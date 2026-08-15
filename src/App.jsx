@@ -1,0 +1,274 @@
+import { useApp } from "./context/AppContext.jsx";
+import { useRef, useCallback } from "react";
+
+import TopBar from "./components/TopBar.jsx";
+import TabBar from "./components/TabBar.jsx";
+import Dashboard from "./components/Dashboard.jsx";
+import MapPage from "./components/MapPage.jsx";
+import NeighborsPage from "./components/NeighborsPage.jsx";
+import CatalogPage from "./components/CatalogPage.jsx";
+import MyProfile from "./components/MyProfile.jsx";
+import MessagesPage from "./components/MessagesPage.jsx";
+import CalendarPage from "./components/CalendarPage.jsx";
+import CraftsmanReviewsPage from "./components/CraftsmanReviewsPage.jsx";
+import InstitutionCrisisPage from "./components/InstitutionCrisisPage.jsx";
+import InstitutionOfficePage from "./components/InstitutionOfficePage.jsx";
+import CreateListingModal from "./components/CreateListingModal.jsx";
+import CreateInvoiceModal from "./components/CreateInvoiceModal.jsx";
+import CreateEventModal from "./components/CreateEventModal.jsx";
+import CreateGroupModal from "./components/CreateGroupModal.jsx";
+import PlusActionMenu from "./components/PlusActionMenu.jsx";
+import RegisterScreen from "./components/RegisterScreen.jsx";
+import ChatModal from "./components/ChatModal.jsx";
+import EventDetailModal from "./components/EventDetailModal.jsx";
+import PaymentModal from "./components/PaymentModal.jsx";
+import CraftsmanPublicProfileModal from "./components/CraftsmanPublicProfileModal.jsx";
+import SosOverlay from "./components/SosOverlay.jsx";
+import ProfileHintModal from "./components/ProfileHintModal.jsx";
+import PlaceSuggestionModal from "./components/entity/PlaceSuggestionModal.jsx";
+import HomeEventGalleryOverlay from "./components/HomeEventGalleryOverlay.jsx";
+import LocationAccessPrompt from "./components/LocationAccessPrompt.jsx";
+import { PodplotStoryWelcome } from "./components/LegalPages.jsx";
+
+import BusinessAdsPage from "./components/BusinessAdsPage.jsx";
+import GlobalSearchResults from "./components/GlobalSearchResults.jsx";
+
+import { LOCATION_DOODLE_ICONS } from "./components/doodle/doodleIcons.jsx";
+import { APP_ROLES } from "./data/userRoles.js";
+
+function Toast() {
+  const { toast } = useApp();
+  if (!toast) return null;
+
+  const bg = {
+    success: { background: "#3D7A68" },
+    error: { background: "#57534e" },
+    info: { background: "#3D7A68" },
+  };
+
+  const LocIcon = toast.locationId
+    ? LOCATION_DOODLE_ICONS[toast.locationId] ?? LOCATION_DOODLE_ICONS.domov
+    : null;
+
+  return (
+    <div
+      className="fixed bottom-24 left-4 right-4 max-w-[358px] mx-auto z-50 px-4 py-3 rounded-2xl text-sm font-medium shadow-lg text-white flex items-center gap-2.5"
+      style={bg[toast.type] ?? bg.info}
+    >
+      {LocIcon && (
+        <span className="shrink-0 w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center text-white">
+          <LocIcon className="w-4 h-4" />
+        </span>
+      )}
+      <span className="min-w-0 leading-snug">{toast.message}</span>
+    </div>
+  );
+}
+
+function MainScroll({ children, fill = false }) {
+  return (
+    <main
+      id="app-main-scroll"
+      className={`min-h-0 min-w-0 scrollbar-thin ${
+        fill
+          ? "flex-1 flex flex-col overflow-hidden"
+          : "flex-1 overflow-y-auto overscroll-y-contain"
+      }`}
+      style={{ scrollbarWidth: "thin", ...(fill ? { flex: "1 1 0%" } : null) }}
+    >
+      {children}
+    </main>
+  );
+}
+
+function Screen() {
+  const { activeTab, appUserRole, viewAsNeighbor, isB2BWorkMode, globalSearchQuery } = useApp();
+  const isOfficeMode = appUserRole === APP_ROLES.OFFICE && !viewAsNeighbor;
+  const searching = Boolean(globalSearchQuery?.trim());
+
+  const fillViewport =
+    !searching &&
+    (activeTab === "map" ||
+      activeTab === "reports" ||
+      (isOfficeMode && (activeTab === "home" || activeTab === "map")));
+
+  if (searching) {
+    return (
+      <MainScroll>
+        <GlobalSearchResults />
+      </MainScroll>
+    );
+  }
+
+  return (
+    <MainScroll fill={fillViewport}>
+      {isOfficeMode ? (
+        <>
+          {activeTab === "reports" && <MapPage lockedSection="reports" officeOverview />}
+          {activeTab === "crisis" && <InstitutionCrisisPage />}
+          {activeTab === "catalog" && <CatalogPage />}
+          {activeTab === "office" && <InstitutionOfficePage />}
+          {(activeTab === "home" || activeTab === "map" || activeTab === "neighbors" || activeTab === "messages") && (
+            <MapPage lockedSection="reports" officeOverview />
+          )}
+        </>
+      ) : (
+        <>
+          {activeTab === "home" && <Dashboard />}
+          {activeTab === "map" && (isB2BWorkMode ? <Dashboard /> : <MapPage />)}
+          {activeTab === "reviews" && isB2BWorkMode && <CraftsmanReviewsPage />}
+          {activeTab === "ads" && isB2BWorkMode && <BusinessAdsPage />}
+          {activeTab === "neighbors" && <NeighborsPage />}
+          {activeTab === "catalog" && <CatalogPage />}
+          {activeTab === "calendar" && (
+            <div className="pp-page min-h-full">
+              <CalendarPage />
+            </div>
+          )}
+        </>
+      )}
+    </MainScroll>
+  );
+}
+
+function AppPanelOverlay({ open, title, onClose, children }) {
+  if (!open) return null;
+
+  return (
+    <div className="pp-profile-overlay" role="dialog" aria-label={title}>
+      <div className="pp-profile-overlay-header">
+        <span className="text-sm font-bold text-stone-900">{title}</span>
+      </div>
+      <div className="pp-profile-overlay-body pp-profile-overlay-body--with-back">{children}</div>
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Zpět"
+        title="Zpět"
+        className="pp-back-fab"
+      >
+        ←
+      </button>
+    </div>
+  );
+}
+
+function ProfileOverlay() {
+  const { profileOpen, closeProfile } = useApp();
+  const legalBackRef = useRef(null);
+
+  const registerLegalBack = useCallback((fn) => {
+    legalBackRef.current = fn;
+  }, []);
+
+  const handleBack = () => {
+    if (legalBackRef.current?.()) return;
+    closeProfile();
+  };
+
+  return (
+    <AppPanelOverlay open={profileOpen} title="Profil" onClose={handleBack}>
+      <MyProfile registerLegalBack={registerLegalBack} />
+    </AppPanelOverlay>
+  );
+}
+
+function MessagesOverlay() {
+  const { messagesOpen, closeMessages } = useApp();
+  return (
+    <AppPanelOverlay open={messagesOpen} title="Zprávy" onClose={closeMessages}>
+      <MessagesPage embedded />
+    </AppPanelOverlay>
+  );
+}
+
+function GlobalModals() {
+  const {
+    chatModal,
+    closeChat,
+    selectedEventId,
+    pendingPayment,
+    setPendingPayment,
+    confirmPendingPayment,
+    credits,
+    profileHint,
+    dismissProfileHint,
+    goToProfileFromHint,
+    createGroupModalOpen,
+    setCreateGroupModalOpen,
+  } = useApp();
+
+  return (
+    <>
+      {chatModal && (
+        <ChatModal
+          open
+          onClose={closeChat}
+          participantName={chatModal.participantName}
+          participantId={chatModal.participantId}
+        />
+      )}
+      <CraftsmanPublicProfileModal />
+      {selectedEventId && <EventDetailModal />}
+      <HomeEventGalleryOverlay />
+      <LocationAccessPrompt />
+      <CreateGroupModal
+        open={createGroupModalOpen}
+        onClose={() => setCreateGroupModalOpen(false)}
+      />
+      <PaymentModal
+        open={!!pendingPayment}
+        onClose={() => setPendingPayment(null)}
+        title={pendingPayment?.title ?? "Platba"}
+        amount={pendingPayment?.amount ?? 0}
+        walletBalance={credits}
+        onConfirm={confirmPendingPayment}
+      />
+      <SosOverlay />
+      <ProfileHintModal
+        open={!!profileHint}
+        variant={profileHint?.variant}
+        onClose={dismissProfileHint}
+        onGoToProfile={goToProfileFromHint}
+      />
+    </>
+  );
+}
+
+export default function AppShell() {
+  const { user, showPodplotStory, dismissPodplotStory } = useApp();
+
+  if (!user) {
+    return (
+      <div className="min-h-dvh overflow-y-auto">
+        <RegisterScreen />
+        <Toast />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-dvh flex justify-center items-stretch sm:items-center py-0 sm:py-4 pp-safe-top pp-safe-bottom" style={{ background: "#F9F9F9" }}>
+      <div
+        id="app-panel-root"
+        className="relative overflow-hidden w-full max-w-[390px] h-dvh sm:h-[844px] sm:max-h-[90dvh] flex flex-col min-h-0 sm:rounded-[28px] sm:border sm:shadow-xl pp-page pp-safe-x"
+        style={{ borderColor: "#EEEEEE" }}
+      >
+        <TopBar />
+        <Screen />
+        <TabBar />
+        <CreateListingModal />
+        <CreateInvoiceModal />
+        <CreateEventModal />
+        <PlaceSuggestionModal />
+        <PlusActionMenu />
+        <ProfileOverlay />
+        <MessagesOverlay />
+        <GlobalModals />
+        <div id="app-modal-root" className="absolute inset-0 z-[70] pointer-events-none" />
+        <Toast />
+        {showPodplotStory ? <PodplotStoryWelcome onContinue={dismissPodplotStory} /> : null}
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,209 @@
+/** Geografické lokality uživatele — střed, obec, rádius */
+
+export const DEFAULT_RADIUS_KM = 7;
+
+export const USER_LOCATIONS = [
+  {
+    id: "domov",
+    emoji: "🏠",
+    label: "Domov",
+    shortLabel: "Jesenice",
+    municipality: "Jesenice",
+    address: "Lípová 12, Jesenice",
+    lat: 49.966,
+    lng: 14.512,
+    radiusKm: DEFAULT_RADIUS_KM,
+  },
+  {
+    id: "prace",
+    emoji: "💼",
+    label: "Práce",
+    shortLabel: "Praha",
+    municipality: "Praha",
+    address: "Václavské nám. 1, Praha",
+    lat: 50.081,
+    lng: 14.427,
+    radiusKm: DEFAULT_RADIUS_KM,
+  },
+  {
+    id: "chata",
+    emoji: "🌲",
+    label: "Chata",
+    shortLabel: "Přední Lhota",
+    municipality: "Přední Lhota",
+    address: "Přední Lhota 15, 290 01 Přední Lhota",
+    lat: 50.135,
+    lng: 15.09,
+    radiusKm: DEFAULT_RADIUS_KM,
+  },
+];
+
+export const GROUPS_BY_LOCATION = {
+  domov: [
+    {
+      id: "maminky",
+      name: "Maminky",
+      emoji: "👶",
+      members: 84,
+      clubCategory: "deti",
+      description: "Rodiny s dětmi v Jesenici.",
+    },
+    {
+      id: "krouzky",
+      name: "Kroužky",
+      emoji: "🎨",
+      members: 36,
+      clubCategory: "deti",
+      description: "Volnočasové kroužky a tipy pro děti.",
+    },
+    {
+      id: "hriste",
+      name: "Hřiště",
+      emoji: "🛝",
+      members: 29,
+      clubCategory: "deti",
+      description: "Setkání u hřišť a tipy na místa pro děti.",
+    },
+    {
+      id: "tenis",
+      name: "Tenis",
+      emoji: "🎾",
+      members: 14,
+      clubCategory: "sport",
+      description: "Rezervace kurtů a společné tréninky.",
+    },
+    {
+      id: "fotbal",
+      name: "Fotbal",
+      emoji: "⚽",
+      members: 22,
+      clubCategory: "sport",
+      description: "Amatérský fotbal a tréninky.",
+    },
+    {
+      id: "beh",
+      name: "Běh",
+      emoji: "🏃",
+      members: 18,
+      clubCategory: "sport",
+      description: "Společné běhy a trasy v okolí.",
+    },
+    {
+      id: "cyklistika",
+      name: "Cyklistika",
+      emoji: "🚴",
+      members: 16,
+      clubCategory: "sport",
+      description: "Společné vyjížďky a tipy na trasy.",
+    },
+    {
+      id: "zahradkari",
+      name: "Zahrádkáři",
+      emoji: "🌱",
+      members: 41,
+      clubCategory: "dum",
+      description: "Zahrady a úroda v okolí.",
+    },
+    {
+      id: "kutilove",
+      name: "Kutilové",
+      emoji: "🔧",
+      members: 23,
+      clubCategory: "dum",
+      description: "Opravy, tipy a půjčování nářadí.",
+    },
+    {
+      id: "kultura",
+      name: "Kultura",
+      emoji: "🎭",
+      members: 28,
+      clubCategory: "hobby",
+      description: "Akce, workshopy a kultura v okolí.",
+    },
+    {
+      id: "pejskari",
+      name: "Pejskaři",
+      emoji: "🐶",
+      members: 33,
+      clubCategory: "hobby",
+      description: "Venčení, tipy a setkání pejskařů.",
+    },
+    {
+      id: "foto",
+      name: "Fotografování",
+      emoji: "📷",
+      members: 12,
+      clubCategory: "hobby",
+      description: "Společné focení a tipy na místa.",
+    },
+  ],
+  prace: [
+    {
+      id: "praha-sousede",
+      name: "Sousedé z práce",
+      emoji: "💼",
+      members: 19,
+      clubCategory: "hobby",
+      description: "Kolegové z okolí kanceláře.",
+    },
+    {
+      id: "praha-obedy",
+      name: "Kam na oběd",
+      emoji: "🍽️",
+      members: 45,
+      clubCategory: "hobby",
+      description: "Tipy na polední menu v centru.",
+    },
+  ],
+  chata: [
+    {
+      id: "zahradkari",
+      name: "Zahrádkáři",
+      emoji: "🌱",
+      members: 22,
+      clubCategory: "dum",
+      description: "Chata a zahrada v Přední Lhotě.",
+    },
+    {
+      id: "houbari",
+      name: "Houbaři",
+      emoji: "🍄",
+      members: 17,
+      clubCategory: "hobby",
+      description: "Výpravy do lesa kolem Přední Lhoty a Poděbrad.",
+    },
+    {
+      id: "kultura",
+      name: "Kultura",
+      emoji: "🎭",
+      members: 11,
+      clubCategory: "hobby",
+      description: "Akce v Přední Lhotě a okolí Poděbrad.",
+    },
+  ],
+};
+
+export function getLocation(id) {
+  return USER_LOCATIONS.find((l) => l.id === id);
+}
+
+export function getGroupsForLocation(locationId) {
+  return GROUPS_BY_LOCATION[locationId] ?? GROUPS_BY_LOCATION.domov;
+}
+
+/** Skupiny, kde je přihlášený uživatel členem (dle lokality) */
+export const MY_GROUP_IDS_BY_LOCATION = {
+  domov: ["maminky", "zahradkari", "tenis"],
+  prace: ["praha-sousede", "praha-obedy"],
+  chata: ["zahradkari", "houbari"],
+};
+
+export function getMyMemberGroups(communityGroups, locationId) {
+  const ids = new Set(MY_GROUP_IDS_BY_LOCATION[locationId] ?? MY_GROUP_IDS_BY_LOCATION.domov);
+  return communityGroups.filter((g) => ids.has(g.id));
+}
+
+export function getDiscoverGroups(communityGroups, locationId) {
+  const ids = new Set(MY_GROUP_IDS_BY_LOCATION[locationId] ?? MY_GROUP_IDS_BY_LOCATION.domov);
+  return communityGroups.filter((g) => !ids.has(g.id));
+}

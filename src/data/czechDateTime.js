@@ -1,0 +1,130 @@
+/** Formátování data a času dle zvyklostí v ČR (cs-CZ, 24 h) */
+
+export const CS_LOCALE = "cs-CZ";
+export const TIME_TBD_LABEL = "čas upřesníme";
+
+export function parseDateInput(value) {
+  if (!value) return null;
+  const d = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function capitalizeCs(str) {
+  if (!str) return str;
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+/** 14. 7. 2026 */
+export function formatCzechDate(dateInput, { weekday = false, year = true } = {}) {
+  const d = parseDateInput(dateInput);
+  if (!d) return "";
+  const opts = { day: "numeric", month: "numeric" };
+  if (year) opts.year = "numeric";
+  if (weekday) opts.weekday = "short";
+  return capitalizeCs(d.toLocaleDateString(CS_LOCALE, opts));
+}
+
+/** 17:00 — vždy 24hodinový formát (nikdy AM/PM) */
+export function formatCzechTime(dateInput) {
+  const d = parseDateInput(dateInput);
+  if (!d) return "";
+  const h = String(d.getHours()).padStart(2, "0");
+  const m = String(d.getMinutes()).padStart(2, "0");
+  return `${h}:${m}`;
+}
+
+/** Normalizace vstupu na HH:mm, nebo null při neplatném čase */
+export function normalizeCzechTime(raw) {
+  if (raw == null) return "";
+  const trimmed = String(raw).trim();
+  if (!trimmed) return "";
+  const colon = trimmed.match(/^(\d{1,2}):(\d{1,2})$/);
+  const compact = !colon ? trimmed.match(/^(\d{1,2})([0-5]\d)$/) : null;
+  const m = colon || compact;
+  if (!m) return null;
+  const hour = Number(m[1]);
+  const minute = Number(m[2]);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute) || hour > 23 || minute > 59) return null;
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+export function isValidCzechTime(raw) {
+  return Boolean(raw) && normalizeCzechTime(raw) != null;
+}
+
+/** Rozdělí hodnotu datetime-local (YYYY-MM-DDTHH:mm) */
+export function splitDateTimeLocal(value) {
+  if (!value) return { date: "", time: "" };
+  const [date = "", timePart = ""] = String(value).split("T");
+  return { date, time: timePart.slice(0, 5) };
+}
+
+/** Spojí datum + čas do YYYY-MM-DDTHH:mm */
+export function joinDateTimeLocal(date, time) {
+  if (!date) return "";
+  const normalized = normalizeCzechTime(time);
+  if (!normalized) return date;
+  return `${date}T${normalized}`;
+}
+
+/** Po 14. 7. · 17:00 */
+export function formatCzechDateTime(dateInput) {
+  const d = parseDateInput(dateInput);
+  if (!d) return "";
+  return `${formatCzechDate(d, { weekday: true, year: false })} · ${formatCzechTime(d)}`;
+}
+
+/** 14. 7. 2026 v 17:00 */
+export function formatCzechDateTimeFull(dateInput) {
+  const d = parseDateInput(dateInput);
+  if (!d) return "";
+  return `${formatCzechDate(d, { weekday: false, year: true })} v ${formatCzechTime(d)}`;
+}
+
+/** Po 14. 7. · 17:00  nebo  Po 14. 7. · čas upřesníme */
+export function formatCzechEventSchedule(startsAtIso, timeTbd = false) {
+  if (!startsAtIso) return "Termín upřesníme";
+  const d = parseDateInput(startsAtIso);
+  if (!d) return "Termín upřesníme";
+  const datePart = formatCzechDate(d, { weekday: true, year: false });
+  if (timeTbd) return `${datePart} · ${TIME_TBD_LABEL}`;
+  return `${datePart} · ${formatCzechTime(d)}`;
+}
+
+export function nowCzechTime() {
+  return formatCzechTime(new Date());
+}
+
+export function minDateInputValue(date = new Date()) {
+  const d = new Date(date);
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 10);
+}
+
+export function minDateTimeLocalValue(date = new Date()) {
+  const d = new Date(date);
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 16);
+}
+
+export function eventDateSortValue(startsAtIso) {
+  const d = parseDateInput(startsAtIso);
+  if (!d) return 999;
+  return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+}
+
+/** Akce je minulá, pokud už proběhl začátek */
+export function isEventPast(event, now = new Date()) {
+  if (!event?.startsAt) return false;
+  return new Date(event.startsAt).getTime() < now.getTime();
+}
+
+export function combineDateAndTime(dateValue, timeValue, timeTbd = false) {
+  if (!dateValue) return null;
+  const time = timeTbd ? "12:00" : timeValue || "12:00";
+  const iso = new Date(`${dateValue}T${time}`).toISOString();
+  return Number.isNaN(new Date(iso).getTime()) ? null : iso;
+}
+
+/** @deprecated alias */
+export const minEventDateValue = minDateInputValue;

@@ -1,0 +1,10 @@
+﻿FAIL src\components\PostInteractions.jsx /src\components\PostInteractions.jsx: Identifier 'getPostInteractionType' has already been declared. (3:9)
+
+  1 | import { useApp } from "../context/AppContext.jsx";
+  2 | import { getPostInteractionType, INTERACTION_TYPES } from "../data/postInteractions.js";
+> 3 | import { getPostInteractionType, INTERACTION_TYPES } from "../data/postInteractions.js";
+    |          ^
+  4 | import { MessageButton } from "./MessagesPage.jsx";
+  5 |
+  6 | export default function PostInteractions({ post }) {
+checked 81 failed 1

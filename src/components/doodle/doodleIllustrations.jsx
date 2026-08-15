@@ -1,0 +1,299 @@
+import { doodleStroke, DOODLE_OLIVE } from "./doodleStroke.js";
+
+const s = doodleStroke;
+
+/** Jemná silueta domků a stromů pro záhlaví */
+export function DoodleHeaderLandscape({ className = "w-20 h-8" }) {
+  return (
+    <svg
+      viewBox="0 0 80 32"
+      fill="none"
+      className={`pp-doodle-landscape ${className}`}
+      aria-hidden
+    >
+      <path
+        {...s}
+        stroke={DOODLE_OLIVE}
+        strokeWidth={1.5}
+        d="M2 26c8-4 14-3 20 0s14 4 22 1 18-2 24 2"
+        opacity={0.7}
+      />
+      <path {...s} stroke={DOODLE_OLIVE} strokeWidth={1.5} d="M12 24V16l5-4 5 4v8" opacity={0.85} />
+      <path {...s} stroke={DOODLE_OLIVE} strokeWidth={1.5} d="M14 24h6" opacity={0.85} />
+      <path {...s} stroke={DOODLE_OLIVE} strokeWidth={1.5} d="M38 24V14l6-5 6 5v10" opacity={0.75} />
+      <path {...s} stroke={DOODLE_OLIVE} strokeWidth={1.5} d="M58 24V18c0-2 1.5-3.5 3-3.5s3 1.5 3 3.5v6" opacity={0.65} />
+      <circle cx="58" cy="13" r="3.5" {...s} stroke={DOODLE_OLIVE} strokeWidth={1.5} opacity={0.55} />
+      <path {...s} stroke={DOODLE_OLIVE} strokeWidth={1.5} d="M58 16.5V24" opacity={0.55} />
+    </svg>
+  );
+}
+
+/** Dva panáčci — úvod sekce Sousedé */
+export function DoodleNeighborsIntro({ className = "w-28 h-14" }) {
+  return (
+    <svg viewBox="0 0 112 56" fill="none" className={`pp-doodle-characters ${className}`} aria-hidden>
+      {/* Panáček vlevo — mává */}
+      <circle cx="28" cy="14" r="6" {...s} />
+      <path {...s} d="M28 20v14M28 26l-8 6M28 26l6-4" />
+      <path {...s} d="M28 34l-5 10M28 34l5 10" />
+      <path {...s} d="M22 22l-5-4" opacity={0.8} />
+      {/* Panáček vpravo */}
+      <circle cx="72" cy="16" r="5.5" {...s} />
+      <path {...s} d="M72 21.5v12M72 27l-7 5M72 27l7 4" />
+      <path {...s} d="M72 33.5l-4.5 9M72 33.5l4.5 9" />
+      {/* Bublina */}
+      <path
+        {...s}
+        stroke={DOODLE_OLIVE}
+        d="M48 8c3-2 8-1.5 10 2s-1 7-5 7.5c-1.5.2-2.5 1.5-2.5 1.5l-2.5-1.5s-3-.5-4-3 1.5-6.5 4-6.5z"
+        opacity={0.75}
+      />
+      <path {...s} stroke={DOODLE_OLIVE} d="M52 13h6M52 16h4" strokeWidth={1.25} opacity={0.6} />
+    </svg>
+  );
+}
+
+/** Panáček s nástrojem — úvod Katalog */
+export function DoodleCatalogIntro({ className = "w-28 h-14" }) {
+  return (
+    <svg viewBox="0 0 112 56" fill="none" className={`pp-doodle-characters ${className}`} aria-hidden>
+      <path {...s} d="M18 38V26l6-5 6 5v12" opacity={0.75} />
+      <path {...s} d="M22 38h4" opacity={0.75} />
+      <path {...s} stroke={DOODLE_OLIVE} d="M14 40c6-2 12-1 18 1" strokeWidth={1.5} opacity={0.55} />
+      <circle cx="62" cy="16" r="6" {...s} />
+      <path {...s} d="M62 22v16M62 28l-9 6M62 28l7 5" />
+      <path {...s} d="M62 38l-5 10M62 38l5 10" />
+      <path {...s} d="M74 30l8-4M74 30l-2 8M82 26v8" stroke={DOODLE_OLIVE} opacity={0.8} />
+      <path {...s} stroke={DOODLE_OLIVE} d="M76 34h4" strokeWidth={1.25} opacity={0.55} />
+    </svg>
+  );
+}
+
+/** Mapa se špendlíkem — úvod Mapa */
+export function DoodleMapIntro({ className = "w-28 h-14" }) {
+  return (
+    <svg viewBox="0 0 112 56" fill="none" className={`pp-doodle-characters ${className}`} aria-hidden>
+      <path
+        {...s}
+        d="M20 14c0-2 1.5-3.5 3.5-3.5h28c2 0 3.5 1.5 3.5 3.5v28c0 2-1.5 3.5-3.5 3.5h-28c-2 0-3.5-1.5-3.5-3.5V14z"
+        opacity={0.85}
+      />
+      <path {...s} d="M20 22h35M28 30h8M28 36h14" opacity={0.55} />
+      <path
+        {...s}
+        d="M58 12c-2.5 0-4.5 2-4.5 4.5 0 3.5 4.5 8 4.5 8s4.5-4.5 4.5-8c0-2.5-2-4.5-4.5-4.5z"
+        stroke={DOODLE_OLIVE}
+      />
+      <circle cx="58" cy="16.5" r="1.8" {...s} stroke={DOODLE_OLIVE} opacity={0.7} />
+      <circle cx="82" cy="20" r="5" {...s} />
+      <path {...s} d="M82 25v12M82 30l-5 4M82 30l5 3" />
+      <path {...s} d="M82 37l-4 8M82 37l4 8" />
+    </svg>
+  );
+}
+
+/** Domeček a sluníčko — úvod Domů */
+export function DoodleHomeIntro({ className = "w-28 h-14" }) {
+  return (
+    <svg viewBox="0 0 112 56" fill="none" className={`pp-doodle-characters ${className}`} aria-hidden>
+      <circle cx="88" cy="12" r="6" {...s} stroke={DOODLE_OLIVE} opacity={0.75} />
+      <path {...s} stroke={DOODLE_OLIVE} d="M88 4v2M88 18v2M96 12h2M78 12h2M94 8l1.5 1.5M82 16l1.5 1.5M94 16l1.5-1.5M82 8l1.5-1.5" strokeWidth={1.25} opacity={0.45} />
+      <path {...s} d="M24 38V24l12-9 12 9v14" />
+      <path {...s} d="M32 38v-8h8v8" />
+      <path {...s} stroke={DOODLE_OLIVE} d="M16 40c10-3 20-2 28 2" strokeWidth={1.5} opacity={0.55} />
+      <circle cx="68" cy="22" r="5" {...s} />
+      <path {...s} d="M68 27v11M68 32l-6 5M68 32l5 4" />
+      <path {...s} d="M68 38l-4 9M68 38l4 9" />
+      <path {...s} d="M62 26l-4-3" opacity={0.75} />
+    </svg>
+  );
+}
+
+/** Kalendář a panáčci — úvod stránky Akce */
+export function DoodleEventsIntro({ className = "w-36 h-14" }) {
+  return (
+    <svg viewBox="0 0 144 56" fill="none" className={`pp-doodle-characters ${className}`} aria-hidden>
+      <path
+        {...s}
+        d="M18 16c.2-2 1.6-3.5 3.5-3.5h28c1.9 0 3.3 1.5 3.5 3.5v28c-.2 2-1.6 3.5-3.5 3.5h-28c-1.9 0-3.3-1.5-3.5-3.5V16z"
+      />
+      <path {...s} d="M17.5 24h35" />
+      <path {...s} d="M28 12v7M38 12v7" />
+      <circle cx="29" cy="34" r="2.2" fill="currentColor" stroke="none" opacity={0.45} />
+      <circle cx="38" cy="34" r="2.2" fill="currentColor" stroke="none" opacity={0.45} />
+      <circle cx="47" cy="34" r="2.2" fill="currentColor" stroke="none" opacity={0.35} />
+      <circle cx="29" cy="42" r="2.2" fill="currentColor" stroke="none" opacity={0.35} />
+      <circle cx="38" cy="42" r="2.2" {...s} stroke={DOODLE_OLIVE} opacity={0.8} />
+
+      <circle cx="78" cy="16" r="5.5" {...s} />
+      <path {...s} d="M78 21.5v12M78 27l-7 5M78 27l7 4" />
+      <path {...s} d="M78 33.5l-4.5 10M78 33.5l4.5 10" />
+      <path {...s} d="M72 24l-4-5" opacity={0.75} />
+
+      <circle cx="104" cy="18" r="5" {...s} />
+      <path {...s} d="M104 23v11M104 28l-6 4M104 28l6 3.5" />
+      <path {...s} d="M104 34l-4 9M104 34l4 9" />
+
+      <path
+        {...s}
+        stroke={DOODLE_OLIVE}
+        d="M120 14c2.5-1.5 6-1 7.5 1.5s0 5.5-3 6c-1 .2-1.8 1.2-1.8 1.2l-1.8-1.2s-2.2-.4-3-2.2 1-5.3 3.1-5.3z"
+        opacity={0.8}
+      />
+      <path {...s} stroke={DOODLE_OLIVE} d="M122 18h4" strokeWidth={1.25} opacity={0.55} />
+      <path {...s} stroke={DOODLE_OLIVE} d="M68 48c12-3 24-2 36 2" strokeWidth={1.5} opacity={0.5} />
+    </svg>
+  );
+}
+
+/** Prázdný stav — panáčci si povídají */
+export function DoodleEmptyChat({ className = "w-24 h-20" }) {
+  return (
+    <svg viewBox="0 0 96 80" fill="none" className={`pp-doodle-characters ${className}`} aria-hidden>
+      <circle cx="30" cy="22" r="7" {...s} />
+      <path {...s} d="M30 29v18M30 36l-9 7M30 36l8 5" />
+      <path {...s} d="M30 47l-6 12M30 47l6 12" />
+      <circle cx="66" cy="26" r="6" {...s} />
+      <path {...s} d="M66 32v16M66 38l-7 6M66 38l7 4" />
+      <path {...s} d="M66 48l-5 10M66 48l5 10" />
+      <ellipse cx="48" cy="14" rx="14" ry="8" {...s} stroke={DOODLE_OLIVE} opacity={0.7} />
+      <path {...s} stroke={DOODLE_OLIVE} d="M42 14h12" strokeWidth={1.25} opacity={0.55} />
+    </svg>
+  );
+}
+
+/** Prázdný stav — pomocné ruce */
+export function DoodleEmptyHands({ className = "w-24 h-20" }) {
+  return (
+    <svg viewBox="0 0 96 80" fill="none" className={`pp-doodle-characters ${className}`} aria-hidden>
+      <path {...s} d="M20 50c4-8 12-14 22-14s18 6 22 14" />
+      <path {...s} d="M32 36l-8-6M32 36l2-10M40 34l4-12" />
+      <path {...s} d="M64 36l8-6M64 36l-2-10M56 34l-4-12" />
+      <circle cx="48" cy="28" r="8" {...s} />
+      <path {...s} d="M48 36v10M48 42l-6 8M48 42l6 8" />
+      <path {...s} stroke={DOODLE_OLIVE} d="M38 58h20" strokeWidth={1.5} opacity={0.5} />
+    </svg>
+  );
+}
+
+/** Prázdný stav — skupina panáčků */
+export function DoodleEmptyGroup({ className = "w-24 h-20" }) {
+  return (
+    <svg viewBox="0 0 96 80" fill="none" className={`pp-doodle-characters ${className}`} aria-hidden>
+      <circle cx="48" cy="20" r="6" {...s} />
+      <circle cx="28" cy="28" r="5" {...s} opacity={0.85} />
+      <circle cx="68" cy="28" r="5" {...s} opacity={0.85} />
+      <path {...s} d="M48 26v14M48 32l-8 6M48 32l8 6" />
+      <path {...s} d="M28 33v12M68 33v12" opacity={0.85} />
+      <path {...s} stroke={DOODLE_OLIVE} d="M20 58c8-4 16-4 24 0s16 4 24 0" strokeWidth={1.5} opacity={0.55} />
+    </svg>
+  );
+}
+
+/** Prázdný stav — prázdná krabice / bazar */
+export function DoodleEmptyBox({ className = "w-24 h-20" }) {
+  return (
+    <svg viewBox="0 0 96 80" fill="none" className={`pp-doodle-characters ${className}`} aria-hidden>
+      <path {...s} d="M24 32l24-12 24 12v28l-24 12-24-12V32z" />
+      <path {...s} d="M48 20v52M24 32l24 12 24-12" opacity={0.65} />
+      <circle cx="48" cy="14" r="5" {...s} stroke={DOODLE_OLIVE} opacity={0.7} />
+      <path {...s} stroke={DOODLE_OLIVE} d="M48 19v5M45 24h6" strokeWidth={1.25} opacity={0.55} />
+    </svg>
+  );
+}
+
+/** Prázdný stav — kalendář */
+export function DoodleEmptyCalendar({ className = "w-24 h-20" }) {
+  return (
+    <svg viewBox="0 0 96 80" fill="none" className={`pp-doodle-characters ${className}`} aria-hidden>
+      <path {...s} d="M28 24c.2-2 1.8-3.5 3.8-3.5h32c2 0 3.6 1.5 3.8 3.5v36c-.2 2-1.8 3.5-3.8 3.5h-32c-2 0-3.6-1.5-3.8-3.5V24z" />
+      <path {...s} d="M27 34h42" />
+      <path {...s} d="M38 20v6M58 20v6" />
+      <circle cx="48" cy="52" r="6" {...s} stroke={DOODLE_OLIVE} opacity={0.65} />
+      <path {...s} stroke={DOODLE_OLIVE} d="M45 52h6" strokeWidth={1.25} opacity={0.5} />
+    </svg>
+  );
+}
+
+/**
+ * Sousedství u plotu — dva domky, plot uprostřed, sousedi si povídají.
+ * Pro Příběh Podplotu (větší scéna).
+ */
+export function DoodleSousedstviScene({ className = "w-full max-w-[280px] h-auto" }) {
+  return (
+    <svg
+      viewBox="0 0 280 140"
+      fill="none"
+      className={`pp-doodle-characters text-[#3D7A68] ${className}`}
+      aria-hidden
+    >
+      {/* Terén */}
+      <path
+        {...s}
+        stroke={DOODLE_OLIVE}
+        strokeWidth={1.5}
+        d="M8 118c28-8 52-6 78 2 26 8 48 6 72-2 24-8 48-6 74 4 18 7 32 4 40 0"
+        opacity={0.65}
+      />
+
+      {/* Domek vlevo */}
+      <path {...s} d="M28 96V62l28-22 28 22v34" />
+      <path {...s} d="M48 96V78h16v18" />
+      <path {...s} d="M62 58l18-8" opacity={0.55} />
+      <path {...s} stroke={DOODLE_OLIVE} d="M36 72h10M36 80h8" strokeWidth={1.4} opacity={0.5} />
+
+      {/* Domek vpravo */}
+      <path {...s} d="M196 96V66l26-20 26 20v30" />
+      <path {...s} d="M214 96V80h14v16" />
+      <path {...s} stroke={DOODLE_OLIVE} d="M228 74h10M228 82h8" strokeWidth={1.4} opacity={0.5} />
+
+      {/* Plot uprostřed */}
+      <path {...s} stroke={DOODLE_OLIVE} d="M118 98V58M138 98V54M158 98V58" strokeWidth={1.6} opacity={0.85} />
+      <path {...s} stroke={DOODLE_OLIVE} d="M112 66h52M112 78h52M112 90h52" strokeWidth={1.5} opacity={0.75} />
+      <path {...s} stroke={DOODLE_OLIVE} d="M118 54l10-8 10 8 10-8 10 8" strokeWidth={1.5} opacity={0.7} />
+
+      {/* Soused vlevo u plotu */}
+      <circle cx="98" cy="72" r="7" {...s} />
+      <path {...s} d="M98 79v18M98 86l-8 6M98 86l7 3" />
+      <path {...s} d="M98 97l-5 12M98 97l5 12" />
+      <path {...s} d="M105 84l8-2" opacity={0.85} />
+
+      {/* Soused vpravo u plotu */}
+      <circle cx="178" cy="74" r="6.5" {...s} />
+      <path {...s} d="M178 80.5v16M178 87l-7 5M178 87l8 4" />
+      <path {...s} d="M178 96.5l-4.5 12M178 96.5l5 12" />
+      <path {...s} d="M171 85l-8-1" opacity={0.85} />
+
+      {/* Bublina mezi nimi */}
+      <path
+        {...s}
+        stroke={DOODLE_OLIVE}
+        d="M128 42c5-3.5 14-3 17.5 2.5s-1 11-7 12c-2 .3-3.5 2-3.5 2l-3.5-2s-5-.8-6.5-4.5 2.5-10 5.5-10z"
+        opacity={0.8}
+      />
+      <path {...s} stroke={DOODLE_OLIVE} d="M132 48h10M132 53h7" strokeWidth={1.3} opacity={0.55} />
+
+      {/* Stromek vpravo */}
+      <circle cx="258" cy="78" r="12" {...s} stroke={DOODLE_OLIVE} opacity={0.55} />
+      <path {...s} stroke={DOODLE_OLIVE} d="M258 90v22" opacity={0.55} />
+
+      {/* Sluníčko */}
+      <circle cx="248" cy="28" r="8" {...s} stroke={DOODLE_OLIVE} opacity={0.7} />
+      <path
+        {...s}
+        stroke={DOODLE_OLIVE}
+        strokeWidth={1.3}
+        d="M248 14v3M248 39v3M262 28h3M231 28h3M258 18l2 2M236 36l2 2M258 38l2-2M236 20l2-2"
+        opacity={0.45}
+      />
+    </svg>
+  );
+}
+
+export const DOODLE_EMPTY_ILLUSTRATIONS = {
+  chat: DoodleEmptyChat,
+  hands: DoodleEmptyHands,
+  group: DoodleEmptyGroup,
+  box: DoodleEmptyBox,
+  calendar: DoodleEmptyCalendar,
+};

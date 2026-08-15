@@ -1,0 +1,136 @@
+import { useState } from "react";
+import { CURRENT_USER, LEND_ASSETS, WANT_ASSETS, MY_GROUPS } from "../data/mockData.js";
+import { useApp } from "../context/AppContext.jsx";
+import { IconCredit } from "../data/icons.jsx";
+
+export default function ProfilePanel() {
+  const { profileOpen, setProfileOpen, credits, addCredits } = useApp();
+  const [lend, setLend] = useState(new Set(["vrtacka", "vozik"]));
+  const [want, setWant] = useState(new Set(["vrtacka"]));
+
+  if (!profileOpen) return null;
+
+  const toggle = (set, id, setter) => {
+    const next = new Set(set);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setter(next);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end" role="dialog">
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/40"
+        onClick={() => setProfileOpen(false)}
+        aria-label="Zavřít"
+      />
+      <aside className="relative w-full max-w-[390px] h-full bg-stone-50 flex flex-col animate-slide-in">
+        <div className="bg-white border-b border-stone-200 p-4 shrink-0">
+          <button
+            type="button"
+            onClick={() => setProfileOpen(false)}
+            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-600"
+          >
+            ✕
+          </button>
+          <div className="flex items-center gap-4 mt-2">
+            <span className="w-14 h-14 rounded-full bg-teal-700 text-white text-lg font-bold flex items-center justify-center">
+              {CURRENT_USER.initials}
+            </span>
+            <div>
+              <h2 className="text-lg font-bold text-stone-900">{CURRENT_USER.name}</h2>
+              {CURRENT_USER.verified && (
+                <span className="text-xs font-semibold text-teal-800 bg-teal-200 px-2 py-0.5 rounded-lg">
+                  Ověřená sousedka
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <section className="bg-white border border-stone-200 rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold text-stone-800">Podplot-Kredity</h3>
+              <span className="flex items-center gap-1 text-lg font-bold text-teal-700">
+                <IconCredit className="w-5 h-5" />
+                {credits} Kč
+              </span>
+            </div>
+            <p className="text-xs text-stone-500 mb-3">Platíte za půjčení věcí — bez hotovosti.</p>
+            <div className="flex gap-2">
+              {[100, 200, 500].map((amt) => (
+                <button
+                  key={amt}
+                  type="button"
+                  onClick={() => addCredits(amt)}
+                  className="flex-1 py-2.5 bg-teal-200 text-teal-800 text-sm font-semibold rounded-xl hover:bg-teal-300 transition-colors"
+                >
+                  +{amt}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="bg-white border border-stone-200 rounded-2xl p-4">
+            <h3 className="text-sm font-semibold text-stone-800 mb-1">Co půjčím sousedům</h3>
+            <p className="text-xs text-stone-500 mb-3">Zaškrtněte věci, které máte doma.</p>
+            <div className="flex flex-wrap gap-2">
+              {LEND_ASSETS.map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => toggle(lend, a.id, setLend)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm border transition-colors ${
+                    lend.has(a.id)
+                      ? "bg-teal-200 border-teal-400 text-teal-800 font-semibold"
+                      : "bg-stone-50 border-stone-200 text-stone-600"
+                  }`}
+                >
+                  <span>{a.emoji}</span> {a.label}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="bg-white border border-stone-200 rounded-2xl p-4">
+            <h3 className="text-sm font-semibold text-stone-800 mb-1">Co občas sháním</h3>
+            <p className="text-xs text-stone-500 mb-3">Upozorníme vás, když to někdo nabídne.</p>
+            <div className="flex flex-wrap gap-2">
+              {WANT_ASSETS.map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => toggle(want, a.id, setWant)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm border transition-colors ${
+                    want.has(a.id)
+                      ? "bg-teal-200 border-teal-400 text-teal-800 font-semibold"
+                      : "bg-stone-50 border-stone-200 text-stone-600"
+                  }`}
+                >
+                  <span>{a.emoji}</span> {a.label}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="bg-white border border-stone-200 rounded-2xl p-4">
+            <h3 className="text-sm font-semibold text-stone-800 mb-3">Moje skupiny</h3>
+            <div className="space-y-2">
+              {MY_GROUPS.map((g) => (
+                <div key={g.id} className="flex items-center gap-3 py-2">
+                  <span className="text-xl">{g.emoji}</span>
+                  <div>
+                    <p className="text-sm font-medium text-stone-800">{g.name}</p>
+                    <p className="text-xs text-stone-500">{g.members} členů</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      </aside>
+    </div>
+  );
+}
