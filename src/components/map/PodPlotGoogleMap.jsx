@@ -142,7 +142,10 @@ export default function PodPlotGoogleMap({
   useEffect(() => {
     if (!containerRef.current || !window.google?.maps) return;
 
-    const map = new window.google.maps.Map(containerRef.current, {
+    const el = containerRef.current;
+    const isTouch = window.matchMedia("(pointer: coarse)").matches;
+
+    const map = new window.google.maps.Map(el, {
       center,
       zoom: 14,
       disableDefaultUI: true,
@@ -151,21 +154,34 @@ export default function PodPlotGoogleMap({
       streetViewControl: false,
       fullscreenControl: false,
       clickableIcons: false,
-      gestureHandling: pickMode ? "greedy" : "cooperative",
+      gestureHandling: pickMode || isTouch ? "greedy" : "cooperative",
       styles: mapMode === "institutions" ? HIDE_GOOGLE_POI_STYLES : undefined,
     });
     mapRef.current = map;
     setMapReady(true);
 
-    const wrap = containerRef.current.parentElement;
+    const triggerResize = () => {
+      if (!mapRef.current || !window.google?.maps?.event) return;
+      window.google.maps.event.trigger(mapRef.current, "resize");
+      mapRef.current.setCenter(center);
+    };
+
+    // Mobil: flex layout často dostane výšku až po paintu — resize po layoutu
+    requestAnimationFrame(() => {
+      triggerResize();
+      window.setTimeout(triggerResize, 100);
+      window.setTimeout(triggerResize, 400);
+    });
+
+    const wrap = el.parentElement;
     const ro =
-      typeof ResizeObserver !== "undefined" && wrap
-        ? new ResizeObserver(() => {
-            if (!mapRef.current || !window.google?.maps?.event) return;
-            window.google.maps.event.trigger(mapRef.current, "resize");
-          })
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(() => triggerResize())
         : null;
-    if (ro && wrap) ro.observe(wrap);
+    if (ro) {
+      ro.observe(el);
+      if (wrap) ro.observe(wrap);
+    }
 
     return () => {
       ro?.disconnect();
@@ -394,14 +410,14 @@ export default function PodPlotGoogleMap({
 
   return (
     <div
-      className={`pp-map-google-wrap ${fluid ? "flex flex-col flex-1 min-h-0" : ""} ${className}`.trim()}
+      className={`pp-map-google-wrap w-full ${fluid ? "flex flex-col flex-1 min-h-0" : ""} ${className}`.trim()}
     >
       <div
-        className={`pp-map-container pp-map-container--google relative ${
-          fluid ? "flex-1 min-h-0" : "h-72"
+        className={`pp-map-container pp-map-container--google relative w-full ${
+          fluid ? "flex-1 min-h-[240px] h-full" : "h-72"
         } ${pickMode ? "pp-map-container--pick" : ""}`}
       >
-        <div ref={containerRef} className="absolute inset-0" aria-hidden={!pickMode} />
+        <div ref={containerRef} className="absolute inset-0 w-full h-full" aria-hidden={!pickMode} />
         {pickMode && !hidePickHint && !draftPin && <MapPickHint />}
         <MapZoomControls onZoomIn={() => zoomBy(1)} onZoomOut={() => zoomBy(-1)} />
       </div>

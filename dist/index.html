@@ -8,7 +8,7 @@
     />
     <meta name="theme-color" content="#1B4D3E" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Podplot" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="format-detection" content="telephone=no" />
@@ -40,19 +40,57 @@
         -webkit-font-smoothing: antialiased;
         -webkit-tap-highlight-color: transparent;
         touch-action: manipulation;
+        height: 100%;
+        height: -webkit-fill-available;
+        width: 100%;
+        margin: 0;
+        padding: 0;
       }
       body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        min-height: 100%;
+        min-height: 100dvh;
+        min-height: -webkit-fill-available;
         overscroll-behavior-y: none;
+        background: #f9f9f9;
+      }
+      #root {
+        width: 100%;
+        min-height: 100%;
+        min-height: 100dvh;
+        min-height: -webkit-fill-available;
+        margin: 0;
+        padding: 0;
+      }
+      /* Kritické: edge-to-edge na telefonu (přebije starý max-w-[390px]) */
+      #app-panel-root,
+      .pp-app-shell,
+      .pp-app-shell-outer,
+      .pp-app-shell--desktop,
+      #app-panel-root.pp-app-shell--desktop {
+        width: 100% !important;
+        max-width: none !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        border-radius: 0 !important;
+      }
+      @media (min-width: 1024px) and (pointer: fine) {
+        #app-panel-root.pp-app-shell--desktop {
+          max-width: 390px !important;
+          border-radius: 28px !important;
+        }
       }
       .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       .scrollbar-hide::-webkit-scrollbar { display: none; }
       @keyframes slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
       .animate-slide-in { animation: slide-in 0.25s ease-out; }
     </style>
-    <script type="module" crossorigin src="/assets/index-CyJnlhPs.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DztnK-4T.css">
+    <script type="module" crossorigin src="/assets/index-DUl2UU4v.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-Be8_dGi9.css">
   </head>
-  <body style="background: #E8E4DC">
+  <body>
     <div id="root"></div>
 
   </body>

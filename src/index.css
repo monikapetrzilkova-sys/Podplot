@@ -42,22 +42,98 @@ html,
 body,
 #root {
   height: 100%;
+  width: 100%;
   margin: 0;
-  background: var(--pp-bg);
+  padding: 0;
+  background: #f9f9f9;
+  overflow-x: hidden;
 }
 
-/* iOS / Android — safe area + touch */
-@supports (padding: env(safe-area-inset-top)) {
-  .pp-safe-top {
-    padding-top: env(safe-area-inset-top);
+/* Hlavní shell — vždy full-bleed; rámeček jen s třídou --desktop (JS: pointer:fine + ≥1024px) */
+.pp-app-shell-outer {
+  min-height: 100%;
+  min-height: 100dvh;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0;
+  display: flex;
+  justify-content: stretch;
+  align-items: stretch;
+  background: #f9f9f9;
+  box-sizing: border-box;
+}
+
+.pp-app-shell,
+#app-panel-root {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0;
+  height: 100dvh;
+  margin: 0 !important;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  background: #f9f9f9;
+  box-sizing: border-box;
+  flex: 1 1 auto;
+}
+
+.pp-app-shell-outer--desktop {
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 1rem 0 !important;
+  background: #1b4d3e !important;
+}
+
+.pp-app-shell--desktop,
+#app-panel-root.pp-app-shell--desktop {
+  width: 100% !important;
+  max-width: 390px !important;
+  height: 844px !important;
+  max-height: 90dvh !important;
+  border-radius: 28px !important;
+  border: 1px solid #eeeeee !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
+  flex: 0 0 auto !important;
+}
+
+/* Telefon / touch: vždy edge-to-edge (přebije i starý cache / desktop třídu) */
+@media (pointer: coarse), (max-width: 1023px) {
+  .pp-app-shell-outer,
+  .pp-app-shell-outer--desktop {
+    justify-content: stretch !important;
+    align-items: stretch !important;
+    padding: 0 !important;
+    background: #f9f9f9 !important;
   }
-  .pp-safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
+
+  .pp-app-shell,
+  .pp-app-shell--desktop,
+  #app-panel-root,
+  #app-panel-root.pp-app-shell--desktop {
+    width: 100% !important;
+    max-width: none !important;
+    height: 100dvh !important;
+    max-height: none !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    flex: 1 1 auto !important;
   }
-  .pp-safe-x {
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-  }
+}
+
+/* iOS / Android — edge-to-edge + safe area */
+.pp-safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.pp-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pp-safe-x {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
 }
 
 button,
@@ -286,6 +362,7 @@ textarea {
   justify-content: space-between;
   gap: 10px;
   padding: 6px 14px;
+  padding-top: max(6px, env(safe-area-inset-top, 0px));
   background: var(--pp-header-brand);
   overflow: visible;
 }
@@ -1416,6 +1493,8 @@ textarea {
   flex: 1 1 0% !important;
   min-height: 0 !important;
   height: auto !important;
+  width: 100% !important;
+  max-width: none !important;
   display: flex;
   flex-direction: column;
 }
@@ -1423,8 +1502,15 @@ textarea {
 .pp-map-module-viewport .pp-map-container,
 .pp-map-module-viewport .pp-map-container--google {
   flex: 1 1 0% !important;
-  min-height: 0 !important;
-  height: auto !important;
+  min-height: 220px !important;
+  height: 100% !important;
+  width: 100% !important;
+  position: relative;
+}
+
+.pp-map-container--google > div {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .pp-map-toolbar-admin {
@@ -2120,6 +2206,7 @@ textarea {
   border-top: 1px solid #eeeeee;
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.04);
   position: relative;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .pp-tab-dot {

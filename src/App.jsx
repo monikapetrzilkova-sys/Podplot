@@ -1,5 +1,5 @@
 import { useApp } from "./context/AppContext.jsx";
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useState, useEffect } from "react";
 
 import TopBar from "./components/TopBar.jsx";
 import TabBar from "./components/TabBar.jsx";
@@ -237,10 +237,20 @@ function GlobalModals() {
 
 export default function AppShell() {
   const { user, showPodplotStory, dismissPodplotStory } = useApp();
+  /** Telefonní rámeček jen na desktopu s myší — telefony/touch vždy full-bleed */
+  const [desktopFrame, setDesktopFrame] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px) and (pointer: fine)");
+    const sync = () => setDesktopFrame(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   if (!user) {
     return (
-      <div className="min-h-dvh overflow-y-auto">
+      <div className="min-h-dvh overflow-y-auto w-full">
         <RegisterScreen />
         <Toast />
       </div>
@@ -248,11 +258,14 @@ export default function AppShell() {
   }
 
   return (
-    <div className="min-h-dvh flex justify-center items-stretch sm:items-center py-0 sm:py-4 pp-safe-top pp-safe-bottom" style={{ background: "#F9F9F9" }}>
+    <div
+      className={`pp-app-shell-outer${desktopFrame ? " pp-app-shell-outer--desktop" : ""}`}
+    >
       <div
         id="app-panel-root"
-        className="relative overflow-hidden w-full max-w-[390px] h-dvh sm:h-[844px] sm:max-h-[90dvh] flex flex-col min-h-0 sm:rounded-[28px] sm:border sm:shadow-xl pp-page pp-safe-x"
-        style={{ borderColor: "#EEEEEE" }}
+        className={`pp-app-shell pp-page relative overflow-hidden flex flex-col min-h-0${
+          desktopFrame ? " pp-app-shell--desktop" : ""
+        }`}
       >
         <TopBar />
         <Screen />

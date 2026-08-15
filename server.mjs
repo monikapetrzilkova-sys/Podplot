@@ -3,13 +3,36 @@
  */
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { join, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 
 const ROOT = fileURLToPath(new URL(".", import.meta.url));
 const PORT = 5173;
+
+/** Načte KEY=VALUE z .env do process.env (nepřepisuje už nastavené). */
+function loadDotEnv(filePath = join(ROOT, ".env")) {
+  if (!existsSync(filePath)) return;
+  const text = readFileSync(filePath, "utf-8");
+  for (const line of text.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq <= 0) continue;
+    const key = trimmed.slice(0, eq).trim();
+    let val = trimmed.slice(eq + 1).trim();
+    if (
+      (val.startsWith('"') && val.endsWith('"')) ||
+      (val.startsWith("'") && val.endsWith("'"))
+    ) {
+      val = val.slice(1, -1);
+    }
+    if (process.env[key] === undefined) process.env[key] = val;
+  }
+}
+
+loadDotEnv();
 
 const babelCode = readFileSync(join(ROOT, "lib/babel.min.js"), "utf-8");
 const babelContext = { globalThis: {}, console };
@@ -42,7 +65,11 @@ const MIME = {
 
 const BINARY_EXT = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".ico"]);
 
-const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY?.trim() || "";
+const GOOGLE_MAPS_API_KEY = (
+  process.env.GOOGLE_MAPS_API_KEY ||
+  process.env.VITE_GOOGLE_MAPS_API_KEY ||
+  ""
+).trim();
 
 function jsonResponse(res, status, body) {
   res.writeHead(status, { "Content-Type": MIME[".json"] });
