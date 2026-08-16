@@ -15,6 +15,7 @@ import { ENABLE_DEV_ROLE_SWITCH } from "../data/devConfig.js";
 import { PUBLIC_AREA_LABEL_HINT } from "../data/personDisplay.js";
 import { getPromptStatusStyle } from "../data/municipalityPrompts.js";
 import { MIN_PASSWORD_LENGTH } from "../data/authApi.js";
+import { isThingsModuleListing, isCommunityAnnouncementPost } from "../utils/thingsModule.js";
 import MyProfilesPanel, {
   ProfileTypeTestSwitcher,
   SousedRoleView,
@@ -199,7 +200,38 @@ export default function MyProfile({ registerLegalBack } = {}) {
   const podnikatelSubtype = getPodnikatelSubtypeLabel(user);
   const registrationFields = getRegistrationFields(user.accountType, resolveBusinessSubtype(user));
   const myOffers = userLendingItems.filter((i) => i.mine);
-  const myListings = [...userPosts, ...userGroupPosts].filter((p) => p.mine);
+  // Jen skutečné inzeráty / půjčovna — hlášení z mapy sem nepatří
+  const myListings = [...userPosts, ...userGroupPosts].filter(
+    (p) => p.mine && isThingsModuleListing(p)
+  );
+  const myReportItems = (() => {
+    const byId = new Map();
+    for (const r of userReports) {
+      byId.set(r.id, {
+        id: r.id,
+        type: r.type,
+        body: r.body,
+        time: r.time ?? "—",
+      });
+    }
+    for (const p of userPosts) {
+      if (!p.mine) continue;
+      const isReport =
+        Boolean(p.fromSecurityReportId) ||
+        p.feedSubtype === "hlaseni" ||
+        isCommunityAnnouncementPost(p);
+      if (!isReport) continue;
+      const id = p.fromSecurityReportId || p.id;
+      if (byId.has(id) || byId.has(p.id)) continue;
+      byId.set(id, {
+        id,
+        type: p.title || p.type || "Hlášení",
+        body: p.body || "",
+        time: p.meta || (p.createdAt ? "uloženo" : "—"),
+      });
+    }
+    return [...byId.values()];
+  })();
   const addressLabel = registrationFields.addressLabel;
 
   const isCommunityVerified = (user.neighborhoodConfirmations ?? 0) >= 3;
@@ -651,14 +683,15 @@ export default function MyProfile({ registerLegalBack } = {}) {
 
       <section>
         <h3 className="text-sm font-bold text-stone-800 mb-3">Moje hlášení</h3>
-        {userReports.length === 0 ? (
+        {myReportItems.length === 0 ? (
           <p className="text-sm text-stone-500 bg-stone-50 rounded-2xl p-4">
             Zatím jste neodeslala žádné hlášení na mapu.
           </p>
         ) : (
           <div className="space-y-2">
-            {userReports.map((r) => (
+            {myReportItems.map((r) => (
               <div key={r.id} className="pp-card p-3">
+                <p className="text-xs font-semibold text-[#3D7A68] mb-0.5">Hlášení</p>
                 <p className="text-xs font-bold text-stone-800">{r.type}</p>
                 <p className="text-sm text-stone-600 mt-1">{r.body}</p>
                 <p className="text-xs text-stone-400 mt-2">{r.time}</p>
