@@ -52,8 +52,10 @@ function Toast() {
 
   return (
     <div
-      className="fixed bottom-24 left-4 right-4 max-w-[358px] mx-auto z-50 px-4 py-3 rounded-2xl text-sm font-medium shadow-lg text-white flex items-center gap-2.5"
+      className="fixed bottom-24 left-4 right-4 max-w-md mx-auto z-[100] px-4 py-3.5 rounded-2xl text-sm font-medium shadow-lg text-white flex items-center gap-2.5 pointer-events-none"
       style={bg[toast.type] ?? bg.info}
+      role="status"
+      aria-live="polite"
     >
       {LocIcon && (
         <span className="shrink-0 w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center text-white">
@@ -291,9 +293,9 @@ export default function AppShell() {
           <MessagesOverlay />
           <GlobalModals />
           <div id="app-modal-root" className="absolute inset-0 z-[70] pointer-events-none" />
-          <Toast />
         </div>
       </div>
+      <Toast />
       {showPodplotStory ? (
         <PodplotStoryWelcome onContinue={dismissPodplotStory} />
       ) : null}

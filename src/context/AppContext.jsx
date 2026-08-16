@@ -429,6 +429,7 @@ export function AppProvider({ children }) {
   const [chatModal, setChatModal] = useState(null);
   const chatModalRef = useRef(null);
   chatModalRef.current = chatModal;
+  const toastClearRef = useRef(null);
   const notificationPrefsRef = useRef(notificationPrefs);
   notificationPrefsRef.current = notificationPrefs;
   const [craftsmanProfileOpen, setCraftsmanProfileOpen] = useState(null);
@@ -1157,8 +1158,28 @@ export function AppProvider({ children }) {
       type,
       locationId: options?.locationId ?? null,
     });
-    setTimeout(() => setToast(null), 3500);
+    const ms = options?.durationMs ?? 3500;
+    if (toastClearRef.current) window.clearTimeout(toastClearRef.current);
+    toastClearRef.current = window.setTimeout(() => setToast(null), ms);
   }, []);
+
+  const notifyLocationRemap = useCallback(
+    (locationId, loc) => {
+      const place =
+        loc?.shortLabel ||
+        loc?.municipality ||
+        loc?.label ||
+        "zvolené místo";
+      const label = loc?.label && loc.label !== place ? loc.label : null;
+      const where = label ? `${label} · ${place}` : place;
+      showToast(
+        `Vše je přemapováno na ${where} — příspěvky, mapa, akce i okolí.`,
+        "info",
+        { locationId, durationMs: 4500 }
+      );
+    },
+    [showToast]
+  );
 
   const showProfileHint = useCallback((variant = "default") => {
     setProfileHint({ variant });
@@ -1613,6 +1634,7 @@ export function AppProvider({ children }) {
 
   const setActiveLocation = useCallback(
     (id) => {
+      if (id === activeLocationId) return;
       setActiveLocationId(id);
       const loc = locations.find((l) => l.id === id);
       setCommunityGroups(getGroupsForLocation(id));
@@ -1620,13 +1642,9 @@ export function AppProvider({ children }) {
       setMapRootKey((k) => k + 1);
       setNeighborsRootKey((k) => k + 1);
       clearModuleSelection();
-      showToast(
-        `Lokalita: ${loc?.label ?? "místo"} (${loc?.shortLabel ?? loc?.municipality ?? ""}) — obsah přemapován.`,
-        "info",
-        { locationId: id }
-      );
+      notifyLocationRemap(id, loc);
     },
-    [locations, showToast, feedMainMode, clearModuleSelection]
+    [activeLocationId, locations, notifyLocationRemap, feedMainMode, clearModuleSelection]
   );
 
   const reportPost = useCallback(
@@ -4752,15 +4770,19 @@ export function AppProvider({ children }) {
   );
 
   const applyActiveLocationRemap = useCallback(
-    (locationId) => {
+    (locationId, { silent = false } = {}) => {
       setActiveLocationId(locationId);
       setCommunityGroups(getGroupsForLocation(locationId));
       setFeedSubFilter(getDefaultSubfilter(feedMainMode));
       setMapRootKey((k) => k + 1);
       setNeighborsRootKey((k) => k + 1);
       clearModuleSelection();
+      if (!silent) {
+        const loc = locations.find((l) => l.id === locationId);
+        notifyLocationRemap(locationId, loc);
+      }
     },
-    [feedMainMode, clearModuleSelection]
+    [feedMainMode, clearModuleSelection, locations, notifyLocationRemap]
   );
 
   const updateUserLocation = useCallback(
@@ -4823,14 +4845,14 @@ export function AppProvider({ children }) {
         );
       }
 
-      applyActiveLocationRemap(locationId);
+      applyActiveLocationRemap(locationId, { silent: true });
 
       showToast(
         coordsChanged
-          ? `${nextLabel}: ${shortLabel} — mapa a okolí přepočítány.`
-          : `${nextLabel}: adresa uložena (${shortLabel}).`,
+          ? `${nextLabel}: ${shortLabel} — vše přemapováno na toto místo.`
+          : `${nextLabel}: adresa uložena — obsah je na ${shortLabel}.`,
         "success",
-        { locationId }
+        { locationId, durationMs: 4500 }
       );
       return true;
     },
@@ -4874,10 +4896,15 @@ export function AppProvider({ children }) {
       };
 
       setLocations((prev) => [...prev, nextLoc]);
-      applyActiveLocationRemap(id);
-      showToast(`Místo „${placeLabel}“ přidáno — obsah přemapován na ${shortLabel}.`, "success", {
-        locationId: id,
-      });
+      applyActiveLocationRemap(id, { silent: true });
+      showToast(
+        `Místo „${placeLabel}“ přidáno — vše je přemapováno na ${shortLabel}.`,
+        "success",
+        {
+          locationId: id,
+          durationMs: 4500,
+        }
+      );
       return true;
     },
     [resolveLocationCoords, applyActiveLocationRemap, showToast]
@@ -4893,7 +4920,7 @@ export function AppProvider({ children }) {
         const next = prev.filter((l) => l.id !== locationId);
         if (activeLocationId === locationId) {
           const fallback = next.find((l) => l.id === "domov") ?? next[0];
-          if (fallback) applyActiveLocationRemap(fallback.id);
+          if (fallback) applyActiveLocationRemap(fallback.id, { silent: false });
         }
         return next;
       });
