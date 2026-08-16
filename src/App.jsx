@@ -236,7 +236,7 @@ function GlobalModals() {
 }
 
 export default function AppShell() {
-  const { user, showPodplotStory, dismissPodplotStory } = useApp();
+  const { user, showPodplotStory, dismissPodplotStory, passwordRecovery } = useApp();
   /** Telefonní rámeček jen na desktopu s myší — telefony/touch vždy full-bleed */
   const [desktopFrame, setDesktopFrame] = useState(false);
 
@@ -248,7 +248,7 @@ export default function AppShell() {
     return () => mq.removeEventListener("change", sync);
   }, []);
 
-  if (!user) {
+  if (!user || passwordRecovery) {
     return (
       <div className="min-h-dvh overflow-y-auto w-full">
         <RegisterScreen />

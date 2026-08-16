@@ -110,7 +110,18 @@ import {
   fetchRemotePosts,
   subscribeRemotePosts,
   rowToFeedPost,
+  fetchRemoteProfile,
+  profileToAppUser,
 } from "../data/communityApi.js";
+import {
+  authSignUp,
+  authSignIn,
+  authSignOut,
+  authResetPassword,
+  authUpdatePassword,
+  validatePassword,
+  subscribeAuth,
+} from "../data/authApi.js";
 import { ensureSupabase } from "../lib/supabaseClient.js";
 import { getAppRoleFromTestId, APP_ROLES, isB2BRole, isMobilniTestRole, isFyzickaTestRole } from "../data/userRoles.js";
 import { filterCraftsmanInquiries, isNationwideRadius } from "../data/craftsmanSettings.js";
@@ -221,6 +232,8 @@ export function AppProvider({ children }) {
   const [feedSubFilter, setFeedSubFilter] = useState("veci");
   const [showDiscoveryWall, setShowDiscoveryWall] = useState(true);
   const [showPodplotStory, setShowPodplotStory] = useState(false);
+  /** Po odkazu z e-mailu „zapomenuté heslo“ — vynutí obrazovku nového hesla */
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [expandedPillar, setExpandedPillar] = useState(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [messagesOpen, setMessagesOpen] = useState(false);
@@ -413,6 +426,16 @@ export function AppProvider({ children }) {
       ownedService,
     });
   }, [user, locations, activeLocationId, credits, userProfileIds, testRoleId, servicesCatalog]);
+
+  // Obnova hesla z e-mailového odkazu (Supabase Auth)
+  useEffect(() => {
+    if (SKIP_REGISTRATION) return undefined;
+    return subscribeAuth((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setPasswordRecovery(true);
+      }
+    });
+  }, []);
 
   const [moduleViewModes, setModuleViewModes] = useState({
     [MODULE_IDS.REPORTS]: DEFAULT_MODULE_VIEW,
@@ -653,6 +676,7 @@ export function AppProvider({ children }) {
     async ({
       name,
       email,
+      password,
       address,
       accountType,
       businessSubtype = null,
@@ -667,6 +691,12 @@ export function AppProvider({ children }) {
       institutionId = null,
       institutionRole = null,
     }) => {
+      const pwdCheck = validatePassword(password, null);
+      if (!pwdCheck.ok) {
+        showToast(pwdCheck.error, "error");
+        return { ok: false, error: pwdCheck.error };
+      }
+
       const normalizedType = normalizeAccountType(accountType);
       const acc = getAccountType(normalizedType);
       let { isVerified, domain } = verifyEmailDomain(email, normalizedType);
@@ -681,7 +711,33 @@ export function AppProvider({ children }) {
         municipality.split("—")[0].split("–")[0].trim() || municipality;
       const resolvedSubtype =
         normalizedType === "podnik" ? businessSubtype ?? resolveBusinessSubtype(accountType) : null;
-      const userId = createUserId();
+
+      let userId = createUserId();
+      const auth = await authSignUp({
+        email,
+        password,
+        metadata: {
+          name,
+          address,
+          account_type: normalizedType,
+          municipality,
+        },
+      });
+      if (!auth.ok && !auth.localOnly) {
+        showToast(auth.error, "error");
+        return { ok: false, error: auth.error };
+      }
+      if (auth.ok && auth.needsEmailConfirm) {
+        showToast(
+          "Poslali jsme potvrzovací e-mail. Po kliknutí na odkaz se přihlaste heslem.",
+          "info"
+        );
+        return { ok: false, needsEmailConfirm: true };
+      }
+      if (auth.ok && auth.user?.id) {
+        userId = auth.user.id;
+      }
+
       const subIds =
         resolvedSubtype === "mobilni"
           ? [
@@ -819,6 +875,119 @@ export function AppProvider({ children }) {
 
       showToast(buildWelcomeToast(name, { isVerified, domain: isVerified ? domain : null }));
       setShowPodplotStory(true);
+      return { ok: true };
+    },
+    [showToast]
+  );
+
+  const login = useCallback(
+    async ({ email, password }) => {
+      const result = await authSignIn(email, password);
+      if (!result.ok) {
+        showToast(result.error, "error");
+        return { ok: false, error: result.error };
+      }
+
+      const authUser = result.user;
+      const remote = await fetchRemoteProfile(authUser.id);
+      const saved = loadUserSession();
+      const base =
+        saved?.user?.id === authUser.id ||
+        (saved?.user?.email &&
+          saved.user.email.toLowerCase() === String(email).trim().toLowerCase())
+          ? saved.user
+          : {};
+      const nextUser = profileToAppUser(remote, authUser, {
+        ...base,
+        role: base.role ?? getAccountType(remote?.account_type || base.accountType || "soused").role,
+        radius: base.radius ?? "1,2 km",
+        isVerified: base.isVerified ?? false,
+        geolocVerified: base.geolocVerified ?? true,
+        neighborhoodConfirmations: base.neighborhoodConfirmations ?? 0,
+        notificationPrefs: base.notificationPrefs ?? { ...DEFAULT_NOTIFICATION_PREFS },
+      });
+
+      setUser(nextUser);
+      if (saved?.user?.id === nextUser.id && Array.isArray(saved.locations) && saved.locations.length) {
+        setLocations(saved.locations);
+        setActiveLocationId(saved.activeLocationId || "domov");
+        setCommunityGroups(getGroupsForLocation(saved.activeLocationId || "domov"));
+        if (typeof saved.credits === "number") setCredits(saved.credits);
+        if (Array.isArray(saved.userProfileIds)) setUserProfileIds(saved.userProfileIds);
+        if (saved.testRoleId) setTestRoleId(saved.testRoleId);
+      } else {
+        const municipality = nextUser.geo?.city || nextUser.location || "Jesenice";
+        setLocations([
+          {
+            ...USER_LOCATIONS[0],
+            address: nextUser.address || USER_LOCATIONS[0].address,
+            municipality,
+            shortLabel: municipality,
+            lat: nextUser.geo?.lat ?? USER_LOCATIONS[0].lat,
+            lng: nextUser.geo?.lng ?? USER_LOCATIONS[0].lng,
+          },
+          USER_LOCATIONS[1],
+          USER_LOCATIONS[2],
+        ]);
+        setActiveLocationId("domov");
+        setCommunityGroups(getGroupsForLocation("domov"));
+      }
+      void upsertRemoteProfile(nextUser);
+      showToast(`Vítejte zpět, ${nextUser.name}.`, "success");
+      return { ok: true };
+    },
+    [showToast]
+  );
+
+  const requestPasswordReset = useCallback(
+    async (email) => {
+      const result = await authResetPassword(email);
+      if (!result.ok) {
+        showToast(result.error, "error");
+        return result;
+      }
+      showToast("Pokud účet existuje, poslali jsme odkaz pro obnovu hesla na e-mail.", "success");
+      return result;
+    },
+    [showToast]
+  );
+
+  const completePasswordRecovery = useCallback(
+    async (password, passwordConfirm) => {
+      const check = validatePassword(password, passwordConfirm);
+      if (!check.ok) {
+        showToast(check.error, "error");
+        return { ok: false, error: check.error };
+      }
+      const result = await authUpdatePassword(password);
+      if (!result.ok) {
+        showToast(result.error, "error");
+        return result;
+      }
+      setPasswordRecovery(false);
+      showToast("Heslo je nastavené. Můžete se přihlásit.", "success");
+      await authSignOut();
+      clearUserSession();
+      setUser(null);
+      return { ok: true };
+    },
+    [showToast]
+  );
+
+  const changePassword = useCallback(
+    async (password, passwordConfirm) => {
+      const check = validatePassword(password, passwordConfirm);
+      if (!check.ok) {
+        showToast(check.error, "error");
+        return { ok: false, error: check.error };
+      }
+      const result = await authUpdatePassword(password);
+      if (!result.ok) {
+        showToast(result.error, "error");
+        return result;
+      }
+      showToast("Heslo bylo změněno.", "success");
+      return { ok: true };
     },
     [showToast]
   );
@@ -827,9 +996,11 @@ export function AppProvider({ children }) {
     setShowPodplotStory(false);
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    await authSignOut();
     clearUserSession();
     setUser(null);
+    setPasswordRecovery(false);
     setLocations(DEFAULT_LOCATIONS);
     setActiveLocationId("domov");
     setCommunityGroups(getGroupsForLocation("domov"));
@@ -842,7 +1013,7 @@ export function AppProvider({ children }) {
     setViewAsNeighbor(false);
     workUserBackupRef.current = null;
     setActiveTab("home");
-    showToast("Odhlášeno — můžete znovu otestovat registraci.", "info");
+    showToast("Odhlášeno. Pro vstup se znovu přihlaste nebo zaregistrujte.", "info");
   }, [showToast]);
 
   const setActiveLocation = useCallback(
@@ -4347,7 +4518,12 @@ export function AppProvider({ children }) {
         formatPersonName,
         personNameIndex,
         register,
+        login,
         logout,
+        requestPasswordReset,
+        completePasswordRecovery,
+        changePassword,
+        passwordRecovery,
         showPodplotStory,
         dismissPodplotStory,
         credits,

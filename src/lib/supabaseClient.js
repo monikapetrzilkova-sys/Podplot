@@ -61,7 +61,12 @@ export async function ensureSupabase() {
       return null;
     }
     client = createClient(cfg.url, cfg.anonKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        storage: typeof window !== "undefined" ? window.localStorage : undefined,
+      },
     });
     return client;
   })();

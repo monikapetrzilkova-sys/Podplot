@@ -11,9 +11,10 @@ import { INTEREST_OPTIONS } from "../data/ecosystemMock.js";
 import PromoteSection from "./PromoteSection.jsx";
 import ViewAsNeighborToggle from "./ViewAsNeighborToggle.jsx";
 import PaymentModal from "./PaymentModal.jsx";
-import { SKIP_REGISTRATION, ENABLE_DEV_ROLE_SWITCH } from "../data/devConfig.js";
+import { ENABLE_DEV_ROLE_SWITCH } from "../data/devConfig.js";
 import { PUBLIC_AREA_LABEL_HINT } from "../data/personDisplay.js";
 import { getPromptStatusStyle } from "../data/municipalityPrompts.js";
+import { MIN_PASSWORD_LENGTH } from "../data/authApi.js";
 import MyProfilesPanel, {
   ProfileTypeTestSwitcher,
   SousedRoleView,
@@ -50,6 +51,56 @@ function ProfileSectionTitle({ icon: Icon, children, className = "mb-3" }) {
       ) : null}
       <span>{children}</span>
     </h3>
+  );
+}
+
+function PasswordChangeFields() {
+  const { changePassword } = useApp();
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const onSave = async () => {
+    setBusy(true);
+    try {
+      const result = await changePassword(password, passwordConfirm);
+      if (result?.ok) {
+        setPassword("");
+        setPasswordConfirm("");
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-stone-500">Změna hesla (min. {MIN_PASSWORD_LENGTH} znaků)</p>
+      <input
+        type="password"
+        autoComplete="new-password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Nové heslo"
+        className="w-full px-3 py-2 border border-stone-200 rounded-xl text-sm"
+      />
+      <input
+        type="password"
+        autoComplete="new-password"
+        value={passwordConfirm}
+        onChange={(e) => setPasswordConfirm(e.target.value)}
+        placeholder="Potvrzení hesla"
+        className="w-full px-3 py-2 border border-stone-200 rounded-xl text-sm"
+      />
+      <button
+        type="button"
+        disabled={busy}
+        onClick={onSave}
+        className="w-full py-2.5 border border-stone-300 rounded-xl text-sm font-semibold disabled:opacity-60"
+      >
+        {busy ? "Ukládám…" : "Změnit heslo"}
+      </button>
+    </div>
   );
 }
 
@@ -803,15 +854,17 @@ export default function MyProfile({ registerLegalBack } = {}) {
         <LegalLinksSection onOpen={setLegalPage} />
       </div>
 
-      {SKIP_REGISTRATION && (
+      <section className="mt-6 bg-white border border-stone-200 rounded-2xl p-4 space-y-3">
+        <h3 className="text-sm font-bold text-stone-800">Heslo a odhlášení</h3>
+        <PasswordChangeFields />
         <button
           type="button"
           onClick={logout}
-          className="mt-6 w-full py-3 text-sm font-semibold text-stone-500 border border-stone-200 rounded-2xl hover:bg-stone-50"
+          className="w-full py-3 text-sm font-semibold text-stone-600 border border-stone-200 rounded-2xl hover:bg-stone-50"
         >
-          Odhlásit se (test registrace)
+          Odhlásit se
         </button>
-      )}
+      </section>
 
       {photoEditorOpen && (
         <ProfilePhotoEditor
@@ -855,6 +908,20 @@ export default function MyProfile({ registerLegalBack } = {}) {
       {showWorkRoleViews && testRoleId === "urad" && (
         <section className="bg-stone-50 border border-stone-200 rounded-2xl p-4 mb-4">
           <p className="text-xs text-stone-500">Obecní úřad nemá peněženku — všechny služby jsou zdarma.</p>
+        </section>
+      )}
+
+      {!showNeighborProfile && (
+        <section className="mt-4 bg-white border border-stone-200 rounded-2xl p-4 space-y-3">
+          <h3 className="text-sm font-bold text-stone-800">Heslo a odhlášení</h3>
+          <PasswordChangeFields />
+          <button
+            type="button"
+            onClick={logout}
+            className="w-full py-3 text-sm font-semibold text-stone-600 border border-stone-200 rounded-2xl hover:bg-stone-50"
+          >
+            Odhlásit se
+          </button>
         </section>
       )}
     </div>

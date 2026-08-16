@@ -1,32 +1,43 @@
-# Supabase — sdílené příspěvky (MVP)
+# Supabase — sdílené příspěvky + Auth (MVP)
 
-Aby kamarádi na https://podplot.vercel.app viděli navzájem příspěvky:
+Aby kamarádi na https://podplot.vercel.app viděli navzájem příspěvky a mohli se registrovat / přihlašovat:
 
-## 1) Ty v Supabase (jednou)
+## 1) SQL (jednou)
 
 1. Otevři projekt: https://supabase.com/dashboard
 2. **SQL Editor** → New query
-3. Zkopíruj celý obsah souboru `supabase/schema.sql` z tohoto repa → **Run**
-4. (Volitelně) **Database → Publications** / Replication: zapni tabulku `posts` pro Realtime
+3. Zkopíruj celý obsah `supabase/schema.sql` → **Run**
+4. (Volitelně) Realtime u tabulky `posts`
 
-Klíče už máš (`Project Settings → API`):
+## 2) Auth (povinné pro heslo a zapomenuté heslo)
+
+1. **Authentication → Providers → Email** → zapnuto
+2. Pro snadné testování: **Authentication → Providers → Email** → vypni *Confirm email* (jinak po registraci musí uživatel nejdřív kliknout v e-mailu)
+3. **Authentication → URL Configuration**:
+   - **Site URL:** `https://podplot.vercel.app`
+   - **Redirect URLs:** přidej
+     - `https://podplot.vercel.app/`
+     - `https://podplot.vercel.app/**`
+     - `http://localhost:5173/` (lokální vývoj)
+4. Šablona e-mailu *Reset password* je výchozí od Supabase (funguje i na free plánu)
+
+## 3) Klíče / Vercel
+
 - Project URL → `VITE_SUPABASE_URL`
 - `anon` `public` key → `VITE_SUPABASE_ANON_KEY`
 
-## 2) Já / CLI (Vercel env)
+Na Vercelu už mají být nastavené; lokálně v `app/.env`.
 
-Na Vercel musí být:
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
+## 4) Co appka dělá
 
-Pak redeploy. Lokálně stačí hodnoty v `app/.env`.
-
-## 3) Co funguje po napojení
-
-- registrace uloží profil do `profiles`
-- nové hlášení / inzerát ve feedu se uloží do `posts`
-- ostatní testeri je načtou při otevření appky (+ realtime pokud je zapnuté)
+| Situace | Chování |
+|--------|---------|
+| Nový telefon / čistý prohlížeč | Musí se **registrovat** (e-mail + heslo) |
+| Stejný telefon po aktualizaci / refresh | Zůstane **přihlášený** (localStorage + Supabase session) |
+| Odhlášení | Profil → **Odhlásit se** |
+| Zapomenuté heslo | Přihlášení → **Zapomenuté heslo** → odkaz e-mailem |
+| Změna hesla | Profil → sekce Heslo |
 
 ## Poznámka k bezpečnosti
 
-MVP RLS je otevřené (kdokoli s anon klíčem může číst/psát). Pro ostrý provoz později doplníme Auth + přísnější politiky.
+MVP RLS u `profiles` / `posts` je stále otevřené pro testery. Později navážeme politiky na `auth.uid()`.

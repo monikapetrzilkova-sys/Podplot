@@ -64,6 +64,59 @@ export async function upsertRemoteProfile(user) {
   return true;
 }
 
+export async function fetchRemoteProfile(id) {
+  if (!id) return null;
+  const sb = await ensureSupabase();
+  if (!sb) return null;
+  const { data, error } = await sb.from("profiles").select("*").eq("id", id).maybeSingle();
+  if (error) {
+    console.warn("[supabase] fetch profile", error.message);
+    return null;
+  }
+  return data ?? null;
+}
+
+/** Mapuje řádek profiles (+ auth metadata) na objekt user v appce. */
+export function profileToAppUser(row, authUser, fallback = {}) {
+  const meta = authUser?.user_metadata && typeof authUser.user_metadata === "object"
+    ? authUser.user_metadata
+    : {};
+  const name = row?.name || meta.name || fallback.name || "Soused";
+  const email = row?.email || authUser?.email || fallback.email || "";
+  const address = row?.address || meta.address || fallback.address || "";
+  const accountType = row?.account_type || meta.account_type || fallback.accountType || "soused";
+  const municipality =
+    row?.municipality || meta.municipality || fallback.geo?.city || fallback.location || "Jesenice";
+  const initials =
+    row?.initials ||
+    fallback.initials ||
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase() ?? "")
+      .join("") ||
+    "??";
+
+  return {
+    ...(fallback && typeof fallback === "object" ? fallback : {}),
+    id: row?.id || authUser?.id || fallback.id,
+    name,
+    email,
+    address,
+    accountType,
+    initials,
+    location: municipality,
+    geo: {
+      ...(fallback.geo ?? {}),
+      city: municipality,
+      lat: fallback.geo?.lat ?? meta.lat ?? null,
+      lng: fallback.geo?.lng ?? meta.lng ?? null,
+    },
+  };
+}
+
+
 export async function publishRemotePost(post, user) {
   if (!post?.id || !post?.title) return false;
   const sb = await ensureSupabase();

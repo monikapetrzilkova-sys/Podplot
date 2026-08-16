@@ -23,11 +23,24 @@ import AccountTypeIcon from "./AccountTypeIcon.jsx";
 import { BUSINESS_SUBTYPE_DOODLE_ICONS, CATALOG_DOODLE_ICONS, DoodleCheckIcon, DoodleSousedIcon, SERVICE_CATEGORY_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
 import InstitutionAutocomplete from "./InstitutionAutocomplete.jsx";
 import { verifyWorkEmailForInstitution } from "../data/institutions/index.js";
+import { MIN_PASSWORD_LENGTH, validatePassword } from "../data/authApi.js";
+
+const AUTH_INPUT =
+  "w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-700/30";
 
 export default function RegisterScreen() {
-  const { register } = useApp();
+  const {
+    register,
+    login,
+    requestPasswordReset,
+    completePasswordRecovery,
+    passwordRecovery,
+  } = useApp();
+  const [authMode, setAuthMode] = useState("register"); // register | login | forgot
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
   const [street, setStreet] = useState("");
   const [houseNumber, setHouseNumber] = useState("");
   const [psc, setPsc] = useState("");
@@ -42,6 +55,7 @@ export default function RegisterScreen() {
   const [emailError, setEmailError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [submitError, setSubmitError] = useState("");
+  const [busy, setBusy] = useState(false);
   const [allowPublicAreaLabel, setAllowPublicAreaLabel] = useState(false);
   const [publicAreaLabel, setPublicAreaLabel] = useState("");
   const [selectedInstitution, setSelectedInstitution] = useState(null);
@@ -128,6 +142,7 @@ export default function RegisterScreen() {
 
     const emailResult = validateEmail(email);
     const addressResult = validateAddressFields({ street, houseNumber, psc, city });
+    const pwdCheck = validatePassword(password, passwordConfirm);
 
     setEmailError(emailResult.valid ? "" : emailResult.error);
     setFieldErrors(addressResult.errors);
@@ -137,6 +152,10 @@ export default function RegisterScreen() {
       return;
     }
     if (!emailResult.valid) return;
+    if (!pwdCheck.ok) {
+      setSubmitError(pwdCheck.error);
+      return;
+    }
     if (!addressResult.valid) {
       setSubmitError("Zkontrolujte adresu — některé údaje chybí nebo nejsou správně.");
       return;
@@ -173,23 +192,234 @@ export default function RegisterScreen() {
       .map((k) => k.trim())
       .filter(Boolean);
 
-    await register({
-      name: name.trim(),
-      email: email.trim(),
-      address: fullAddress,
-      accountType,
-      businessSubtype: accountType === "podnik" ? businessSubtype : null,
-      geo: { city: city.trim() },
-      allowPublicAreaLabel,
-      publicAreaLabel: allowPublicAreaLabel ? publicAreaLabel.trim() : "",
-      serviceHomeGroup: isMobilniCraft ? serviceHomeGroup : null,
-      serviceSubcategory: isMobilniCraft ? serviceSubcategories[0] : null,
-      serviceSubcategories: isMobilniCraft ? serviceSubcategories : null,
-      serviceKeywords: isMobilniCraft ? keywordList : [],
-      institutionId: isUrad ? selectedInstitution?.id ?? null : null,
-      institutionRole: isUrad ? "admin" : null,
-    });
+    setBusy(true);
+    try {
+      await register({
+        name: name.trim(),
+        email: email.trim(),
+        password,
+        address: fullAddress,
+        accountType,
+        businessSubtype: accountType === "podnik" ? businessSubtype : null,
+        geo: { city: city.trim() },
+        allowPublicAreaLabel,
+        publicAreaLabel: allowPublicAreaLabel ? publicAreaLabel.trim() : "",
+        serviceHomeGroup: isMobilniCraft ? serviceHomeGroup : null,
+        serviceSubcategory: isMobilniCraft ? serviceSubcategories[0] : null,
+        serviceSubcategories: isMobilniCraft ? serviceSubcategories : null,
+        serviceKeywords: isMobilniCraft ? keywordList : [],
+        institutionId: isUrad ? selectedInstitution?.id ?? null : null,
+        institutionRole: isUrad ? "admin" : null,
+      });
+    } finally {
+      setBusy(false);
+    }
   };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setSubmitError("");
+    const emailResult = validateEmail(email);
+    setEmailError(emailResult.valid ? "" : emailResult.error);
+    if (!emailResult.valid) return;
+    if (!password) {
+      setSubmitError("Zadejte heslo.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const result = await login({ email: email.trim(), password });
+      if (!result?.ok && result?.error) setSubmitError(result.error);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleForgot = async (e) => {
+    e.preventDefault();
+    setSubmitError("");
+    const emailResult = validateEmail(email);
+    setEmailError(emailResult.valid ? "" : emailResult.error);
+    if (!emailResult.valid) return;
+    setBusy(true);
+    try {
+      const result = await requestPasswordReset(email.trim());
+      if (result?.ok) setAuthMode("login");
+      else if (result?.error) setSubmitError(result.error);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleRecovery = async (e) => {
+    e.preventDefault();
+    setSubmitError("");
+    const pwdCheck = validatePassword(password, passwordConfirm);
+    if (!pwdCheck.ok) {
+      setSubmitError(pwdCheck.error);
+      return;
+    }
+    setBusy(true);
+    try {
+      const result = await completePasswordRecovery(password, passwordConfirm);
+      if (result?.ok) {
+        setPassword("");
+        setPasswordConfirm("");
+        setAuthMode("login");
+      } else if (result?.error) setSubmitError(result.error);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const authShell = (title, subtitle, children) => (
+    <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center px-4 py-8">
+      <div className="w-full max-w-md">
+        <div className="flex items-center justify-center gap-3 mb-8">
+          <PodplotLogo size={48} />
+          <span className="text-2xl font-bold text-stone-900">Podplot</span>
+        </div>
+        <div className="bg-white border border-stone-200 rounded-2xl p-6 shadow-sm">
+          <h1 className="text-lg font-bold text-stone-900 mb-1">{title}</h1>
+          {subtitle ? <p className="text-sm text-stone-500 mb-6">{subtitle}</p> : <div className="mb-6" />}
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (passwordRecovery) {
+    return authShell(
+      "Nové heslo",
+      "Zadejte nové heslo pro svůj účet (odkaz z e-mailu).",
+      <form onSubmit={handleRecovery} noValidate className="space-y-4">
+        <div>
+          <label className="block text-xs font-semibold text-stone-600 mb-1.5">Nové heslo</label>
+          <input
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={`Alespoň ${MIN_PASSWORD_LENGTH} znaků`}
+            className={AUTH_INPUT}
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-stone-600 mb-1.5">Potvrzení hesla</label>
+          <input
+            type="password"
+            autoComplete="new-password"
+            value={passwordConfirm}
+            onChange={(e) => setPasswordConfirm(e.target.value)}
+            className={AUTH_INPUT}
+          />
+        </div>
+        {submitError && (
+          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">{submitError}</p>
+        )}
+        <button
+          type="submit"
+          disabled={busy}
+          className="w-full py-3.5 bg-teal-700 text-white font-semibold rounded-2xl hover:bg-teal-800 disabled:opacity-60"
+        >
+          {busy ? "Ukládám…" : "Uložit heslo"}
+        </button>
+      </form>
+    );
+  }
+
+  if (authMode === "login") {
+    return authShell(
+      "Přihlášení",
+      "Vstupte do svého sousedství.",
+      <>
+        <form onSubmit={handleLogin} noValidate className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-stone-600 mb-1.5">E-mail</label>
+            <input
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (emailError) setEmailError("");
+              }}
+              className={AUTH_INPUT}
+            />
+            {emailError && <p className="mt-1.5 text-xs text-red-600">{emailError}</p>}
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-stone-600 mb-1.5">Heslo</label>
+            <input
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={AUTH_INPUT}
+            />
+          </div>
+          {submitError && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">{submitError}</p>
+          )}
+          <button
+            type="submit"
+            disabled={busy}
+            className="w-full py-3.5 bg-teal-700 text-white font-semibold rounded-2xl hover:bg-teal-800 disabled:opacity-60"
+          >
+            {busy ? "Přihlašuji…" : "Přihlásit se"}
+          </button>
+        </form>
+        <div className="mt-4 flex flex-col gap-2 text-center text-sm">
+          <button type="button" className="text-teal-800 font-semibold" onClick={() => { setSubmitError(""); setAuthMode("forgot"); }}>
+            Zapomenuté heslo
+          </button>
+          <button type="button" className="text-stone-500" onClick={() => { setSubmitError(""); setAuthMode("register"); }}>
+            Nemáte účet? Zaregistrujte se
+          </button>
+        </div>
+      </>
+    );
+  }
+
+  if (authMode === "forgot") {
+    return authShell(
+      "Zapomenuté heslo",
+      "Pošleme vám odkaz pro nastavení nového hesla.",
+      <>
+        <form onSubmit={handleForgot} noValidate className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-stone-600 mb-1.5">E-mail účtu</label>
+            <input
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (emailError) setEmailError("");
+              }}
+              className={AUTH_INPUT}
+            />
+            {emailError && <p className="mt-1.5 text-xs text-red-600">{emailError}</p>}
+          </div>
+          {submitError && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">{submitError}</p>
+          )}
+          <button
+            type="submit"
+            disabled={busy}
+            className="w-full py-3.5 bg-teal-700 text-white font-semibold rounded-2xl hover:bg-teal-800 disabled:opacity-60"
+          >
+            {busy ? "Odesílám…" : "Odeslat odkaz"}
+          </button>
+        </form>
+        <div className="mt-4 text-center text-sm">
+          <button type="button" className="text-stone-500" onClick={() => { setSubmitError(""); setAuthMode("login"); }}>
+            Zpět na přihlášení
+          </button>
+        </div>
+      </>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center px-4 py-8">
@@ -201,7 +431,13 @@ export default function RegisterScreen() {
 
         <div className="bg-white border border-stone-200 rounded-2xl p-6 shadow-sm">
           <h1 className="text-lg font-bold text-stone-900 mb-1">Vytvořte si účet</h1>
-          <p className="text-sm text-stone-500 mb-6">Otevřená registrace pro testery MVP verze.</p>
+          <p className="text-sm text-stone-500 mb-4">Registrace je povinná. Účet zůstane uložený v tomto telefonu i po aktualizaci.</p>
+          <p className="text-sm text-stone-500 mb-6">
+            Už máte účet?{" "}
+            <button type="button" className="text-teal-800 font-semibold" onClick={() => { setSubmitError(""); setAuthMode("login"); }}>
+              Přihlaste se
+            </button>
+          </p>
 
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
             <div>
@@ -279,6 +515,28 @@ export default function RegisterScreen() {
                   )}
                 </div>
               )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-stone-600 mb-1.5">Heslo</label>
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={`Alespoň ${MIN_PASSWORD_LENGTH} znaků`}
+                className={AUTH_INPUT}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-stone-600 mb-1.5">Potvrzení hesla</label>
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={passwordConfirm}
+                onChange={(e) => setPasswordConfirm(e.target.value)}
+                className={AUTH_INPUT}
+              />
             </div>
 
             {isUrad ? (
@@ -569,10 +827,11 @@ export default function RegisterScreen() {
 
             <button
               type="submit"
-              className="w-full py-3.5 bg-teal-700 text-white font-semibold rounded-2xl hover:bg-teal-800 transition-colors inline-flex items-center justify-center gap-2"
+              disabled={busy}
+              className="w-full py-3.5 bg-teal-700 text-white font-semibold rounded-2xl hover:bg-teal-800 transition-colors inline-flex items-center justify-center gap-2 disabled:opacity-60"
             >
               <DoodleSousedIcon className="w-5 h-5 shrink-0 text-white" />
-              Vstoupit do sousedství
+              {busy ? "Vytvářím účet…" : "Vstoupit do sousedství"}
             </button>
           </form>
         </div>

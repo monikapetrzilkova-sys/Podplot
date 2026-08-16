@@ -494,7 +494,7 @@ export function CraftsmanOrdersSection() {
 }
 
 function CraftsmanAccountSettings() {
-  const { user, updateAccountProfile, showToast } = useApp();
+  const { user, updateAccountProfile, changePassword, logout } = useApp();
   const persona = TEST_PERSONAS.remeslnik;
   const [name, setName] = useState(user?.name ?? persona.name);
   const [email, setEmail] = useState(user?.email ?? "");
@@ -513,18 +513,12 @@ function CraftsmanAccountSettings() {
     updateAccountProfile({ name, email, address });
   };
 
-  const savePassword = () => {
-    if (!password.trim()) {
-      showToast("Zadejte nové heslo.", "error");
-      return;
+  const savePassword = async () => {
+    const result = await changePassword(password, passwordConfirm);
+    if (result?.ok) {
+      setPassword("");
+      setPasswordConfirm("");
     }
-    if (password !== passwordConfirm) {
-      showToast("Hesla se neshodují.", "error");
-      return;
-    }
-    setPassword("");
-    setPasswordConfirm("");
-    showToast("Heslo bylo změněno.", "success");
   };
 
   return (
@@ -594,6 +588,13 @@ function CraftsmanAccountSettings() {
           className="w-full py-2 border border-stone-300 rounded-xl text-sm font-semibold"
         >
           Změnit heslo
+        </button>
+        <button
+          type="button"
+          onClick={logout}
+          className="w-full py-2.5 text-sm font-semibold text-stone-600 border border-stone-200 rounded-xl"
+        >
+          Odhlásit se
         </button>
       </div>
     </section>
