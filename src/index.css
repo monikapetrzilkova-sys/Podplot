@@ -445,6 +445,15 @@ textarea {
   background: #ffffff;
 }
 
+.pp-header-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  object-fit: cover;
+  display: block;
+  background: #ffffff;
+}
+
 .pp-header-notify-dot {
   position: absolute;
   top: -2px;

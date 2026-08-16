@@ -44,19 +44,25 @@ export async function upsertRemoteProfile(user) {
   if (!user?.id || !user?.name) return false;
   const sb = await ensureSupabase();
   if (!sb) return false;
-  const { error } = await sb.from("profiles").upsert(
-    {
-      id: user.id,
-      name: user.name,
-      email: user.email ?? null,
-      address: user.address ?? null,
-      account_type: user.accountType ?? null,
-      initials: user.initials ?? null,
-      municipality: user.geo?.city ?? user.location ?? null,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "id" }
-  );
+  const payload = {
+    id: user.id,
+    name: user.name,
+    email: user.email ?? null,
+    address: user.address ?? null,
+    account_type: user.accountType ?? null,
+    initials: user.initials ?? null,
+    municipality: user.geo?.city ?? user.location ?? null,
+    updated_at: new Date().toISOString(),
+  };
+  // volitelný sloupec — pokud v DB ještě není, zkusíme bez něj
+  if (user.profilePhoto) {
+    payload.profile_photo = user.profilePhoto;
+  }
+  let { error } = await sb.from("profiles").upsert(payload, { onConflict: "id" });
+  if (error && String(error.message || "").includes("profile_photo")) {
+    delete payload.profile_photo;
+    ({ error } = await sb.from("profiles").upsert(payload, { onConflict: "id" }));
+  }
   if (error) {
     console.warn("[supabase] upsert profile", error.message);
     return false;
@@ -92,6 +98,7 @@ export function profileRowToNeighbor(row, { confirmationCount = 0, isNew = false
     id: row.id,
     name: row.name,
     initials: row.initials || "??",
+    profilePhoto: row.profile_photo || null,
     confirmations: confirmationCount,
     geolocVerified: true,
     location: "ve vaší lokalitě",

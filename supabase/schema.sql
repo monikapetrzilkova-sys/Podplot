@@ -9,6 +9,7 @@ create table if not exists public.profiles (
   account_type text,
   initials text,
   municipality text,
+  profile_photo text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -110,6 +111,9 @@ create table if not exists public.neighbor_confirmations (
   created_at timestamptz not null default now(),
   primary key (confirmer_id, neighbor_id)
 );
+
+-- Existující DB: doplnění fotky profilu (bezpečné spustit opakovaně)
+alter table public.profiles add column if not exists profile_photo text;
 
 create index if not exists neighbor_confirmations_neighbor_idx
   on public.neighbor_confirmations (neighbor_id);

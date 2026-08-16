@@ -5,7 +5,7 @@ import PersonLabel from "./PersonLabel.jsx";
 import { DoodleChatIcon } from "./doodle/doodleIcons.jsx";
 
 export default function MessagesPage({ embedded = false }) {
-  const { chats, openChat, blockedUserIds } = useApp();
+  const { chats, openChat, blockedUserIds, getPersonPhoto } = useApp();
 
   const visible = chats.filter((c) => !blockedUserIds.includes(c.participantId));
 
@@ -29,6 +29,13 @@ export default function MessagesPage({ embedded = false }) {
           <p className="text-[11px] font-bold uppercase tracking-wide text-stone-400 mb-1">Konverzace</p>
           {visible.map((chat) => {
             const unread = chat.unread ?? 0;
+            const initials = chat.participantName
+              .split(/\s+/)
+              .map((w) => w[0])
+              .join("")
+              .slice(0, 2)
+              .toUpperCase();
+            const photo = getPersonPhoto?.(chat.participantId);
             return (
               <button
                 key={chat.chatId}
@@ -40,14 +47,10 @@ export default function MessagesPage({ embedded = false }) {
               >
                 <div className="flex items-center gap-3">
                   <Avatar
-                    initials={chat.participantName
-                      .split(/\s+/)
-                      .map((w) => w[0])
-                      .join("")
-                      .slice(0, 2)
-                      .toUpperCase()}
+                    initials={initials}
                     roleId="soused"
                     size="sm"
+                    photo={photo}
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 mb-0.5">

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useApp } from "../context/AppContext.jsx";
+import { Avatar } from "./RoleBadge.jsx";
 import {
   groupMessagesByTopic,
   formatTopicHeading,
@@ -168,6 +169,7 @@ export default function ChatModal({
     resolveChatParticipantService,
     openCraftsmanPublicProfile,
     setChatActiveTopic,
+    getPersonPhoto,
   } = useApp();
   const [text, setText] = useState("");
   const [didInitThread, setDidInitThread] = useState(false);
@@ -179,6 +181,13 @@ export default function ChatModal({
 
   const participantService = resolveChatParticipantService?.(participantId);
   const displayName = formatPersonName({ id: participantId, name: participantName });
+  const participantPhoto = getPersonPhoto?.(participantId);
+  const participantInitials = (participantName || displayName || "?")
+    .split(/\s+/)
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   const sections = useMemo(
     () => groupMessagesByTopic(messages, { ensureTopic: topic }),
@@ -263,6 +272,12 @@ export default function ChatModal({
         >
           ×
         </button>
+        <Avatar
+          initials={participantInitials || "??"}
+          roleId="soused"
+          size="sm"
+          photo={participantPhoto}
+        />
         {participantService ? (
           <button
             type="button"

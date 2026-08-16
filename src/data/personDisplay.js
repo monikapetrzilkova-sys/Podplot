@@ -32,6 +32,8 @@ export function dedupePeopleById(people) {
       allowPublicAreaLabel: p.allowPublicAreaLabel ?? prev.allowPublicAreaLabel,
       location: p.location || prev.location,
       municipality: p.municipality || prev.municipality,
+      profilePhoto: p.profilePhoto || prev.profilePhoto || null,
+      initials: p.initials || prev.initials,
     });
   });
   return Array.from(map.values());
@@ -69,6 +71,7 @@ function personFromNeighbor(n, municipality) {
     id: n.id,
     name: n.name,
     initials: n.initials,
+    profilePhoto: n.profilePhoto ?? null,
     allowPublicAreaLabel: Boolean(n.allowPublicAreaLabel),
     publicAreaLabel: n.publicAreaLabel ?? "",
     location: n.location,
@@ -110,6 +113,7 @@ export function collectLocalPeople({
       id: currentUser.id ?? "me",
       name: currentUser.name,
       initials: currentUser.initials,
+      profilePhoto: currentUser.profilePhoto ?? null,
       allowPublicAreaLabel: Boolean(currentUser.allowPublicAreaLabel),
       publicAreaLabel: currentUser.publicAreaLabel ?? "",
       municipality,
@@ -191,4 +195,17 @@ export function getDisplayNameForPerson(index, personInput) {
     return typeof personInput === "string" ? personInput : "";
   }
   return formatPersonDisplayName(person, index);
+}
+
+/** Profilová fotka osoby z indexu (nebo null → iniciály). */
+export function getPersonPhoto(index, personInput) {
+  if (!index?.peopleById) return null;
+  if (typeof personInput === "string") {
+    return index.peopleById.get(personInput)?.profilePhoto ?? null;
+  }
+  if (personInput?.profilePhoto) return personInput.profilePhoto;
+  if (personInput?.id && index.peopleById.has(personInput.id)) {
+    return index.peopleById.get(personInput.id)?.profilePhoto ?? null;
+  }
+  return null;
 }

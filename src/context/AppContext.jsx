@@ -74,6 +74,7 @@ import {
   buildPersonNameIndex,
   collectLocalPeople,
   getDisplayNameForPerson,
+  getPersonPhoto as getPersonPhotoFromIndex,
 } from "../data/personDisplay.js";
 import {
   formatCzechEventSchedule,
@@ -698,10 +699,21 @@ export function AppProvider({ children }) {
       const counts = await fetchNeighborConfirmationCounts(remoteNeighbors.map((n) => n.id));
       if (cancelled) return;
 
-      const withCounts = remoteNeighbors.map((n) => ({
-        ...n,
-        confirmations: Math.max(n.confirmations ?? 0, counts[n.id] ?? 0),
-      }));
+      const withCounts = remoteNeighbors.map((n) => {
+        let profilePhoto = n.profilePhoto ?? null;
+        try {
+          const raw = localStorage.getItem("podplot-public-photos-v1");
+          const map = raw ? JSON.parse(raw) : {};
+          if (!profilePhoto && map[n.id]) profilePhoto = map[n.id];
+        } catch {
+          /* ignore */
+        }
+        return {
+          ...n,
+          profilePhoto,
+          confirmations: Math.max(n.confirmations ?? 0, counts[n.id] ?? 0),
+        };
+      });
 
       setNeighbors((prev) => mergeNeighborLists(prev, withCounts));
 
@@ -4497,14 +4509,44 @@ export function AppProvider({ children }) {
 
   const updateProfilePhoto = useCallback(
     (photoUrl) => {
-      setUser((u) => (u ? { ...u, profilePhoto: photoUrl } : u));
+      setUser((u) => {
+        if (!u) return u;
+        const next = { ...u, profilePhoto: photoUrl };
+        void upsertRemoteProfile(next);
+        try {
+          const raw = localStorage.getItem("podplot-public-photos-v1");
+          const map = raw ? JSON.parse(raw) : {};
+          if (u.id) {
+            map[u.id] = photoUrl;
+            localStorage.setItem("podplot-public-photos-v1", JSON.stringify(map));
+          }
+        } catch {
+          /* ignore */
+        }
+        return next;
+      });
       showToast("Profilová fotka uložena.", "success");
     },
     [showToast]
   );
 
   const removeProfilePhoto = useCallback(() => {
-    setUser((u) => (u ? { ...u, profilePhoto: null } : u));
+    setUser((u) => {
+      if (!u) return u;
+      const next = { ...u, profilePhoto: null };
+      void upsertRemoteProfile(next);
+      try {
+        const raw = localStorage.getItem("podplot-public-photos-v1");
+        const map = raw ? JSON.parse(raw) : {};
+        if (u.id && map[u.id]) {
+          delete map[u.id];
+          localStorage.setItem("podplot-public-photos-v1", JSON.stringify(map));
+        }
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
     showToast("Profilová fotka odstraněna.", "info");
   }, [showToast]);
 
@@ -5131,6 +5173,28 @@ export function AppProvider({ children }) {
     [personNameIndex]
   );
 
+  const getPersonPhoto = useCallback(
+    (personInput) => {
+      if (personInput == null) return null;
+      const id =
+        typeof personInput === "string"
+          ? personInput
+          : personInput?.id ?? personInput?.participantId ?? null;
+      if (id && (id === user?.id || id === "me")) return user?.profilePhoto ?? null;
+      const fromIndex = getPersonPhotoFromIndex(personNameIndex, personInput);
+      if (fromIndex) return fromIndex;
+      try {
+        const raw = localStorage.getItem("podplot-public-photos-v1");
+        const map = raw ? JSON.parse(raw) : {};
+        if (id && map[id]) return map[id];
+      } catch {
+        /* ignore */
+      }
+      return null;
+    },
+    [personNameIndex, user?.id, user?.profilePhoto]
+  );
+
   const allPostsForContacts = useMemo(
     () => [...FEED_POSTS, ...userPosts, ...userGroupPosts],
     [userPosts, userGroupPosts]
@@ -5215,6 +5279,7 @@ export function AppProvider({ children }) {
       value={{
         user,
         formatPersonName,
+        getPersonPhoto,
         personNameIndex,
         register,
         login,

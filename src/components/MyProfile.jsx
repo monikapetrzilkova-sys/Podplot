@@ -413,6 +413,26 @@ export default function MyProfile({ registerLegalBack } = {}) {
               />
               {acc.shortLabel}
             </span>
+            <button
+              type="button"
+              onClick={() => {
+                document
+                  .getElementById("profile-trust-received")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                markTrustVerifiersSeen?.();
+              }}
+              className="mt-2 text-left text-xs text-stone-600 hover:text-emerald-800"
+            >
+              <span className="font-bold text-stone-800 tabular-nums">
+                {trustVerifiers.length}
+              </span>{" "}
+              {trustVerifiers.length === 1 ? "potvrzení sousedství" : "potvrzení sousedství"}
+              {unreadTrustVerifiersCount > 0 ? (
+                <span className="ml-1.5 text-emerald-700 font-semibold">
+                  · {unreadTrustVerifiersCount} nová
+                </span>
+              ) : null}
+            </button>
             <div className="flex flex-wrap gap-2 mt-3">
               <button
                 type="button"
@@ -470,6 +490,48 @@ export default function MyProfile({ registerLegalBack } = {}) {
           </div>
         </div>
       </div>
+
+      <section id="profile-trust-received" className="pp-card p-4 mb-4 scroll-mt-4">
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <ProfileSectionTitle icon={PROFILE_DOODLE_ICONS.trust} className="mb-0">
+            Kdo mě ověřil
+          </ProfileSectionTitle>
+          <span className="shrink-0 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-lg tabular-nums">
+            {trustVerifiers.length}
+          </span>
+        </div>
+        {trustVerifiers.length === 0 ? (
+          <p className="text-xs text-stone-500 leading-relaxed">
+            Zatím 0 potvrzení. Až soused potvrdí vaše sousedství, uvidíte ho tady — a na avataru se
+            objeví číslo nových potvrzení.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-xs text-stone-500 mb-1">
+              {isCommunityVerified
+                ? "Jste komunitou ověřený soused (alespoň 3 potvrzení)."
+                : `Do ověření komunitou zbývá ${Math.max(0, 3 - trustVerifiers.length)}.`}
+            </p>
+            {trustVerifiers.map((v) => (
+              <div
+                key={v.confirmerId}
+                className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50/80 border border-emerald-100"
+              >
+                <Avatar initials={v.initials || "??"} roleId="soused" size="sm" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-stone-800 truncate">
+                    <PersonLabel personId={v.confirmerId} name={v.name} />
+                  </p>
+                  <p className="text-[11px] text-stone-500">Potvrdil/a vaše sousedství</p>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-md shrink-0">
+                  Ověřeno
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       <section className="pp-card p-4 mb-4">
         <ProfileSectionTitle icon={PROFILE_DOODLE_ICONS.places}>Moje místa</ProfileSectionTitle>
@@ -548,50 +610,6 @@ export default function MyProfile({ registerLegalBack } = {}) {
             );
           })}
         </div>
-      </section>
-
-      <section id="profile-trust-received" className="pp-card p-4 mb-4 scroll-mt-4">
-        <ProfileSectionTitle icon={PROFILE_DOODLE_ICONS.trust}>
-          Kdo mě ověřil
-        </ProfileSectionTitle>
-        {trustVerifiers.length === 0 ? (
-          <p className="text-xs text-stone-500 leading-relaxed">
-            Zatím vás nikdo nepotvrdil. Až soused potvrdí vaše sousedství, uvidíte ho tady — a na
-            avataru se objeví číslo nových potvrzení.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            <p className="text-xs text-stone-500 mb-1">
-              {trustVerifiers.length}{" "}
-              {trustVerifiers.length === 1
-                ? "potvrzení"
-                : trustVerifiers.length < 5
-                  ? "potvrzení"
-                  : "potvrzení"}{" "}
-              ·{" "}
-              {isCommunityVerified
-                ? "jste komunitou ověřený soused"
-                : `do ověření zbývá ${Math.max(0, 3 - trustVerifiers.length)}`}
-            </p>
-            {trustVerifiers.map((v) => (
-              <div
-                key={v.confirmerId}
-                className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50/80 border border-emerald-100"
-              >
-                <Avatar initials={v.initials || "??"} roleId="soused" size="sm" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-stone-800 truncate">
-                    <PersonLabel personId={v.confirmerId} name={v.name} />
-                  </p>
-                  <p className="text-[11px] text-stone-500">Potvrdil/a vaše sousedství</p>
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-md shrink-0">
-                  Ověřeno
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
       </section>
 
       <section id="profile-trust-network" className="pp-card p-4 mb-4 scroll-mt-4">

@@ -48,7 +48,11 @@ export default function TopBar() {
                 : "Můj profil"
             }
           >
-            <span className="pp-header-avatar">{user.initials}</span>
+            {user.profilePhoto ? (
+              <img src={user.profilePhoto} alt="" className="pp-header-avatar-img" />
+            ) : (
+              <span className="pp-header-avatar">{user.initials}</span>
+            )}
             {unreadTrustVerifiersCount > 0 && (
               <span className="pp-header-notify-dot">
                 {unreadTrustVerifiersCount > 9 ? "9+" : unreadTrustVerifiersCount}
