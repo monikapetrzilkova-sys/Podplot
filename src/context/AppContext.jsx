@@ -1722,7 +1722,7 @@ export function AppProvider({ children }) {
   );
 
   const addSecurityReport = useCallback(
-    ({ type, body, urgent = false, urgentScope = URGENT_SCOPE.LOCAL, mapPos = null, alsoAsPrompt = false, photos = [], validUntil = null, reportCategoryId = null }) => {
+    ({ type, body, urgent = false, urgentScope = URGENT_SCOPE.LOCAL, mapPos = null, alsoAsPrompt = false, photos = [], validUntil = null, reportCategoryId = null, lossKind = null }) => {
       if (!user) return;
       const isMunicipalityWide = urgent && urgentScope === URGENT_SCOPE.MUNICIPALITY;
       const rawMapPos = isMunicipalityWide ? mapPos ?? { x: 50, y: 50 } : mapPos;
@@ -1758,6 +1758,7 @@ export function AppProvider({ children }) {
         type,
         body,
         reportCategoryId,
+        lossKind: reportCategoryId === "loss" ? lossKind || null : null,
         distance,
         time: "Právě teď",
         createdAt,
