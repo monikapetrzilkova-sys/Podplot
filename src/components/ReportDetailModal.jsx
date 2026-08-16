@@ -23,9 +23,7 @@ export default function ReportDetailModal({ report, onClose, onReport }) {
   if (!report) return null;
 
   const acc = report.accountType ? getAccountType(report.accountType) : null;
-  const authorLabel = report.accountType
-    ? formatAuthorName(report.author, report.accountType)
-    : report.author;
+  const authorLabel = formatAuthorName(report.author, report.accountType);
   const publicNotes = report.publicOfficeNotes ?? [];
   const showOfficeStatus = report.officeStatus && report.officeStatus !== "new";
   const tip = isTipReport(report);

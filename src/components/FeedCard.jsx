@@ -151,7 +151,7 @@ export default function FeedCard({ post, compact = false, detailsOnly = false })
   const isReported = reportedPosts.includes(post.id);
   const acc = post.accountType ? getAccountType(post.accountType) : null;
   const accRole = acc ? getRole(acc.role) : null;
-  const authorLabel = post.accountType ? formatAuthorName(post.author, post.accountType) : post.author.split(" ")[0];
+  const authorLabel = formatAuthorName(post.author, post.accountType);
   const distance = extractDistance(post.meta);
   const searchHighlight = isSearchHighlighted(post.id);
   const isListingEdit =
@@ -204,6 +204,10 @@ export default function FeedCard({ post, compact = false, detailsOnly = false })
   if (detailsOnly) {
     return (
       <div className="space-y-2">
+        <p className="pp-text-meta">
+          {post.mine ? "Vy" : authorLabel}
+          {distance && !post.mine ? ` · ${distance}` : ""}
+        </p>
         <EditedBadge item={post} />
         <p className="pp-text-body">{post.body}</p>
         <PostPhotos photos={post.photos} compact />

@@ -6,6 +6,7 @@ import HelpFeedActions from "./HelpFeedActions.jsx";
 import PillFilterRow from "./PillFilterRow.jsx";
 import PrimaryAddButton from "./PrimaryAddButton.jsx";
 import CompactSearchToggle from "./CompactSearchToggle.jsx";
+import { formatAuthorName } from "../data/accountTypes.js";
 
 function matchesHelpSearch(item, query) {
   const q = query.trim().toLowerCase();
@@ -185,25 +186,23 @@ export default function NeighborHelp({
                 title={item.title}
                 preview={item.body}
               >
+                <p className="pp-text-meta">
+                  {item.mine ? "Vy" : formatAuthorName(item.author, item.accountType)}
+                  {item.time ? ` · ${item.time}` : ""}
+                </p>
                 {item.mine ? (
-                  <>
-                    <p className="pp-text-body text-sm">{item.body}</p>
-                    <p className="pp-text-meta">{item.time}</p>
-                  </>
+                  <p className="pp-text-body text-sm">{item.body}</p>
                 ) : (
-                  <>
-                    <HelpFeedActions
-                      help={{
-                        ...item,
-                        helpId: item.id,
-                        helpType: item.type,
-                        offerCount: item.offerCount,
-                      }}
-                      onOfferHelp={offerHelpOnPost}
-                      alreadyOffered={hasOfferedHelp(item.id)}
-                    />
-                    <p className="pp-text-meta">{item.time}</p>
-                  </>
+                  <HelpFeedActions
+                    help={{
+                      ...item,
+                      helpId: item.id,
+                      helpType: item.type,
+                      offerCount: item.offerCount,
+                    }}
+                    onOfferHelp={offerHelpOnPost}
+                    alreadyOffered={hasOfferedHelp(item.id)}
+                  />
                 )}
               </LiveFeedCard>
             );

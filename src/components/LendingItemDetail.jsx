@@ -6,6 +6,7 @@ import { getLendingCategory } from "../data/lendingCategories.js";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
 import AppPanelPortal from "./AppPanelPortal.jsx";
 import { DoodlePackageIcon } from "./doodle/doodleIcons.jsx";
+import { formatAuthorName } from "../data/accountTypes.js";
 
 export default function LendingItemDetail({ group, onClose, onRent }) {
   if (!group) return null;
@@ -65,7 +66,7 @@ export default function LendingItemDetail({ group, onClose, onRent }) {
                           item.onVacation ? "text-stone-400" : "text-stone-900"
                         }`}
                       >
-                        {item.author}
+                        {formatAuthorName(item.author, item.accountType)}
                       </span>
                       <RoleBadge roleId={item.role} />
                     </div>

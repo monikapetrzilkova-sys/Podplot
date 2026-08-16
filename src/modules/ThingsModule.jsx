@@ -17,6 +17,7 @@ import { getPujcovnaSubFilter } from "../data/lendingCategories.js";
 import { lendingDisplayTitle } from "../data/lendingItemTypes.js";
 import { IconNavSearch } from "../components/communityNavIcons.jsx";
 import PrimaryAddButton from "../components/PrimaryAddButton.jsx";
+import { formatAuthorName } from "../data/accountTypes.js";
 
 function addListingLabel(categoryId) {
   if (categoryId === "daruji") return "Přidat darování";
@@ -41,7 +42,7 @@ function ThingLendingDetail({ item, onReserve }) {
   return (
     <div className="space-y-1.5 pp-thing-detail">
       <p className="pp-text-body">{item.description ?? item.subtitle}</p>
-      <p className="pp-text-meta">{item.author}</p>
+      <p className="pp-text-meta">{formatAuthorName(item.author, item.accountType)}</p>
       <LendingOwnerStatus
         onVacation={onVacation}
         availabilityMessage={item.availabilityMessage}
@@ -80,7 +81,7 @@ function ThingListRow({ item, expanded, onToggle }) {
     item.description ??
     item.subtitle ??
     item.body ??
-    joinMetaLine(item.author, item.distance);
+    joinMetaLine(formatAuthorName(item.author, item.accountType), item.distance);
 
   return (
     <LiveFeedCard

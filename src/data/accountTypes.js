@@ -134,19 +134,30 @@ export function getPodnikatelSubtypeLabel(userOrType) {
   return subtype ? BUSINESS_SUBTYPES[subtype]?.label ?? null : null;
 }
 
+/** Veřejné jméno souseda: křestní + iniciála příjmení (např. Monika P.) */
+export function formatNeighborShortName(author = "") {
+  const parts = String(author)
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (parts.length === 0) return "";
+  if (parts.length === 1) return parts[0];
+  const first = parts[0];
+  const lastInitial = parts[parts.length - 1].charAt(0).toLocaleUpperCase("cs-CZ");
+  return `${first} ${lastInitial}.`;
+}
+
 export function formatAuthorName(author, accountTypeId) {
   const acc = getAccountType(accountTypeId);
   const normalized = normalizeAccountType(accountTypeId);
-  if (normalized === "soused") {
-    return author.split(" ")[0];
-  }
   if (normalized === "podnik") {
     return `${author} (Podnik)`;
   }
   if (normalized === "urad") {
     return `${author} (${acc.shortLabel})`;
   }
-  return author.split(" ")[0];
+  // soused / neznámý typ — křestní + iniciála příjmení
+  return formatNeighborShortName(author);
 }
 
 export function getRegistrationFields(accountTypeId, businessSubtype) {
