@@ -2,9 +2,11 @@ import { MessageButton } from "./MessagesPage.jsx";
 import ReportUserButton from "./ReportUserButton.jsx";
 import { DoodleHelpIcon } from "./doodle/doodleIcons.jsx";
 import { ACTION_BTN } from "./PostInteractions.jsx";
+import { topicFromHelp } from "../data/chatTopics.js";
 
 /** Rozbalené akce u výpomoci — stejně na Domů i u Sousedů */
 export default function HelpFeedActions({ help, onOfferHelp, alreadyOffered }) {
+  const topic = topicFromHelp(help);
   return (
     <>
       <p className="pp-text-body text-sm mb-2 line-clamp-3">{help.body}</p>
@@ -16,7 +18,7 @@ export default function HelpFeedActions({ help, onOfferHelp, alreadyOffered }) {
             onClick={() =>
               onOfferHelp({
                 postId: help.helpId,
-                authorId: help.helpId,
+                authorId: help.authorId || help.helpId,
                 authorName: help.author,
                 postTitle: help.title,
               })
@@ -34,8 +36,17 @@ export default function HelpFeedActions({ help, onOfferHelp, alreadyOffered }) {
             )}
           </button>
         )}
-        <MessageButton participantId={help.helpId} participantName={help.author} compact />
-        <ReportUserButton targetId={help.helpId} targetName={help.author} compact />
+        <MessageButton
+          participantId={help.authorId || help.helpId}
+          participantName={help.author}
+          topic={topic}
+          compact
+        />
+        <ReportUserButton
+          targetId={help.authorId || help.helpId}
+          targetName={help.author}
+          compact
+        />
       </div>
     </>
   );

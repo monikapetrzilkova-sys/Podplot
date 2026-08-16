@@ -86,8 +86,25 @@ export function MessageButton({
   className = "",
   compact = false,
   primary = false,
+  topic = null,
+  topicKind = null,
+  topicId = null,
+  topicTitle = null,
+  topicLabel = null,
+  initialMessage = null,
 }) {
   const { startChat } = useApp();
+
+  const resolvedTopic =
+    topic ||
+    (topicKind || topicId || topicTitle
+      ? {
+          kind: topicKind || "listing",
+          refId: topicId,
+          title: topicTitle,
+          label: topicLabel,
+        }
+      : null);
 
   const base = primary
     ? "w-full py-2.5 px-4 text-sm font-semibold text-white bg-[#3D7A68] rounded-xl border border-[#3D7A68] hover:bg-[#346859] shadow-sm"
@@ -98,7 +115,9 @@ export function MessageButton({
   return (
     <button
       type="button"
-      onClick={() => startChat(participantId, participantName)}
+      onClick={() =>
+        startChat(participantId, participantName, initialMessage, resolvedTopic)
+      }
       className={`${base} ${className}`.trim()}
     >
       {primary || !compact ? "Napsat zprávu" : "Zpráva"}

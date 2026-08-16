@@ -127,6 +127,11 @@ import {
   markRemoteMessagesRead,
 } from "../data/messagesApi.js";
 import {
+  normalizeChatTopic,
+  topicToMessageMeta,
+  topicFromMessageMeta,
+} from "../data/chatTopics.js";
+import {
   showMessageNotification,
   requestNotificationPermission,
   getStoredMessageAlertsPref,
@@ -2127,6 +2132,12 @@ export function AppProvider({ children }) {
         participantId,
         participantName,
         message: offerMessage,
+        topic: {
+          kind: "help",
+          refId: postId,
+          title: resolvedTitle,
+          label: "Výpomoc",
+        },
       });
 
       setNotifications((prev) => [
@@ -3693,6 +3704,19 @@ export function AppProvider({ children }) {
       const msgId = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
       const body = text.trim();
       const createdAt = new Date().toISOString();
+
+      let finalMeta = meta;
+      if (meta) {
+        const special =
+          meta.kind === "interest" || String(meta.kind || "").startsWith("office_");
+        if (special) {
+          const t = topicFromMessageMeta(meta);
+          finalMeta = t ? { ...meta, topic: t } : meta;
+        } else if (meta.topic || meta.kind || meta.refId || meta.title) {
+          finalMeta = topicToMessageMeta(meta.topic || meta);
+        }
+      }
+
       setChats((prev) => {
         const idx = prev.findIndex((c) => c.participantId === participantId);
         const msg = {
@@ -3702,7 +3726,7 @@ export function AppProvider({ children }) {
           time,
           status: "sent",
           createdAt,
-          ...(meta ? { meta } : null),
+          ...(finalMeta ? { meta: finalMeta } : null),
         };
         if (idx >= 0) {
           const updated = [...prev];
@@ -3738,7 +3762,7 @@ export function AppProvider({ children }) {
           recipientId: participantId,
           recipientName: participantName || "Soused",
           text: body,
-          meta,
+          meta: finalMeta,
         });
       }
 
@@ -3909,11 +3933,17 @@ export function AppProvider({ children }) {
       const chatOpen = chatModal?.participantId === participantId;
       setChats((prev) => {
         const idx = prev.findIndex((c) => c.participantId === participantId);
+        const prior = idx >= 0 ? prev[idx].messages : [];
+        const lastTopic =
+          topicFromMessageMeta(prior[prior.length - 1]?.meta) ||
+          (chatOpen ? normalizeChatTopic(chatModal?.activeTopic) : null);
+        const replyMeta = lastTopic ? topicToMessageMeta(lastTopic) : null;
         const msg = {
           id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
           sender: "them",
           text,
           time,
+          ...(replyMeta ? { meta: replyMeta } : null),
         };
         const markMineRead = (messages) =>
           messages.map((m) =>
@@ -3927,7 +3957,6 @@ export function AppProvider({ children }) {
             lastMessage: text,
             lastTime: time,
             unread: chatOpen ? 0 : (updated[idx].unread ?? 0) + 1,
-            // Odpověď = protistrana chat otevřela → naše zprávy jsou přečtené
             messages: [...markMineRead(updated[idx].messages), msg],
           };
           return updated;
@@ -3970,29 +3999,49 @@ export function AppProvider({ children }) {
   );
 
   const openChat = useCallback(
-    (participantId, participantName) => {
+    (participantId, participantName, topic = null) => {
       markChatRead(participantId);
-      setChatModal({ participantId, participantName });
+      setChatModal({
+        participantId,
+        participantName,
+        activeTopic: normalizeChatTopic(topic),
+      });
     },
     [markChatRead]
   );
 
   const startChat = useCallback(
-    (participantId, participantName, initialMessage) => {
+    (participantId, participantName, initialMessage, topic = null) => {
+      const activeTopic = normalizeChatTopic(topic);
       if (initialMessage?.trim()) {
-        sendMessage(participantId, participantName, initialMessage.trim());
+        sendMessage(
+          participantId,
+          participantName,
+          initialMessage.trim(),
+          activeTopic ? topicToMessageMeta(activeTopic) : null
+        );
       }
       markChatRead(participantId);
-      setChatModal({ participantId, participantName });
+      setChatModal({
+        participantId,
+        participantName,
+        activeTopic,
+      });
     },
     [sendMessage, markChatRead]
   );
 
+  const setChatActiveTopic = useCallback((topic) => {
+    setChatModal((prev) =>
+      prev ? { ...prev, activeTopic: normalizeChatTopic(topic) } : prev
+    );
+  }, []);
+
   useEffect(() => {
     if (!helpOfferChatKickoff) return;
-    const { participantId, participantName, message } = helpOfferChatKickoff;
+    const { participantId, participantName, message, topic } = helpOfferChatKickoff;
     openMessages();
-    startChat(participantId, participantName, message);
+    startChat(participantId, participantName, message, topic);
     setHelpOfferChatKickoff(null);
   }, [helpOfferChatKickoff, openMessages, startChat]);
 
@@ -5075,6 +5124,7 @@ export function AppProvider({ children }) {
         openChat,
         startChat,
         closeChat,
+        setChatActiveTopic,
         chatModal,
         craftsmanProfileOpen,
         openCraftsmanPublicProfile,

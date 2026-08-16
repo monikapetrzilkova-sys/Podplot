@@ -18,6 +18,7 @@ import { lendingDisplayTitle } from "../data/lendingItemTypes.js";
 import { IconNavSearch } from "../components/communityNavIcons.jsx";
 import PrimaryAddButton from "../components/PrimaryAddButton.jsx";
 import { formatAuthorName } from "../data/accountTypes.js";
+import { topicFromLending, topicFromPost } from "../data/chatTopics.js";
 
 function addListingLabel(categoryId) {
   if (categoryId === "daruji") return "Přidat darování";
@@ -58,7 +59,12 @@ function ThingLendingDetail({ item, onReserve }) {
             {onVacation ? "Teď nedostupné" : `Rezervovat · od ${item.credits} Kč/den`}
           </button>
         )}
-        <MessageButton participantId={item.authorId ?? item.id} participantName={item.author} compact />
+        <MessageButton
+          participantId={item.authorId ?? item.id}
+          participantName={item.author}
+          topic={topicFromLending(item) || topicFromPost(item)}
+          compact
+        />
         <ReportUserButton targetId={item.authorId ?? item.id} targetName={item.author} compact />
       </div>
     </div>
@@ -259,6 +265,12 @@ export default function ThingsModule({ hideCategoryFilters = false }) {
                 <MessageButton
                   participantId={r.ownerId ?? r.authorId ?? r.id}
                   participantName={r.author}
+                  topic={{
+                    kind: "lending",
+                    refId: r.id,
+                    title: r.item,
+                    label: "Půjčovna",
+                  }}
                 />
                 {r.returnedAt ? (
                   <p className="text-[#3D7A68] font-semibold">✓ Vrácení potvrzeno</p>

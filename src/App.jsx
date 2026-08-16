@@ -216,6 +216,7 @@ function GlobalModals() {
           onClose={closeChat}
           participantName={chatModal.participantName}
           participantId={chatModal.participantId}
+          activeTopic={chatModal.activeTopic}
         />
       )}
       <CraftsmanPublicProfileModal />

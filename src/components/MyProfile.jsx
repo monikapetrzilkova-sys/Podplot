@@ -682,6 +682,12 @@ export default function MyProfile({ registerLegalBack } = {}) {
                       participantId={offer.authorId}
                       participantName={offer.authorName}
                       className="shrink-0"
+                      topic={{
+                        kind: "help",
+                        refId: offer.postId,
+                        title: offer.postTitle,
+                        label: "Výpomoc",
+                      }}
                     />
                   )}
                 </div>
@@ -780,6 +786,12 @@ export default function MyProfile({ registerLegalBack } = {}) {
                   <MessageButton
                     participantId={item.ownerId ?? item.authorId ?? item.id}
                     participantName={item.author}
+                    topic={{
+                      kind: "lending",
+                      refId: item.id,
+                      title: item.item,
+                      label: "Půjčovna",
+                    }}
                   />
                 </div>
                 {item.returnedAt ? (

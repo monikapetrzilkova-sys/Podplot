@@ -7,6 +7,7 @@ import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
 import AppPanelPortal from "./AppPanelPortal.jsx";
 import { DoodlePackageIcon } from "./doodle/doodleIcons.jsx";
 import { formatAuthorName } from "../data/accountTypes.js";
+import { topicFromLending } from "../data/chatTopics.js";
 
 export default function LendingItemDetail({ group, onClose, onRent }) {
   if (!group) return null;
@@ -123,7 +124,11 @@ export default function LendingItemDetail({ group, onClose, onRent }) {
                       {item.onVacation ? "Teď nedostupné" : `Půjčit si · od ${item.credits} Kč/den`}
                     </button>
                     <div className="flex gap-2 mt-2 flex-wrap">
-                      <MessageButton participantId={item.id} participantName={item.author} />
+                      <MessageButton
+                        participantId={item.id}
+                        participantName={item.author}
+                        topic={topicFromLending(item)}
+                      />
                       <ReportUserButton targetId={item.id} targetName={item.author} compact />
                     </div>
                   </>

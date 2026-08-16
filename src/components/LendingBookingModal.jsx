@@ -4,6 +4,7 @@ import { PAYMENT_METHODS } from "../data/monetization.js";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
 import AppPanelPortal from "./AppPanelPortal.jsx";
 import LendingOwnerStatus from "./LendingOwnerStatus.jsx";
+import { topicFromLending } from "../data/chatTopics.js";
 
 const WEEKDAYS = ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"];
 
@@ -149,13 +150,13 @@ export default function LendingBookingModal({ open, item, onClose }) {
       .filter(Boolean)
       .join("\n\n");
 
-    sendMessage(ownerId, ownerName, summary);
+    sendMessage(ownerId, ownerName, summary, topicFromLending(item));
     setPaidReservation({ startKey, endKey, days, total });
     setStep("done");
   };
 
   const openConversation = () => {
-    openChat(ownerId, ownerName);
+    openChat(ownerId, ownerName, topicFromLending(item));
     resetAndClose();
   };
 

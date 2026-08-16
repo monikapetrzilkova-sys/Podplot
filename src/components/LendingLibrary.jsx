@@ -11,6 +11,7 @@ import { accordionKey } from "../data/uiPreferences.js";
 import { MessageButton } from "./MessagesPage.jsx";
 import ReportUserButton from "./ReportUserButton.jsx";
 import { formatAuthorName } from "../data/accountTypes.js";
+import { topicFromLending } from "../data/chatTopics.js";
 
 function formatReservationDates(r) {
   if (!r.startDate) return null;
@@ -76,6 +77,12 @@ export default function LendingLibrary() {
                 <MessageButton
                   participantId={r.ownerId ?? r.authorId ?? r.id}
                   participantName={r.author}
+                  topic={{
+                    kind: "lending",
+                    refId: r.id,
+                    title: r.item,
+                    label: "Půjčovna",
+                  }}
                 />
               </div>
             </div>
@@ -146,7 +153,11 @@ export default function LendingLibrary() {
                       {item.onVacation ? "Teď nedostupné" : `Rezervovat · od ${item.credits} Kč/den`}
                     </button>
                   )}
-                  <MessageButton participantId={item.authorId ?? item.id} participantName={item.author} />
+                  <MessageButton
+                    participantId={item.authorId ?? item.id}
+                    participantName={item.author}
+                    topic={topicFromLending(item)}
+                  />
                   <ReportUserButton targetId={item.authorId ?? item.id} targetName={item.author} compact />
                 </div>
               </div>

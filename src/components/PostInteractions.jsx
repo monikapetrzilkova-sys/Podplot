@@ -37,7 +37,12 @@ export default function PostInteractions({ post }) {
             <p className="text-xs text-stone-800">
               Soused <strong>{o.helperName}</strong> nabízí pomoc
             </p>
-            <MessageButton participantId={o.helperId} participantName={o.helperName} className="shrink-0" />
+            <MessageButton participantId={o.helperId} participantName={o.helperName} className="shrink-0" topic={{
+              kind: "help",
+              refId: post.id,
+              title: post.title || o.postTitle,
+              label: "Výpomoc",
+            }} />
           </div>
         ))}
       </div>

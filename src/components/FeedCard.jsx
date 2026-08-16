@@ -20,6 +20,7 @@ import {
   LISTING_SALE_STATUS,
 } from "../data/listingSales.js";
 import { ACTION_BTN } from "./PostInteractions.jsx";
+import { topicFromPost } from "../data/chatTopics.js";
 
 function extractDistance(meta) {
   if (!meta) return null;
@@ -152,6 +153,7 @@ export default function FeedCard({ post, compact = false, detailsOnly = false })
   const acc = post.accountType ? getAccountType(post.accountType) : null;
   const accRole = acc ? getRole(acc.role) : null;
   const authorLabel = formatAuthorName(post.author, post.accountType);
+  const messageTopic = topicFromPost(post);
   const distance = extractDistance(post.meta);
   const searchHighlight = isSearchHighlighted(post.id);
   const isListingEdit =
@@ -221,7 +223,12 @@ export default function FeedCard({ post, compact = false, detailsOnly = false })
             {!post.mine && !isReserved && <PostInteractions post={post} />}
             {!post.mine && (
               <>
-                <MessageButton participantId={authorId} participantName={post.author} compact />
+                <MessageButton
+                  participantId={authorId}
+                  participantName={post.author}
+                  topic={messageTopic}
+                  compact
+                />
                 <ListingSaleActions post={post} />
               </>
             )}
@@ -380,7 +387,12 @@ export default function FeedCard({ post, compact = false, detailsOnly = false })
           {!post.mine && !isReserved && <PostInteractions post={post} />}
           {!post.mine && (
             <>
-              <MessageButton participantId={authorId} participantName={post.author} compact />
+              <MessageButton
+                participantId={authorId}
+                participantName={post.author}
+                topic={messageTopic}
+                compact
+              />
               <ListingSaleActions post={post} />
             </>
           )}
