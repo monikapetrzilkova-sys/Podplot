@@ -61,6 +61,86 @@ function ProfileSectionTitle({ icon: Icon, children, className = "mb-3" }) {
   );
 }
 
+/** Sbalený seznam sousedů čekajících na potvrzení (bez už potvrzených). */
+function TrustPendingAccordion({ pending, confirmNeighbor, dismissTrustNeighbor, getPersonPhoto }) {
+  const [expanded, setExpanded] = useState(false);
+  const countLabel =
+    pending.length === 1 ? "1 nový soused" : `${pending.length} noví sousedé`;
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        className="w-full flex items-center gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-left hover:bg-emerald-100/70 transition-colors"
+      >
+        <span className="relative shrink-0 w-8 h-8 rounded-lg bg-white text-[#3D7A68] flex items-center justify-center border border-emerald-100">
+          <span className="text-xs font-bold tabular-nums">{pending.length}</span>
+        </span>
+        <span className="flex-1 min-w-0">
+          <span className="block text-sm font-semibold text-stone-900">{countLabel} k potvrzení</span>
+          <span className="block text-[11px] text-stone-500 mt-0.5">
+            Rozbalte a potvrďte sousedství, pokud se znáte.
+          </span>
+        </span>
+        <span className="text-[11px] font-semibold text-[#3D7A68] shrink-0">
+          {expanded ? "Sbalit ▲" : "Rozbalit ▼"}
+        </span>
+      </button>
+
+      {expanded && (
+        <div className="space-y-2 mt-3">
+          {pending.map((n) => {
+            const photo = getPersonPhoto?.(n.id) || n.profilePhoto || null;
+            return (
+              <div
+                key={n.id}
+                className="flex items-center justify-between gap-2 p-3 rounded-xl bg-emerald-50 border border-emerald-200"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Avatar
+                    initials={n.initials}
+                    name={n.name}
+                    roleId="soused"
+                    size="sm"
+                    photo={photo}
+                  />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-stone-800 truncate">
+                      <PersonLabel personId={n.id} name={n.name} />
+                    </p>
+                    <p className="text-xs text-stone-500">
+                      {(n.confirmations ?? 0) > 0 ? `${n.confirmations} potvrzení · ` : ""}
+                      {n.location || "ve vaší lokalitě"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => confirmNeighbor(n.id)}
+                    className="text-[10px] font-semibold text-emerald-700 bg-white px-2 py-1 rounded-lg border border-emerald-200"
+                  >
+                    Potvrdit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => dismissTrustNeighbor(n.id)}
+                    className="text-[10px] font-semibold text-stone-500 bg-white px-2 py-1 rounded-lg border border-stone-200"
+                  >
+                    Neznám ho
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PasswordChangeFields() {
   const { changePassword } = useApp();
   const [password, setPassword] = useState("");
@@ -153,6 +233,7 @@ export default function MyProfile({ registerLegalBack } = {}) {
     craftsmanRadius,
     setCraftsmanRadius,
     formatPersonName,
+    getPersonPhoto,
     logout,
     profileScrollTarget,
     clearProfileScrollTarget,
@@ -770,81 +851,28 @@ export default function MyProfile({ registerLegalBack } = {}) {
         <ProfileSectionTitle icon={PROFILE_DOODLE_ICONS.trust}>Síť důvěry</ProfileSectionTitle>
         {(() => {
           const dismissed = trustDismissedIds ?? [];
-          const others = neighbors.filter(
-            (n) => n?.id && !isSelfNeighborCandidate(n, user) && !isCurrentUserRef(n.id, user)
+          const pending = neighbors.filter(
+            (n) =>
+              n?.id &&
+              !isSelfNeighborCandidate(n, user) &&
+              !isCurrentUserRef(n.id, user) &&
+              !confirmationsGiven.includes(n.id) &&
+              !dismissed.includes(n.id)
           );
-          const pending = others.filter(
-            (n) => !confirmationsGiven.includes(n.id) && !dismissed.includes(n.id)
-          );
-          const confirmed = others.filter((n) => confirmationsGiven.includes(n.id));
-          const pendingNew = pending.filter((n) => n.isNew);
-          const pendingRest = pending.filter((n) => !n.isNew);
-          const ordered = [...pendingNew, ...pendingRest, ...confirmed];
+          if (pending.length === 0) {
+            return (
+              <p className="text-xs text-stone-500 leading-relaxed">
+                Teď nemáte nikoho nového k potvrzení. Až se v lokalitě objeví nový soused, ukáže se tady.
+              </p>
+            );
+          }
           return (
-            <>
-              {pendingNew.length > 0 && (
-                <p className="text-xs text-emerald-800 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2 mb-3">
-                  {pendingNew.length === 1
-                    ? "Nový soused ve vaší lokalitě — potvrďte sousedství, pokud se znáte."
-                    : `${pendingNew.length} noví sousedé ve vaší lokalitě — potvrďte sousedství, pokud se znáte.`}
-                </p>
-              )}
-              <div className="space-y-2">
-                {ordered.map((n) => {
-                  const already = confirmationsGiven.includes(n.id);
-                  return (
-                    <div
-                      key={n.id}
-                      className={`flex items-center justify-between gap-2 p-3 rounded-xl ${
-                        n.isNew && !already
-                          ? "bg-emerald-50 border border-emerald-200"
-                          : "bg-stone-50"
-                      }`}
-                    >
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-stone-800 flex items-center gap-2 flex-wrap">
-                          <PersonLabel personId={n.id} name={n.name} />
-                          {n.isNew && !already && (
-                            <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-md">
-                              Nový
-                            </span>
-                          )}
-                        </p>
-                        <p className="text-xs text-stone-500">
-                          {n.confirmations} potvrzení · {n.location}
-                          {n.confirmations >= 3 && " · ✓ ověřený"}
-                        </p>
-                      </div>
-                      {!already && (
-                        <div className="flex flex-col gap-1 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => confirmNeighbor(n.id)}
-                            className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200"
-                          >
-                            Potvrdit
-                          </button>
-                          {n.isNew && (
-                            <button
-                              type="button"
-                              onClick={() => dismissTrustNeighbor(n.id)}
-                              className="text-[10px] font-semibold text-stone-500 bg-white px-2 py-1 rounded-lg border border-stone-200"
-                            >
-                              Neznám ho
-                            </button>
-                          )}
-                        </div>
-                      )}
-                      {already && (
-                        <span className="text-[10px] font-semibold text-stone-400 px-2 py-1 shrink-0">
-                          Potvrzeno
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </>
+            <TrustPendingAccordion
+              pending={pending}
+              confirmNeighbor={confirmNeighbor}
+              dismissTrustNeighbor={dismissTrustNeighbor}
+              getPersonPhoto={getPersonPhoto}
+            />
           );
         })()}
       </section>
