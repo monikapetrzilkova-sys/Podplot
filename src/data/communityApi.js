@@ -6,8 +6,20 @@
 import { ensureSupabase } from "../lib/supabaseClient.js";
 import { municipalitiesMatch } from "./geoFilter.js";
 
+function inferCategoryIdFromType(type) {
+  const t = String(type ?? "").toLowerCase();
+  if (t.includes("půjčovna") || t === "pujcovna") return "pujcovna";
+  if (t.includes("daruji")) return "daruji";
+  if (t.includes("prodám") || t.includes("prodam")) return "prodam";
+  if (t.includes("sháním") || t.includes("shanim")) return "shanim";
+  return null;
+}
+
 function rowToFeedPost(row, currentUserId) {
   const payload = row.payload && typeof row.payload === "object" ? row.payload : {};
+  const type = row.type ?? "Příspěvek";
+  const categoryId =
+    payload.categoryId ?? inferCategoryIdFromType(type) ?? null;
   return {
     id: row.id,
     role: payload.role ?? null,
@@ -18,9 +30,9 @@ function rowToFeedPost(row, currentUserId) {
     title: row.title,
     body: row.body ?? "",
     meta: row.meta ?? "",
-    type: row.type ?? "Příspěvek",
+    type,
     feedType: row.feed_type ?? "komunita",
-    feedSubtype: row.feed_subtype ?? null,
+    feedSubtype: row.feed_subtype ?? (categoryId ? "veci" : null),
     mine: Boolean(currentUserId && row.author_id === currentUserId),
     photos: Array.isArray(row.photos) ? row.photos : [],
     isVerified: Boolean(payload.isVerified),
@@ -32,8 +44,11 @@ function rowToFeedPost(row, currentUserId) {
     createdAt: row.created_at ? Date.parse(row.created_at) || Date.now() : Date.now(),
     fromSecurityReportId: payload.fromSecurityReportId ?? null,
     reportCategoryId: payload.reportCategoryId ?? null,
-    categoryId: payload.categoryId ?? null,
+    categoryId,
     marketCategory: payload.marketCategory ?? null,
+    lendingCategory: payload.lendingCategory ?? null,
+    itemType: payload.itemType ?? null,
+    itemTypeLabel: payload.itemTypeLabel ?? null,
     listingPrice: payload.listingPrice ?? null,
     groupId: payload.groupId ?? null,
     sharedRemote: true,
@@ -398,6 +413,9 @@ export async function publishRemotePost(post, user) {
     reportCategoryId: post.reportCategoryId ?? null,
     categoryId: post.categoryId ?? null,
     marketCategory: post.marketCategory ?? null,
+    lendingCategory: post.lendingCategory ?? null,
+    itemType: post.itemType ?? null,
+    itemTypeLabel: post.itemTypeLabel ?? null,
     listingPrice: post.listingPrice ?? null,
     groupId: post.groupId ?? null,
     interactionType: post.interactionType ?? null,

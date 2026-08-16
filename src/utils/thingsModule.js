@@ -30,10 +30,21 @@ export function isCommunityAnnouncementPost(post) {
 
 /** Inzerát do modulu Věci (daruji / prodám / sháním věc / půjčovna) */
 export function isThingsModuleListing(post) {
-  if (!post || !THING_FEED_TYPES.has(post.feedType)) return false;
-  if (isCommunityAnnouncementPost(post)) return false;
+  if (!post || isCommunityAnnouncementPost(post)) return false;
+  if (post.feedType && !THING_FEED_TYPES.has(post.feedType)) return false;
   const cat = post.categoryId ?? post.feedSubtype;
-  return THING_CATEGORY_IDS.has(cat);
+  if (THING_CATEGORY_IDS.has(cat)) return true;
+  if (post.thingKind === "lending") return true;
+  const type = (post.type ?? "").toLowerCase();
+  return /půjčovna|daruji|prodám|prodam|sháním|shanim/i.test(type);
+}
+
+/** Půjčovna — post nebo položka katalogu */
+export function isPujcovnaListing(item) {
+  if (!item) return false;
+  if (item.thingKind === "lending") return true;
+  if (item.categoryId === "pujcovna" || item.feedSubtype === "pujcovna") return true;
+  return (item.type ?? "").toLowerCase().includes("půjčovna");
 }
 
 /** Filtry v modulu Věci — pouze typ nabídky (bez kategorií zboží). */

@@ -4,16 +4,44 @@ import FeedCard from "./FeedCard.jsx";
 import LiveFeedCard, { getListingBadge } from "./LiveFeedCard.jsx";
 import HelpFeedActions from "./HelpFeedActions.jsx";
 import { extractDistanceFromMeta, extractListingPrice } from "./CompactListingRow.jsx";
-import { isThingsModuleListing, isCommunityAnnouncementPost } from "../utils/thingsModule.js";
+import {
+  isThingsModuleListing,
+  isCommunityAnnouncementPost,
+  isPujcovnaListing,
+  normalizeLendingToThing,
+} from "../utils/thingsModule.js";
 import { isServiceOrSponsoredAdPost } from "../utils/categoryAccents.js";
 import { IconMapPin } from "../data/icons.jsx";
 import { REPORTS_TIP_CATEGORY_ID } from "../data/reportCategories.js";
 import { getPostInteractionType, INTERACTION_TYPES } from "../data/postInteractions.js";
 import { getActiveListingSale } from "../data/listingSales.js";
 import { displayCreatorLabel } from "../data/accountTypes.js";
+import { lendingDisplayTitle } from "../data/lendingItemTypes.js";
 
-function isPujcovnaPost(post) {
-  return post?.categoryId === "pujcovna" || (post?.type ?? "").toLowerCase().includes("půjčovna");
+function lendingToLivePost(item) {
+  const thing = normalizeLendingToThing(item);
+  const title = lendingDisplayTitle(thing) || thing.label || thing.item || "Půjčovna";
+  return {
+    id: thing.id,
+    title,
+    body: thing.description || thing.subtitle || "",
+    type: "Půjčovna",
+    categoryId: "pujcovna",
+    feedType: "komunita",
+    feedSubtype: "veci",
+    author: thing.author,
+    authorId: thing.authorId,
+    accountType: thing.accountType,
+    initials: thing.initials,
+    mine: Boolean(thing.mine),
+    photos: thing.photos ?? [],
+    listingPrice: thing.credits ?? thing.listingPrice ?? null,
+    meta: thing.distance || (thing.mine ? "Právě teď · 0 m" : ""),
+    createdAt: thing.createdAt ?? 0,
+    thingKind: "lending",
+    lendingCategory: thing.lendingCategory,
+    itemTypeLabel: thing.itemTypeLabel,
+  };
 }
 
 export default function LiveNeighborFeed() {
@@ -22,6 +50,7 @@ export default function LiveNeighborFeed() {
     neighborHelp,
     userPostsForLocation,
     feedPostsForLocation,
+    lendingItemsForLocation,
     feedGalleryActivities,
     openEventGalleryFromFeed,
     openLendingFromHome,
@@ -57,6 +86,11 @@ export default function LiveNeighborFeed() {
     const communityPosts = [...userPostsForLocation, ...feedPostsForLocation].filter(
       (p) => !isServiceOrSponsoredAdPost(p)
     );
+
+    const postIds = new Set(communityPosts.map((p) => p.id));
+    const lendingPosts = (lendingItemsForLocation ?? [])
+      .filter((item) => item?.id && !postIds.has(item.id))
+      .map(lendingToLivePost);
 
     const gallery = feedGalleryActivities.map((a) => ({
       id: a.id,
@@ -108,8 +142,7 @@ export default function LiveNeighborFeed() {
       .sort((a, b) => b.engagement - a.engagement || (b.createdAt ?? 0) - (a.createdAt ?? 0))
       .slice(0, 4);
 
-    const listings = communityPosts
-      .filter(isThingsModuleListing)
+    const listings = [...communityPosts.filter(isThingsModuleListing), ...lendingPosts]
       .map((p) => {
         const reserved =
           p.saleStatus === "held" || Boolean(getActiveListingSale(listingSaleOrders, p.id));
@@ -122,14 +155,17 @@ export default function LiveNeighborFeed() {
           reserved,
           photoUrl: p.photos?.[0],
           post: p,
-          isPujcovna: isPujcovnaPost(p),
+          isPujcovna: isPujcovnaListing(p),
           mine: Boolean(p.mine),
           createdAt: p.createdAt ?? 0,
           engagement: engagementForPost(p),
         };
       })
-      .sort((a, b) => b.engagement - a.engagement || (b.createdAt ?? 0) - (a.createdAt ?? 0))
-      .slice(0, 8);
+      .sort((a, b) => {
+        if (a.isPujcovna !== b.isPujcovna) return a.isPujcovna ? -1 : 1;
+        return b.engagement - a.engagement || (b.createdAt ?? 0) - (a.createdAt ?? 0);
+      })
+      .slice(0, 10);
 
     const announcements = communityPosts
       .filter(isCommunityAnnouncementPost)
@@ -152,10 +188,14 @@ export default function LiveNeighborFeed() {
     const isFresh = (item) =>
       Boolean(item.mine) ||
       Boolean(item.post?.mine) ||
+      Boolean(item.isPujcovna && (item.createdAt ?? 0) > Date.now() - 1000 * 60 * 60 * 48) ||
       (typeof item.distance === "string" && /právě teď/i.test(item.distance)) ||
       (typeof item.post?.meta === "string" && /právě teď/i.test(item.post.meta));
 
     const byEngagementThenTime = (a, b) => {
+      const ap = a.isPujcovna ? 1 : 0;
+      const bp = b.isPujcovna ? 1 : 0;
+      if (ap !== bp) return bp - ap;
       const de = (b.engagement ?? 0) - (a.engagement ?? 0);
       if (de !== 0) return de;
       return (b.createdAt ?? 0) - (a.createdAt ?? 0);
@@ -169,6 +209,7 @@ export default function LiveNeighborFeed() {
     neighborHelp,
     userPostsForLocation,
     feedPostsForLocation,
+    lendingItemsForLocation,
     feedGalleryActivities,
     formatPersonName,
     getUsefulCount,
