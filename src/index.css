@@ -2373,10 +2373,11 @@ textarea {
   flex-shrink: 0;
   background: var(--pp-pure-white);
   border-bottom: 1px solid #eeeeee;
-  padding: 12px 16px;
+  padding: 8px 12px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  min-height: 3rem;
 }
 
 .pp-profile-overlay-body {
@@ -2386,16 +2387,45 @@ textarea {
   overscroll-behavior: contain;
 }
 
+/* Zpět v horní liště — spolehlivé na telefonu (ne pod systémovou lištou) */
+.pp-overlay-back-btn {
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  border: 1px solid #d6e5df;
+  background: #f1f6f5;
+  color: #1b4d3e;
+  font-size: 1.25rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+}
+
+.pp-overlay-back-btn:active {
+  transform: scale(0.96);
+  background: #e8f3ef;
+}
+
+@media (pointer: coarse) {
+  .pp-overlay-back-btn {
+    width: 3rem;
+    height: 3rem;
+  }
+}
+
 .pp-profile-overlay-body--with-back {
   padding-bottom: 4.5rem;
 }
 
-/* Zpět — plovoucí tlačítko vpravo dole (profil, zprávy) */
+/* Zpět — legacy FAB (ponecháno kvůli případným starším místům) */
 .pp-back-fab {
   position: absolute;
   right: 0.75rem;
-  bottom: 0.75rem;
-  z-index: 30;
+  bottom: calc(0.75rem + max(16px, env(safe-area-inset-bottom, 0px)));
+  z-index: 60;
   width: 2.75rem;
   height: 2.75rem;
   border-radius: 999px;
@@ -2409,6 +2439,7 @@ textarea {
   justify-content: center;
   box-shadow: 0 2px 10px rgba(27, 77, 62, 0.28);
   transition: transform 0.12s ease, filter 0.12s ease;
+  touch-action: manipulation;
 }
 
 .pp-back-fab:hover {

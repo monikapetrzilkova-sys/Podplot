@@ -137,18 +137,18 @@ function AppPanelOverlay({ open, title, onClose, children }) {
   return (
     <div className="pp-profile-overlay" role="dialog" aria-label={title}>
       <div className="pp-profile-overlay-header">
-        <span className="text-sm font-bold text-stone-900">{title}</span>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Zpět"
+          title="Zpět"
+          className="pp-overlay-back-btn"
+        >
+          ←
+        </button>
+        <span className="text-sm font-bold text-stone-900 min-w-0 truncate">{title}</span>
       </div>
-      <div className="pp-profile-overlay-body pp-profile-overlay-body--with-back">{children}</div>
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Zpět"
-        title="Zpět"
-        className="pp-back-fab"
-      >
-        ←
-      </button>
+      <div className="pp-profile-overlay-body">{children}</div>
     </div>
   );
 }
@@ -174,9 +174,19 @@ function ProfileOverlay() {
 }
 
 function MessagesOverlay() {
-  const { messagesOpen, closeMessages } = useApp();
+  const { messagesOpen, closeMessages, chatModal, closeChat } = useApp();
+
+  const handleBack = () => {
+    // Nejdřív zavřít otevřenou konverzaci, pak seznam zpráv
+    if (chatModal) {
+      closeChat();
+      return;
+    }
+    closeMessages();
+  };
+
   return (
-    <AppPanelOverlay open={messagesOpen} title="Zprávy" onClose={closeMessages}>
+    <AppPanelOverlay open={messagesOpen} title="Zprávy" onClose={handleBack}>
       <MessagesPage embedded />
     </AppPanelOverlay>
   );

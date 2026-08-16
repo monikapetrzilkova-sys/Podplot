@@ -88,8 +88,14 @@ export default function ChatModal({ open, onClose, participantName, participantI
 
   return (
     <div className="absolute inset-0 z-[60] flex flex-col bg-white">
-      <header className="flex items-center gap-3 px-4 py-3 border-b border-stone-200 shrink-0">
-        <button type="button" onClick={onClose} className="text-stone-500 text-lg">
+      <header className="flex items-center gap-2 px-3 py-2.5 border-b border-stone-200 shrink-0">
+        <button
+          type="button"
+          onClick={onClose}
+          className="pp-overlay-back-btn"
+          aria-label="Zpět na zprávy"
+          title="Zpět"
+        >
           ←
         </button>
         {participantService ? (
@@ -102,13 +108,13 @@ export default function ChatModal({ open, onClose, participantName, participantI
                 name: participantService.name,
               })
             }
-            className="font-semibold text-[#1B4D3E] truncate text-left hover:underline underline-offset-2"
+            className="font-semibold text-[#1B4D3E] truncate text-left hover:underline underline-offset-2 min-w-0"
             title="Zobrazit profil a recenze"
           >
             {displayName}
           </button>
         ) : (
-          <h2 className="font-semibold text-stone-900 truncate">{displayName}</h2>
+          <h2 className="font-semibold text-stone-900 truncate min-w-0">{displayName}</h2>
         )}
       </header>
 
