@@ -2,10 +2,20 @@ import { useApp } from "../context/AppContext.jsx";
 import NewMessageComposer from "./NewMessageComposer.jsx";
 import { Avatar } from "./RoleBadge.jsx";
 import PersonLabel from "./PersonLabel.jsx";
-import { DoodleChatIcon } from "./doodle/doodleIcons.jsx";
+import { DoodleChatIcon, LOCATION_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
+
+function chatLocationLabel(chat, locations) {
+  const locId = chat?.locationId;
+  if (!locId || !locations?.length) return null;
+  const loc = locations.find((l) => l.id === locId);
+  if (!loc) return null;
+  const place = loc.shortLabel || loc.municipality || "";
+  if (place && place !== loc.label) return `${loc.label} · ${place}`;
+  return loc.label || place || null;
+}
 
 export default function MessagesPage({ embedded = false }) {
-  const { chats, openChat, blockedUserIds, getPersonPhoto } = useApp();
+  const { chats, openChat, blockedUserIds, getPersonPhoto, locations } = useApp();
 
   const visible = chats.filter((c) => !blockedUserIds.includes(c.participantId));
 
@@ -36,6 +46,11 @@ export default function MessagesPage({ embedded = false }) {
               .slice(0, 2)
               .toUpperCase();
             const photo = getPersonPhoto?.(chat.participantId);
+            const locationLabel = chatLocationLabel(chat, locations);
+            const LocIcon =
+              chat.locationId
+                ? LOCATION_DOODLE_ICONS[chat.locationId] ?? LOCATION_DOODLE_ICONS.domov
+                : null;
             return (
               <button
                 key={chat.chatId}
@@ -69,6 +84,12 @@ export default function MessagesPage({ embedded = false }) {
                         <span className="text-[10px] text-stone-400">{chat.lastTime}</span>
                       </div>
                     </div>
+                    {locationLabel ? (
+                      <p className="text-[11px] text-[#3D7A68] font-medium mb-0.5 flex items-center gap-1 min-w-0">
+                        {LocIcon ? <LocIcon className="w-3 h-3 shrink-0" aria-hidden /> : null}
+                        <span className="truncate">{locationLabel}</span>
+                      </p>
+                    ) : null}
                     <p className={`text-sm truncate ${unread > 0 ? "text-stone-700 font-medium" : "text-stone-500"}`}>
                       {chat.lastMessage}
                     </p>
@@ -127,4 +148,3 @@ export function MessageButton({
     </button>
   );
 }
-

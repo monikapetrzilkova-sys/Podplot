@@ -22,6 +22,16 @@ function formatMsgTime(iso) {
   }
 }
 
+/** Moje lokace u konverzace — z první odeslané zprávy s myLocationId. */
+export function locationIdFromChatMessages(messages = []) {
+  for (const m of messages) {
+    if (m?.sender !== "me") continue;
+    const id = m.meta?.myLocationId || m.meta?.locationId;
+    if (id) return id;
+  }
+  return null;
+}
+
 /** Řádky DB → pole chatů jako v appce. */
 export function rowsToChats(rows, currentUserId) {
   if (!currentUserId || !Array.isArray(rows)) return [];
@@ -39,6 +49,7 @@ export function rowsToChats(rows, currentUserId) {
       ? row.recipient_name || "Soused"
       : row.sender_name || "Soused";
     const time = formatMsgTime(row.created_at);
+    const rowMeta = row.meta && typeof row.meta === "object" ? row.meta : null;
     const msg = {
       id: row.id,
       sender: iAmSender ? "me" : "them",
@@ -46,7 +57,7 @@ export function rowsToChats(rows, currentUserId) {
       time,
       status: iAmSender ? (row.read_at ? "read" : "delivered") : undefined,
       createdAt: row.created_at,
-      ...(row.meta && typeof row.meta === "object" ? { meta: row.meta } : null),
+      ...(rowMeta ? { meta: rowMeta } : null),
     };
 
     let chat = byPeer.get(peerId);
@@ -60,6 +71,7 @@ export function rowsToChats(rows, currentUserId) {
         unread: 0,
         messages: [],
         sharedRemote: true,
+        locationId: null,
       };
       byPeer.set(peerId, chat);
     } else if (!iAmSender && row.sender_name) {
@@ -72,13 +84,22 @@ export function rowsToChats(rows, currentUserId) {
     if (!iAmSender && !row.read_at) {
       chat.unread = (chat.unread ?? 0) + 1;
     }
+    if (!chat.locationId && iAmSender) {
+      const fromMeta = rowMeta?.myLocationId || rowMeta?.locationId;
+      if (fromMeta) chat.locationId = fromMeta;
+    }
   }
 
-  return [...byPeer.values()].sort((a, b) => {
-    const ta = a.messages[a.messages.length - 1]?.createdAt ?? "";
-    const tb = b.messages[b.messages.length - 1]?.createdAt ?? "";
-    return new Date(tb).getTime() - new Date(ta).getTime();
-  });
+  return [...byPeer.values()]
+    .map((chat) => ({
+      ...chat,
+      locationId: chat.locationId || locationIdFromChatMessages(chat.messages),
+    }))
+    .sort((a, b) => {
+      const ta = a.messages[a.messages.length - 1]?.createdAt ?? "";
+      const tb = b.messages[b.messages.length - 1]?.createdAt ?? "";
+      return new Date(tb).getTime() - new Date(ta).getTime();
+    });
 }
 
 export async function fetchRemoteMessages(currentUserId) {

@@ -129,6 +129,7 @@ import {
   subscribeRemoteMessages,
   rowsToChats,
   markRemoteMessagesRead,
+  locationIdFromChatMessages,
 } from "../data/messagesApi.js";
 import {
   normalizeChatTopic,
@@ -1048,7 +1049,11 @@ export function AppProvider({ children }) {
         for (const c of remoteChats) {
           const existing = byPeer.get(c.participantId);
           if (!existing) {
-            byPeer.set(c.participantId, c);
+            byPeer.set(c.participantId, {
+              ...c,
+              locationId:
+                c.locationId || locationIdFromChatMessages(c.messages) || null,
+            });
             continue;
           }
           const msgById = new Map((existing.messages ?? []).map((m) => [m.id, m]));
@@ -1071,9 +1076,20 @@ export function AppProvider({ children }) {
             lastTime: last?.time ?? c.lastTime,
             unread: c.unread ?? existing.unread ?? 0,
             sharedRemote: true,
+            locationId:
+              existing.locationId ||
+              c.locationId ||
+              locationIdFromChatMessages(messages) ||
+              null,
           });
         }
-        return [...byPeer.values()];
+        return [...byPeer.values()].map((chat) => ({
+          ...chat,
+          locationId:
+            chat.locationId ||
+            locationIdFromChatMessages(chat.messages) ||
+            null,
+        }));
       });
     };
 
@@ -4068,6 +4084,7 @@ export function AppProvider({ children }) {
       const msgId = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
       const body = text.trim();
       const createdAt = new Date().toISOString();
+      const myLocationId = activeLocationId || "domov";
 
       let finalMeta = meta;
       if (meta) {
@@ -4080,6 +4097,7 @@ export function AppProvider({ children }) {
           finalMeta = topicToMessageMeta(meta.topic || meta);
         }
       }
+      finalMeta = { ...(finalMeta && typeof finalMeta === "object" ? finalMeta : {}), myLocationId };
 
       setChats((prev) => {
         const idx = prev.findIndex((c) => c.participantId === participantId);
@@ -4090,7 +4108,7 @@ export function AppProvider({ children }) {
           time,
           status: "sent",
           createdAt,
-          ...(finalMeta ? { meta: finalMeta } : null),
+          meta: finalMeta,
         };
         if (idx >= 0) {
           const updated = [...prev];
@@ -4098,6 +4116,7 @@ export function AppProvider({ children }) {
             ...updated[idx],
             lastMessage: body,
             lastTime: time,
+            locationId: updated[idx].locationId || myLocationId,
             messages: [...updated[idx].messages, msg],
             sharedRemote: true,
           };
@@ -4108,6 +4127,7 @@ export function AppProvider({ children }) {
             chatId: `chat-${participantId}`,
             participantId,
             participantName: participantName || "Soused",
+            locationId: myLocationId,
             lastMessage: body,
             lastTime: time,
             unread: 0,
@@ -4144,7 +4164,7 @@ export function AppProvider({ children }) {
         );
       }, 900);
     },
-    [user?.id, user?.name]
+    [user?.id, user?.name, activeLocationId]
   );
 
   const updatePromptStatus = useCallback(
@@ -4295,6 +4315,7 @@ export function AppProvider({ children }) {
     (participantId, participantName, text) => {
       const time = nowTime();
       const chatOpen = chatModal?.participantId === participantId;
+      const fallbackLocationId = activeLocationId || "domov";
       setChats((prev) => {
         const idx = prev.findIndex((c) => c.participantId === participantId);
         const prior = idx >= 0 ? prev[idx].messages : [];
@@ -4320,6 +4341,7 @@ export function AppProvider({ children }) {
             ...updated[idx],
             lastMessage: text,
             lastTime: time,
+            locationId: updated[idx].locationId || fallbackLocationId,
             unread: chatOpen ? 0 : (updated[idx].unread ?? 0) + 1,
             messages: [...markMineRead(updated[idx].messages), msg],
           };
@@ -4330,6 +4352,7 @@ export function AppProvider({ children }) {
             chatId: `chat-${participantId}`,
             participantId,
             participantName,
+            locationId: fallbackLocationId,
             lastMessage: text,
             lastTime: time,
             unread: chatOpen ? 0 : 1,
@@ -4339,7 +4362,7 @@ export function AppProvider({ children }) {
         ];
       });
     },
-    [chatModal]
+    [chatModal, activeLocationId]
   );
 
   const markChatRead = useCallback(
