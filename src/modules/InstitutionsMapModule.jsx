@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import ReportsMap from "../components/ReportsMap.jsx";
 import InstitutionDetailCard from "../components/InstitutionDetailCard.jsx";
+import MapInstitutionPreviewSheet from "../components/map/MapEntityPreviewSheet.jsx";
 import {
   INSTITUTION_MAP_CATEGORIES,
   institutionMatchesCategory,
@@ -18,6 +19,7 @@ export default function InstitutionsMapModule() {
   } = useApp();
 
   const [selectedPlaceId, setSelectedPlaceId] = useState(null);
+  const [detailPlace, setDetailPlace] = useState(null);
 
   const filtered = useMemo(
     () => institutionsForMap.filter((p) => institutionMatchesCategory(p, institutionMapCategory)),
@@ -25,6 +27,16 @@ export default function InstitutionsMapModule() {
   );
 
   const selectedPlace = filtered.find((p) => p.id === selectedPlaceId) ?? null;
+
+  const handlePinClick = (place) => {
+    if (selectedPlaceId === place.id) {
+      setSelectedPlaceId(null);
+      setDetailPlace(null);
+      return;
+    }
+    setSelectedPlaceId(place.id);
+    setDetailPlace(null);
+  };
 
   return (
     <div className="px-4 py-3">
@@ -42,22 +54,31 @@ export default function InstitutionsMapModule() {
         className="mb-3"
       />
 
-      <ReportsMap
-        mapMode="institutions"
-        institutions={filtered}
-        onInstitutionPinClick={(place) => setSelectedPlaceId(place.id)}
-        selectedInstitutionId={selectedPlaceId}
-        large
-        legendCollapsible
-        userAddress={activeLocation?.address ?? user?.address ?? ""}
-        userGeo={user?.geo ?? null}
-        areaLabel={activeLocation?.shortLabel}
-        homeLabel={activeLocation?.label ?? "Domov"}
-        totalCount={filtered.length}
-      />
+      <div className="relative">
+        <ReportsMap
+          mapMode="institutions"
+          institutions={filtered}
+          onInstitutionPinClick={handlePinClick}
+          selectedInstitutionId={selectedPlaceId}
+          large
+          legendCollapsible
+          userAddress={activeLocation?.address ?? user?.address ?? ""}
+          userGeo={user?.geo ?? null}
+          areaLabel={activeLocation?.shortLabel}
+          homeLabel={activeLocation?.label ?? "Domov"}
+          totalCount={filtered.length}
+        />
+        {selectedPlace && !detailPlace && (
+          <MapInstitutionPreviewSheet
+            place={selectedPlace}
+            onDetail={() => setDetailPlace(selectedPlace)}
+            onClose={() => setSelectedPlaceId(null)}
+          />
+        )}
+      </div>
 
-      {selectedPlace && (
-        <InstitutionDetailCard place={selectedPlace} onClose={() => setSelectedPlaceId(null)} />
+      {detailPlace && (
+        <InstitutionDetailCard place={detailPlace} onClose={() => setDetailPlace(null)} />
       )}
     </div>
   );

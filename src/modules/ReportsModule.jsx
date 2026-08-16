@@ -6,6 +6,7 @@ import MapAddMenuFab from "../components/module/MapAddMenuFab.jsx";
 import ListView, { ListItemShell } from "../components/module/ListView.jsx";
 import MapRadiusOverlay from "../components/map/MapRadiusOverlay.jsx";
 import ReportDetailModal from "../components/ReportDetailModal.jsx";
+import ReportMapPreviewSheet from "../components/module/ReportMapPreviewSheet.jsx";
 import { MODULE_IDS } from "../data/moduleConfig.js";
 import {
   MIN_REPORTS_MAP_RADIUS_KM,
@@ -131,6 +132,10 @@ export default function ReportsModule({
   );
 
   const selectedId = moduleSelection?.module === moduleId ? moduleSelection.id : null;
+  const selectedReport =
+    mapReports.find((r) => r.id === selectedId) ??
+    reportsInRadius.find((r) => r.id === selectedId) ??
+    null;
   const urgentCount = reportsInRadius.filter((r) => r.urgent).length;
 
   const openReportDetail = (report) => {
@@ -141,7 +146,20 @@ export default function ReportsModule({
 
   const closeReportDetail = () => {
     setDetailReport(null);
+  };
+
+  const closeReportPreview = () => {
+    setDetailReport(null);
     clearModuleSelection();
+  };
+
+  const handleReportPinClick = (r) => {
+    if (selectedId === r.id) {
+      closeReportPreview();
+      return;
+    }
+    selectModuleItem(moduleId, r.id);
+    setDetailReport(null);
   };
 
   const showAddMenu = !pickMode && addMenuActions?.length > 0;
@@ -169,13 +187,7 @@ export default function ReportsModule({
             pickMode={pickMode}
             draftPin={draftPin}
             onPickPin={onPickPin}
-            onReportPinClick={(r) => {
-              if (selectedId === r.id && liveDetailReport?.id === r.id) {
-                closeReportDetail();
-              } else {
-                openReportDetail(r);
-              }
-            }}
+            onReportPinClick={handleReportPinClick}
             selectedReportId={selectedId}
             userAddress={activeLocation?.address ?? user?.address ?? ""}
             userGeo={user?.geo ?? null}
@@ -189,6 +201,13 @@ export default function ReportsModule({
             fluid
             className="flex flex-col flex-1 min-h-0 mb-0"
           />
+          {selectedReport && !detailReport && !pickMode && (
+            <ReportMapPreviewSheet
+              report={selectedReport}
+              onDetail={() => openReportDetail(selectedReport)}
+              onClose={closeReportPreview}
+            />
+          )}
           {radiusControl && viewMode === "map" && (
             <div className="pp-map-radius-overlay pp-map-radius-overlay--with-toggle pp-map-radius-overlay--compact">
               {radiusControl}

@@ -132,7 +132,8 @@ export default function MapModule({ provozovnaType = null }) {
   const sheetPlace = previewPlace ?? selectedPlace;
 
   const handleInstitutionPinClick = async (place) => {
-    if (selectedId === place.id && detailPlace?.id === place.id) {
+    // Stejný špendlík znovu = zavřít náhled (detail se otevírá jen přes „Zobrazit detail“)
+    if (selectedId === place.id) {
       clearModuleSelection();
       setPreviewPlace(null);
       setDetailPlace(null);
@@ -141,7 +142,7 @@ export default function MapModule({ provozovnaType = null }) {
 
     selectModuleItem(moduleId, place.id);
     setPreviewPlace(place);
-    setDetailPlace(place);
+    setDetailPlace(null);
     setPreviewLoading(Boolean(place.isGooglePlace && place.googlePlaceId));
 
     if (place.isGooglePlace && place.googlePlaceId) {
@@ -150,7 +151,6 @@ export default function MapModule({ provozovnaType = null }) {
         if (details && !details.error) {
           const merged = mergeGooglePlaceDetails(place, details);
           setPreviewPlace(merged);
-          setDetailPlace(merged);
         }
       } finally {
         setPreviewLoading(false);
