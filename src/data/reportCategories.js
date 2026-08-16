@@ -7,7 +7,7 @@ import { classifyReportType } from "../utils/reportPinUtils.js";
  * Tipy = sousedské tipy (obchod, místo…) — ukládají se jako hlášení s kategorií tip.
  */
 export const REPORT_CATEGORIES = [
-  { id: "loss", label: "Ztráta / nález", shortLabel: "Ztráta/Nález", typeLabel: "Ztráta" },
+  { id: "loss", label: "Ztráta / nález", shortLabel: "Ztráta/Nález", typeLabel: "Ztráta / nález" },
   { id: "animal", label: "Zvíře", shortLabel: "Zvíře", typeLabel: "Zatoulané zvíře" },
   { id: "damage", label: "Závada / nehoda", shortLabel: "Závada", typeLabel: "Závada" },
   {
@@ -34,6 +34,16 @@ export const MAP_REPORT_FILTER_CATEGORIES = [
 
 export const REPORTS_CALLS_FILTER_ID = "vyzvy";
 export const REPORTS_TIP_CATEGORY_ID = "tip";
+
+/** Podtyp u kategorie Ztráta / nález — povinný výběr ve formuláři */
+export const LOSS_KIND_OPTIONS = [
+  { id: "lost", label: "Ztráta", typeLabel: "Ztráta", hint: "Něco jsem ztratil/a nebo hledám" },
+  { id: "found", label: "Nález", typeLabel: "Nález", hint: "Něco jsem našel/a" },
+];
+
+export function getLossKindOption(id) {
+  return LOSS_KIND_OPTIONS.find((o) => o.id === id) ?? null;
+}
 
 /** Odstín tipů — limetkově zelená */
 export const REPORT_TIP_ACCENT = "#8FAE3E";

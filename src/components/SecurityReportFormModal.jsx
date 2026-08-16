@@ -15,7 +15,7 @@ import {
 } from "../data/reportUrgency.js";
 import { IconMapPin } from "../data/icons.jsx";
 import CzechDateTimeFields from "./CzechDateTimeFields.jsx";
-import { REPORTS_TIP_CATEGORY_ID } from "../data/reportCategories.js";
+import { REPORTS_TIP_CATEGORY_ID, LOSS_KIND_OPTIONS } from "../data/reportCategories.js";
 
 export default function SecurityReportFormModal({
   mode,
@@ -30,6 +30,8 @@ export default function SecurityReportFormModal({
   pinError,
   reportCategoryId,
   setReportCategoryId,
+  lossKind = "",
+  setLossKind,
   categoryError,
   reportTypeDetail,
   setReportTypeDetail,
@@ -165,6 +167,41 @@ export default function SecurityReportFormModal({
                   onSelect={setReportCategoryId}
                 />
 
+                {reportCategoryId === "loss" && (
+                  <div>
+                    <p className="text-xs font-semibold text-stone-600 mb-1.5">
+                      Je to ztráta, nebo nález? *
+                    </p>
+                    <div className="grid grid-cols-2 gap-2" role="group" aria-label="Ztráta nebo nález">
+                      {LOSS_KIND_OPTIONS.map((opt) => {
+                        const active = lossKind === opt.id;
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => setLossKind?.(opt.id)}
+                            aria-pressed={active}
+                            className={`text-left px-3 py-2.5 rounded-xl border transition-colors ${
+                              active
+                                ? "bg-emerald-700 text-white border-emerald-700 shadow-sm"
+                                : "bg-white text-stone-800 border-stone-200 hover:border-emerald-300 hover:bg-emerald-50/50"
+                            }`}
+                          >
+                            <span className="block text-sm font-bold">{opt.label}</span>
+                            <span
+                              className={`block text-[11px] mt-0.5 leading-snug ${
+                                active ? "text-white/85" : "text-stone-500"
+                              }`}
+                            >
+                              {opt.hint}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 <input
                   type="text"
                   value={reportTypeDetail}
@@ -172,7 +209,13 @@ export default function SecurityReportFormModal({
                   placeholder={
                     isTip
                       ? "Upřesnění (volitelné, např. Bio obchod, dětské hřiště…)"
-                      : "Upřesnění typu (volitelné, např. Ztráta klíčů…)"
+                      : reportCategoryId === "loss"
+                        ? lossKind === "found"
+                          ? "Upřesnění (volitelné, např. klíče u lavičky…)"
+                          : lossKind === "lost"
+                            ? "Upřesnění (volitelné, např. černá peněženka…)"
+                            : "Upřesnění (volitelné)"
+                        : "Upřesnění typu (volitelné, např. výpadek proudu…)"
                   }
                   className="w-full min-w-0 px-3 py-2 border border-stone-200 rounded-xl text-sm"
                 />

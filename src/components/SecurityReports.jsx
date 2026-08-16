@@ -8,6 +8,7 @@ import { filterActiveReports } from "../data/reportExpiry.js";
 import { MODULE_IDS } from "../data/moduleConfig.js";
 import {
   getReportCategory,
+  getLossKindOption,
   reportMatchesMapCategoryFilter,
   REPORTS_CALLS_FILTER_ID,
   REPORT_CALLS_ACCENT,
@@ -56,6 +57,8 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
   /** Výběr místa na mapě před otevřením formuláře */
   const [pendingForm, setPendingForm] = useState(null);
   const [reportCategoryId, setReportCategoryId] = useState("");
+  /** u kategorie loss: "lost" | "found" | "" */
+  const [lossKind, setLossKind] = useState("");
   const [reportTypeDetail, setReportTypeDetail] = useState("");
   const [reportBody, setReportBody] = useState("");
   const [categoryError, setCategoryError] = useState("");
@@ -99,6 +102,7 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
   const resetForms = () => {
     setActiveForm(null);
     setReportCategoryId("");
+    setLossKind("");
     setReportTypeDetail("");
     setReportBody("");
     setCategoryError("");
@@ -220,6 +224,10 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
       setCategoryError("Vyberte kategorii hlášení.");
       return;
     }
+    if (reportCategoryId === "loss" && !lossKind) {
+      setCategoryError("U ztráty / nálezu vyberte, jestli jde o ztrátu, nebo nález.");
+      return;
+    }
     if (!reportBody.trim()) return;
     const municipalityWide = isUrgent && urgentScope === URGENT_SCOPE.MUNICIPALITY;
     if (!municipalityWide && !draftPin) {
@@ -237,12 +245,15 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
     setPinError("");
     setCategoryError("");
     const category = getReportCategory(reportCategoryId);
+    const lossOption = reportCategoryId === "loss" ? getLossKindOption(lossKind) : null;
+    const baseType = lossOption?.typeLabel || category.typeLabel;
     const typeLabel = reportTypeDetail.trim()
-      ? `${category.typeLabel} — ${reportTypeDetail.trim()}`
-      : category.typeLabel;
+      ? `${baseType} — ${reportTypeDetail.trim()}`
+      : baseType;
     addSecurityReport({
       type: typeLabel,
       reportCategoryId,
+      lossKind: reportCategoryId === "loss" ? lossKind : null,
       body: reportBody.trim(),
       mapPos: municipalityWide ? draftPin ?? { x: 50, y: 50 } : draftPin,
       urgent: isUrgent && (isAdminMode || isInstitution) && reportCategoryId !== "tip",
@@ -543,10 +554,16 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
         setReportCategoryId={(id) => {
           setReportCategoryId(id);
           setCategoryError("");
+          if (id !== "loss") setLossKind("");
           if (id === "tip") {
             setAlsoAsPrompt(false);
             setIsUrgent(false);
           }
+        }}
+        lossKind={lossKind}
+        setLossKind={(kind) => {
+          setLossKind(kind);
+          setCategoryError("");
         }}
         categoryError={categoryError}
         reportTypeDetail={reportTypeDetail}
