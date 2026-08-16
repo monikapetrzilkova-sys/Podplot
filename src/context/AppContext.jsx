@@ -4005,14 +4005,17 @@ export function AppProvider({ children }) {
         participantId,
         participantName,
         activeTopic: normalizeChatTopic(topic),
+        // Když zprávy už byly otevřené, ← vrátí na seznam; jinak rovnou pryč
+        dismissMessagesOnClose: !messagesOpen,
       });
     },
-    [markChatRead]
+    [markChatRead, messagesOpen]
   );
 
   const startChat = useCallback(
     (participantId, participantName, initialMessage, topic = null) => {
       const activeTopic = normalizeChatTopic(topic);
+      const dismissMessagesOnClose = !messagesOpen;
       if (initialMessage?.trim()) {
         sendMessage(
           participantId,
@@ -4026,9 +4029,10 @@ export function AppProvider({ children }) {
         participantId,
         participantName,
         activeTopic,
+        dismissMessagesOnClose,
       });
     },
-    [sendMessage, markChatRead]
+    [sendMessage, markChatRead, messagesOpen]
   );
 
   const setChatActiveTopic = useCallback((topic) => {
@@ -4040,10 +4044,10 @@ export function AppProvider({ children }) {
   useEffect(() => {
     if (!helpOfferChatKickoff) return;
     const { participantId, participantName, message, topic } = helpOfferChatKickoff;
-    openMessages();
+    // Jen chat přes aktuální obrazovku — neotevírat seznam zpráv (jeden krok zpět)
     startChat(participantId, participantName, message, topic);
     setHelpOfferChatKickoff(null);
-  }, [helpOfferChatKickoff, openMessages, startChat]);
+  }, [helpOfferChatKickoff, startChat]);
 
   // Klik na systémové upozornění / SW → otevřít chat
   useEffect(() => {
@@ -4075,7 +4079,14 @@ export function AppProvider({ children }) {
     };
   }, [openMessages, openChat]);
 
-  const closeChat = useCallback(() => setChatModal(null), []);
+  const closeChat = useCallback(() => {
+    setChatModal((prev) => {
+      if (prev?.dismissMessagesOnClose) {
+        setMessagesOpen(false);
+      }
+      return null;
+    });
+  }, []);
 
   const joinEvent = useCallback((eventId) => {
     if (!user) return;

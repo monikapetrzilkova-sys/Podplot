@@ -162,10 +162,10 @@ export default function ChatModal({
           type="button"
           onClick={onClose}
           className="pp-overlay-back-btn"
-          aria-label="Zpět na zprávy"
-          title="Zpět"
+          aria-label="Zavřít"
+          title="Zavřít"
         >
-          ←
+          ×
         </button>
         {participantService ? (
           <button
