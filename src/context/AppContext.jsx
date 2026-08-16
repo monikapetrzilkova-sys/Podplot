@@ -3425,7 +3425,7 @@ export function AppProvider({ children }) {
         groupName: group?.name,
         mine: true,
         createdAt: Date.now(),
-        photos: photos.map((p) => p.url ?? p),
+        photos: (photos ?? []).map((p) => (typeof p === "string" ? p : p?.url)).filter(Boolean),
         isVerified: user.isVerified ?? false,
         verifiedDomain: user.verifiedDomain ?? null,
         locationId: activeLocationId,
@@ -3667,7 +3667,7 @@ export function AppProvider({ children }) {
         mine: true,
         createdAt: Date.now(),
         locationId: activeLocationId,
-        photos: photoUrls,
+        photos: photoUrls.map((p) => (typeof p === "string" ? p : p?.url)).filter(Boolean),
       };
       setUserGroupPosts((prev) => [post, ...prev]);
       setUserPosts((prev) => [post, ...prev]);

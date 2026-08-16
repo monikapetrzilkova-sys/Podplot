@@ -332,7 +332,12 @@ export default function FeedCard({ post, compact = false, detailsOnly = false })
 
       <div className={compact ? "p-3" : "p-4"}>
         <div className="flex items-start gap-3 mb-2">
-          <Avatar initials={post.initials} roleId={post.role} size={compact ? "sm" : "md"} />
+          <Avatar
+            initials={post.initials}
+            name={post.author}
+            roleId={post.role}
+            size={compact ? "sm" : "md"}
+          />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-0.5">
               <span className="pp-text-title">{authorLabel}</span>

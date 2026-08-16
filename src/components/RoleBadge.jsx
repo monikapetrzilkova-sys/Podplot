@@ -1,5 +1,6 @@
 import { getRole } from "../data/roles.js";
 import { RoleIcon } from "../data/icons.jsx";
+import { initialsFromName } from "../utils/listingPhotos.js";
 
 export default function RoleBadge({ roleId, size = "sm" }) {
   const role = getRole(roleId);
@@ -13,13 +14,15 @@ export default function RoleBadge({ roleId, size = "sm" }) {
   );
 }
 
-export function Avatar({ initials, roleId, size = "md", photo = null }) {
+export function Avatar({ initials, roleId, size = "md", photo = null, name = null }) {
   const role = getRole(roleId);
   const sizes = {
     sm: "w-8 h-8 text-[10px]",
     md: "w-10 h-10 text-xs",
     lg: "w-14 h-14 text-base",
   };
+  const label =
+    initials && initials !== "??" ? initials : initialsFromName(name || initials);
 
   if (photo) {
     return (
@@ -35,7 +38,7 @@ export function Avatar({ initials, roleId, size = "md", photo = null }) {
     <div
       className={`${sizes[size]} rounded-full flex items-center justify-center font-bold shrink-0 ${role.bg} ${role.text} ring-2 ring-white`}
     >
-      {initials}
+      {label}
     </div>
   );
 }

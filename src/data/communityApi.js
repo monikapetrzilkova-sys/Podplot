@@ -5,6 +5,7 @@
 
 import { ensureSupabase } from "../lib/supabaseClient.js";
 import { municipalitiesMatch } from "./geoFilter.js";
+import { initialsFromName, normalizePhotoList } from "../utils/listingPhotos.js";
 
 function inferCategoryIdFromType(type) {
   const t = String(type ?? "").toLowerCase();
@@ -20,13 +21,13 @@ function rowToFeedPost(row, currentUserId) {
   const type = row.type ?? "Příspěvek";
   const categoryId =
     payload.categoryId ?? inferCategoryIdFromType(type) ?? null;
-  return {
+  const base = {
     id: row.id,
     role: payload.role ?? null,
     accountType: row.account_type ?? payload.accountType ?? null,
     author: row.author_name,
     authorId: row.author_id,
-    initials: row.author_initials ?? "??",
+    initials: row.author_initials || initialsFromName(row.author_name),
     title: row.title,
     body: row.body ?? "",
     meta: row.meta ?? "",
@@ -34,7 +35,6 @@ function rowToFeedPost(row, currentUserId) {
     feedType: row.feed_type ?? "komunita",
     feedSubtype: row.feed_subtype ?? (categoryId ? "veci" : null),
     mine: Boolean(currentUserId && row.author_id === currentUserId),
-    photos: Array.isArray(row.photos) ? row.photos : [],
     isVerified: Boolean(payload.isVerified),
     locationId: row.location_id ?? null,
     municipality: row.municipality ?? null,
@@ -54,6 +54,12 @@ function rowToFeedPost(row, currentUserId) {
     sharedRemote: true,
     ...payload.extra,
   };
+  // Fotky vždy z řádku DB (ne z payload.extra) a jako čisté URL řetězce
+  base.photos = normalizePhotoList(row.photos ?? base.photos);
+  if (!base.initials || base.initials === "??") {
+    base.initials = initialsFromName(base.author);
+  }
+  return base;
 }
 
 export async function upsertRemoteProfile(user) {
@@ -458,7 +464,7 @@ export async function publishRemotePost(post, user) {
       feed_subtype: post.feedSubtype ?? null,
       location_id: post.locationId ?? null,
       municipality: post.municipality ?? null,
-      photos: post.photos ?? [],
+      photos: normalizePhotoList(post.photos),
       map_pos: post.mapPos ?? null,
       lat: post.lat ?? post.mapPos?.lat ?? null,
       lng: post.lng ?? post.mapPos?.lng ?? null,
