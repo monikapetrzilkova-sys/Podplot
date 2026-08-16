@@ -6,7 +6,7 @@ import { calculateTopCost, getTopPlan, canTopCategory } from "../data/pricing.js
 import { getAccountType, normalizeAccountType, resolveBusinessSubtype } from "../data/accountTypes.js";
 import { CLUB_VOTES_REQUIRED, getClubCategory } from "../data/clubCategories.js";
 import { inferFeedClassification, getDefaultSubfilter } from "../data/feedNavigation.js";
-import { USER_LOCATIONS, getGroupsForLocation } from "../data/locations.js";
+import { USER_LOCATIONS, getGroupsForLocation, DEFAULT_RADIUS_KM } from "../data/locations.js";
 import { filterByRadius, filterByMunicipality, filterByActiveLocation } from "../data/geoFilter.js";
 import { FEED_POSTS, LENDING_ITEMS } from "../data/mockData.js";
 import { AREA_NEWS, getAreaNewsForLocation, getActiveCrisis } from "../data/areaNews.js";
@@ -1603,13 +1603,16 @@ export function AppProvider({ children }) {
       const loc = locations.find((l) => l.id === id);
       setCommunityGroups(getGroupsForLocation(id));
       setFeedSubFilter(getDefaultSubfilter(feedMainMode));
+      setMapRootKey((k) => k + 1);
+      setNeighborsRootKey((k) => k + 1);
+      clearModuleSelection();
       showToast(
-        `Lokalita: ${loc?.label} (${loc?.shortLabel}) — obsah překreslen.`,
+        `Lokalita: ${loc?.label ?? "místo"} (${loc?.shortLabel ?? loc?.municipality ?? ""}) — obsah přemapován.`,
         "info",
         { locationId: id }
       );
     },
-    [locations, showToast, feedMainMode]
+    [locations, showToast, feedMainMode, clearModuleSelection]
   );
 
   const reportPost = useCallback(
@@ -4678,12 +4681,9 @@ export function AppProvider({ children }) {
     [showToast]
   );
 
-  const updateHomeAddress = useCallback(
-    async ({ street, houseNumber, psc, city, fullAddress, lat, lng }) => {
-      const municipality = city.trim();
-      const shortLabel = municipality.split("—")[0].split("–")[0].trim() || municipality;
+  const resolveLocationCoords = useCallback(
+    async ({ street, houseNumber, psc, city, lat, lng, fallbackLat, fallbackLng }) => {
       const pscNorm = pscDigits(psc);
-
       let nextLat = lat;
       let nextLng = lng;
       if (nextLat == null || nextLng == null) {
@@ -4708,62 +4708,169 @@ export function AppProvider({ children }) {
           }
         }
       }
+      return {
+        lat: nextLat ?? fallbackLat ?? USER_LOCATIONS[0].lat,
+        lng: nextLng ?? fallbackLng ?? USER_LOCATIONS[0].lng,
+      };
+    },
+    []
+  );
 
-      const currentDomov = locations.find((l) => l.id === "domov");
-      const resolvedLat = nextLat ?? currentDomov?.lat ?? USER_LOCATIONS[0].lat;
-      const resolvedLng = nextLng ?? currentDomov?.lng ?? USER_LOCATIONS[0].lng;
+  const applyActiveLocationRemap = useCallback(
+    (locationId) => {
+      setActiveLocationId(locationId);
+      setCommunityGroups(getGroupsForLocation(locationId));
+      setFeedSubFilter(getDefaultSubfilter(feedMainMode));
+      setMapRootKey((k) => k + 1);
+      setNeighborsRootKey((k) => k + 1);
+      clearModuleSelection();
+    },
+    [feedMainMode, clearModuleSelection]
+  );
+
+  const updateUserLocation = useCallback(
+    async (locationId, { street, houseNumber, psc, city, fullAddress, lat, lng, label } = {}) => {
+      if (!locationId) return false;
+      const municipality = String(city ?? "").trim();
+      if (!municipality || !fullAddress) return false;
+      const shortLabel = municipality.split("—")[0].split("–")[0].trim() || municipality;
+      const current = locations.find((l) => l.id === locationId);
+      const { lat: resolvedLat, lng: resolvedLng } = await resolveLocationCoords({
+        street,
+        houseNumber,
+        psc,
+        city: municipality,
+        lat,
+        lng,
+        fallbackLat: current?.lat,
+        fallbackLng: current?.lng,
+      });
       const coordsChanged =
-        Math.abs((currentDomov?.lat ?? 0) - resolvedLat) > 0.0005 ||
-        Math.abs((currentDomov?.lng ?? 0) - resolvedLng) > 0.0005;
-
-      setUser((u) =>
-        u
-          ? {
-              ...u,
-              address: fullAddress,
-              location: shortLabel,
-              geo: {
-                ...(u.geo ?? {}),
-                city: municipality,
-                lat: resolvedLat,
-                lng: resolvedLng,
-              },
-            }
-          : u
-      );
+        Math.abs((current?.lat ?? 0) - resolvedLat) > 0.0005 ||
+        Math.abs((current?.lng ?? 0) - resolvedLng) > 0.0005;
+      const nextLabel =
+        locationId === "domov"
+          ? current?.label ?? "Domov"
+          : String(label ?? current?.label ?? "Místo").trim() || current?.label || "Místo";
 
       setLocations((prev) =>
         prev.map((loc) =>
-          loc.id === "domov"
+          loc.id === locationId
             ? {
                 ...loc,
+                label: nextLabel,
                 address: fullAddress,
                 municipality,
                 shortLabel,
                 lat: resolvedLat,
                 lng: resolvedLng,
+                radiusKm: loc.radiusKm ?? DEFAULT_RADIUS_KM,
               }
             : loc
         )
       );
 
-      // Domov musí být aktivní, aby zeď / mapa / průvodce hned čerpaly z nové lokality
-      setActiveLocationId("domov");
-      setCommunityGroups(getGroupsForLocation("domov"));
-      setFeedSubFilter(getDefaultSubfilter(feedMainMode));
-      setMapRootKey((k) => k + 1);
-      clearModuleSelection();
+      if (locationId === "domov") {
+        setUser((u) =>
+          u
+            ? {
+                ...u,
+                address: fullAddress,
+                location: shortLabel,
+                geo: {
+                  ...(u.geo ?? {}),
+                  city: municipality,
+                  lat: resolvedLat,
+                  lng: resolvedLng,
+                },
+              }
+            : u
+        );
+      }
+
+      applyActiveLocationRemap(locationId);
 
       showToast(
         coordsChanged
-          ? `Domov: ${shortLabel} — mapa a okolí přepočítány.`
-          : `Domovská adresa uložena (${shortLabel}).`,
+          ? `${nextLabel}: ${shortLabel} — mapa a okolí přepočítány.`
+          : `${nextLabel}: adresa uložena (${shortLabel}).`,
         "success",
-        { locationId: "domov" }
+        { locationId }
       );
       return true;
     },
-    [locations, showToast, feedMainMode, clearModuleSelection]
+    [locations, resolveLocationCoords, applyActiveLocationRemap, showToast]
+  );
+
+  const addUserLocation = useCallback(
+    async ({ street, houseNumber, psc, city, fullAddress, lat, lng, label } = {}) => {
+      const placeLabel = String(label ?? "").trim();
+      const municipality = String(city ?? "").trim();
+      if (!placeLabel || !municipality || !fullAddress) return false;
+      const shortLabel = municipality.split("—")[0].split("–")[0].trim() || municipality;
+      const slug = placeLabel
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .slice(0, 20) || "misto";
+      const id = `misto-${slug}-${Date.now().toString(36).slice(-4)}`;
+      const { lat: resolvedLat, lng: resolvedLng } = await resolveLocationCoords({
+        street,
+        houseNumber,
+        psc,
+        city: municipality,
+        lat,
+        lng,
+      });
+
+      const nextLoc = {
+        id,
+        emoji: "📍",
+        label: placeLabel,
+        shortLabel,
+        municipality,
+        address: fullAddress,
+        lat: resolvedLat,
+        lng: resolvedLng,
+        radiusKm: DEFAULT_RADIUS_KM,
+        custom: true,
+      };
+
+      setLocations((prev) => [...prev, nextLoc]);
+      applyActiveLocationRemap(id);
+      showToast(`Místo „${placeLabel}“ přidáno — obsah přemapován na ${shortLabel}.`, "success", {
+        locationId: id,
+      });
+      return true;
+    },
+    [resolveLocationCoords, applyActiveLocationRemap, showToast]
+  );
+
+  const removeUserLocation = useCallback(
+    (locationId) => {
+      if (!locationId || locationId === "domov") {
+        showToast("Domov nelze smazat.", "info");
+        return false;
+      }
+      setLocations((prev) => {
+        const next = prev.filter((l) => l.id !== locationId);
+        if (activeLocationId === locationId) {
+          const fallback = next.find((l) => l.id === "domov") ?? next[0];
+          if (fallback) applyActiveLocationRemap(fallback.id);
+        }
+        return next;
+      });
+      showToast("Místo odstraněno.", "info");
+      return true;
+    },
+    [activeLocationId, applyActiveLocationRemap, showToast]
+  );
+
+  const updateHomeAddress = useCallback(
+    async (payload) => updateUserLocation("domov", payload),
+    [updateUserLocation]
   );
 
   const openEventDetail = useCallback(
@@ -5543,6 +5650,9 @@ export function AppProvider({ children }) {
         updatePublicDisambiguation,
         updateAccountProfile,
         updateHomeAddress,
+        updateUserLocation,
+        addUserLocation,
+        removeUserLocation,
         openEventDetail,
         closeEventDetail,
         selectedEventId,

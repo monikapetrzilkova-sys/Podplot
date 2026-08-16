@@ -163,6 +163,9 @@ export default function MyProfile({ registerLegalBack } = {}) {
     toggleLunchMenuAlerts,
     toggleMessageAlerts,
     updateHomeAddress,
+    updateUserLocation,
+    addUserLocation,
+    removeUserLocation,
     myHelpOffers,
     lendingAvailability,
     viewAsNeighbor,
@@ -177,6 +180,8 @@ export default function MyProfile({ registerLegalBack } = {}) {
   const [photoEditorOpen, setPhotoEditorOpen] = useState(false);
   const [legalPage, setLegalPage] = useState(null);
   const [editingHomeAddress, setEditingHomeAddress] = useState(false);
+  const [editingLocationId, setEditingLocationId] = useState(null);
+  const [addingLocation, setAddingLocation] = useState(false);
   const [allowPublicAreaLabel, setAllowPublicAreaLabel] = useState(Boolean(user?.allowPublicAreaLabel));
   const [publicAreaLabel, setPublicAreaLabel] = useState(user?.publicAreaLabel ?? "");
   const [detailReport, setDetailReport] = useState(null);
@@ -465,7 +470,17 @@ export default function MyProfile({ registerLegalBack } = {}) {
               {!editingHomeAddress && (
                 <button
                   type="button"
-                  onClick={() => setEditingHomeAddress(true)}
+                  onClick={() => {
+                    setEditingHomeAddress(true);
+                    setEditingLocationId("domov");
+                    setAddingLocation(false);
+                    requestAnimationFrame(() => {
+                      document.getElementById("profile-my-places")?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                      });
+                    });
+                  }}
                   className="text-[11px] font-semibold text-emerald-700 hover:underline shrink-0"
                 >
                   Upravit
@@ -535,52 +550,145 @@ export default function MyProfile({ registerLegalBack } = {}) {
         )}
       </section>
 
-      <section className="pp-card p-4 mb-4">
-        <ProfileSectionTitle icon={PROFILE_DOODLE_ICONS.places}>Moje místa</ProfileSectionTitle>
+      <section className="pp-card p-4 mb-4" id="profile-my-places">
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <ProfileSectionTitle icon={PROFILE_DOODLE_ICONS.places} className="mb-0">
+            Moje místa
+          </ProfileSectionTitle>
+          {!addingLocation && !editingLocationId && (
+            <button
+              type="button"
+              onClick={() => {
+                setAddingLocation(true);
+                setEditingLocationId(null);
+                setEditingHomeAddress(false);
+              }}
+              className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg shrink-0"
+            >
+              + Přidat místo
+            </button>
+          )}
+        </div>
+        <p className="text-[11px] text-stone-500 mb-3 leading-relaxed">
+          Přepnutím místa se zeď, mapa i okolí přemapují na danou lokalitu. Každé místo můžete upravit.
+        </p>
         <div className="space-y-2">
           {locations.map((loc) => {
             const LocIcon = LOCATION_DOODLE_ICONS[loc.id] ?? LOCATION_DOODLE_ICONS.domov;
             const isActive = activeLocationId === loc.id;
+            const isEditing = editingLocationId === loc.id;
             return (
-            <div
-              key={loc.id}
-              className={`w-full text-left p-3 rounded-xl border text-sm ${
-                isActive ? "border-emerald-600 bg-emerald-50" : "border-stone-200"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <button
-                  type="button"
-                  onClick={() => setActiveLocation(loc.id)}
-                  className="flex-1 min-w-0 text-left flex items-start gap-2.5"
-                >
-                  <span className={`mt-0.5 shrink-0 ${isActive ? "text-[#1B4332]" : "text-[#4D8B7A]"}`}>
-                    <LocIcon className="w-5 h-5" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="font-semibold block">{loc.label}</span>
-                    <span className="block text-xs text-stone-500">{loc.address}</span>
-                  </span>
-                </button>
-                {loc.id === "domov" && !editingHomeAddress && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingHomeAddress(true);
-                      requestAnimationFrame(() => {
-                        document.getElementById("profile-home-address")?.scrollIntoView({ behavior: "smooth", block: "start" });
-                      });
-                    }}
-                    className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg shrink-0"
-                  >
-                    Upravit
-                  </button>
+              <div
+                key={loc.id}
+                className={`w-full text-left p-3 rounded-xl border text-sm ${
+                  isActive ? "border-emerald-600 bg-emerald-50" : "border-stone-200"
+                }`}
+              >
+                {isEditing ? (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-stone-700">
+                      Upravit · {loc.label}
+                    </p>
+                    <HomeAddressForm
+                      key={`edit-${loc.id}`}
+                      compact
+                      initialAddress={loc.address}
+                      initialLabel={loc.label}
+                      showLabel={loc.id !== "domov"}
+                      labelRequired={loc.id !== "domov"}
+                      submitLabel="Uložit místo"
+                      onSave={async (payload) => {
+                        const ok = await updateUserLocation(loc.id, payload);
+                        if (ok) {
+                          setEditingLocationId(null);
+                          if (loc.id === "domov") setEditingHomeAddress(false);
+                        }
+                        return ok;
+                      }}
+                      onCancel={() => {
+                        setEditingLocationId(null);
+                        if (loc.id === "domov") setEditingHomeAddress(false);
+                      }}
+                    />
+                    {loc.id !== "domov" ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm(`Odstranit místo „${loc.label}“?`)) {
+                            removeUserLocation(loc.id);
+                            setEditingLocationId(null);
+                          }
+                        }}
+                        className="text-[11px] font-semibold text-red-600"
+                      >
+                        Odstranit místo
+                      </button>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="flex items-start justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setActiveLocation(loc.id)}
+                      className="flex-1 min-w-0 text-left flex items-start gap-2.5"
+                    >
+                      <span
+                        className={`mt-0.5 shrink-0 ${isActive ? "text-[#1B4332]" : "text-[#4D8B7A]"}`}
+                      >
+                        <LocIcon className="w-5 h-5" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="font-semibold block flex items-center gap-1.5 flex-wrap">
+                          {loc.label}
+                          {isActive ? (
+                            <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-md">
+                              Aktivní
+                            </span>
+                          ) : null}
+                        </span>
+                        <span className="block text-xs text-stone-500">{loc.address}</span>
+                        <span className="block text-[10px] text-stone-400 mt-0.5">
+                          {loc.municipality || loc.shortLabel}
+                          {loc.radiusKm ? ` · okruh ${loc.radiusKm} km` : ""}
+                        </span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAddingLocation(false);
+                        setEditingLocationId(loc.id);
+                        if (loc.id === "domov") setEditingHomeAddress(true);
+                      }}
+                      className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg shrink-0"
+                    >
+                      Upravit
+                    </button>
+                  </div>
                 )}
               </div>
-            </div>
             );
           })}
         </div>
+
+        {addingLocation ? (
+          <div className="mt-3 p-3 rounded-xl border border-emerald-200 bg-emerald-50/50 space-y-2">
+            <p className="text-xs font-semibold text-stone-800">Nové místo</p>
+            <HomeAddressForm
+              key="add-location"
+              compact
+              showLabel
+              labelRequired
+              submitLabel="Přidat a přepnout"
+              onSave={async (payload) => {
+                const ok = await addUserLocation(payload);
+                if (ok) setAddingLocation(false);
+                return ok;
+              }}
+              onCancel={() => setAddingLocation(false)}
+            />
+          </div>
+        ) : null}
       </section>
 
       <section className="pp-card p-4 mb-4">

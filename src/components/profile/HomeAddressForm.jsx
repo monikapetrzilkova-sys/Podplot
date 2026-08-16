@@ -14,8 +14,19 @@ import {
   ADDRESS_SEARCH_HINT,
 } from "../../data/addressAutocomplete.js";
 
-export default function HomeAddressForm({ initialAddress = "", onSave, onCancel, compact = false }) {
+export default function HomeAddressForm({
+  initialAddress = "",
+  initialLabel = "",
+  showLabel = false,
+  labelRequired = false,
+  labelPlaceholder = "Název místa (např. Práce, Chata)",
+  onSave,
+  onCancel,
+  compact = false,
+  submitLabel = "Uložit adresu",
+}) {
   const parsed = parseStoredAddress(initialAddress);
+  const [placeLabel, setPlaceLabel] = useState(initialLabel);
   const [street, setStreet] = useState(parsed.street);
   const [houseNumber, setHouseNumber] = useState(parsed.houseNumber);
   const [psc, setPsc] = useState(parsed.psc);
@@ -35,6 +46,10 @@ export default function HomeAddressForm({ initialAddress = "", onSave, onCancel,
     autocompleteRef.current = createAddressAutocomplete(setSuggestions, setSuggestLoading, setSuggestError);
     return () => autocompleteRef.current?.cancel();
   }, []);
+
+  useEffect(() => {
+    setPlaceLabel(initialLabel);
+  }, [initialLabel]);
 
   useEffect(() => {
     const digits = pscDigits(psc);
@@ -89,10 +104,15 @@ export default function HomeAddressForm({ initialAddress = "", onSave, onCancel,
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitError("");
+    const nextErrors = {};
+    if (showLabel && labelRequired && !placeLabel.trim()) {
+      nextErrors.label = "Zadejte název místa.";
+    }
     const result = validateAddressFields({ street, houseNumber, psc, city });
-    setFieldErrors(result.errors);
-    if (!result.valid) {
-      setSubmitError("Zkontrolujte adresu — některé údaje chybí nebo nejsou správně.");
+    Object.assign(nextErrors, result.errors);
+    setFieldErrors(nextErrors);
+    if (!result.valid || nextErrors.label) {
+      setSubmitError("Zkontrolujte údaje — některé chybí nebo nejsou správně.");
       return;
     }
 
@@ -107,6 +127,7 @@ export default function HomeAddressForm({ initialAddress = "", onSave, onCancel,
         fullAddress,
         lat: pickedCoords?.lat ?? null,
         lng: pickedCoords?.lng ?? null,
+        label: placeLabel.trim(),
       });
       if (ok === false) setSubmitError("Adresu se nepodařilo uložit.");
     } finally {
@@ -116,6 +137,25 @@ export default function HomeAddressForm({ initialAddress = "", onSave, onCancel,
 
   return (
     <form onSubmit={handleSubmit} className={compact ? "space-y-2" : "space-y-3"}>
+      {showLabel ? (
+        <div>
+          <label className="block text-[11px] text-stone-500 mb-1">Název místa</label>
+          <input
+            type="text"
+            value={placeLabel}
+            onChange={(e) => {
+              setPlaceLabel(e.target.value);
+              if (fieldErrors.label) setFieldErrors((p) => ({ ...p, label: "" }));
+            }}
+            placeholder={labelPlaceholder}
+            className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 ${
+              fieldErrors.label ? "border-red-300" : "border-stone-200"
+            }`}
+          />
+          {fieldErrors.label && <p className="mt-1 text-xs text-red-600">{fieldErrors.label}</p>}
+        </div>
+      ) : null}
+
       <div>
         <label className="block text-[11px] text-stone-500 mb-1">Ulice</label>
         <input
@@ -192,21 +232,19 @@ export default function HomeAddressForm({ initialAddress = "", onSave, onCancel,
           type="text"
           value={cityLoading ? "Načítám obec…" : city}
           onChange={(e) => {
-            setCityManual(true);
             setCity(e.target.value);
-            setPickedCoords(null);
+            setCityManual(true);
             if (fieldErrors.city) setFieldErrors((p) => ({ ...p, city: "" }));
           }}
-          readOnly={cityLoading && !cityManual}
+          disabled={cityLoading}
           placeholder="Jesenice"
           className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 ${
-            fieldErrors.city ? "border-red-300" : city && !cityManual ? "bg-emerald-50/50 border-emerald-200" : "border-stone-200"
+            fieldErrors.city ? "border-red-300" : "border-stone-200"
           }`}
         />
         {fieldErrors.city && <p className="mt-1 text-xs text-red-600">{fieldErrors.city}</p>}
+        <p className="mt-1 text-[10px] text-stone-400">{ADDRESS_PRIVACY_NOTE_INLINE}</p>
       </div>
-
-      <p className="text-[11px] text-stone-400 leading-relaxed">{ADDRESS_PRIVACY_NOTE_INLINE}</p>
 
       {submitError && <p className="text-xs text-red-600">{submitError}</p>}
 
@@ -215,7 +253,7 @@ export default function HomeAddressForm({ initialAddress = "", onSave, onCancel,
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 py-2 text-sm font-semibold border border-stone-200 rounded-xl hover:bg-stone-50"
+            className="flex-1 py-2.5 text-sm font-semibold border border-stone-200 rounded-xl"
           >
             Zrušit
           </button>
@@ -223,10 +261,9 @@ export default function HomeAddressForm({ initialAddress = "", onSave, onCancel,
         <button
           type="submit"
           disabled={saving}
-          className="flex-1 py-2 text-sm font-semibold text-white rounded-xl disabled:opacity-50"
-          style={{ background: "#1B4332" }}
+          className="flex-1 py-2.5 text-sm font-semibold text-white bg-[#3D7A68] rounded-xl disabled:opacity-60"
         >
-          {saving ? "Ukládám…" : "Uložit adresu"}
+          {saving ? "Ukládám…" : submitLabel}
         </button>
       </div>
     </form>
