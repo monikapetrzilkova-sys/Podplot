@@ -114,6 +114,13 @@ import {
   profileToAppUser,
 } from "../data/communityApi.js";
 import {
+  fetchRemoteMessages,
+  publishRemoteMessage,
+  subscribeRemoteMessages,
+  rowsToChats,
+  markRemoteMessagesRead,
+} from "../data/messagesApi.js";
+import {
   authSignUp,
   authSignIn,
   authSignOut,
@@ -558,6 +565,88 @@ export function AppProvider({ children }) {
       unsubscribe?.();
     };
   }, [user?.id, activeLocation?.municipality, user?.geo?.city, user]);
+
+  // Sdílené zprávy mezi testery (odpověď na inzerát / hlášení)
+  useEffect(() => {
+    if (!user?.id || SKIP_REGISTRATION) return undefined;
+    let cancelled = false;
+    let unsubscribe = () => {};
+
+    const mergeRemoteChats = (remoteChats) => {
+      setChats((prev) => {
+        const byPeer = new Map();
+        for (const c of prev) {
+          if (c.sharedRemote || !["marie", "tomas"].includes(c.participantId)) {
+            byPeer.set(c.participantId, c);
+          }
+        }
+        for (const c of remoteChats) {
+          const existing = byPeer.get(c.participantId);
+          if (!existing) {
+            byPeer.set(c.participantId, c);
+            continue;
+          }
+          const msgById = new Map((existing.messages ?? []).map((m) => [m.id, m]));
+          for (const m of c.messages ?? []) {
+            if (m.id) msgById.set(m.id, m);
+            else msgById.set(`${m.sender}-${m.time}-${m.text}`, m);
+          }
+          const messages = [...msgById.values()].sort((a, b) => {
+            const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return ta - tb;
+          });
+          const last = messages[messages.length - 1];
+          byPeer.set(c.participantId, {
+            ...existing,
+            ...c,
+            participantName: c.participantName || existing.participantName,
+            messages,
+            lastMessage: last?.text ?? c.lastMessage,
+            lastTime: last?.time ?? c.lastTime,
+            unread: c.unread ?? existing.unread ?? 0,
+            sharedRemote: true,
+          });
+        }
+        return [...byPeer.values()];
+      });
+    };
+
+    (async () => {
+      await ensureSupabase();
+      if (cancelled) return;
+      const rows = await fetchRemoteMessages(user.id);
+      if (cancelled) return;
+      if (rows.length) mergeRemoteChats(rowsToChats(rows, user.id));
+
+      unsubscribe = await subscribeRemoteMessages(user.id, (row) => {
+        const incomingForMe = row.recipient_id === user.id;
+        const mini = rowsToChats([row], user.id);
+        if (mini.length) mergeRemoteChats(mini);
+        if (incomingForMe) {
+          const peerName = row.sender_name || "Soused";
+          setNotifications((prev) => [
+            {
+              id: `n-msg-${row.id}`,
+              type: "blue",
+              title: `${peerName} vám napsal/a`,
+              body: row.body?.slice(0, 80) || "Nová zpráva",
+              read: false,
+              time: "právě teď",
+              participantId: row.sender_id,
+              participantName: peerName,
+            },
+            ...prev.filter((n) => n.id !== `n-msg-${row.id}`),
+          ]);
+        }
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user) return;
@@ -3327,56 +3416,78 @@ export function AppProvider({ children }) {
     setB2bInquiries((prev) => prev.map((i) => (i.id === id ? { ...i, read: true } : i)));
   }, []);
 
-  const sendMessage = useCallback((participantId, participantName, text, meta = null) => {
-    const time = nowTime();
-    const msgId = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    setChats((prev) => {
-      const idx = prev.findIndex((c) => c.participantId === participantId);
-      const msg = {
-        id: msgId,
-        sender: "me",
-        text,
-        time,
-        status: "sent",
-        ...(meta ? { meta } : null),
-      };
-      if (idx >= 0) {
-        const updated = [...prev];
-        updated[idx] = {
-          ...updated[idx],
-          lastMessage: text,
-          lastTime: time,
-          messages: [...updated[idx].messages, msg],
+  const sendMessage = useCallback(
+    (participantId, participantName, text, meta = null) => {
+      if (!participantId || !text?.trim()) return;
+      const time = nowTime();
+      const msgId = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      const body = text.trim();
+      const createdAt = new Date().toISOString();
+      setChats((prev) => {
+        const idx = prev.findIndex((c) => c.participantId === participantId);
+        const msg = {
+          id: msgId,
+          sender: "me",
+          text: body,
+          time,
+          status: "sent",
+          createdAt,
+          ...(meta ? { meta } : null),
         };
-        return updated;
-      }
-      return [
-        {
-          chatId: `chat-${participantId}`,
-          participantId,
-          participantName,
-          lastMessage: text,
-          lastTime: time,
-          unread: 0,
-          messages: [msg],
-        },
-        ...prev,
-      ];
-    });
-    window.setTimeout(() => {
-      setChats((prev) =>
-        prev.map((c) => {
-          if (c.participantId !== participantId) return c;
-          return {
-            ...c,
-            messages: c.messages.map((m) =>
-              m.id === msgId && m.status === "sent" ? { ...m, status: "delivered" } : m
-            ),
+        if (idx >= 0) {
+          const updated = [...prev];
+          updated[idx] = {
+            ...updated[idx],
+            lastMessage: body,
+            lastTime: time,
+            messages: [...updated[idx].messages, msg],
+            sharedRemote: true,
           };
-        })
-      );
-    }, 900);
-  }, []);
+          return updated;
+        }
+        return [
+          {
+            chatId: `chat-${participantId}`,
+            participantId,
+            participantName: participantName || "Soused",
+            lastMessage: body,
+            lastTime: time,
+            unread: 0,
+            messages: [msg],
+            sharedRemote: true,
+          },
+          ...prev,
+        ];
+      });
+
+      if (user?.id && participantId !== user.id && participantId !== "me") {
+        void publishRemoteMessage({
+          id: msgId,
+          senderId: user.id,
+          senderName: user.name,
+          recipientId: participantId,
+          recipientName: participantName || "Soused",
+          text: body,
+          meta,
+        });
+      }
+
+      window.setTimeout(() => {
+        setChats((prev) =>
+          prev.map((c) => {
+            if (c.participantId !== participantId) return c;
+            return {
+              ...c,
+              messages: c.messages.map((m) =>
+                m.id === msgId && m.status === "sent" ? { ...m, status: "delivered" } : m
+              ),
+            };
+          })
+        );
+      }, 900);
+    },
+    [user?.id, user?.name]
+  );
 
   const updatePromptStatus = useCallback(
     (id, status) => {
@@ -3568,11 +3679,17 @@ export function AppProvider({ children }) {
     [chatModal]
   );
 
-  const markChatRead = useCallback((participantId) => {
-    setChats((prev) =>
-      prev.map((c) => (c.participantId === participantId ? { ...c, unread: 0 } : c))
-    );
-  }, []);
+  const markChatRead = useCallback(
+    (participantId) => {
+      setChats((prev) =>
+        prev.map((c) => (c.participantId === participantId ? { ...c, unread: 0 } : c))
+      );
+      if (user?.id && participantId) {
+        void markRemoteMessagesRead(user.id, participantId);
+      }
+    },
+    [user?.id]
+  );
 
   const getChatMessages = useCallback(
     (participantId) => {

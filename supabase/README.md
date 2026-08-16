@@ -37,6 +37,14 @@ Na Vercelu už mají být nastavené; lokálně v `app/.env`.
 | Odhlášení | Profil → **Odhlásit se** |
 | Zapomenuté heslo | Přihlášení → **Zapomenuté heslo** → odkaz e-mailem |
 | Změna hesla | Profil → sekce Heslo |
+| Zpráva na inzerát / hlášení | Uloží se do `direct_messages` — druhý tester ji uvidí ve **Zprávách** |
+
+## 5) Zprávy (když ještě nemáš tabulku)
+
+1. SQL Editor → spusť celý `supabase/messages.sql`
+2. (Volitelně) **Database → Publications** → u `supabase_realtime` zapni **`direct_messages`**
+
+Bez kroku 5 odpovědi na inzerát zůstanou jen u odesílatele.
 
 ## Poznámka k bezpečnosti
 
