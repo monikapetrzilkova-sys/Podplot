@@ -114,20 +114,5 @@
       }
     </script>
     <script type="module" src="/src/main.jsx"></script>
-    <script type="module">
-      if ("serviceWorker" in navigator) {
-        window.addEventListener("load", async () => {
-          try {
-            const regs = await navigator.serviceWorker.getRegistrations();
-            await Promise.all(regs.map((r) => r.unregister()));
-            if (window.caches) {
-              const keys = await caches.keys();
-              await Promise.all(keys.map((k) => caches.delete(k)));
-            }
-          } catch (_) {}
-          navigator.serviceWorker.register("/sw.js?v=3").catch(() => {});
-        });
-      }
-    </script>
   </body>
 </html>

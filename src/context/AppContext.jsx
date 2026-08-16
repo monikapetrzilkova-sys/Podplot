@@ -121,6 +121,12 @@ import {
   markRemoteMessagesRead,
 } from "../data/messagesApi.js";
 import {
+  showMessageNotification,
+  requestNotificationPermission,
+  getStoredMessageAlertsPref,
+  setStoredMessageAlertsPref,
+} from "../lib/browserNotifications.js";
+import {
   authSignUp,
   authSignIn,
   authSignOut,
@@ -302,7 +308,10 @@ export function AppProvider({ children }) {
   const [acknowledgedNewsIds, setAcknowledgedNewsIds] = useState([]);
   const [lunchMenus, setLunchMenus] = useState(LUNCH_MENUS);
   const [lunchSubscriptions, setLunchSubscriptions] = useState(["sp1"]);
-  const [notificationPrefs, setNotificationPrefs] = useState(() => ({ ...DEFAULT_NOTIFICATION_PREFS }));
+  const [notificationPrefs, setNotificationPrefs] = useState(() => ({
+    ...DEFAULT_NOTIFICATION_PREFS,
+    messageAlerts: getStoredMessageAlertsPref(),
+  }));
   const [businessNotificationPrefs, setBusinessNotificationPrefs] = useState(() => ({
     ...DEFAULT_BUSINESS_NOTIFICATION_PREFS,
   }));
@@ -397,6 +406,10 @@ export function AppProvider({ children }) {
   const [neighborHelpFilter, setNeighborHelpFilter] = useState("vse");
   const [sosAlert, setSosAlert] = useState(null);
   const [chatModal, setChatModal] = useState(null);
+  const chatModalRef = useRef(null);
+  chatModalRef.current = chatModal;
+  const notificationPrefsRef = useRef(notificationPrefs);
+  notificationPrefsRef.current = notificationPrefs;
   const [craftsmanProfileOpen, setCraftsmanProfileOpen] = useState(null);
   const [helpOfferChatKickoff, setHelpOfferChatKickoff] = useState(null);
   const [galleryPreviewQueue, setGalleryPreviewQueue] = useState([]);
@@ -638,6 +651,21 @@ export function AppProvider({ children }) {
             },
             ...prev.filter((n) => n.id !== `n-msg-${row.id}`),
           ]);
+
+          const alertsOn = notificationPrefsRef.current?.messageAlerts !== false;
+          const viewingChat =
+            typeof document !== "undefined" &&
+            document.visibilityState === "visible" &&
+            chatModalRef.current?.participantId === row.sender_id;
+          if (alertsOn && !viewingChat) {
+            void showMessageNotification({
+              title: `${peerName} · Podplot`,
+              body: row.body?.slice(0, 120) || "Nová zpráva",
+              peerId: row.sender_id,
+              peerName,
+              tag: `podplot-msg-${row.sender_id}`,
+            });
+          }
         }
       });
     })();
@@ -2078,6 +2106,42 @@ export function AppProvider({ children }) {
           : "Vypnuto — upozornění na polední menu nebudete dostávat.",
         "info"
       );
+    },
+    [updateNotificationPrefs, showToast]
+  );
+
+  const toggleMessageAlerts = useCallback(
+    async (enabled) => {
+      if (enabled) {
+        const result = await requestNotificationPermission();
+        if (!result.ok) {
+          setStoredMessageAlertsPref(false);
+          updateNotificationPrefs({ messageAlerts: false });
+          if (result.permission === "denied") {
+            showToast(
+              "Prohlížeč blokuje upozornění. Povolte je v nastavení webu / telefonu.",
+              "error"
+            );
+          } else if (result.permission === "unsupported") {
+            showToast("Tento prohlížeč systémová upozornění nepodporuje.", "error");
+          } else {
+            showToast("Bez povolení upozornění se zprávy neozvou venku z appky.", "info");
+          }
+          return;
+        }
+        setStoredMessageAlertsPref(true);
+        updateNotificationPrefs({ messageAlerts: true });
+        showToast("Zapnuto — při nové zprávě vyskočí upozornění v telefonu.", "success");
+        void showMessageNotification({
+          title: "Podplot",
+          body: "Upozornění na zprávy jsou zapnutá.",
+          tag: "podplot-msg-test",
+        });
+        return;
+      }
+      setStoredMessageAlertsPref(false);
+      updateNotificationPrefs({ messageAlerts: false });
+      showToast("Vypnuto — systémová upozornění na zprávy nebudete dostávat.", "info");
     },
     [updateNotificationPrefs, showToast]
   );
@@ -3726,6 +3790,36 @@ export function AppProvider({ children }) {
     setHelpOfferChatKickoff(null);
   }, [helpOfferChatKickoff, openMessages, startChat]);
 
+  // Klik na systémové upozornění / SW → otevřít chat
+  useEffect(() => {
+    const openFromPayload = (peerId, peerName) => {
+      if (!peerId) {
+        openMessages();
+        return;
+      }
+      openMessages();
+      openChat(peerId, peerName || "Soused");
+    };
+
+    const onSwMessage = (event) => {
+      const data = event.data;
+      if (!data || data.type !== "podplot-notification-click") return;
+      openFromPayload(data.peerId, data.peerName);
+    };
+
+    const onCustom = (event) => {
+      const detail = event.detail || {};
+      openFromPayload(detail.peerId, detail.peerName);
+    };
+
+    navigator.serviceWorker?.addEventListener?.("message", onSwMessage);
+    window.addEventListener("podplot:open-chat", onCustom);
+    return () => {
+      navigator.serviceWorker?.removeEventListener?.("message", onSwMessage);
+      window.removeEventListener("podplot:open-chat", onCustom);
+    };
+  }, [openMessages, openChat]);
+
   const closeChat = useCallback(() => setChatModal(null), []);
 
   const joinEvent = useCallback((eventId) => {
@@ -4945,6 +5039,7 @@ export function AppProvider({ children }) {
         notificationPrefs,
         updateNotificationPrefs,
         toggleLunchMenuAlerts,
+        toggleMessageAlerts,
         businessNotificationPrefs,
         subscribeMobilniPush,
         lunchMenuDraft,

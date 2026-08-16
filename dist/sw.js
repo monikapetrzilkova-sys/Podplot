@@ -1,5 +1,5 @@
-/* Podplot PWA service worker — network-first for app shell (dev-friendly) */
-const CACHE = "podplot-v3";
+/* Podplot PWA service worker — síť first + systémová upozornění na zprávy */
+const CACHE = "podplot-v4";
 const PRECACHE = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {
@@ -24,7 +24,8 @@ function isAppShell(url) {
     path.endsWith(".js") ||
     path.endsWith(".jsx") ||
     path.endsWith(".css") ||
-    path.startsWith("/src/")
+    path.startsWith("/src/") ||
+    path.startsWith("/assets/")
   );
 }
 
@@ -35,7 +36,6 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  // App code: always prefer network so layout/CSS updates reach phones
   if (isAppShell(url)) {
     event.respondWith(
       fetch(request)
@@ -64,5 +64,42 @@ self.addEventListener("fetch", (event) => {
         .catch(() => cached);
       return cached || fetched;
     })
+  );
+});
+
+/** Klik na systémové upozornění → otevřít appku / chat */
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const data = event.notification.data || {};
+  const targetUrl = data.url || "/";
+
+  event.waitUntil(
+    (async () => {
+      const allClients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      for (const client of allClients) {
+        if ("focus" in client) {
+          await client.focus();
+          client.postMessage({
+            type: "podplot-notification-click",
+            peerId: data.peerId || null,
+            peerName: data.peerName || null,
+          });
+          return;
+        }
+      }
+      if (self.clients.openWindow) {
+        const win = await self.clients.openWindow(targetUrl);
+        if (win) {
+          // krátká prodleva — appka se načte a pak otevře chat
+          setTimeout(() => {
+            win.postMessage?.({
+              type: "podplot-notification-click",
+              peerId: data.peerId || null,
+              peerName: data.peerName || null,
+            });
+          }, 800);
+        }
+      }
+    })()
   );
 });

@@ -156,6 +156,7 @@ export default function MyProfile({ registerLegalBack } = {}) {
     confirmLendingReturn,
     notificationPrefs,
     toggleLunchMenuAlerts,
+    toggleMessageAlerts,
     updateHomeAddress,
     myHelpOffers,
     lendingAvailability,
@@ -542,6 +543,21 @@ export default function MyProfile({ registerLegalBack } = {}) {
         <ProfileSectionTitle icon={PROFILE_DOODLE_ICONS.alerts} className="mb-2">
           Upozornění
         </ProfileSectionTitle>
+        <label className="flex items-start gap-3 p-3 rounded-xl border border-stone-200 cursor-pointer mb-2">
+          <input
+            type="checkbox"
+            checked={Boolean(notificationPrefs?.messageAlerts !== false)}
+            onChange={(e) => toggleMessageAlerts(e.target.checked)}
+            className="mt-0.5 rounded accent-emerald-600"
+          />
+          <span className="text-xs text-stone-600 leading-relaxed">
+            <strong className="text-stone-800">Nové zprávy</strong>
+            <span className="block mt-0.5 text-stone-500">
+              Systémové upozornění v telefonu (jako Messenger), když vám někdo napíše. Na iPhonu nejlépe funguje po
+              „Přidat na plochu“.
+            </span>
+          </span>
+        </label>
         <label className="flex items-start gap-3 p-3 rounded-xl border border-stone-200 cursor-pointer">
           <input
             type="checkbox"

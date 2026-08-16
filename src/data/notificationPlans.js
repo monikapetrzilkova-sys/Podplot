@@ -19,6 +19,8 @@ export const DEFAULT_NOTIFICATION_PREFS = {
   /** Soused — zájem o polední menu z gastro podniků v okolí */
   lunchMenuAlerts: false,
   lunchMenuRadiusKm: 2,
+  /** Systémové upozornění při nové zprávě (jako Messenger) */
+  messageAlerts: true,
 };
 
 export const DEFAULT_BUSINESS_NOTIFICATION_PREFS = {
