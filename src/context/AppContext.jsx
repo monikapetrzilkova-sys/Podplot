@@ -448,6 +448,8 @@ export function AppProvider({ children }) {
   const [trustDismissedIds, setTrustDismissedIds] = useState([]);
   const trustDismissedIdsRef = useRef(trustDismissedIds);
   trustDismissedIdsRef.current = trustDismissedIds;
+  /** Celý widget „nový soused“ na Domů schovaný */
+  const [trustHomePromptHidden, setTrustHomePromptHidden] = useState(false);
   const [craftsmanRadius, setCraftsmanRadiusState] = useState(15);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [craftsmanInvoices, setCraftsmanInvoices] = useState([]);
@@ -717,6 +719,14 @@ export function AppProvider({ children }) {
       } catch {
         setTrustDismissedIds([]);
         trustDismissedIdsRef.current = [];
+      }
+
+      try {
+        setTrustHomePromptHidden(
+          localStorage.getItem(`podplot-trust-home-hidden-v1-${user.id}`) === "1"
+        );
+      } catch {
+        setTrustHomePromptHidden(false);
       }
 
       const remoteNeighbors = await fetchRemoteNeighbors({
@@ -1785,6 +1795,30 @@ export function AppProvider({ children }) {
     },
     [showToast, user?.id]
   );
+
+  const hideTrustHomePrompt = useCallback(() => {
+    setTrustHomePromptHidden(true);
+    try {
+      if (user?.id) {
+        localStorage.setItem(`podplot-trust-home-hidden-v1-${user.id}`, "1");
+      }
+    } catch {
+      /* ignore */
+    }
+    showToast("Připomínky nových sousedů na Domů jsou skryté. Zapnete je znovu v profilu.", "info");
+  }, [showToast, user?.id]);
+
+  const showTrustHomePrompt = useCallback(() => {
+    setTrustHomePromptHidden(false);
+    try {
+      if (user?.id) {
+        localStorage.removeItem(`podplot-trust-home-hidden-v1-${user.id}`);
+      }
+    } catch {
+      /* ignore */
+    }
+    showToast("Připomínky nových sousedů na Domů jsou znovu zapnuté.", "success");
+  }, [showToast, user?.id]);
 
   const switchFeedMainMode = useCallback((mode) => {
     setFeedMainMode(mode);
@@ -5666,6 +5700,9 @@ export function AppProvider({ children }) {
         neighbors,
         confirmNeighbor,
         dismissTrustNeighbor,
+        hideTrustHomePrompt,
+        showTrustHomePrompt,
+        trustHomePromptHidden,
         confirmationsGiven,
         trustDismissedIds,
         trustVerifiers,

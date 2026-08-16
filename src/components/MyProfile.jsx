@@ -162,6 +162,9 @@ export default function MyProfile({ registerLegalBack } = {}) {
     notificationPrefs,
     toggleLunchMenuAlerts,
     toggleMessageAlerts,
+    trustHomePromptHidden,
+    hideTrustHomePrompt,
+    showTrustHomePrompt,
     updateHomeAddress,
     updateUserLocation,
     addUserLocation,
@@ -805,7 +808,7 @@ export default function MyProfile({ registerLegalBack } = {}) {
             </span>
           </span>
         </label>
-        <label className="flex items-start gap-3 p-3 rounded-xl border border-stone-200 cursor-pointer">
+        <label className="flex items-start gap-3 p-3 rounded-xl border border-stone-200 cursor-pointer mb-2">
           <input
             type="checkbox"
             checked={Boolean(notificationPrefs?.lunchMenuAlerts ?? user.notificationPrefs?.lunchMenuAlerts)}
@@ -816,6 +819,23 @@ export default function MyProfile({ registerLegalBack } = {}) {
             <strong className="text-stone-800">Polední menu v okolí</strong>
             <span className="block mt-0.5 text-stone-500">
               Push upozornění, když místní gastro podnik zveřejní denní menu.
+            </span>
+          </span>
+        </label>
+        <label className="flex items-start gap-3 p-3 rounded-xl border border-stone-200 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={!trustHomePromptHidden}
+            onChange={(e) =>
+              e.target.checked ? showTrustHomePrompt?.() : hideTrustHomePrompt?.()
+            }
+            className="mt-0.5 rounded accent-emerald-600"
+          />
+          <span className="text-xs text-stone-600 leading-relaxed">
+            <strong className="text-stone-800">Noví sousedé na Domů</strong>
+            <span className="block mt-0.5 text-stone-500">
+              Karty k potvrzení sousedství nahoře na Domů. Když vypnete, zůstanou jen v profilu · Síť
+              důvěry.
             </span>
           </span>
         </label>

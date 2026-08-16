@@ -11,8 +11,10 @@ export default function TrustNeighborHomePrompt() {
     neighbors,
     confirmationsGiven,
     trustDismissedIds,
+    trustHomePromptHidden,
     confirmNeighbor,
     dismissTrustNeighbor,
+    hideTrustHomePrompt,
     getPersonPhoto,
   } = useApp();
 
@@ -25,13 +27,27 @@ export default function TrustNeighborHomePrompt() {
       !(trustDismissedIds ?? []).includes(n.id)
   );
 
-  if (pending.length === 0) return null;
+  if (trustHomePromptHidden || pending.length === 0) return null;
 
   const visible = pending.slice(0, 3);
   const TrustIcon = PROFILE_DOODLE_ICONS.trust;
 
   return (
     <section className="px-3 pt-2 pb-1 space-y-2" aria-label="Noví sousedé k potvrzení">
+      <div className="flex items-center justify-between gap-2 px-0.5">
+        <p className="text-[11px] text-stone-500">
+          {pending.length === 1
+            ? "1 nový soused k potvrzení"
+            : `${pending.length} noví sousedé k potvrzení`}
+        </p>
+        <button
+          type="button"
+          onClick={() => hideTrustHomePrompt?.()}
+          className="text-[11px] font-semibold text-stone-500 hover:text-stone-700 underline underline-offset-2 shrink-0"
+        >
+          Skrýt na Domů
+        </button>
+      </div>
       {visible.map((n) => {
         const initials =
           n.initials ||
@@ -46,7 +62,7 @@ export default function TrustNeighborHomePrompt() {
         return (
           <article
             key={n.id}
-            className="rounded-2xl border border-emerald-200 bg-emerald-50/90 px-3.5 py-3 shadow-sm"
+            className="rounded-2xl border border-emerald-200 bg-emerald-50/90 px-3.5 py-3 shadow-sm relative"
           >
             <div className="flex items-start gap-3">
               <Avatar initials={initials} roleId="soused" size="md" photo={photo} />
