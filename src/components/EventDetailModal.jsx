@@ -10,6 +10,7 @@ import { SKIP_REGISTRATION } from "../data/devConfig.js";
 import AppPanelPortal from "./AppPanelPortal.jsx";
 import ReportMenu, { EVENT_REPORT_REASONS } from "./ReportMenu.jsx";
 import { isSameAppUser } from "../data/listingSales.js";
+import { displayCreatorLabel } from "../data/accountTypes.js";
 
 export default function EventDetailModal() {
   const {
@@ -106,7 +107,12 @@ export default function EventDetailModal() {
         )}
         {past && <p className="text-xs text-stone-500 mt-0.5">Tato akce už proběhla.</p>}
         <p className="text-sm text-stone-600 mt-0.5">{locationLabel}</p>
-        <p className="text-xs text-stone-400 mt-1">Organizátor: {ev.organizer}</p>
+        <p className="text-xs text-stone-400 mt-1">
+          Organizátor:{" "}
+          {displayCreatorLabel(ev.organizer, ev.accountType, {
+            mine: isOwnEvent,
+          })}
+        </p>
 
         {ev.description && (
           <p className="text-sm text-stone-700 leading-relaxed mt-4 whitespace-pre-wrap">{ev.description}</p>

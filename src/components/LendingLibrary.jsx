@@ -10,7 +10,7 @@ import CompactAccordion from "./CompactAccordion.jsx";
 import { accordionKey } from "../data/uiPreferences.js";
 import { MessageButton } from "./MessagesPage.jsx";
 import ReportUserButton from "./ReportUserButton.jsx";
-import { formatAuthorName } from "../data/accountTypes.js";
+import { formatAuthorName, displayCreatorLabel } from "../data/accountTypes.js";
 import { topicFromLending } from "../data/chatTopics.js";
 
 function formatReservationDates(r) {
@@ -104,29 +104,34 @@ export default function LendingLibrary() {
               prefKey={accordionKey("lending", item.id ?? `${item.item}-${item.author}`)}
               className={inactive ? "bg-stone-50 border-stone-200 opacity-80" : ""}
               summary={
-                <div className="flex items-center gap-2 min-w-0 w-full text-sm">
-                  <span
-                    className={`font-semibold truncate flex-1 ${
-                      inactive ? "text-stone-400" : "text-stone-900"
-                    }`}
-                  >
-                    {lendingDisplayTitle(item)}
-                  </span>
-                  {item.distance && (
-                    <span className="shrink-0 text-stone-400 text-[11px]">{item.distance}</span>
-                  )}
-                  <span
-                    className={`shrink-0 font-bold text-xs tabular-nums ${
-                      inactive ? "text-stone-400" : "text-emerald-700"
-                    }`}
-                  >
-                    {item.credits != null ? `${item.credits} Kč/den` : ""}
-                  </span>
-                  {inactive && (
-                    <span className="shrink-0 text-[10px] font-semibold uppercase text-stone-400">
-                      dovolená
+                <div className="min-w-0 w-full text-sm">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className={`font-semibold truncate flex-1 ${
+                        inactive ? "text-stone-400" : "text-stone-900"
+                      }`}
+                    >
+                      {lendingDisplayTitle(item)}
                     </span>
-                  )}
+                    {item.distance && (
+                      <span className="shrink-0 text-stone-400 text-[11px]">{item.distance}</span>
+                    )}
+                    <span
+                      className={`shrink-0 font-bold text-xs tabular-nums ${
+                        inactive ? "text-stone-400" : "text-emerald-700"
+                      }`}
+                    >
+                      {item.credits != null ? `${item.credits} Kč/den` : ""}
+                    </span>
+                    {inactive && (
+                      <span className="shrink-0 text-[10px] font-semibold uppercase text-stone-400">
+                        dovolená
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-stone-500 mt-0.5 truncate">
+                    {displayCreatorLabel(item.author, item.accountType, { mine: item.mine })}
+                  </p>
                 </div>
               }
             >

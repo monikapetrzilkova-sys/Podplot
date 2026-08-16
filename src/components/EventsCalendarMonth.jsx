@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { CS_LOCALE, parseDateInput } from "../data/czechDateTime.js";
+import { displayCreatorLabel } from "../data/accountTypes.js";
 
 const WEEKDAYS = ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"];
 
@@ -208,7 +209,14 @@ export default function EventsCalendarMonth({
                   >
                     <p className="pp-text-title line-clamp-1 leading-snug">{event.title}</p>
                     <p className="pp-text-meta line-clamp-1 mt-0.5 leading-snug">
-                      {[event.date, event.address ?? event.location, event.categoryLabel]
+                      {[
+                        displayCreatorLabel(event.organizer, event.accountType, {
+                          mine: event.organizer === "Vy",
+                        }),
+                        event.date,
+                        event.address ?? event.location,
+                        event.categoryLabel,
+                      ]
                         .filter(Boolean)
                         .join(" · ")}
                     </p>

@@ -15,6 +15,7 @@ import { filterEventsForMapView } from "../data/geoFilter.js";
 import ReportMenu, { EVENT_REPORT_REASONS } from "../components/ReportMenu.jsx";
 import { getNeighborCategoryAccent } from "../utils/categoryAccents.js";
 import CompactSearchToggle from "../components/CompactSearchToggle.jsx";
+import { displayCreatorLabel } from "../data/accountTypes.js";
 
 function matchesEventSearch(event, query) {
   const q = String(query ?? "").trim().toLowerCase();
@@ -25,7 +26,10 @@ function matchesEventSearch(event, query) {
 }
 
 function EventListRow({ event, selected, onShowOnMap, onOpen, onJoin, joined, onReport, canReport }) {
-  const meta = [event.date, event.address ?? event.location, event.categoryLabel, `${event.participants ?? 0} účastníků`]
+  const creator = displayCreatorLabel(event.organizer, event.accountType, {
+    mine: event.organizer === "Vy",
+  });
+  const meta = [creator, event.date, event.address ?? event.location, event.categoryLabel, `${event.participants ?? 0} účastníků`]
     .filter(Boolean)
     .join(" · ");
 

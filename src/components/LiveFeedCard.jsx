@@ -52,6 +52,7 @@ export default function LiveFeedCard({
   badgeClassName = "",
   title,
   preview = null,
+  authorLabel = null,
   onReport,
   onSummaryClick,
   expandable = true,
@@ -105,6 +106,9 @@ export default function LiveFeedCard({
               </h3>
               {editedItem && <EditedBadge item={editedItem} className="shrink-0" />}
             </div>
+            {authorLabel ? (
+              <p className="pp-text-meta text-[10px] mt-0.5 truncate text-stone-500">{authorLabel}</p>
+            ) : null}
             {preview && !isOpen && (
               <p className="pp-text-body text-[11px] leading-snug line-clamp-2 mt-0.5 text-stone-600">
                 {preview}

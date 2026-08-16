@@ -160,6 +160,13 @@ export function formatAuthorName(author, accountTypeId) {
   return formatNeighborShortName(author);
 }
 
+/** Veřejný popisek autora — „Vy“ u vlastního, jinak křestní + iniciála / název účtu */
+export function displayCreatorLabel(name, accountTypeId, { mine = false } = {}) {
+  if (mine) return "Vy";
+  if (!name || name === "Vy") return name || "";
+  return formatAuthorName(name, accountTypeId);
+}
+
 export function getRegistrationFields(accountTypeId, businessSubtype) {
   const acc = getAccountType(accountTypeId);
   if (normalizeAccountType(accountTypeId) === "podnik" && businessSubtype) {

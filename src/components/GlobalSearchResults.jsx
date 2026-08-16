@@ -15,6 +15,7 @@ import {
   DoodleMegaphoneIcon,
   DoodlePackageIcon,
 } from "./doodle/doodleIcons.jsx";
+import { displayCreatorLabel } from "../data/accountTypes.js";
 
 function ResultSection({ title, children, count }) {
   if (!count) return null;
@@ -281,7 +282,9 @@ export default function GlobalSearchResults() {
             <h3 className="text-base font-bold text-stone-900">{detailListing.title}</h3>
             <p className="text-sm text-stone-600 leading-relaxed">{detailListing.body}</p>
             <p className="text-[11px] text-stone-400">
-              {detailListing.author}
+              {displayCreatorLabel(detailListing.author, detailListing.accountType, {
+                mine: detailListing.mine,
+              })}
               {detailListing.meta ? ` · ${detailListing.meta}` : ""}
             </p>
             <button

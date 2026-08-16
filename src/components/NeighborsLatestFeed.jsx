@@ -7,7 +7,7 @@ import DoodleEmptyState from "./doodle/DoodleEmptyState.jsx";
 import { extractListingPrice } from "./CompactListingRow.jsx";
 import { isThingsModuleListing } from "../utils/thingsModule.js";
 import { getRecentGroupPosts, getGroup } from "../data/groups.js";
-import { formatAuthorName } from "../data/accountTypes.js";
+import { formatAuthorName, displayCreatorLabel } from "../data/accountTypes.js";
 
 const SECTION_LABELS = {
   veci: "Věci",
@@ -63,6 +63,7 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
           badge: listingBadge.label,
           badgeClassName: listingBadge.className,
           preview: post.body,
+          authorLabel: displayCreatorLabel(post.author, post.accountType, { mine: post.mine }),
           price: reserved ? null : extractListingPrice(post),
           statusLabel: reserved ? "V rezervaci" : null,
           post,
@@ -81,6 +82,7 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
           badge: sectionBadge.label,
           badgeClassName: sectionBadge.className,
           preview: h.body,
+          authorLabel: displayCreatorLabel(h.author, h.accountType, { mine: h.mine }),
           help: {
             ...h,
             helpId: h.id,
@@ -110,6 +112,7 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
         badge: sectionBadge.label,
         badgeClassName: sectionBadge.className,
         preview: post.body,
+        authorLabel: displayCreatorLabel(post.author, post.accountType, { mine: post.mine }),
         meta: group?.name ?? post.author,
         post,
         mine: Boolean(post.mine),
@@ -127,6 +130,9 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
         badge: sectionBadge.label,
         badgeClassName: sectionBadge.className,
         preview: [ev.date, ev.location].filter(Boolean).join(" · "),
+        authorLabel: displayCreatorLabel(ev.organizer, ev.accountType, {
+          mine: ev.organizer === "Vy",
+        }),
         event: ev,
         createdAt: 0,
       };
@@ -175,6 +181,7 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
                 badge={item.badge}
                 badgeClassName={item.badgeClassName}
                 title={item.title}
+                authorLabel={item.authorLabel}
                 preview={item.preview}
                 editedItem={item.post}
                 priceLabel={item.price}
@@ -197,6 +204,7 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
                 badge={item.badge}
                 badgeClassName={item.badgeClassName}
                 title={item.title}
+                authorLabel={item.authorLabel}
                 preview={item.preview}
               >
                 <p className="pp-text-meta">
@@ -225,6 +233,7 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
                 badge={item.badge}
                 badgeClassName={item.badgeClassName}
                 title={item.title}
+                authorLabel={item.authorLabel}
                 preview={item.preview || item.meta}
                 editedItem={item.post}
                 priceLabel={item.price}
@@ -243,8 +252,10 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
                 badge={item.badge}
                 badgeClassName={item.badgeClassName}
                 title={item.title}
+                authorLabel={item.authorLabel}
                 preview={item.preview}
               >
+                <p className="pp-text-meta">{item.authorLabel}</p>
                 <p className="pp-text-body text-sm">
                   {item.event.address ?? item.event.location}
                   {item.event.categoryLabel ? ` · ${item.event.categoryLabel}` : ""}

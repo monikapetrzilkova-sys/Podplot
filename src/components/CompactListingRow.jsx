@@ -4,6 +4,7 @@ import FeedCard from "./FeedCard.jsx";
 import EditedBadge from "./EditedBadge.jsx";
 import { useApp } from "../context/AppContext.jsx";
 import { getActiveListingSale } from "../data/listingSales.js";
+import { displayCreatorLabel } from "../data/accountTypes.js";
 
 export function extractListingPrice(post) {
   if (!post) return null;
@@ -38,24 +39,30 @@ export default function CompactListingRow({ post }) {
   const price = extractListingPrice(post);
   const distance = extractDistanceFromMeta(post.meta);
   const reserved = post.saleStatus === "held" || Boolean(getActiveListingSale(listingSaleOrders, post.id));
+  const creator = displayCreatorLabel(post.author, post.accountType, { mine: post.mine });
 
   return (
     <CompactAccordion
       prefKey={accordionKey("listing", post.id)}
       summary={
-        <div className="flex items-center gap-2 min-w-0 w-full text-sm">
-          <span className="font-semibold text-stone-900 truncate flex-1">{post.title}</span>
-          {post.updatedAt && <EditedBadge item={post} className="shrink-0" />}
-          {distance && <span className="shrink-0 text-stone-400 text-[11px]">{distance}</span>}
-          {reserved ? (
-            <span className="shrink-0 text-amber-800 font-semibold text-xs">V rezervaci</span>
-          ) : (
-            price && (
-              <span className="shrink-0 text-emerald-700 font-bold text-xs tabular-nums whitespace-nowrap">
-                {price}
-              </span>
-            )
-          )}
+        <div className="min-w-0 w-full text-sm">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="font-semibold text-stone-900 truncate flex-1">{post.title}</span>
+            {post.updatedAt && <EditedBadge item={post} className="shrink-0" />}
+            {distance && <span className="shrink-0 text-stone-400 text-[11px]">{distance}</span>}
+            {reserved ? (
+              <span className="shrink-0 text-amber-800 font-semibold text-xs">V rezervaci</span>
+            ) : (
+              price && (
+                <span className="shrink-0 text-emerald-700 font-bold text-xs tabular-nums whitespace-nowrap">
+                  {price}
+                </span>
+              )
+            )}
+          </div>
+          {creator ? (
+            <p className="text-[10px] text-stone-500 mt-0.5 truncate">{creator}</p>
+          ) : null}
         </div>
       }
     >

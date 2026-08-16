@@ -1,6 +1,7 @@
 import ReportsMapModule from "../modules/ReportsMapModule.jsx";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
 import { hasReportMapPosition } from "../utils/reportPinUtils.js";
+import { displayCreatorLabel } from "../data/accountTypes.js";
 
 export default function ReportMapPopup({ report, onClose }) {
   if (!hasReportMapPosition(report)) return null;
@@ -13,7 +14,14 @@ export default function ReportMapPopup({ report, onClose }) {
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-stone-200">
           <div className="min-w-0">
             <p className="text-sm font-bold text-stone-900 truncate">{report.type}</p>
-            <p className="text-[11px] text-stone-500 truncate">{report.distance}</p>
+            <p className="text-[11px] text-stone-500 truncate">
+              {[
+                displayCreatorLabel(report.author, report.accountType, { mine: report.mine }),
+                report.distance,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
           </div>
           <button
             type="button"

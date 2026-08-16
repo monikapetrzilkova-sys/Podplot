@@ -19,6 +19,7 @@ import { getPromptStatusStyle } from "../data/municipalityPrompts.js";
 import { isTipReport, REPORT_TIP_ACCENT } from "../data/reportCategories.js";
 import { reportPinAccentColor } from "../utils/reportPinUtils.js";
 import EditedBadge from "../components/EditedBadge.jsx";
+import { displayCreatorLabel } from "../data/accountTypes.js";
 
 function OfficeStatusBadge({ report }) {
   if (!report?.officeStatus || report.officeStatus === "new") return null;
@@ -33,7 +34,9 @@ function OfficeStatusBadge({ report }) {
 
 function ReportListRow({ report, onOpen }) {
   const publicNote = (report.publicOfficeNotes ?? []).at(-1);
+  const creator = displayCreatorLabel(report.author, report.accountType, { mine: report.mine });
   const meta = [
+    creator,
     report.distance,
     report.time,
     report.urgent && getUrgentReachLabel(report) ? getUrgentReachLabel(report) : null,

@@ -1,5 +1,6 @@
 import { useApp } from "../context/AppContext.jsx";
 import { DoodleCalendarIcon, DoodleCheckIcon, DoodleStarIcon } from "./doodle/doodleIcons.jsx";
+import { displayCreatorLabel } from "../data/accountTypes.js";
 
 export default function EventsWidget() {
   const { upcomingEvents, joinEvent, isJoinedEvent, setActiveTab, openEventDetail } = useApp();
@@ -23,7 +24,13 @@ export default function EventsWidget() {
           <div key={ev.id} className="border border-stone-100 rounded-xl p-3">
             <button type="button" onClick={() => openEventDetail(ev.id)} className="text-left w-full">
               <p className="text-sm font-semibold text-stone-900">{ev.title}</p>
-              <p className="text-xs text-stone-500 mt-0.5">{ev.date} · {ev.location}</p>
+              <p className="text-xs text-stone-500 mt-0.5">
+                {displayCreatorLabel(ev.organizer, ev.accountType, {
+                  mine: ev.organizer === "Vy",
+                })}
+                {" · "}
+                {ev.date} · {ev.location}
+              </p>
             </button>
             <div className="flex items-center justify-between mt-2">
               <span className="text-xs text-stone-500">{ev.participants} účastníků</span>

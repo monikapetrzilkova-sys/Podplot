@@ -3,7 +3,6 @@ import { useApp } from "../context/AppContext.jsx";
 import ListView from "../components/module/ListView.jsx";
 import PillFilterRow from "../components/PillFilterRow.jsx";
 import LendingSubFilterRow from "../components/LendingSubFilterRow.jsx";
-import { joinMetaLine } from "../components/CompactListRow.jsx";
 import { extractListingPrice } from "../components/CompactListingRow.jsx";
 import FeedCard from "../components/FeedCard.jsx";
 import LiveFeedCard, { getListingBadge } from "../components/LiveFeedCard.jsx";
@@ -17,7 +16,7 @@ import { getPujcovnaSubFilter } from "../data/lendingCategories.js";
 import { lendingDisplayTitle } from "../data/lendingItemTypes.js";
 import { IconNavSearch } from "../components/communityNavIcons.jsx";
 import PrimaryAddButton from "../components/PrimaryAddButton.jsx";
-import { formatAuthorName } from "../data/accountTypes.js";
+import { formatAuthorName, displayCreatorLabel } from "../data/accountTypes.js";
 import { topicFromLending, topicFromPost } from "../data/chatTopics.js";
 
 function addListingLabel(categoryId) {
@@ -83,11 +82,8 @@ function ThingListRow({ item, expanded, onToggle }) {
       ? lendingDisplayTitle(item)
       : item.label;
   const badgeInfo = getListingBadge(item.type ?? thingCategoryId(item));
-  const preview =
-    item.description ??
-    item.subtitle ??
-    item.body ??
-    joinMetaLine(formatAuthorName(item.author, item.accountType), item.distance);
+  const creator = displayCreatorLabel(item.author, item.accountType, { mine: item.mine });
+  const preview = item.description ?? item.subtitle ?? item.body ?? null;
 
   return (
     <LiveFeedCard
@@ -96,6 +92,7 @@ function ThingListRow({ item, expanded, onToggle }) {
       badge={badgeInfo.label}
       badgeClassName={badgeInfo.className}
       title={title}
+      authorLabel={creator}
       preview={preview}
       editedItem={item}
       priceLabel={price}

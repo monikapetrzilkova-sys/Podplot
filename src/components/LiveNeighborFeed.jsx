@@ -10,6 +10,7 @@ import { IconMapPin } from "../data/icons.jsx";
 import { REPORTS_TIP_CATEGORY_ID } from "../data/reportCategories.js";
 import { getPostInteractionType, INTERACTION_TYPES } from "../data/postInteractions.js";
 import { getActiveListingSale } from "../data/listingSales.js";
+import { displayCreatorLabel } from "../data/accountTypes.js";
 
 function isPujcovnaPost(post) {
   return post?.categoryId === "pujcovna" || (post?.type ?? "").toLowerCase().includes("půjčovna");
@@ -237,6 +238,9 @@ export default function LiveNeighborFeed() {
                 badge="Výpomoc"
                 badgeClassName="pp-badge--vypomoc"
                 title={item.title}
+                authorLabel={displayCreatorLabel(item.author, item.accountType, {
+                  mine: item.mine,
+                })}
                 preview={item.body}
                 onReport={reportGeneric}
               >
@@ -268,6 +272,9 @@ export default function LiveNeighborFeed() {
                 badge={badge.label}
                 badgeClassName={badge.className || (isTip ? "pp-badge--tip" : "")}
                 title={item.title}
+                authorLabel={displayCreatorLabel(post.author, post.accountType, {
+                  mine: post.mine,
+                })}
                 preview={post.body}
                 editedItem={post}
                 onReport={(reason) => reportPost(post.id, reason)}
@@ -318,6 +325,9 @@ export default function LiveNeighborFeed() {
                 badge={badge.label}
                 badgeClassName={badge.className}
                 title={item.title}
+                authorLabel={displayCreatorLabel(item.post?.author, item.post?.accountType, {
+                  mine: item.post?.mine,
+                })}
                 preview={item.post?.body}
                 priceLabel={item.price}
                 editedItem={item.post}
@@ -335,6 +345,9 @@ export default function LiveNeighborFeed() {
               badge={badge.label}
               badgeClassName={badge.className}
               title={item.title}
+              authorLabel={displayCreatorLabel(item.post?.author, item.post?.accountType, {
+                mine: item.post?.mine,
+              })}
               preview={item.post?.body}
               statusLabel={item.reserved ? "V rezervaci" : null}
               priceLabel={item.reserved ? null : item.price}

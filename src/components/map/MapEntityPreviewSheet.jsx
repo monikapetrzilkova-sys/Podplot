@@ -1,5 +1,6 @@
 import { PlaceIcon } from "../module/placeIcons.jsx";
 import { formatGoogleHours } from "../../data/placesApi.js";
+import { displayCreatorLabel } from "../../data/accountTypes.js";
 
 function Stars({ rating }) {
   if (rating == null) return null;
@@ -78,7 +79,15 @@ export default function MapInstitutionPreviewSheet({ place, loading = false, onD
 export function MapEventPreviewSheet({ event, onDetail, onClose }) {
   if (!event) return null;
 
-  const meta = [event.date, event.address ?? event.location, `${event.participants ?? 0} účastníků`]
+  const creator = displayCreatorLabel(event.organizer, event.accountType, {
+    mine: event.organizer === "Vy",
+  });
+  const meta = [
+    creator,
+    event.date,
+    event.address ?? event.location,
+    `${event.participants ?? 0} účastníků`,
+  ]
     .filter(Boolean)
     .join(" · ");
 

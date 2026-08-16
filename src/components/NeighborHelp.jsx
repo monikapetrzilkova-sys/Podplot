@@ -6,7 +6,7 @@ import HelpFeedActions from "./HelpFeedActions.jsx";
 import PillFilterRow from "./PillFilterRow.jsx";
 import PrimaryAddButton from "./PrimaryAddButton.jsx";
 import CompactSearchToggle from "./CompactSearchToggle.jsx";
-import { formatAuthorName } from "../data/accountTypes.js";
+import { formatAuthorName, displayCreatorLabel } from "../data/accountTypes.js";
 
 function matchesHelpSearch(item, query) {
   const q = query.trim().toLowerCase();
@@ -184,6 +184,9 @@ export default function NeighborHelp({
                 badge={sectionBadge.label}
                 badgeClassName={sectionBadge.className}
                 title={item.title}
+                authorLabel={displayCreatorLabel(item.author, item.accountType, {
+                  mine: item.mine,
+                })}
                 preview={item.body}
               >
                 <p className="pp-text-meta">

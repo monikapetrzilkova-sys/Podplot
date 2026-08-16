@@ -13,6 +13,7 @@ import PrimaryAddButton from "./PrimaryAddButton.jsx";
 import PhotoUpload from "./PhotoUpload.jsx";
 import DoodleEmptyState from "./doodle/DoodleEmptyState.jsx";
 import { ClubCategoryIcon, GroupNavIcon } from "./communityNavIcons.jsx";
+import { displayCreatorLabel } from "../data/accountTypes.js";
 
 function normalize(text) {
   return (text ?? "")
@@ -37,7 +38,8 @@ function GroupPostRow({ post, groupName, expanded, onToggle }) {
       badge={sectionBadge.label}
       badgeClassName={sectionBadge.className}
       title={post.title}
-      preview={post.body || resolvedGroupName || post.author}
+      authorLabel={displayCreatorLabel(post.author, post.accountType, { mine: post.mine })}
+      preview={post.body || resolvedGroupName}
       editedItem={post}
       priceLabel={extractListingPrice(post)}
       expanded={expanded}
