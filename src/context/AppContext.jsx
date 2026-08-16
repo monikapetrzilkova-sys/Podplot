@@ -7,7 +7,7 @@ import { getAccountType, normalizeAccountType, resolveBusinessSubtype } from "..
 import { CLUB_VOTES_REQUIRED, getClubCategory } from "../data/clubCategories.js";
 import { inferFeedClassification, getDefaultSubfilter } from "../data/feedNavigation.js";
 import { USER_LOCATIONS, getGroupsForLocation, DEFAULT_RADIUS_KM } from "../data/locations.js";
-import { filterByRadius, filterByMunicipality, filterByActiveLocation } from "../data/geoFilter.js";
+import { filterByRadius, filterByMunicipality, filterByActiveLocation, municipalitiesMatch } from "../data/geoFilter.js";
 import { FEED_POSTS, LENDING_ITEMS } from "../data/mockData.js";
 import { AREA_NEWS, getAreaNewsForLocation, getActiveCrisis } from "../data/areaNews.js";
 import { LUNCH_MENUS, sortLunchMenus } from "../data/lunchMenus.js";
@@ -1013,6 +1013,10 @@ export function AppProvider({ children }) {
 
       unsubscribe = await subscribeRemotePosts((row) => {
         const post = rowToFeedPost(row, user.id);
+        const activeMun = activeLocation?.municipality ?? user.geo?.city ?? null;
+        if (activeMun && post.municipality && !municipalitiesMatch(post.municipality, activeMun)) {
+          return;
+        }
         setUserPosts((prev) => {
           if (prev.some((p) => p.id === post.id)) return prev;
           return [post, ...prev];

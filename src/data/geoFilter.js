@@ -20,6 +20,20 @@ export function distanceBetweenKm(a, b) {
   return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
 }
 
+/** Volné párování názvů obcí (Jesenice / jesenice u Prahy). */
+export function municipalitiesMatch(a, b) {
+  const left = String(a ?? "").trim().toLowerCase();
+  const right = String(b ?? "").trim().toLowerCase();
+  if (!left || !right) return false;
+  return left === right || left.includes(right) || right.includes(left);
+}
+
+function withinActiveRadius(item, activeLocation, radiusKm) {
+  if (item.lat == null || item.lng == null || !activeLocation) return true;
+  if (activeLocation.lat == null || activeLocation.lng == null) return true;
+  return distanceBetweenKm(activeLocation, item) <= radiusKm;
+}
+
 /** Komerční/komunitní obsah — v okruhu rádiusu od středu lokality */
 export function filterByRadius(items, location, radiusKm = location?.radiusKm ?? 7) {
   if (!location) return items;
@@ -38,24 +52,32 @@ export function resolveLocationId(item, legacyDefault = "domov") {
   return item?.locationId ?? legacyDefault;
 }
 
-/** Komunitní obsah vázaný na aktivní oblast (domov, práce, chata) */
+/**
+ * Komunitní obsah pro aktivní místo.
+ * Stejná obec = viditelné napříč osobními sloty (domov / vlastní místo),
+ * aby sousedé ve stejné obci viděli stejné příspěvky.
+ * Bez obce (starý mock) → fallback na locationId.
+ */
 export function filterByActiveLocation(items, activeLocationId, activeLocation, legacyDefault = "domov") {
   if (!activeLocationId) return items;
   const radius = activeLocation?.radiusKm ?? 7;
+  const activeMun = activeLocation?.municipality ?? activeLocation?.shortLabel ?? null;
+
   return items.filter((item) => {
+    const itemMun = item.municipality;
+
+    if (itemMun && itemMun !== "all" && activeMun) {
+      if (!municipalitiesMatch(itemMun, activeMun)) return false;
+      return withinActiveRadius(item, activeLocation, radius);
+    }
+
+    if (itemMun === "all") {
+      return withinActiveRadius(item, activeLocation, radius);
+    }
+
+    // Legacy mock bez obce — osobní slot (domov / práce / …)
     if (resolveLocationId(item, legacyDefault) !== activeLocationId) return false;
-    if (
-      item.municipality &&
-      item.municipality !== "all" &&
-      activeLocation?.municipality &&
-      item.municipality !== activeLocation.municipality
-    ) {
-      return false;
-    }
-    if (item.lat != null && item.lng != null && activeLocation) {
-      return distanceBetweenKm(activeLocation, item) <= radius;
-    }
-    return true;
+    return withinActiveRadius(item, activeLocation, radius);
   });
 }
 
@@ -65,12 +87,12 @@ export function filterByMunicipality(items, municipality) {
   return items.filter(
     (item) =>
       !item.municipality ||
-      item.municipality === municipality ||
-      item.municipality === "all"
+      item.municipality === "all" ||
+      municipalitiesMatch(item.municipality, municipality)
   );
 }
 
-/** Hlášení z mapy — podle aktivní lokality (domov / práce / chata) */
+/** Hlášení z mapy — podle aktivní lokality (obec, ne jen osobní slot) */
 export function filterSecurityReportsByLocation(
   reports,
   activeLocationId,
@@ -78,23 +100,23 @@ export function filterSecurityReportsByLocation(
   legacyDefault = "domov"
 ) {
   if (!activeLocationId || !activeLocation) return reports;
+  const activeMun = activeLocation.municipality ?? activeLocation.shortLabel ?? null;
 
   return reports.filter((report) => {
-    const reportLocId = resolveLocationId(report, legacyDefault);
+    const reportMun = report.municipality;
 
     if (report.urgentScope === "municipality" && report.urgent) {
-      if (reportLocId !== activeLocationId) return false;
-      if (
-        report.municipality &&
-        report.municipality !== activeLocation.municipality &&
-        report.municipality !== "all"
-      ) {
-        return false;
+      if (reportMun && reportMun !== "all" && activeMun) {
+        return municipalitiesMatch(reportMun, activeMun);
       }
-      return true;
+      return resolveLocationId(report, legacyDefault) === activeLocationId;
     }
 
-    return reportLocId === activeLocationId;
+    if (reportMun && reportMun !== "all" && activeMun) {
+      return municipalitiesMatch(reportMun, activeMun);
+    }
+
+    return resolveLocationId(report, legacyDefault) === activeLocationId;
   });
 }
 

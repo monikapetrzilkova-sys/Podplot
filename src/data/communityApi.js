@@ -4,6 +4,7 @@
  */
 
 import { ensureSupabase } from "../lib/supabaseClient.js";
+import { municipalitiesMatch } from "./geoFilter.js";
 
 function rowToFeedPost(row, currentUserId) {
   const payload = row.payload && typeof row.payload === "object" ? row.payload : {};
@@ -82,13 +83,6 @@ export async function fetchRemoteProfile(id) {
   return data ?? null;
 }
 
-function municipalityMatches(a, b) {
-  const left = String(a ?? "").trim().toLowerCase();
-  const right = String(b ?? "").trim().toLowerCase();
-  if (!left || !right) return false;
-  return left === right || left.includes(right) || right.includes(left);
-}
-
 /** Profil → položka sítě důvěry / sousedů */
 export function profileRowToNeighbor(row, { confirmationCount = 0, isNew = false } = {}) {
   if (!row?.id || !row?.name) return null;
@@ -141,7 +135,7 @@ export async function fetchRemoteNeighbors({ municipality = null, excludeId = nu
       }
       const type = String(row.account_type ?? "soused").toLowerCase();
       if (type && type !== "soused") return false;
-      if (municipality && !municipalityMatches(row.municipality, municipality)) return false;
+      if (municipality && !municipalitiesMatch(row.municipality, municipality)) return false;
       return true;
     })
     .map((row) => profileRowToNeighbor(row))
@@ -461,12 +455,12 @@ export async function fetchRemotePosts({ municipality = null, limit = 80, curren
 
   let rows = data ?? [];
   if (municipality) {
-    const m = String(municipality).trim().toLowerCase();
-    const filtered = rows.filter((r) => {
-      const rm = String(r.municipality ?? "").trim().toLowerCase();
-      return !rm || rm === m || rm.includes(m) || m.includes(rm);
+    rows = rows.filter((r) => {
+      const rm = r.municipality;
+      // Starší příspěvky bez obce necháme projít — dofiltruje se podle aktivní lokality
+      if (!rm) return true;
+      return municipalitiesMatch(rm, municipality);
     });
-    if (filtered.length > 0) rows = filtered;
   }
   return rows.map((row) => rowToFeedPost(row, currentUserId));
 }
