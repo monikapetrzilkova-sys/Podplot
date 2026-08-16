@@ -46,6 +46,11 @@ Na Vercelu už mají být nastavené; lokálně v `app/.env`.
 
 Bez kroku 5 odpovědi na inzerát zůstanou jen u odesílatele.
 
+## 5b) Úpravy příspěvků / návrhů skupin
+
+Pokud už máš starší `schema.sql` bez UPDATE politiky u `posts`, spusť jednou `supabase/posts_update_policy.sql`.
+Bez toho se nový návrh uloží, ale **úprava** po refreshi zmizí (a ostatní ji neuvidí).
+
 ## 6) Síť důvěry — nový soused v lokalitě
 
 1. SQL Editor → spusť celý `supabase/trust.sql`

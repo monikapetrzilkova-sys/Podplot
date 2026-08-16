@@ -2219,6 +2219,7 @@ export function AppProvider({ children }) {
         municipality: activeLocation?.municipality ?? user?.geo?.city ?? user?.location ?? null,
         status: "v-priprave",
         createdAt: Date.now(),
+        updatedAt: Date.now(),
       };
       setGroupProposals((prev) => mergeProposalLists([proposal], prev));
       setUiPref(UI_KEYS.GROUP_PROPOSALS_MINIMIZED, false);
@@ -2245,6 +2246,7 @@ export function AppProvider({ children }) {
           proposalRequired: proposal.required,
           proposalVotes: proposal.votes,
           createdAt: proposal.createdAt,
+          updatedAt: proposal.updatedAt,
         },
         user
       );
@@ -2293,6 +2295,7 @@ export function AppProvider({ children }) {
         clubCategory: clubCategory || existing.clubCategory || null,
         categoryId: clubCategory || existing.categoryId || null,
         tag: cat?.label ?? existing.tag ?? "Skupiny",
+        updatedAt: Date.now(),
       };
 
       setGroupProposals((prev) => prev.map((p) => (p.id === id ? updated : p)));
@@ -2318,6 +2321,7 @@ export function AppProvider({ children }) {
           proposalRequired: updated.required,
           proposalVotes: updated.votes,
           createdAt: updated.createdAt,
+          updatedAt: updated.updatedAt,
         },
         user
       );

@@ -42,6 +42,9 @@ function rowToFeedPost(row, currentUserId) {
     lat: row.lat ?? null,
     lng: row.lng ?? null,
     createdAt: row.created_at ? Date.parse(row.created_at) || Date.now() : Date.now(),
+    updatedAt: payload.updatedAt
+      ? Number(payload.updatedAt) || Date.parse(payload.updatedAt) || null
+      : null,
     fromSecurityReportId: payload.fromSecurityReportId ?? null,
     reportCategoryId: payload.reportCategoryId ?? null,
     categoryId,
@@ -462,40 +465,48 @@ export async function publishRemotePost(post, user) {
     clubCategory: post.clubCategory ?? null,
     required: post.proposalRequired ?? post.required ?? null,
     votes: post.proposalVotes ?? post.votes ?? null,
+    updatedAt: post.updatedAt ?? null,
   };
 
-  const { error } = await sb.from("posts").upsert(
-    {
-      id: post.id,
-      author_id: user?.id ?? post.authorId ?? null,
-      author_name: post.author ?? user?.name ?? "Soused",
-      author_initials: post.initials ?? user?.initials ?? null,
-      account_type: post.accountType ?? user?.accountType ?? null,
-      title: post.title,
-      body: post.body ?? "",
-      type: post.type ?? "Příspěvek",
-      feed_type: post.feedType ?? "komunita",
-      feed_subtype: post.feedSubtype ?? null,
-      location_id: post.locationId ?? null,
-      municipality: post.municipality ?? null,
-      photos: normalizePhotoList(post.photos),
-      map_pos: post.mapPos ?? null,
-      lat: post.lat ?? post.mapPos?.lat ?? null,
-      lng: post.lng ?? post.mapPos?.lng ?? null,
-      meta: post.meta ?? null,
-      payload,
-      created_at: post.createdAt
-        ? new Date(post.createdAt).toISOString()
-        : new Date().toISOString(),
-    },
-    { onConflict: "id" }
-  );
+  const row = {
+    id: post.id,
+    author_id: user?.id ?? post.authorId ?? null,
+    author_name: post.author ?? user?.name ?? "Soused",
+    author_initials: post.initials ?? user?.initials ?? null,
+    account_type: post.accountType ?? user?.accountType ?? null,
+    title: post.title,
+    body: post.body ?? "",
+    type: post.type ?? "Příspěvek",
+    feed_type: post.feedType ?? "komunita",
+    feed_subtype: post.feedSubtype ?? null,
+    location_id: post.locationId ?? null,
+    municipality: post.municipality ?? null,
+    photos: normalizePhotoList(post.photos),
+    map_pos: post.mapPos ?? null,
+    lat: post.lat ?? post.mapPos?.lat ?? null,
+    lng: post.lng ?? post.mapPos?.lng ?? null,
+    meta: post.meta ?? null,
+    payload,
+    created_at: post.createdAt
+      ? new Date(post.createdAt).toISOString()
+      : new Date().toISOString(),
+  };
 
-  if (error) {
-    console.warn("[supabase] publish post", error.message);
-    return false;
-  }
-  return true;
+  // Upsert potřebuje INSERT i UPDATE politiku. Bez UPDATE selže úprava existujícího řádku.
+  const { error } = await sb.from("posts").upsert(row, { onConflict: "id" });
+  if (!error) return true;
+
+  const { error: updErr } = await sb.from("posts").update(row).eq("id", post.id);
+  if (!updErr) return true;
+
+  const { error: insErr } = await sb.from("posts").insert(row);
+  if (!insErr) return true;
+
+  console.warn(
+    "[supabase] publish post",
+    error?.message || updErr?.message || insErr?.message
+  );
+  return false;
 }
 
 export async function fetchRemotePosts({ municipality = null, limit = 80, currentUserId = null } = {}) {

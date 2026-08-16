@@ -49,6 +49,7 @@ drop policy if exists "profiles_insert_public" on public.profiles;
 drop policy if exists "profiles_update_public" on public.profiles;
 drop policy if exists "posts_select_public" on public.posts;
 drop policy if exists "posts_insert_public" on public.posts;
+drop policy if exists "posts_update_public" on public.posts;
 
 create policy "profiles_select_public" on public.profiles for select using (true);
 create policy "profiles_insert_public" on public.profiles for insert with check (true);
@@ -56,6 +57,8 @@ create policy "profiles_update_public" on public.profiles for update using (true
 
 create policy "posts_select_public" on public.posts for select using (true);
 create policy "posts_insert_public" on public.posts for insert with check (true);
+drop policy if exists "posts_update_public" on public.posts;
+create policy "posts_update_public" on public.posts for update using (true) with check (true);
 
 -- Realtime (volitelné): Database → Replication → posts
 -- nebo:

@@ -55,11 +55,16 @@ export function persistGroupProposals(list) {
         municipality: p.municipality ?? null,
         status: p.status ?? "v-priprave",
         createdAt: p.createdAt ?? Date.now(),
+        updatedAt: p.updatedAt ?? p.createdAt ?? Date.now(),
       }));
     localStorage.setItem(STORAGE_KEY, JSON.stringify(slim));
   } catch {
     /* ignore quota */
   }
+}
+
+function proposalContentTs(p) {
+  return Number(p?.updatedAt ?? p?.createdAt ?? 0) || 0;
 }
 
 export function mergeProposalLists(...lists) {
@@ -68,12 +73,26 @@ export function mergeProposalLists(...lists) {
     for (const p of list ?? []) {
       if (!p?.id || !p?.name || p.active) continue;
       const prev = byId.get(p.id);
+      if (!prev) {
+        byId.set(p.id, { ...p, active: false });
+        continue;
+      }
+      const prevTs = proposalContentTs(prev);
+      const nextTs = proposalContentTs(p);
+      const newer = nextTs >= prevTs ? p : prev;
+      const older = newer === p ? prev : p;
       byId.set(p.id, {
-        ...prev,
-        ...p,
-        voted: Boolean(prev?.voted || p.voted),
-        votes: Math.max(Number(prev?.votes) || 0, Number(p.votes) || 0),
-        status: p.status ?? prev?.status ?? "v-priprave",
+        ...older,
+        ...newer,
+        voted: Boolean(prev.voted || p.voted),
+        votes: Math.max(Number(prev.votes) || 0, Number(p.votes) || 0),
+        status: newer.status ?? older.status ?? "v-priprave",
+        createdAt:
+          Math.min(
+            Number(prev.createdAt) || Number.POSITIVE_INFINITY,
+            Number(p.createdAt) || Number.POSITIVE_INFINITY
+          ) || newer.createdAt,
+        updatedAt: Math.max(prevTs, nextTs) || newer.updatedAt,
         active: false,
       });
     }
@@ -119,6 +138,7 @@ export function proposalsFromRemotePosts(posts, currentUserId = null) {
       municipality: post.municipality ?? null,
       status: "v-priprave",
       createdAt: post.createdAt ?? Date.now(),
+      updatedAt: post.updatedAt ?? post.createdAt ?? Date.now(),
       sharedRemote: true,
     };
   });
