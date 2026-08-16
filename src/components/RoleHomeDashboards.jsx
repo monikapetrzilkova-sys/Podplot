@@ -74,10 +74,26 @@ export function CraftsmanHomeDashboard() {
                 {r.author} · {r.distanceKm} km · {r.time}
               </p>
               <div className="flex gap-2 mt-2">
-                <MessageButton participantId={r.authorId} participantName={r.author} />
+                <MessageButton
+                  participantId={r.authorId}
+                  participantName={r.author}
+                  topic={{
+                    kind: "inquiry",
+                    refId: r.id,
+                    title: r.title,
+                    label: "Poptávka",
+                  }}
+                />
                 <button
                   type="button"
-                  onClick={() => openChat(r.authorId, r.author)}
+                  onClick={() =>
+                    openChat(r.authorId, r.author, {
+                      kind: "inquiry",
+                      refId: r.id,
+                      title: r.title,
+                      label: "Poptávka",
+                    })
+                  }
                   className="text-xs font-semibold text-emerald-700"
                 >
                   Rychlá odpověď
@@ -156,7 +172,16 @@ export function InstitutionHomeDashboard() {
               </p>
               <div className="flex flex-wrap gap-2 mt-2">
                 {p.authorId && (
-                  <MessageButton participantId={p.authorId} participantName={p.authorName} />
+                  <MessageButton
+                    participantId={p.authorId}
+                    participantName={p.authorName}
+                    topic={{
+                      kind: "prompt",
+                      refId: p.id,
+                      title: p.title,
+                      label: "Podnět",
+                    }}
+                  />
                 )}
                 <button
                   type="button"

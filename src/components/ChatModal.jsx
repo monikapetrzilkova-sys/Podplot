@@ -59,12 +59,12 @@ function ChatBubble({ m, mine, showReadLabel }) {
 
   return (
     <div className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-      <div className="max-w-[85%]">
+      <div className="max-w-[88%]">
         <div
           className={`px-3 py-2 rounded-2xl text-sm ${
             mine
               ? "bg-[#3D7A68] text-white rounded-br-md"
-              : "bg-stone-100 text-stone-800 rounded-bl-md"
+              : "bg-white text-stone-800 rounded-bl-md border border-stone-200"
           }`}
         >
           {m.text}
@@ -96,7 +96,7 @@ function ChatBubble({ m, mine, showReadLabel }) {
   );
 }
 
-function ThreadChip({ section, selected, onSelect }) {
+function ThreadHeader({ section, expanded, onToggle }) {
   const count = section.messages.length;
   const kind = section.topic?.label || chatTopicKindLabel(section.topic?.kind);
   const title = section.topic?.title || formatTopicHeading(section.topic);
@@ -104,47 +104,50 @@ function ThreadChip({ section, selected, onSelect }) {
   return (
     <button
       type="button"
-      onClick={onSelect}
-      aria-pressed={selected}
-      className={`w-full text-left rounded-2xl border px-3.5 py-2.5 transition-colors ${
-        selected
-          ? "border-emerald-400 bg-emerald-50 ring-1 ring-emerald-200"
-          : "border-stone-200 bg-white hover:border-emerald-200 hover:bg-stone-50"
+      onClick={onToggle}
+      aria-expanded={expanded}
+      className={`w-full text-left px-3.5 py-3 flex items-start gap-2.5 transition-colors ${
+        expanded ? "bg-emerald-50" : "bg-white hover:bg-stone-50"
       }`}
     >
-      <div className="flex items-start gap-2">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span
-              className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md border ${
-                selected
-                  ? "text-emerald-900 bg-emerald-100 border-emerald-200"
-                  : "text-stone-600 bg-stone-50 border-stone-200"
-              }`}
-            >
-              {kind}
-            </span>
-            {count > 0 ? (
-              <span className="text-[10px] text-stone-400 tabular-nums">
-                {count} {count === 1 ? "zpráva" : count < 5 ? "zprávy" : "zpráv"}
-              </span>
-            ) : (
-              <span className="text-[10px] font-semibold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded-md">
-                Nové vlákno
-              </span>
-            )}
-          </div>
-          <p className="text-sm font-semibold text-stone-900 mt-1 line-clamp-2 leading-snug">{title}</p>
-          <p className="text-[11px] text-stone-500 mt-0.5 line-clamp-1">{topicPreviewText(section)}</p>
-        </div>
-        <div className="shrink-0 text-right">
-          {topicLastTime(section) ? (
-            <p className="text-[10px] text-stone-400">{topicLastTime(section)}</p>
-          ) : null}
-          <span className={`text-xs font-bold ${selected ? "text-emerald-700" : "text-stone-300"}`}>
-            {selected ? "●" : "○"}
+      <span
+        className={`mt-0.5 shrink-0 w-5 h-5 rounded-full border flex items-center justify-center text-[10px] font-bold ${
+          expanded
+            ? "border-emerald-500 bg-emerald-500 text-white"
+            : "border-stone-300 text-stone-400"
+        }`}
+        aria-hidden
+      >
+        {expanded ? "−" : "+"}
+      </span>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span
+            className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md border ${
+              expanded
+                ? "text-emerald-900 bg-emerald-100 border-emerald-200"
+                : "text-stone-600 bg-stone-50 border-stone-200"
+            }`}
+          >
+            {kind}
           </span>
+          {count > 0 ? (
+            <span className="text-[10px] text-stone-400 tabular-nums">
+              {count} {count === 1 ? "zpráva" : count < 5 ? "zprávy" : "zpráv"}
+            </span>
+          ) : (
+            <span className="text-[10px] font-semibold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded-md">
+              Nové vlákno
+            </span>
+          )}
+          {topicLastTime(section) ? (
+            <span className="text-[10px] text-stone-400 ml-auto">{topicLastTime(section)}</span>
+          ) : null}
         </div>
+        <p className="text-sm font-semibold text-stone-900 mt-1 line-clamp-2 leading-snug">{title}</p>
+        {!expanded && (
+          <p className="text-[11px] text-stone-500 mt-0.5 line-clamp-1">{topicPreviewText(section)}</p>
+        )}
       </div>
     </button>
   );
@@ -170,6 +173,7 @@ export default function ChatModal({
   const [didInitThread, setDidInitThread] = useState(false);
   const messages = participantId ? getChatMessages(participantId) : [];
   const listRef = useRef(null);
+  const openPanelRef = useRef(null);
   const topic = normalizeChatTopic(activeTopic);
   const activeKey = topic ? topicSectionKey(topic) : null;
 
@@ -213,9 +217,15 @@ export default function ChatModal({
     listRef.current.scrollTop = listRef.current.scrollHeight;
   }, [open, openSection?.key, openSection?.messages?.length, messages[messages.length - 1]?.status]);
 
+  useEffect(() => {
+    if (!open || !openPanelRef.current) return;
+    openPanelRef.current.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [open, activeKey]);
+
   if (!open) return null;
 
   const selectThread = (section) => {
+    if (section.key === activeKey) return;
     setChatActiveTopic?.(section.topic);
     setText("");
   };
@@ -273,76 +283,71 @@ export default function ChatModal({
         )}
       </header>
 
-      <div className="shrink-0 max-h-[40vh] overflow-y-auto px-3 pt-3 pb-2 border-b border-stone-100">
-        <p className="text-[11px] font-bold uppercase tracking-wide text-stone-400 mb-2">
-          Témata · klepněte pro otevření vlákna
-        </p>
-        <div className="space-y-2">
-          {sections.map((section) => (
-            <ThreadChip
-              key={section.key}
-              section={section}
-              selected={section.key === activeKey}
-              onSelect={() => selectThread(section)}
-            />
-          ))}
-        </div>
-      </div>
+      <p className="shrink-0 px-3.5 py-2 text-[11px] text-stone-500 border-b border-stone-100 bg-stone-50">
+        Všechna témata zůstávají nahoře — klepnutím rozbalíte jiné vlákno.
+      </p>
 
-      <div className="flex-1 min-h-0 flex flex-col bg-[#FAFAFA]">
-        {openSection ? (
-          <>
-            <div className="px-3 py-2 border-b border-stone-100 bg-white shrink-0">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-emerald-800">
-                Rozbalené vlákno
-              </p>
-              <p className="text-xs font-semibold text-stone-800 truncate">
-                {formatTopicHeading(openSection.topic)}
-              </p>
-            </div>
-            <div ref={listRef} className="flex-1 overflow-y-auto p-4 space-y-3">
-              {threadMessages.length === 0 ? (
-                <p className="text-sm text-stone-400 text-center py-10 px-4 leading-relaxed">
-                  Nové vlákno k tomuto tématu. Napište první zprávu níže.
-                </p>
-              ) : (
-                threadMessages.map((m) => {
-                  const mine = m.sender === "me";
-                  const showReadLabel = mine && m.id === lastMineId && m.status === "read";
-                  return (
-                    <ChatBubble key={m.id} m={m} mine={mine} showReadLabel={showReadLabel} />
-                  );
-                })
-              )}
-            </div>
-            <form
-              onSubmit={submit}
-              className="p-3 border-t border-stone-200 flex gap-2 shrink-0 bg-white"
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        {sections.map((section) => {
+          const expanded = section.key === activeKey;
+          return (
+            <section
+              key={section.key}
+              ref={expanded ? openPanelRef : null}
+              className="border-b border-stone-200"
             >
-              <input
-                type="text"
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder={
-                  openSection.key === "general"
-                    ? "Napište zprávu…"
-                    : `Zpráva · ${openSection.topic?.title || openSection.topic?.label || "téma"}…`
-                }
-                className="flex-1 px-3 py-2.5 border border-stone-200 rounded-2xl text-sm"
+              <ThreadHeader
+                section={section}
+                expanded={expanded}
+                onToggle={() => selectThread(section)}
               />
-              <button
-                type="submit"
-                className="px-4 py-2.5 bg-[#3D7A68] text-white rounded-2xl text-sm font-semibold"
-              >
-                Odeslat
-              </button>
-            </form>
-          </>
-        ) : (
-          <p className="text-sm text-stone-400 text-center py-12 px-6">
-            Vyberte téma výše — zobrazí se celá konverzace k němu.
-          </p>
-        )}
+              {expanded ? (
+                <div className="bg-[#F7F8F7] border-t border-emerald-100">
+                  <div
+                    ref={listRef}
+                    className="max-h-[min(42vh,360px)] overflow-y-auto px-3 py-3 space-y-2.5"
+                  >
+                    {threadMessages.length === 0 ? (
+                      <p className="text-sm text-stone-400 text-center py-6 px-3 leading-relaxed">
+                        Nové vlákno. Napište první zprávu níže — ostatní témata zůstanou vidět.
+                      </p>
+                    ) : (
+                      threadMessages.map((m) => {
+                        const mine = m.sender === "me";
+                        const showReadLabel = mine && m.id === lastMineId && m.status === "read";
+                        return (
+                          <ChatBubble key={m.id} m={m} mine={mine} showReadLabel={showReadLabel} />
+                        );
+                      })
+                    )}
+                  </div>
+                  <form
+                    onSubmit={submit}
+                    className="px-3 pb-3 pt-1 flex gap-2 bg-[#F7F8F7] sticky bottom-0"
+                  >
+                    <input
+                      type="text"
+                      value={text}
+                      onChange={(e) => setText(e.target.value)}
+                      placeholder={
+                        section.key === "general"
+                          ? "Napište zprávu…"
+                          : `Zpráva · ${section.topic?.title || section.topic?.label || "téma"}…`
+                      }
+                      className="flex-1 px-3 py-2.5 border border-stone-200 rounded-2xl text-sm bg-white"
+                    />
+                    <button
+                      type="submit"
+                      className="px-4 py-2.5 bg-[#3D7A68] text-white rounded-2xl text-sm font-semibold shrink-0"
+                    >
+                      Odeslat
+                    </button>
+                  </form>
+                </div>
+              ) : null}
+            </section>
+          );
+        })}
       </div>
     </div>
   );
