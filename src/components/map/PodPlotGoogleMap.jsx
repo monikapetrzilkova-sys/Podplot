@@ -229,23 +229,27 @@ export default function PodPlotGoogleMap({
     if (markers.length === 0) return () => { cancelled = true; };
 
     const gMarkers = markers.map((marker) => {
+      const w = marker.selected ? 36 : 32;
+      const h = marker.selected ? 46 : 40;
       const gMarker = new window.google.maps.Marker({
+        map: null,
         position: { lat: marker.lat, lng: marker.lng },
         title: marker.label,
+        clickable: true,
+        optimized: false,
+        cursor: "pointer",
         icon: {
           url: marker.iconUrl ?? markerIconSvg(marker.variant, marker.emoji),
-          scaledSize: new window.google.maps.Size(
-            marker.selected ? 28 : 24,
-            marker.selected ? 36 : 32
-          ),
-          anchor: new window.google.maps.Point(
-            marker.selected ? 14 : 12,
-            marker.selected ? 36 : 32
-          ),
+          size: new window.google.maps.Size(w, h),
+          scaledSize: new window.google.maps.Size(w, h),
+          anchor: new window.google.maps.Point(w / 2, h),
         },
         zIndex: marker.selected ? 2000 : marker.showPinLabel ? 800 : 100,
       });
-      gMarker.addListener("click", () => fireMarkerClick(marker));
+      gMarker.addListener("click", (e) => {
+        e?.domEvent?.stopPropagation?.();
+        fireMarkerClick(marker);
+      });
       return gMarker;
     });
 
@@ -416,7 +420,11 @@ export default function PodPlotGoogleMap({
           fluid ? "flex-1 min-h-[240px] h-full" : "h-72"
         } ${pickMode ? "pp-map-container--pick" : ""}`}
       >
-        <div ref={containerRef} className="absolute inset-0 w-full h-full" aria-hidden={!pickMode} />
+        <div
+          ref={containerRef}
+          className="pp-map-google-canvas absolute inset-0 w-full h-full"
+          aria-hidden={!pickMode}
+        />
         {pickMode && !hidePickHint && !draftPin && <MapPickHint />}
         <MapZoomControls onZoomIn={() => zoomBy(1)} onZoomOut={() => zoomBy(-1)} />
       </div>

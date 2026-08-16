@@ -1090,6 +1090,26 @@ textarea {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Sousedé / Katalog — lišta vyplní celý řádek, výška zůstane */
+.tab-header-container > .pp-smart-bar {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+}
+
+.tab-header-container > .pp-smart-bar .pp-smart-bar-pills--fit {
+  width: 100%;
+}
+
+.tab-header-container > .pp-smart-bar.pp-smart-bar--fit .pp-smart-tab {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 /* Akce — toolbar nad obsahem (okruh + Kalendář/Seznam/Mapa), nic nepřekrývá seznam */
@@ -1527,7 +1547,8 @@ textarea {
   position: relative;
 }
 
-.pp-map-container--google > div {
+/* Jen plátno mapy — ne ovládací vrstvy (zoom), jinak překryjí celou mapu a blokují špendlíky */
+.pp-map-container--google > .pp-map-google-canvas {
   width: 100% !important;
   height: 100% !important;
 }
@@ -1576,7 +1597,7 @@ textarea {
   min-height: 140px;
 }
 
-/* Hlavní přepínač Hlášení / Průvodce na stránce Mapa */
+/* Hlavní přepínač Hlášení / Průvodce — stejná výška dlaždic jako Sousedé / Katalog */
 .pp-map-main-tabs-wrap {
   position: relative;
 }
@@ -1584,7 +1605,9 @@ textarea {
 .pp-map-main-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
 }
 
 .pp-map-main-tab {
@@ -1593,11 +1616,12 @@ textarea {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  min-height: 76px;
-  padding: 10px 8px;
-  border: 2px solid #e8f0ed;
-  border-radius: 16px;
+  gap: 4px;
+  min-height: 0;
+  /* Stejný rytmus jako .pp-smart-tab--prominent ve fit režimu (Sousedé / Katalog) */
+  padding: 9px 8px 8px;
+  border: 1.5px solid #e8f0ed;
+  border-radius: 14px;
   background: #ffffff;
   color: #4d8b7a;
   cursor: pointer;
@@ -1609,24 +1633,36 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  transform: scale(0.92);
+  transform: none;
   color: #64a08d;
+  line-height: 0;
   transition: color 0.15s ease, transform 0.15s ease;
 }
 
+.pp-map-main-tab-icon .pp-doodle-icon,
+.pp-map-main-tab-icon svg {
+  width: 1.55rem;
+  height: 1.55rem;
+}
+
 .pp-map-main-tab-label {
-  font-size: 14px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: -0.01em;
-  line-height: 1.2;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
 }
 
 .pp-map-main-tab-sub {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
-  line-height: 1.25;
+  line-height: 1.15;
   color: #7da59a;
   text-align: center;
+  max-width: 100%;
+  padding: 0 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pp-map-main-tab--active {
@@ -1643,7 +1679,7 @@ textarea {
 
 .pp-map-main-tab--active .pp-map-main-tab-icon {
   color: #2d6a4f;
-  transform: scale(0.96);
+  transform: none;
 }
 
 .pp-map-main-tab--active .pp-map-main-tab-sub {
@@ -1654,11 +1690,11 @@ textarea {
 /* Tip (žárovka) / lupa — roh aktivní dlaždice Hlášení / Průvodce */
 .pp-map-tab-info-btn {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 4px;
+  right: 4px;
   z-index: 2;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 999px;
   border: 1.5px solid #95d5b2;
   background: #ffffff;
@@ -2402,10 +2438,15 @@ textarea {
   position: absolute;
   right: 10px;
   bottom: 10px;
+  top: auto;
+  left: auto;
+  width: auto;
+  height: auto;
   z-index: 5;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  pointer-events: none;
 }
 
 .pp-map-google-control-btn {
@@ -2422,6 +2463,7 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: auto;
 }
 
 .pp-map-google-control-btn:hover {
