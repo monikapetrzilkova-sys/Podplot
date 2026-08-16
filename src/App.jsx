@@ -35,6 +35,7 @@ import GlobalSearchResults from "./components/GlobalSearchResults.jsx";
 
 import { LOCATION_DOODLE_ICONS } from "./components/doodle/doodleIcons.jsx";
 import { APP_ROLES } from "./data/userRoles.js";
+import usePullToRefresh, { PullToRefreshIndicator } from "./hooks/usePullToRefresh.jsx";
 
 function Toast() {
   const { toast } = useApp();
@@ -68,8 +69,14 @@ function Toast() {
 }
 
 function MainScroll({ children, fill = false }) {
+  const scrollRef = useRef(null);
+  const { pull, refreshing, threshold } = usePullToRefresh(scrollRef, {
+    enabled: !fill,
+  });
+
   return (
     <main
+      ref={scrollRef}
       id="app-main-scroll"
       className={`min-h-0 min-w-0 scrollbar-thin ${
         fill
@@ -78,6 +85,9 @@ function MainScroll({ children, fill = false }) {
       }`}
       style={{ scrollbarWidth: "thin", ...(fill ? { flex: "1 1 0%" } : null) }}
     >
+      {!fill && (
+        <PullToRefreshIndicator pull={pull} refreshing={refreshing} threshold={threshold} />
+      )}
       {children}
     </main>
   );
