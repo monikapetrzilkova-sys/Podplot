@@ -78,10 +78,10 @@ function StoryPage() {
   );
 }
 
-/** Celá obrazovka po registraci — uživatel potvrdí a vstoupí do aplikace */
+/** Celá obrazovka po registraci — uživatel potvrdí a vstoupí na Domů */
 export function PodplotStoryWelcome({ onContinue }) {
   return (
-    <div className="fixed inset-0 z-[90] bg-[#F9F9F9] overflow-y-auto">
+    <div className="fixed inset-0 z-[100] bg-[#F9F9F9] overflow-y-auto">
       <div className="min-h-full max-w-[390px] mx-auto px-4 py-6 pb-10 flex flex-col">
         <PodplotStoryContent />
         <button
@@ -90,7 +90,7 @@ export function PodplotStoryWelcome({ onContinue }) {
           className="mt-8 w-full py-3.5 rounded-2xl text-sm font-semibold text-white shrink-0"
           style={{ background: "#1B4332" }}
         >
-          Pokračovat do aplikace
+          Pokračovat na Domů
         </button>
       </div>
     </div>

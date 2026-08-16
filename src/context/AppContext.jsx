@@ -255,7 +255,13 @@ export function AppProvider({ children }) {
   const [feedMainMode, setFeedMainMode] = useState("komunita");
   const [feedSubFilter, setFeedSubFilter] = useState("veci");
   const [showDiscoveryWall, setShowDiscoveryWall] = useState(true);
-  const [showPodplotStory, setShowPodplotStory] = useState(false);
+  const [showPodplotStory, setShowPodplotStory] = useState(() => {
+    try {
+      return sessionStorage.getItem("pp-show-podplot-story") === "1";
+    } catch {
+      return false;
+    }
+  });
   /** Po odkazu z e-mailu „zapomenuté heslo“ — vynutí obrazovku nového hesla */
   const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [expandedPillar, setExpandedPillar] = useState(null);
@@ -1184,6 +1190,17 @@ export function AppProvider({ children }) {
       }
 
       showToast(buildWelcomeToast(name, { isVerified, domain: isVerified ? domain : null }));
+      setActiveTab("home");
+      setFeedMainMode("komunita");
+      setFeedSubFilter("veci");
+      setShowDiscoveryWall(true);
+      setHomeModule(null);
+      setExpandedPillar(null);
+      try {
+        sessionStorage.setItem("pp-show-podplot-story", "1");
+      } catch {
+        /* ignore */
+      }
       setShowPodplotStory(true);
       return { ok: true };
     },
@@ -1303,7 +1320,18 @@ export function AppProvider({ children }) {
   );
 
   const dismissPodplotStory = useCallback(() => {
+    try {
+      sessionStorage.removeItem("pp-show-podplot-story");
+    } catch {
+      /* ignore */
+    }
     setShowPodplotStory(false);
+    setActiveTab("home");
+    setFeedMainMode("komunita");
+    setFeedSubFilter("veci");
+    setShowDiscoveryWall(true);
+    setHomeModule(null);
+    setExpandedPillar(null);
   }, []);
 
   const logout = useCallback(async () => {
@@ -1320,6 +1348,11 @@ export function AppProvider({ children }) {
     setServicesCatalog(SERVICES_CATALOG);
     setShowDiscoveryWall(true);
     setShowPodplotStory(false);
+    try {
+      sessionStorage.removeItem("pp-show-podplot-story");
+    } catch {
+      /* ignore */
+    }
     setViewAsNeighbor(false);
     workUserBackupRef.current = null;
     setActiveTab("home");

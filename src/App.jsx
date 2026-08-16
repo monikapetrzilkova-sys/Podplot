@@ -269,30 +269,34 @@ export default function AppShell() {
   }
 
   return (
-    <div
-      className={`pp-app-shell-outer${desktopFrame ? " pp-app-shell-outer--desktop" : ""}`}
-    >
+    <>
       <div
-        id="app-panel-root"
-        className={`pp-app-shell pp-page relative overflow-hidden flex flex-col min-h-0${
-          desktopFrame ? " pp-app-shell--desktop" : ""
-        }`}
+        className={`pp-app-shell-outer${desktopFrame ? " pp-app-shell-outer--desktop" : ""}`}
       >
-        <TopBar />
-        <Screen />
-        <TabBar />
-        <CreateListingModal />
-        <CreateInvoiceModal />
-        <CreateEventModal />
-        <PlaceSuggestionModal />
-        <PlusActionMenu />
-        <ProfileOverlay />
-        <MessagesOverlay />
-        <GlobalModals />
-        <div id="app-modal-root" className="absolute inset-0 z-[70] pointer-events-none" />
-        <Toast />
-        {showPodplotStory ? <PodplotStoryWelcome onContinue={dismissPodplotStory} /> : null}
+        <div
+          id="app-panel-root"
+          className={`pp-app-shell pp-page relative overflow-hidden flex flex-col min-h-0${
+            desktopFrame ? " pp-app-shell--desktop" : ""
+          }`}
+        >
+          <TopBar />
+          <Screen />
+          <TabBar />
+          <CreateListingModal />
+          <CreateInvoiceModal />
+          <CreateEventModal />
+          <PlaceSuggestionModal />
+          <PlusActionMenu />
+          <ProfileOverlay />
+          <MessagesOverlay />
+          <GlobalModals />
+          <div id="app-modal-root" className="absolute inset-0 z-[70] pointer-events-none" />
+          <Toast />
+        </div>
       </div>
-    </div>
+      {showPodplotStory ? (
+        <PodplotStoryWelcome onContinue={dismissPodplotStory} />
+      ) : null}
+    </>
   );
 }
