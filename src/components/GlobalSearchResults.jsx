@@ -109,11 +109,8 @@ export default function GlobalSearchResults() {
   );
 
   const groupPosts = useMemo(() => {
-    const myGroups = getMyGroups(activeLocationId);
-    return myGroups.flatMap((g) => getGroupPosts(g.id, userGroupPosts ?? []));
-  }, [activeLocationId, userGroupPosts]);
-
-  const communityGroups = useMemo(() => getMyGroups(activeLocationId), [activeLocationId]);
+    return (communityGroups ?? []).flatMap((g) => getGroupPosts(g.id, userGroupPosts ?? []));
+  }, [communityGroups, userGroupPosts]);
 
   const searchableNeighbors = useMemo(
     () =>
