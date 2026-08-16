@@ -4,6 +4,7 @@ import { buildGlobalSearchResults } from "../utils/globalSearch.js";
 import { SECURITY_REPORTS } from "../data/mockData.js";
 import { filterSecurityReportsByLocation } from "../data/geoFilter.js";
 import { filterActiveReports } from "../data/reportExpiry.js";
+import { getMyGroups, getGroupPosts, getGroup } from "../data/groups.js";
 import { PlaceIcon } from "./module/placeIcons.jsx";
 import { ReportPinIcon } from "./module/reportPinIcons.jsx";
 import InstitutionDetailCard from "./InstitutionDetailCard.jsx";
@@ -14,8 +15,11 @@ import {
   DoodleHelpIcon,
   DoodleMegaphoneIcon,
   DoodlePackageIcon,
+  DoodleCalendarIcon,
+  DoodleGroupsIcon,
 } from "./doodle/doodleIcons.jsx";
 import { displayCreatorLabel } from "../data/accountTypes.js";
+import { isSelfNeighborCandidate, isCurrentUserRef } from "../data/listingSales.js";
 
 function ResultSection({ title, children, count }) {
   if (!count) return null;
@@ -53,7 +57,7 @@ function ResultRow({ badge, title, subtitle, meta, icon, onClick }) {
   );
 }
 
-/** Celkové výsledky z horního vyhledávání — místa, hlášení, inzeráty… */
+/** Celkové výsledky z horního vyhledávání — napříč aplikací */
 export default function GlobalSearchResults() {
   const {
     globalSearchQuery,
@@ -63,9 +67,15 @@ export default function GlobalSearchResults() {
     reportedReports,
     userPostsForLocation,
     feedPostsForLocation,
+    userGroupPosts,
     neighborHelp,
     areaNews,
     servicesCatalogReachable,
+    upcomingEvents,
+    pastEvents,
+    lendingItemsForLocation,
+    neighbors,
+    user,
     activeLocation,
     activeLocationId,
     setActiveTab,
@@ -74,6 +84,9 @@ export default function GlobalSearchResults() {
     showModuleItemOnMap,
     openCraftsmanPublicProfile,
     setLocalGuideSearchQuery,
+    openEventDetail,
+    openGroup,
+    openLendingFromHome,
   } = useApp();
 
   const [detailPlace, setDetailPlace] = useState(null);
@@ -94,6 +107,26 @@ export default function GlobalSearchResults() {
     [userPostsForLocation, feedPostsForLocation]
   );
 
+  const groupPosts = useMemo(() => {
+    const myGroups = getMyGroups(activeLocationId);
+    return myGroups.flatMap((g) => getGroupPosts(g.id, userGroupPosts ?? []));
+  }, [activeLocationId, userGroupPosts]);
+
+  const communityGroups = useMemo(() => getMyGroups(activeLocationId), [activeLocationId]);
+
+  const searchableNeighbors = useMemo(
+    () =>
+      (neighbors ?? []).filter(
+        (n) => n?.id && !isSelfNeighborCandidate(n, user) && !isCurrentUserRef(n.id, user)
+      ),
+    [neighbors, user]
+  );
+
+  const events = useMemo(
+    () => [...(upcomingEvents ?? []), ...(pastEvents ?? [])],
+    [upcomingEvents, pastEvents]
+  );
+
   const results = useMemo(
     () =>
       buildGlobalSearchResults({
@@ -104,11 +137,31 @@ export default function GlobalSearchResults() {
         help: neighborHelp ?? [],
         news: areaNews ?? [],
         services: servicesCatalogReachable ?? [],
+        events,
+        groupPosts,
+        lending: lendingItemsForLocation ?? [],
+        groups: communityGroups,
+        neighbors: searchableNeighbors,
       }),
-    [q, institutionsSorted, reports, listings, neighborHelp, areaNews, servicesCatalogReachable]
+    [
+      q,
+      institutionsSorted,
+      reports,
+      listings,
+      neighborHelp,
+      areaNews,
+      servicesCatalogReachable,
+      events,
+      groupPosts,
+      lendingItemsForLocation,
+      communityGroups,
+      searchableNeighbors,
+    ]
   );
 
   if (!q) return null;
+
+  const clearSearch = () => setGlobalSearchQuery("");
 
   const openPlace = (place) => setDetailPlace(place);
 
@@ -120,14 +173,14 @@ export default function GlobalSearchResults() {
     setActiveTab("map");
     setMapFocus("reports");
     showModuleItemOnMap?.(MODULE_IDS.REPORTS, report.id);
+    clearSearch();
   };
 
   const openListing = (post) => setDetailListing(post);
 
   const goToMapPlaces = () => {
-    const query = q;
-    setLocalGuideSearchQuery?.(query);
-    setGlobalSearchQuery("");
+    setLocalGuideSearchQuery?.(q);
+    clearSearch();
     setActiveTab("map");
     setMapFocus("places");
   };
@@ -138,12 +191,12 @@ export default function GlobalSearchResults() {
         <div className="min-w-0">
           <h2 className="text-lg font-bold text-stone-900">Výsledky hledání</h2>
           <p className="text-xs text-stone-500 mt-0.5 truncate">
-            „{q}“ · {results.total} {results.total === 1 ? "výsledek" : "výsledků"} v okolí
+            „{q}“ · {results.total} {results.total === 1 ? "výsledek" : "výsledků"} napříč aplikací
           </p>
         </div>
         <button
           type="button"
-          onClick={() => setGlobalSearchQuery("")}
+          onClick={clearSearch}
           className="text-xs font-semibold text-[#3D7A68] px-3 py-1.5 rounded-lg border border-[#C5DDD4] bg-white shrink-0"
         >
           Zrušit
@@ -152,10 +205,95 @@ export default function GlobalSearchResults() {
 
       {results.total === 0 ? (
         <p className="pp-card px-4 py-6 text-sm text-stone-500 text-center leading-relaxed">
-          Nic jsme v okolí nenašli. Zkuste jiné slovo — např. hřiště, jahody, výpadek.
+          Nic jsme nenašli. Zkuste jiné slovo — např. běh, oblečení, hřiště, jahody.
         </p>
       ) : (
         <>
+          <ResultSection title="Akce" count={results.events.length}>
+            {results.events.map((ev) => (
+              <ResultRow
+                key={ev.id}
+                badge="Akce"
+                title={ev.title}
+                subtitle={ev.description || ev.location}
+                meta={[ev.date, ev.categoryLabel].filter(Boolean).join(" · ")}
+                icon={<DoodleCalendarIcon className="w-4 h-4" />}
+                onClick={() => {
+                  openEventDetail?.(ev.id);
+                  clearSearch();
+                }}
+              />
+            ))}
+          </ResultSection>
+
+          <ResultSection title="Příspěvky ve skupinách" count={results.groupPosts.length}>
+            {results.groupPosts.map((post) => {
+              const group = getGroup(post.groupId);
+              return (
+                <ResultRow
+                  key={post.id}
+                  badge={group?.name || "Skupina"}
+                  title={post.title}
+                  subtitle={post.body}
+                  meta={post.type || post.meta}
+                  icon={<DoodleGroupsIcon className="w-4 h-4" />}
+                  onClick={() => {
+                    openGroup?.(post.groupId);
+                    clearSearch();
+                  }}
+                />
+              );
+            })}
+          </ResultSection>
+
+          <ResultSection title="Skupiny" count={results.groups.length}>
+            {results.groups.map((group) => (
+              <ResultRow
+                key={group.id}
+                badge="Skupina"
+                title={group.name}
+                subtitle={group.description}
+                meta={`${group.members ?? "?"} členů`}
+                icon={<DoodleGroupsIcon className="w-4 h-4" />}
+                onClick={() => {
+                  openGroup?.(group.id);
+                  clearSearch();
+                }}
+              />
+            ))}
+          </ResultSection>
+
+          <ResultSection title="Inzeráty a nabídky" count={results.listings.length}>
+            {results.listings.map((post) => (
+              <ResultRow
+                key={post.id}
+                badge={post.type || post.feedSubtype || "Inzerát"}
+                title={post.title}
+                subtitle={post.body}
+                meta={post.meta}
+                icon={<DoodlePackageIcon className="w-4 h-4" />}
+                onClick={() => openListing(post)}
+              />
+            ))}
+          </ResultSection>
+
+          <ResultSection title="Půjčovna" count={results.lending.length}>
+            {results.lending.map((item) => (
+              <ResultRow
+                key={item.id}
+                badge="Půjčovna"
+                title={item.title || item.name}
+                subtitle={item.body}
+                meta={item.meta || item.categoryLabel}
+                icon={<DoodlePackageIcon className="w-4 h-4" />}
+                onClick={() => {
+                  openLendingFromHome?.(item.id);
+                  clearSearch();
+                }}
+              />
+            ))}
+          </ResultSection>
+
           <ResultSection title="Místa na mapě" count={results.places.length}>
             {results.places.map((place) => (
               <ResultRow
@@ -193,20 +331,6 @@ export default function GlobalSearchResults() {
             ))}
           </ResultSection>
 
-          <ResultSection title="Inzeráty a nabídky" count={results.listings.length}>
-            {results.listings.map((post) => (
-              <ResultRow
-                key={post.id}
-                badge={post.type || post.feedSubtype || "Inzerát"}
-                title={post.title}
-                subtitle={post.body}
-                meta={post.meta}
-                icon={<DoodlePackageIcon className="w-4 h-4" />}
-                onClick={() => openListing(post)}
-              />
-            ))}
-          </ResultSection>
-
           <ResultSection title="Výpomoc" count={results.help.length}>
             {results.help.map((item) => (
               <ResultRow
@@ -218,7 +342,7 @@ export default function GlobalSearchResults() {
                 icon={<DoodleHelpIcon className="w-4 h-4" />}
                 onClick={() => {
                   selectMainTab?.("neighbors");
-                  setGlobalSearchQuery("");
+                  clearSearch();
                 }}
               />
             ))}
@@ -235,7 +359,7 @@ export default function GlobalSearchResults() {
                 icon={<DoodleMegaphoneIcon className="w-4 h-4" />}
                 onClick={() => {
                   selectMainTab?.("home");
-                  setGlobalSearchQuery("");
+                  clearSearch();
                 }}
               />
             ))}
@@ -252,6 +376,23 @@ export default function GlobalSearchResults() {
                 icon={<DoodleCraftIcon className="w-4 h-4" />}
                 onClick={() => {
                   openCraftsmanPublicProfile?.({ serviceId: svc.id });
+                }}
+              />
+            ))}
+          </ResultSection>
+
+          <ResultSection title="Sousedé" count={results.neighbors.length}>
+            {results.neighbors.map((n) => (
+              <ResultRow
+                key={n.id}
+                badge="Soused"
+                title={n.name}
+                subtitle={n.municipality || n.location}
+                meta={n.distance}
+                icon={<DoodleGroupsIcon className="w-4 h-4" />}
+                onClick={() => {
+                  selectMainTab?.("neighbors");
+                  clearSearch();
                 }}
               />
             ))}
