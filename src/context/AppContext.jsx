@@ -164,6 +164,7 @@ import {
   persistGroupProposals,
   mergeProposalLists,
   proposalsFromRemotePosts,
+  extractSupportsForMyProposals,
   GROUP_PROPOSAL_FEED_SUBTYPE,
   GROUP_PROPOSAL_VOTE_FEED_SUBTYPE,
 } from "../utils/groupProposalSync.js";
@@ -398,6 +399,13 @@ export function AppProvider({ children }) {
   const [groupProposals, setGroupProposals] = useState(() =>
     mergeProposalLists(INITIAL_GROUP_PROPOSALS, loadStoredGroupProposals())
   );
+  const groupProposalsRef = useRef(groupProposals);
+  groupProposalsRef.current = groupProposals;
+  /** Kdo podpořil mé návrhy skupin — [{ id, proposalId, proposalName, voterId, voterName, voterInitials, createdAt }] */
+  const [groupProposalSupporters, setGroupProposalSupporters] = useState([]);
+  const [groupProposalSupportersSeenIds, setGroupProposalSupportersSeenIds] = useState([]);
+  const groupProposalSupportersRef = useRef(groupProposalSupporters);
+  groupProposalSupportersRef.current = groupProposalSupporters;
   const [createGroupModalOpen, setCreateGroupModalOpen] = useState(false);
   const [editingGroupProposalId, setEditingGroupProposalId] = useState(null);
 
@@ -1017,16 +1025,99 @@ export function AppProvider({ children }) {
     );
   }, [user?.id]);
 
+  const loadGroupSupportSeen = useCallback((userId) => {
+    try {
+      const raw = localStorage.getItem(`podplot-group-support-seen-v1-${userId}`);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+    } catch {
+      return [];
+    }
+  }, []);
+
+  const notifyGroupProposalSupport = useCallback((entry) => {
+    if (!entry?.id || !entry?.voterId) return;
+    const first = (entry.voterName || "Soused").split(/\s+/)[0];
+    const notifId = `n-group-support-${entry.id}`;
+    setNotifications((prev) => {
+      if (prev.some((n) => n.id === notifId)) return prev;
+      return [
+        {
+          id: notifId,
+          type: "green",
+          title: `${first} podpořil/a váš návrh`,
+          body: `„${entry.proposalName || "Skupina"}“ — podívejte se v profilu, kdo vás podpořil.`,
+          read: false,
+          time: "právě teď",
+          actionType: "group_proposal_support",
+          supportId: entry.id,
+          proposalId: entry.proposalId,
+        },
+        ...prev,
+      ];
+    });
+    setToast({
+      message: `${first} podpořil/a návrh „${entry.proposalName || "Skupina"}“.`,
+      type: "success",
+      locationId: null,
+    });
+    window.setTimeout(() => setToast(null), 3500);
+  }, []);
+
+  const applyGroupProposalSupports = useCallback(
+    (list, { notifyNew = false } = {}) => {
+      if (!user?.id) return;
+      const seen = new Set(loadGroupSupportSeen(user.id));
+      setGroupProposalSupportersSeenIds([...seen]);
+      setGroupProposalSupporters(list);
+      if (!notifyNew) return;
+      list.forEach((entry) => {
+        if (!entry?.id || seen.has(entry.id)) return;
+        notifyGroupProposalSupport(entry);
+      });
+    },
+    [user?.id, loadGroupSupportSeen, notifyGroupProposalSupport]
+  );
+
+  const markGroupProposalSupportersSeen = useCallback(() => {
+    if (!user?.id) return;
+    const ids = groupProposalSupportersRef.current.map((s) => s.id).filter(Boolean);
+    setGroupProposalSupportersSeenIds(ids);
+    try {
+      localStorage.setItem(`podplot-group-support-seen-v1-${user.id}`, JSON.stringify(ids));
+    } catch {
+      /* ignore */
+    }
+    setNotifications((prev) =>
+      prev.map((n) => (n.actionType === "group_proposal_support" ? { ...n, read: true } : n))
+    );
+  }, [user?.id]);
+
   // Sdílené příspěvky ze Supabase (kamarádi na Vercelu)
   useEffect(() => {
-    if (!user?.id) return undefined;
+    if (!user?.id) {
+      setGroupProposalSupporters([]);
+      setGroupProposalSupportersSeenIds([]);
+      return undefined;
+    }
     let cancelled = false;
     let unsubscribe = () => {};
+
+    const isMyProposalId = (proposalId) => {
+      if (!proposalId) return false;
+      return groupProposalsRef.current.some(
+        (p) =>
+          p.id === proposalId &&
+          String(p.proposerId ?? p.proposer_id ?? "") === String(user.id)
+      );
+    };
 
     (async () => {
       await ensureSupabase();
       if (cancelled) return;
       void upsertRemoteProfile(user);
+      const seen = loadGroupSupportSeen(user.id);
+      setGroupProposalSupportersSeenIds(seen);
       const remote = await fetchRemotePosts({
         municipality: activeLocation?.municipality ?? user.geo?.city ?? null,
         currentUserId: user.id,
@@ -1037,6 +1128,13 @@ export function AppProvider({ children }) {
       if (fromPosts.length) {
         setGroupProposals((prev) => mergeProposalLists(prev, fromPosts));
       }
+
+      const supports = extractSupportsForMyProposals(
+        remote,
+        user.id,
+        mergeProposalLists(groupProposalsRef.current, fromPosts)
+      );
+      if (!cancelled) applyGroupProposalSupports(supports, { notifyNew: false });
 
       const feedRemote = remote.filter(
         (p) => !isGroupProposalPost(p) && !isGroupProposalVotePost(p)
@@ -1074,6 +1172,32 @@ export function AppProvider({ children }) {
               };
             })
           );
+
+          if (
+            post.authorId &&
+            post.authorId !== user.id &&
+            isMyProposalId(post.proposalId)
+          ) {
+            const proposal =
+              groupProposalsRef.current.find((p) => p.id === post.proposalId) ?? null;
+            const entry = {
+              id: `${post.proposalId}:${post.authorId}`,
+              proposalId: post.proposalId,
+              proposalName: proposal?.name || "Skupina",
+              voterId: String(post.authorId),
+              voterName: post.author || "Soused",
+              voterInitials: post.initials || null,
+              createdAt: post.createdAt ?? Date.now(),
+            };
+            setGroupProposalSupporters((prev) => {
+              if (prev.some((s) => s.id === entry.id)) return prev;
+              return [entry, ...prev];
+            });
+            const seenNow = new Set(loadGroupSupportSeen(user.id));
+            if (!seenNow.has(entry.id)) {
+              notifyGroupProposalSupport(entry);
+            }
+          }
           return;
         }
         setUserPosts((prev) => {
@@ -1087,7 +1211,15 @@ export function AppProvider({ children }) {
       cancelled = true;
       unsubscribe?.();
     };
-  }, [user?.id, activeLocation?.municipality, user?.geo?.city, user]);
+  }, [
+    user?.id,
+    activeLocation?.municipality,
+    user?.geo?.city,
+    user,
+    loadGroupSupportSeen,
+    applyGroupProposalSupports,
+    notifyGroupProposalSupport,
+  ]);
 
   // Sdílené zprávy mezi testery (odpověď na inzerát / hlášení)
   useEffect(() => {
@@ -5424,6 +5556,11 @@ export function AppProvider({ children }) {
         setProfileScrollTarget("trust-received");
         return;
       }
+      if (target.actionType === "group_proposal_support") {
+        openProfile();
+        setProfileScrollTarget("group-supports");
+        return;
+      }
       if (target.participantId) {
         openMessages();
         openChat(target.participantId, target.participantName ?? "Soused");
@@ -5439,10 +5576,47 @@ export function AppProvider({ children }) {
     return trustVerifiers.filter((v) => v?.confirmerId && !seen.has(v.confirmerId)).length;
   }, [trustVerifiers, trustVerifiersSeenIds]);
 
+  const unreadGroupProposalSupportersCount = useMemo(() => {
+    const seen = new Set(groupProposalSupportersSeenIds);
+    return groupProposalSupporters.filter((s) => s?.id && !seen.has(s.id)).length;
+  }, [groupProposalSupporters, groupProposalSupportersSeenIds]);
+
+  const unreadProfileBadgeCount = useMemo(
+    () => unreadTrustVerifiersCount + unreadGroupProposalSupportersCount,
+    [unreadTrustVerifiersCount, unreadGroupProposalSupportersCount]
+  );
+
   const openTrustVerifiers = useCallback(() => {
     openProfile();
     setProfileScrollTarget("trust-received");
   }, [openProfile]);
+
+  const openGroupProposalSupporters = useCallback(() => {
+    openProfile();
+    setProfileScrollTarget("group-supports");
+  }, [openProfile]);
+
+  const openProfileActivity = useCallback(() => {
+    if (unreadGroupProposalSupportersCount > 0 && unreadTrustVerifiersCount === 0) {
+      openGroupProposalSupporters();
+      return;
+    }
+    if (unreadTrustVerifiersCount > 0) {
+      openTrustVerifiers();
+      return;
+    }
+    if (unreadGroupProposalSupportersCount > 0) {
+      openGroupProposalSupporters();
+      return;
+    }
+    openProfile();
+  }, [
+    unreadGroupProposalSupportersCount,
+    unreadTrustVerifiersCount,
+    openGroupProposalSupporters,
+    openTrustVerifiers,
+    openProfile,
+  ]);
 
   const unreadMessagesCount = useMemo(
     () => chats.reduce((sum, c) => sum + (c.unread ?? 0), 0),
@@ -6102,6 +6276,12 @@ export function AppProvider({ children }) {
         unreadTrustVerifiersCount,
         markTrustVerifiersSeen,
         openTrustVerifiers,
+        groupProposalSupporters,
+        unreadGroupProposalSupportersCount,
+        unreadProfileBadgeCount,
+        markGroupProposalSupportersSeen,
+        openGroupProposalSupporters,
+        openProfileActivity,
         adminReports,
         blockedUserIds,
         reportUser,

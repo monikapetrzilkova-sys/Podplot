@@ -123,3 +123,49 @@ export function proposalsFromRemotePosts(posts, currentUserId = null) {
     };
   });
 }
+
+/**
+ * Hlasy podpory u mých návrhů (bez mého vlastního hlasu).
+ * @returns {{ id, proposalId, proposalName, voterId, voterName, voterInitials, createdAt }[]}
+ */
+export function extractSupportsForMyProposals(posts, myUserId, myProposals = []) {
+  if (!myUserId) return [];
+  const myId = String(myUserId);
+  const nameById = new Map();
+  const myProposalIds = new Set();
+
+  for (const p of myProposals ?? []) {
+    if (!p?.id) continue;
+    if (String(p.proposerId ?? p.proposer_id ?? "") !== myId) continue;
+    myProposalIds.add(p.id);
+    nameById.set(p.id, p.name || "Skupina");
+  }
+
+  for (const post of posts ?? []) {
+    if (!isGroupProposalPost(post)) continue;
+    if (String(post.authorId ?? "") !== myId) continue;
+    myProposalIds.add(post.id);
+    nameById.set(post.id, post.title || nameById.get(post.id) || "Skupina");
+  }
+
+  const byKey = new Map();
+  for (const v of posts ?? []) {
+    if (!isGroupProposalVotePost(v)) continue;
+    const pid = v.proposalId;
+    const voterId = v.authorId;
+    if (!pid || !voterId || !myProposalIds.has(pid)) continue;
+    if (String(voterId) === myId) continue;
+    const key = `${pid}:${voterId}`;
+    byKey.set(key, {
+      id: key,
+      proposalId: pid,
+      proposalName: nameById.get(pid) || "Skupina",
+      voterId: String(voterId),
+      voterName: v.author || "Soused",
+      voterInitials: v.initials || null,
+      createdAt: v.createdAt ?? Date.now(),
+    });
+  }
+
+  return [...byKey.values()].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+}

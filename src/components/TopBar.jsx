@@ -8,11 +8,12 @@ import { DoodleHomeIntro } from "./doodle/doodleIllustrations.jsx";
 export default function TopBar() {
   const {
     user,
-    openProfile,
-    openTrustVerifiers,
+    openProfileActivity,
     openMessages,
     unreadMessagesCount,
+    unreadProfileBadgeCount,
     unreadTrustVerifiersCount,
+    unreadGroupProposalSupportersCount,
     globalSearchQuery,
     setGlobalSearchQuery,
     goToHomeWall,
@@ -20,6 +21,17 @@ export default function TopBar() {
   } = useApp();
 
   if (!user) return null;
+
+  const profileBadgeLabel = (() => {
+    const parts = [];
+    if (unreadTrustVerifiersCount > 0) {
+      parts.push(`${unreadTrustVerifiersCount} nová potvrzení sousedství`);
+    }
+    if (unreadGroupProposalSupportersCount > 0) {
+      parts.push(`${unreadGroupProposalSupportersCount} nové podpory návrhů`);
+    }
+    return parts.length ? `Můj profil · ${parts.join(", ")}` : "Můj profil";
+  })();
 
   return (
     <header className="pp-header shrink-0 sticky top-0 z-40">
@@ -38,24 +50,18 @@ export default function TopBar() {
         <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
-            onClick={() =>
-              unreadTrustVerifiersCount > 0 ? openTrustVerifiers() : openProfile()
-            }
+            onClick={openProfileActivity}
             className="pp-header-avatar-btn relative"
-            aria-label={
-              unreadTrustVerifiersCount > 0
-                ? `Můj profil · ${unreadTrustVerifiersCount} nová potvrzení sousedství`
-                : "Můj profil"
-            }
+            aria-label={profileBadgeLabel}
           >
             {user.profilePhoto ? (
               <img src={user.profilePhoto} alt="" className="pp-header-avatar-img" />
             ) : (
               <span className="pp-header-avatar">{user.initials}</span>
             )}
-            {unreadTrustVerifiersCount > 0 && (
+            {unreadProfileBadgeCount > 0 && (
               <span className="pp-header-notify-dot">
-                {unreadTrustVerifiersCount > 9 ? "9+" : unreadTrustVerifiersCount}
+                {unreadProfileBadgeCount > 9 ? "9+" : unreadProfileBadgeCount}
               </span>
             )}
           </button>

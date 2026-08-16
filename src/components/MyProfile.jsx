@@ -229,6 +229,10 @@ export default function MyProfile({ registerLegalBack } = {}) {
     trustVerifiers,
     unreadTrustVerifiersCount,
     markTrustVerifiersSeen,
+    groupProposalSupporters,
+    unreadGroupProposalSupportersCount,
+    unreadProfileBadgeCount,
+    markGroupProposalSupportersSeen,
     triggerSos,
     craftsmanRadius,
     setCraftsmanRadius,
@@ -314,7 +318,8 @@ export default function MyProfile({ registerLegalBack } = {}) {
     if (
       profileScrollTarget !== "my-lending-offers" &&
       profileScrollTarget !== "trust-network" &&
-      profileScrollTarget !== "trust-received"
+      profileScrollTarget !== "trust-received" &&
+      profileScrollTarget !== "group-supports"
     ) {
       return;
     }
@@ -323,7 +328,9 @@ export default function MyProfile({ registerLegalBack } = {}) {
         ? "profile-trust-network"
         : profileScrollTarget === "trust-received"
           ? "profile-trust-received"
-          : "profile-my-lending-offers";
+          : profileScrollTarget === "group-supports"
+            ? "profile-group-supports"
+            : "profile-my-lending-offers";
     const frame = requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         const section = document.getElementById(targetId);
@@ -331,11 +338,19 @@ export default function MyProfile({ registerLegalBack } = {}) {
         if (profileScrollTarget === "trust-received") {
           markTrustVerifiersSeen?.();
         }
+        if (profileScrollTarget === "group-supports") {
+          markGroupProposalSupportersSeen?.();
+        }
         clearProfileScrollTarget();
       });
     });
     return () => cancelAnimationFrame(frame);
-  }, [profileScrollTarget, clearProfileScrollTarget, markTrustVerifiersSeen]);
+  }, [
+    profileScrollTarget,
+    clearProfileScrollTarget,
+    markTrustVerifiersSeen,
+    markGroupProposalSupportersSeen,
+  ]);
 
   if (!user) return null;
 
@@ -460,23 +475,37 @@ export default function MyProfile({ registerLegalBack } = {}) {
             type="button"
             className="pp-avatar-ring shrink-0 relative"
             onClick={() => {
+              if (unreadGroupProposalSupportersCount > 0 && unreadTrustVerifiersCount === 0) {
+                document
+                  .getElementById("profile-group-supports")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                markGroupProposalSupportersSeen?.();
+                return;
+              }
               if (unreadTrustVerifiersCount > 0 || trustVerifiers.length > 0) {
                 document
                   .getElementById("profile-trust-received")
                   ?.scrollIntoView({ behavior: "smooth", block: "start" });
                 markTrustVerifiersSeen?.();
+                return;
+              }
+              if (groupProposalSupporters.length > 0) {
+                document
+                  .getElementById("profile-group-supports")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                markGroupProposalSupportersSeen?.();
               }
             }}
             aria-label={
-              unreadTrustVerifiersCount > 0
-                ? `${unreadTrustVerifiersCount} nová potvrzení sousedství`
+              unreadProfileBadgeCount > 0
+                ? `${unreadProfileBadgeCount} nové aktivity v profilu`
                 : "Profilová fotka"
             }
           >
             <Avatar initials={user.initials} roleId={acc.role} size="lg" photo={user.profilePhoto} />
-            {unreadTrustVerifiersCount > 0 && (
+            {unreadProfileBadgeCount > 0 && (
               <span className="absolute -top-1 -right-1 min-w-[1.15rem] h-[1.15rem] px-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center shadow-sm border-2 border-white">
-                {unreadTrustVerifiersCount > 9 ? "9+" : unreadTrustVerifiersCount}
+                {unreadProfileBadgeCount > 9 ? "9+" : unreadProfileBadgeCount}
               </span>
             )}
           </button>
@@ -529,6 +558,28 @@ export default function MyProfile({ registerLegalBack } = {}) {
                 </span>
               ) : null}
             </button>
+            {(groupProposalSupporters.length > 0 || unreadGroupProposalSupportersCount > 0) && (
+              <button
+                type="button"
+                onClick={() => {
+                  document
+                    .getElementById("profile-group-supports")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  markGroupProposalSupportersSeen?.();
+                }}
+                className="mt-1.5 text-left text-xs text-stone-600 hover:text-emerald-800 block"
+              >
+                <span className="font-bold text-stone-800 tabular-nums">
+                  {groupProposalSupporters.length}
+                </span>{" "}
+                {groupProposalSupporters.length === 1 ? "podpora návrhů" : "podpor návrhů"}
+                {unreadGroupProposalSupportersCount > 0 ? (
+                  <span className="ml-1.5 text-emerald-700 font-semibold">
+                    · {unreadGroupProposalSupportersCount} nová
+                  </span>
+                ) : null}
+              </button>
+            )}
             <div className="flex flex-wrap gap-2 mt-3">
               <button
                 type="button"
@@ -821,6 +872,45 @@ export default function MyProfile({ registerLegalBack } = {}) {
             </div>
           );
         })()}
+      </section>
+
+      <section id="profile-group-supports" className="pp-card p-4 mb-4 scroll-mt-4">
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <ProfileSectionTitle icon={PROFILE_DOODLE_ICONS.groups} className="mb-0">
+            Kdo podpořil mé návrhy
+          </ProfileSectionTitle>
+          <span className="shrink-0 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-lg tabular-nums">
+            {groupProposalSupporters.length}
+          </span>
+        </div>
+        {groupProposalSupporters.length === 0 ? (
+          <p className="text-xs text-stone-500 leading-relaxed">
+            Až soused podpoří váš návrh skupiny, uvidíte ho tady — a na avataru se objeví číslo nových
+            podpor.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {groupProposalSupporters.map((s) => (
+              <div
+                key={s.id}
+                className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50/80 border border-emerald-100"
+              >
+                <Avatar initials={s.voterInitials || "??"} roleId="soused" size="sm" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-stone-800 truncate">
+                    <PersonLabel personId={s.voterId} name={s.voterName} />
+                  </p>
+                  <p className="text-[11px] text-stone-500 truncate">
+                    Podpořil/a návrh „{s.proposalName || "Skupina"}“
+                  </p>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-md shrink-0">
+                  Podpora
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="pp-card p-4 mb-4">
