@@ -19,6 +19,7 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png" />
     <title>Podplot</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -33,7 +34,7 @@
         }
       }
     </script>
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
       html {
         font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -64,22 +65,42 @@
         margin: 0;
         padding: 0;
       }
-      /* Kritické: edge-to-edge na telefonu (přebije starý max-w-[390px]) */
+      /* Mobil: full-bleed; PC s myší: telefonní rámeček 390px */
       #app-panel-root,
       .pp-app-shell,
-      .pp-app-shell-outer,
-      .pp-app-shell--desktop,
-      #app-panel-root.pp-app-shell--desktop {
-        width: 100% !important;
-        max-width: none !important;
-        margin-left: 0 !important;
-        margin-right: 0 !important;
-        border-radius: 0 !important;
+      .pp-app-shell-outer {
+        width: 100%;
+        max-width: none;
+        margin-left: 0;
+        margin-right: 0;
+        border-radius: 0;
       }
-      @media (min-width: 1024px) and (pointer: fine) {
+      @media (min-width: 768px) and (pointer: fine) {
         #app-panel-root.pp-app-shell--desktop {
           max-width: 390px !important;
+          height: 844px !important;
+          max-height: 90dvh !important;
           border-radius: 28px !important;
+          border: 1px solid #eeeeee !important;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
+          flex: 0 0 auto !important;
+        }
+        .pp-app-shell-outer--desktop {
+          justify-content: center !important;
+          align-items: center !important;
+          padding: 1rem 0 !important;
+          background: #1b4d3e !important;
+        }
+      }
+      @media (pointer: coarse) {
+        #app-panel-root,
+        #app-panel-root.pp-app-shell--desktop,
+        .pp-app-shell,
+        .pp-app-shell--desktop {
+          max-width: none !important;
+          width: 100% !important;
+          border-radius: 0 !important;
+          height: 100dvh !important;
         }
       }
       .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
@@ -87,11 +108,11 @@
       @keyframes slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
       .animate-slide-in { animation: slide-in 0.25s ease-out; }
     </style>
-    <script type="module" crossorigin src="/assets/index-DUl2UU4v.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-Be8_dGi9.css">
+    <script type="module" crossorigin src="/assets/index-Du0pFqmn.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CfqNhbfg.css">
   </head>
   <body>
     <div id="root"></div>
-
+
   </body>
 </html>

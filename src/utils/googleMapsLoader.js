@@ -1,20 +1,62 @@
 let loadPromise = null;
 let cachedConfig = null;
+
+function clientEnvMapsKey() {
+  try {
+    const fromVite = import.meta.env?.VITE_GOOGLE_MAPS_API_KEY;
+    if (typeof fromVite === "string" && fromVite.trim()) return fromVite.trim();
+  } catch {
+    /* ignore */
+  }
+  if (typeof window !== "undefined" && typeof window.__PODPLOT_MAPS_KEY__ === "string") {
+    return window.__PODPLOT_MAPS_KEY__.trim();
+  }
+  return "";
+}
+
+function configFromKey(key, source) {
+  const apiKey = key || null;
+  return {
+    enabled: Boolean(apiKey),
+    apiKey,
+    source,
+    mockPlaces: !apiKey,
+  };
+}
+
 export async function fetchMapsConfig() {
   if (cachedConfig) return cachedConfig;
+
   try {
-    const res = await fetch("/api/config/maps");
-    if (!res.ok) throw new Error("config unavailable");
-    cachedConfig = await res.json();
-    return cachedConfig;
+    const res = await fetch("/api/config/maps", { headers: { Accept: "application/json" } });
+    if (res.ok) {
+      const ct = res.headers.get("content-type") || "";
+      if (ct.includes("application/json")) {
+        const data = await res.json();
+        if (data && typeof data === "object") {
+          cachedConfig = {
+            enabled: Boolean(data.enabled && data.apiKey),
+            apiKey: data.apiKey || null,
+            source: data.source || "api",
+            mockPlaces: Boolean(data.mockPlaces ?? !data.apiKey),
+          };
+          return cachedConfig;
+        }
+      }
+    }
   } catch {
-    cachedConfig = { enabled: false, apiKey: null, source: "offline" };
-    return cachedConfig;
+    /* fall through */
   }
+
+  const fallbackKey = clientEnvMapsKey();
+  cachedConfig = configFromKey(fallbackKey, fallbackKey ? "client-env" : "offline");
+  return cachedConfig;
 }
+
 export function didMapsAuthFail() {
   return Boolean(window.__podplotMapsAuthFailed);
 }
+
 export async function loadGoogleMaps() {
   const config = await fetchMapsConfig();
   if (!config.enabled || !config.apiKey) {
@@ -22,12 +64,14 @@ export async function loadGoogleMaps() {
   }
   if (window.google?.maps && !didMapsAuthFail()) return window.google.maps;
   if (loadPromise) return loadPromise;
+
   window.__podplotMapsAuthFailed = false;
   const prevAuthFailure = window.gm_authFailure;
   window.gm_authFailure = () => {
     window.__podplotMapsAuthFailed = true;
     if (typeof prevAuthFailure === "function") prevAuthFailure();
   };
+
   loadPromise = new Promise((resolve, reject) => {
     const cbName = "__podplotGoogleMapsInit";
     window[cbName] = () => {
@@ -36,7 +80,7 @@ export async function loadGoogleMaps() {
         loadPromise = null;
         reject(
           new Error(
-            "Google Maps API klíč odmítnut. Na mobilu přes Wi‑Fi přidejte HTTP referrer (např. http://192.168.*.*:5173/*) v Google Cloud Console."
+            "Google Maps API klíč odmítnut. Přidejte HTTP referrer (localhost + podplot.vercel.app) v Google Cloud Console."
           )
         );
         return;
@@ -59,17 +103,19 @@ export async function loadGoogleMaps() {
     };
     document.head.appendChild(script);
   }).then(async (maps) => {
-    await new Promise((r) => setTimeout(r, 600));
+    await new Promise((r) => setTimeout(r, 800));
     if (didMapsAuthFail()) {
       loadPromise = null;
       throw new Error(
-        "Google Maps API klíč odmítnut (prázdná mapa). Zkontrolujte omezení HTTP referrer pro mobilní IP."
+        "Google Maps API klíč odmítnut (prázdná mapa). Zkontrolujte HTTP referrer pro localhost a podplot.vercel.app."
       );
     }
     return maps;
   });
+
   return loadPromise;
 }
+
 export function resetMapsLoaderForTests() {
   loadPromise = null;
   cachedConfig = null;

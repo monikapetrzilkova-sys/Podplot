@@ -241,7 +241,7 @@ export default function AppShell() {
   const [desktopFrame, setDesktopFrame] = useState(false);
 
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1024px) and (pointer: fine)");
+    const mq = window.matchMedia("(min-width: 768px) and (pointer: fine)");
     const sync = () => setDesktopFrame(mq.matches);
     sync();
     mq.addEventListener("change", sync);
