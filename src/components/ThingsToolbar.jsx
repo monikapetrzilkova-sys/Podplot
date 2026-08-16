@@ -11,7 +11,7 @@ export default function ThingsToolbar({ embedded = false }) {
       <SearchField
         value={zboziSearchQuery}
         onChange={setZboziSearchQuery}
-        placeholder="🔍 Hledat věc v okolí… (např. kočárek, vrtačka)"
+        placeholder="Hledat věc v okolí… (např. kočárek, vrtačka)"
       />
       <CategoryPills
         categories={MARKET_CATEGORIES}

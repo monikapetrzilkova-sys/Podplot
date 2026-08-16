@@ -1,0 +1,33 @@
+---
+description: Ikony v PodPlot UI musí být monochromatické doodle SVG, ne emoji
+alwaysApply: true
+---
+
+# Doodle ikony (monochromatické)
+
+V UI PodPlotu **nepoužívej emoji jako ikony** (tlačítka, chipy, záhlaví sekcí, CTA, vyhledávání, navigace, seznamy).
+
+## Povinné
+
+- Používej komponenty z `src/components/doodle/doodleIcons.jsx` (`DoodleIcon` + `currentColor`).
+- Barva jen přes `currentColor` / textové utility — bez barevných emoji.
+- Nové ikony přidávej do `doodleIcons.jsx` ve stejném stroke stylu (`doodleStroke`).
+- Mapování kategorií: `SERVICE_CATEGORY_DOODLE_ICONS`, `CATALOG_DOODLE_ICONS`, `MAP_DOODLE_ICONS`, atd.
+
+## Povoleno
+
+- Emoji v mock datech / textech zpráv jen pokud nejsou vizuální „ikonkou“ UI.
+- Status texty bez ikony (např. „Ověřeno“) — pokud je symbol potřeba, použij `DoodleCheckIcon`.
+
+## Příklady
+
+```jsx
+// ❌
+<button>Vstoupit do sousedství 🏘️</button>
+
+// ✅
+<button className="inline-flex items-center gap-2">
+  <DoodleSousedIcon className="w-5 h-5" />
+  Vstoupit do sousedství
+</button>
+```

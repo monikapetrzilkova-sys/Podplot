@@ -5,6 +5,7 @@ import LendingOwnerStatus from "./LendingOwnerStatus.jsx";
 import { getLendingCategory } from "../data/lendingCategories.js";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
 import AppPanelPortal from "./AppPanelPortal.jsx";
+import { DoodlePackageIcon } from "./doodle/doodleIcons.jsx";
 
 export default function LendingItemDetail({ group, onClose, onRent }) {
   if (!group) return null;
@@ -22,7 +23,9 @@ export default function LendingItemDetail({ group, onClose, onRent }) {
         <div className="pp-app-sheet-body p-5">
           <div className="flex items-start justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
-              <span className="text-3xl">{cat?.emoji ?? "📦"}</span>
+              <span className="w-12 h-12 rounded-2xl bg-[#E8F3EF] text-[#3D7A68] flex items-center justify-center shrink-0">
+                <DoodlePackageIcon className="w-7 h-7" />
+              </span>
               <div>
                 <h2 className="text-lg font-bold text-stone-900">{group.itemTypeLabel}</h2>
                 <p className="text-xs text-stone-500">

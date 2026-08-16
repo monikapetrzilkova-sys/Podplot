@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import EditedBadge from "./EditedBadge.jsx";
+import { DoodleMegaphoneIcon } from "./doodle/doodleIcons.jsx";
 
 export default function AreaNewsWidget() {
   const { areaNews, acknowledgedNewsIds } = useApp();
@@ -29,8 +30,8 @@ export default function AreaNewsWidget() {
                 className="w-full text-left p-3 flex items-start gap-2"
                 aria-expanded={open}
               >
-                <span className="text-lg shrink-0" title="Běžná aktualita" aria-hidden>
-                  📢
+                <span className="shrink-0 text-[#3D7A68]" title="Běžná aktualita" aria-hidden>
+                  <DoodleMegaphoneIcon className="w-5 h-5" />
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-bold text-blue-800 uppercase tracking-wide flex items-center gap-1.5 flex-wrap">

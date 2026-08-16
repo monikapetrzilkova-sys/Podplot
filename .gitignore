@@ -1,7 +1,10 @@
 ﻿.vercel
+.env
 .env.local
 .env.local.backup
 .env.*.local
 node_modules
 *.log
 .DS_Store
+.vercel
+.env*

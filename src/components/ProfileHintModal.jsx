@@ -2,6 +2,7 @@
 
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
 import AppPanelPortal from "./AppPanelPortal.jsx";
+import { DoodlePersonIcon } from "./doodle/doodleIcons.jsx";
 
 export default function ProfileHintModal({ open, onClose, onGoToProfile, variant = "default" }) {
   if (!open) return null;
@@ -30,9 +31,7 @@ export default function ProfileHintModal({ open, onClose, onGoToProfile, variant
           role="dialog"
           aria-labelledby="profile-hint-title"
         >
-          <p className="text-2xl mb-2" aria-hidden="true">
-            👤
-          </p>
+          <DoodlePersonIcon className="w-8 h-8 mb-2 text-[#3D7A68]" />
           <h2 id="profile-hint-title" className="text-lg font-bold mb-2" style={{ color: "#1B4332" }}>
             {title}
           </h2>

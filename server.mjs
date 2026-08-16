@@ -127,6 +127,18 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    if (url === "/api/config/supabase") {
+      const sbUrl = (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "").trim();
+      const sbKey = (process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "").trim();
+      jsonResponse(res, 200, {
+        enabled: Boolean(sbUrl && sbKey),
+        url: sbUrl || null,
+        anonKey: sbKey || null,
+        source: sbUrl && sbKey ? "env" : "offline",
+      });
+      return;
+    }
+
     if (url === "/api/places/nearby") {
       const params = new URL(req.url, "http://localhost").searchParams;
       const lat = params.get("lat");
@@ -230,5 +242,10 @@ server.on("error", (err) => {
 server.listen(PORT, () => {
   console.log("\n  PodPlot:  http://localhost:" + PORT);
   console.log("  Maps:     " + (GOOGLE_MAPS_API_KEY ? "Google Maps API aktivní" : "bez klíče — simulovaná mapa + mock Places"));
+  const sbOn = Boolean(
+    (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "").trim() &&
+      (process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "").trim()
+  );
+  console.log("  Supabase: " + (sbOn ? "zapnuto (sdílené příspěvky)" : "vypnuto — doplňte VITE_SUPABASE_* do .env"));
   console.log("  Ukoncit:  Ctrl+C\n");
 });

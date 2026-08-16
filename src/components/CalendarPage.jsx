@@ -3,6 +3,7 @@ import EventsModule from "../modules/EventsModule.jsx";
 import CompactAccordion from "./CompactAccordion.jsx";
 import { UI_KEYS } from "../data/uiPreferences.js";
 import { DoodleEventsIntro } from "./doodle/doodleIllustrations.jsx";
+import { DoodleCalendarIcon, DoodleCameraIcon } from "./doodle/doodleIcons.jsx";
 
 function formatAttendeePreview(attendees = [], formatPersonName) {
   if (attendees.length === 0) return "Bez přihlášených";
@@ -49,11 +50,12 @@ function PastEventListItem({
         </p>
         {pastPhotoLabel && (
           <p
-            className={`text-[11px] mt-0.5 truncate leading-snug ${
+            className={`text-[11px] mt-0.5 truncate leading-snug inline-flex items-center gap-1 ${
               unreadGalleryCount > 0 ? "font-semibold text-[#3D7A68]" : "text-emerald-700"
             }`}
           >
-            📷 {pastPhotoLabel}
+            <DoodleCameraIcon className="w-3.5 h-3.5 shrink-0" />
+            {pastPhotoLabel}
           </p>
         )}
         <p className="text-[10px] text-stone-400 truncate">
@@ -61,10 +63,8 @@ function PastEventListItem({
         </p>
       </button>
       {photoCount > 0 && (
-        <div className="shrink-0 flex flex-col items-center gap-0.5 px-1">
-          <span className="text-lg leading-none" aria-hidden>
-            📷
-          </span>
+        <div className="shrink-0 flex flex-col items-center gap-0.5 px-1 text-[#3D7A68]">
+          <DoodleCameraIcon className="w-5 h-5" />
           <span className={`text-[10px] font-bold ${hasUnreadGallery ? "text-[#3D7A68]" : "text-stone-500"}`}>
             {photoCount}
           </span>
@@ -117,7 +117,10 @@ export default function CalendarPage({ embedded = false, hideTopFilters = false 
       {!embedded && (
         <div className="flex items-start justify-between gap-2 mb-3 shrink-0">
           <div className="min-w-0 flex-1">
-            <h2 className="pp-text-title text-lg">📅 Kalendář</h2>
+            <h2 className="pp-text-title text-lg inline-flex items-center gap-2">
+              <DoodleCalendarIcon className="w-5 h-5 text-[#3D7A68]" />
+              Kalendář
+            </h2>
             {unreadCalendarGalleryCount > 0 && (
               <button
                 type="button"

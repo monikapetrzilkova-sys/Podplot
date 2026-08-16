@@ -20,7 +20,7 @@ import {
 } from "../data/serviceCategories.js";
 import { useApp } from "../context/AppContext.jsx";
 import AccountTypeIcon from "./AccountTypeIcon.jsx";
-import { BUSINESS_SUBTYPE_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
+import { BUSINESS_SUBTYPE_DOODLE_ICONS, CATALOG_DOODLE_ICONS, DoodleCheckIcon, DoodleSousedIcon, SERVICE_CATEGORY_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
 import InstitutionAutocomplete from "./InstitutionAutocomplete.jsx";
 import { verifyWorkEmailForInstitution } from "../data/institutions/index.js";
 
@@ -481,20 +481,24 @@ export default function RegisterScreen() {
                     slov vám budeme párovat poptávky v dojezdu.
                   </p>
                   <div className="grid grid-cols-2 gap-2">
-                    {HOME_SERVICE_SUB_FILTERS.map((g) => (
-                      <button
-                        key={g.id}
-                        type="button"
-                        onClick={() => setServiceHomeGroup(g.id)}
-                        className={`px-2.5 py-2 rounded-xl border text-xs font-semibold ${
-                          serviceHomeGroup === g.id
-                            ? "border-[#3D7A68] bg-white text-[#1B4D3E]"
-                            : "border-stone-200 bg-white text-stone-600"
-                        }`}
-                      >
-                        {g.shortLabel ?? g.label}
-                      </button>
-                    ))}
+                    {HOME_SERVICE_SUB_FILTERS.map((g) => {
+                      const GroupIcon = CATALOG_DOODLE_ICONS[g.id] ?? CATALOG_DOODLE_ICONS.ostatni;
+                      return (
+                        <button
+                          key={g.id}
+                          type="button"
+                          onClick={() => setServiceHomeGroup(g.id)}
+                          className={`px-2.5 py-2 rounded-xl border text-xs font-semibold inline-flex items-center justify-center gap-1.5 ${
+                            serviceHomeGroup === g.id
+                              ? "border-[#3D7A68] bg-white text-[#1B4D3E]"
+                              : "border-stone-200 bg-white text-stone-600"
+                          }`}
+                        >
+                          <GroupIcon className="w-4 h-4 shrink-0" />
+                          {g.shortLabel ?? g.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -505,6 +509,7 @@ export default function RegisterScreen() {
                   <div className="flex flex-wrap gap-1.5">
                     {craftSubcategories.map((c) => {
                       const selected = serviceSubcategories.includes(c.id);
+                      const CatIcon = SERVICE_CATEGORY_DOODLE_ICONS[c.id] ?? SERVICE_CATEGORY_DOODLE_ICONS.ostatni;
                       return (
                         <button
                           key={c.id}
@@ -519,14 +524,14 @@ export default function RegisterScreen() {
                             })
                           }
                           aria-pressed={selected}
-                          className={`px-2.5 py-1.5 rounded-full border text-[11px] font-semibold ${
+                          className={`px-2.5 py-1.5 rounded-full border text-[11px] font-semibold inline-flex items-center gap-1 ${
                             selected
                               ? "border-[#3D7A68] bg-[#E8F3EF] text-[#1B4D3E]"
                               : "border-stone-200 bg-white text-stone-600"
                           }`}
                         >
-                          {selected ? "✓ " : ""}
-                          {c.emoji} {c.label}
+                          {selected ? <DoodleCheckIcon className="w-3.5 h-3.5 shrink-0" /> : <CatIcon className="w-3.5 h-3.5 shrink-0" />}
+                          {c.label}
                         </button>
                       );
                     })}
@@ -564,9 +569,10 @@ export default function RegisterScreen() {
 
             <button
               type="submit"
-              className="w-full py-3.5 bg-teal-700 text-white font-semibold rounded-2xl hover:bg-teal-800 transition-colors"
+              className="w-full py-3.5 bg-teal-700 text-white font-semibold rounded-2xl hover:bg-teal-800 transition-colors inline-flex items-center justify-center gap-2"
             >
-              Vstoupit do sousedství 🏘️
+              <DoodleSousedIcon className="w-5 h-5 shrink-0 text-white" />
+              Vstoupit do sousedství
             </button>
           </form>
         </div>

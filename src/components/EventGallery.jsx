@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import GalleryLightbox from "./module/GalleryLightbox.jsx";
+import { DoodleCameraIcon } from "./doodle/doodleIcons.jsx";
 
 export default function EventGallery({ event, past = false }) {
   const {
@@ -95,7 +96,10 @@ export default function EventGallery({ event, past = false }) {
 
   return (
     <section className="mt-5">
-      <h3 className="text-sm font-bold text-stone-800 mb-1">📷 Fotky z akce</h3>
+      <h3 className="text-sm font-bold text-stone-800 mb-1 inline-flex items-center gap-1.5">
+        <DoodleCameraIcon className="w-4 h-4 text-[#3D7A68]" />
+        Fotky z akce
+      </h3>
       <p className="text-xs text-stone-500 mb-3">
         {past
           ? participated

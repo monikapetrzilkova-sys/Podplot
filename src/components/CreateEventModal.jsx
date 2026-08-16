@@ -154,7 +154,7 @@ export default function CreateEventModal() {
             >
               {INTEREST_OPTIONS.map((i) => (
                 <option key={i.id} value={i.id}>
-                  {i.emoji} {i.label}
+                  {i.label}
                 </option>
               ))}
             </select>

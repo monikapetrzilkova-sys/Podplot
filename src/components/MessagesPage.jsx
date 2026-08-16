@@ -2,6 +2,7 @@ import { useApp } from "../context/AppContext.jsx";
 import NewMessageComposer from "./NewMessageComposer.jsx";
 import { Avatar } from "./RoleBadge.jsx";
 import PersonLabel from "./PersonLabel.jsx";
+import { DoodleChatIcon } from "./doodle/doodleIcons.jsx";
 
 export default function MessagesPage({ embedded = false }) {
   const { chats, openChat, blockedUserIds } = useApp();
@@ -10,7 +11,12 @@ export default function MessagesPage({ embedded = false }) {
 
   return (
     <div className="px-4 py-4 pb-8">
-      {!embedded && <h2 className="text-lg font-bold text-stone-900 mb-4">💬 Zprávy</h2>}
+      {!embedded && (
+        <h2 className="text-lg font-bold text-stone-900 mb-4 inline-flex items-center gap-2">
+          <DoodleChatIcon className="w-5 h-5 text-[#3D7A68]" />
+          Zprávy
+        </h2>
+      )}
 
       <NewMessageComposer />
 

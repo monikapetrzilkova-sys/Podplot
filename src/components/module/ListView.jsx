@@ -63,9 +63,9 @@ export function ListItemShell({ selected, onShowOnMap, children, id, accentColor
             e.stopPropagation();
             onShowOnMap();
           }}
-          className="mt-2 text-xs font-semibold text-[#4D8B7A] hover:underline"
+          className="mt-2 text-xs font-semibold text-[#4D8B7A] hover:underline inline-flex items-center gap-1"
         >
-          📍 Zobrazit na mapě
+          Zobrazit na mapě
         </button>
       )}
     </article>

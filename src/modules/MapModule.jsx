@@ -92,7 +92,7 @@ export default function MapModule({ provozovnaType = null }) {
   const isProvozovny = activeCategory === SLUZBY_CATEGORY_ID;
   const showMap = isGuideMapCategory(activeCategory);
 
-  const { googlePlaces } = useGuideGooglePlaces(
+  const { googlePlaces, source } = useGuideGooglePlaces(
     activeCategory,
     activeLocation,
     localGuideSearchQuery
@@ -172,6 +172,13 @@ export default function MapModule({ provozovnaType = null }) {
       <div className="pp-map-module-root flex flex-col flex-1 min-h-0 overflow-hidden">
         {showMap ? (
           <div className="pp-map-module-viewport relative flex flex-col flex-1 min-h-0 overflow-hidden">
+            {(source === "mock" || source === "mock-fallback") && (
+              <p className="shrink-0 mx-0.5 mb-1 px-2 py-1.5 text-[10px] leading-snug rounded-lg border border-amber-200 bg-amber-50 text-amber-900">
+                Lokálně běží ukázková místa — do <code className="font-mono">app/.env</code> doplňte{" "}
+                <code className="font-mono">GOOGLE_MAPS_SERVER_API_KEY</code> (klíč bez HTTP referrer) a
+                restartujte SPUSTIT.bat.
+              </p>
+            )}
             {viewMode === "map" ? (
               <>
                 <MapComponent

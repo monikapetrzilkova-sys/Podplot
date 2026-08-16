@@ -16,7 +16,7 @@ export default function ServicesToolbar() {
       <SearchField
         value={servicesSearchQuery}
         onChange={setServicesSearchQuery}
-        placeholder="🔍 Hledat službu nebo řemeslníka… (např. instalatér)"
+        placeholder="Hledat službu nebo řemeslníka… (např. instalatér)"
       />
       <CategoryPills
         categories={SERVICE_PARENT_CATEGORIES}

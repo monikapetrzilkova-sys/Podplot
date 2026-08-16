@@ -104,6 +104,14 @@ import {
   clearUserSession,
   createUserId,
 } from "../data/userSession.js";
+import {
+  upsertRemoteProfile,
+  publishRemotePost,
+  fetchRemotePosts,
+  subscribeRemotePosts,
+  rowToFeedPost,
+} from "../data/communityApi.js";
+import { ensureSupabase } from "../lib/supabaseClient.js";
 import { getAppRoleFromTestId, APP_ROLES, isB2BRole, isMobilniTestRole, isFyzickaTestRole } from "../data/userRoles.js";
 import { filterCraftsmanInquiries, isNationwideRadius } from "../data/craftsmanSettings.js";
 import {
@@ -490,6 +498,44 @@ export function AppProvider({ children }) {
 
   const activeLocation = locations.find((l) => l.id === activeLocationId) ?? locations[0];
 
+  // Sdílené příspěvky ze Supabase (kamarádi na Vercelu)
+  useEffect(() => {
+    if (!user?.id) return undefined;
+    let cancelled = false;
+    let unsubscribe = () => {};
+
+    (async () => {
+      await ensureSupabase();
+      if (cancelled) return;
+      void upsertRemoteProfile(user);
+      const remote = await fetchRemotePosts({
+        municipality: activeLocation?.municipality ?? user.geo?.city ?? null,
+        currentUserId: user.id,
+      });
+      if (cancelled || remote.length === 0) return;
+      setUserPosts((prev) => {
+        const byId = new Map(prev.map((p) => [p.id, p]));
+        for (const p of remote) {
+          if (!byId.has(p.id)) byId.set(p.id, p);
+        }
+        return [...byId.values()].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+      });
+
+      unsubscribe = await subscribeRemotePosts((row) => {
+        const post = rowToFeedPost(row, user.id);
+        setUserPosts((prev) => {
+          if (prev.some((p) => p.id === post.id)) return prev;
+          return [post, ...prev];
+        });
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [user?.id, activeLocation?.municipality, user?.geo?.city, user]);
+
   useEffect(() => {
     if (!user) return;
     setEventGalleryActivity((prev) => {
@@ -698,6 +744,7 @@ export function AppProvider({ children }) {
         institutionRole: normalizedType === "urad" ? institutionRole ?? "editor" : null,
       };
       setUser(nextUser);
+      void upsertRemoteProfile(nextUser);
       if (normalizedType === "urad") {
         setTestRoleId("urad");
         setUserProfileIds(["urad"]);
@@ -1225,8 +1272,11 @@ export function AppProvider({ children }) {
         mapPos: report.mapPos,
         placeLabel: report.placeLabel ?? null,
         createdAt,
+        lat: report.lat ?? null,
+        lng: report.lng ?? null,
       };
       setUserPosts((prev) => [feedPost, ...prev]);
+      void publishRemotePost(feedPost, user);
 
       if (alsoAsPrompt) {
         const prompt = {
@@ -2419,7 +2469,7 @@ export function AppProvider({ children }) {
         role: acc.role,
         accountType: user.accountType,
         author: user.name,
-        authorId: "me",
+        authorId: user.id ?? "me",
         initials: user.initials,
         title: displayTitle,
         body: body.trim(),
@@ -2450,6 +2500,7 @@ export function AppProvider({ children }) {
 
       // Vždy na domovský feed; při skupině i na nástěnku skupiny
       setUserPosts((prev) => [post, ...prev]);
+      void publishRemotePost(post, user);
       if (groupId) {
         setUserGroupPosts((prev) => [post, ...prev]);
       }

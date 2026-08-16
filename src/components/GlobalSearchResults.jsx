@@ -9,6 +9,12 @@ import { ReportPinIcon } from "./module/reportPinIcons.jsx";
 import InstitutionDetailCard from "./InstitutionDetailCard.jsx";
 import ReportMapPopup from "./ReportMapPopup.jsx";
 import { MODULE_IDS } from "../data/moduleConfig.js";
+import {
+  DoodleCraftIcon,
+  DoodleHelpIcon,
+  DoodleMegaphoneIcon,
+  DoodlePackageIcon,
+} from "./doodle/doodleIcons.jsx";
 
 function ResultSection({ title, children, count }) {
   if (!count) return null;
@@ -190,7 +196,7 @@ export default function GlobalSearchResults() {
                 title={post.title}
                 subtitle={post.body}
                 meta={post.meta}
-                icon={<span className="text-sm">📦</span>}
+                icon={<DoodlePackageIcon className="w-4 h-4" />}
                 onClick={() => openListing(post)}
               />
             ))}
@@ -204,7 +210,7 @@ export default function GlobalSearchResults() {
                 title={item.title}
                 subtitle={item.body}
                 meta={item.distance}
-                icon={<span className="text-sm">🤝</span>}
+                icon={<DoodleHelpIcon className="w-4 h-4" />}
                 onClick={() => {
                   selectMainTab?.("neighbors");
                   setGlobalSearchQuery("");
@@ -221,7 +227,7 @@ export default function GlobalSearchResults() {
                 title={item.title}
                 subtitle={item.body}
                 meta={item.time}
-                icon={<span className="text-sm">📢</span>}
+                icon={<DoodleMegaphoneIcon className="w-4 h-4" />}
                 onClick={() => {
                   selectMainTab?.("home");
                   setGlobalSearchQuery("");
@@ -238,7 +244,7 @@ export default function GlobalSearchResults() {
                 title={svc.name}
                 subtitle={svc.profession || svc.tagline}
                 meta={svc.distanceKm != null ? `${svc.distanceKm} km` : null}
-                icon={<span className="text-sm">🛠️</span>}
+                icon={<DoodleCraftIcon className="w-4 h-4" />}
                 onClick={() => {
                   openCraftsmanPublicProfile?.({ serviceId: svc.id });
                 }}

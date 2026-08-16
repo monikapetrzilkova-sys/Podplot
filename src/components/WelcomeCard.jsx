@@ -2,6 +2,7 @@ import { useApp } from "../context/AppContext.jsx";
 import { UI_KEYS } from "../data/uiPreferences.js";
 import { useUiPref } from "../hooks/useUiPref.js";
 import { DoodleNeighborsIntro } from "./doodle/doodleIllustrations.jsx";
+import { DoodleStarIcon } from "./doodle/doodleIcons.jsx";
 
 export default function WelcomeCard() {
   const { user, switchFeedMainMode, selectFeedSubFilter, setActiveTab } = useApp();
@@ -24,8 +25,9 @@ export default function WelcomeCard() {
         ×
       </button>
       <p className="text-[10px] font-bold uppercase tracking-wider text-teal-200 mb-1">Testovací verze MVP</p>
-      <h2 className="text-base font-bold leading-snug mb-2 pr-6">
-        Ahoj {firstName}, vítej v testovací verzi aplikace Podplot! 🌟
+      <h2 className="text-base font-bold leading-snug mb-2 pr-6 inline-flex items-start gap-1.5 flex-wrap">
+        <span>Ahoj {firstName}, vítej v testovací verzi aplikace Podplot!</span>
+        <DoodleStarIcon className="w-4 h-4 shrink-0 mt-0.5 text-teal-100" />
       </h2>
       <p className="text-sm text-teal-100 leading-relaxed mb-3">
         Pomoz mi ji vylepšit. Zkus si půjčit věc, založit klub nebo nahlásit závadu na mapě.

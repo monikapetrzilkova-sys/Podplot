@@ -1,3 +1,5 @@
+import { DoodleMapPinIcon } from "./doodle/doodleIcons.jsx";
+
 export default function MiniBusinessMap({ mapPos, label }) {
   const x = mapPos?.x ?? 50;
   const y = mapPos?.y ?? 50;
@@ -13,11 +15,11 @@ export default function MiniBusinessMap({ mapPos, label }) {
         }}
       />
       <div
-        className="absolute w-8 h-8 -translate-x-1/2 -translate-y-full flex items-center justify-center bg-emerald-600 text-white rounded-full border-2 border-white shadow-lg text-sm"
+        className="absolute w-8 h-8 -translate-x-1/2 -translate-y-full flex items-center justify-center bg-emerald-600 text-white rounded-full border-2 border-white shadow-lg"
         style={{ left: `${x}%`, top: `${y}%` }}
         title={label}
       >
-        📍
+        <DoodleMapPinIcon className="w-4 h-4 text-white" />
       </div>
       <p className="absolute bottom-2 left-3 right-3 text-[10px] text-stone-600 bg-white/80 rounded-lg px-2 py-1 truncate">
         {label}

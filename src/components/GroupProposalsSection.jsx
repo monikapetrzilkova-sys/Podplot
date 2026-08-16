@@ -1,6 +1,7 @@
 import { useUiPref } from "../hooks/useUiPref.js";
 import { UI_KEYS } from "../data/uiPreferences.js";
 import GroupProposalCard from "./GroupProposalCard.jsx";
+import { DoodleListIcon } from "./doodle/doodleIcons.jsx";
 
 export default function GroupProposalsSection({
   proposals,
@@ -28,8 +29,9 @@ export default function GroupProposalsSection({
           className="w-full flex items-center justify-between gap-3 text-left"
           aria-expanded={false}
         >
-          <span className={titleClass}>
-            📋 Návrhy na nové skupiny
+          <span className={`${titleClass} inline-flex items-center gap-1.5`}>
+            <DoodleListIcon className="w-4 h-4 text-[#3D7A68]" />
+            Návrhy na nové skupiny
             {proposals.length > 0 && (
               <span className="font-semibold text-stone-500 normal-case tracking-normal ml-1">
                 ({proposals.length})
@@ -45,7 +47,10 @@ export default function GroupProposalsSection({
   return (
     <section>
       <div className="flex items-start justify-between gap-2 mb-1">
-        <h3 className={titleClass}>📋 Návrhy na nové skupiny</h3>
+        <h3 className={`${titleClass} inline-flex items-center gap-1.5`}>
+          <DoodleListIcon className="w-4 h-4 text-[#3D7A68]" />
+          Návrhy na nové skupiny
+        </h3>
         <button
           type="button"
           onClick={toggleMinimized}

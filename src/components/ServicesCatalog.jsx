@@ -119,7 +119,7 @@ export default function ServicesCatalog({ showRequestForm = false, hideToolbar =
           <SearchField
             value={servicesSearchQuery}
             onChange={setServicesSearchQuery}
-            placeholder="🔍 Hledat službu nebo řemeslníka… (např. instalatér)"
+            placeholder="Hledat službu nebo řemeslníka… (např. instalatér)"
           />
           <CategoryPills
             categories={SERVICE_PARENT_CATEGORIES}
