@@ -960,15 +960,22 @@ textarea {
 .pp-smart-bar-pills--fit {
   display: flex;
   align-items: stretch;
-  gap: 6px;
+  gap: 4px;
   width: 100%;
   min-width: 0;
-  overflow: visible;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.pp-smart-bar-pills--fit::-webkit-scrollbar {
+  display: none;
 }
 
 .pp-smart-bar--fit .pp-smart-tab {
   flex: 1 1 0;
-  min-width: 0;
+  min-width: max-content;
   justify-content: center;
 }
 
@@ -998,6 +1005,14 @@ textarea {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Fit režim (Sousedé Věci…) — celý text filtru, bez ořezu */
+.pp-smart-bar--fit:not(.pp-smart-bar--prefer-icons) .pp-smart-tab-label {
+  overflow: visible;
+  text-overflow: unset;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* Výrazné záložky — zelená jako záhlaví */
@@ -1083,18 +1098,18 @@ textarea {
   transform: translateX(-50%) translateY(0);
 }
 
-/* Sousedé — ikona nad krátkým textem, vše vedle sebe */
+/* Sousedé — ikona nad textem, celý label viditelný */
 .pp-smart-bar--fit.pp-smart-bar--prominent:not(.pp-smart-bar--prefer-icons) .pp-smart-tab--prominent {
   flex-direction: column;
-  gap: 4px;
-  padding: 9px 4px 8px;
+  gap: 3px;
+  padding: 8px 6px 7px;
   font-size: 10px;
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
 }
 
 .pp-smart-bar--fit.pp-smart-bar--prominent:not(.pp-smart-bar--prefer-icons) .pp-smart-tab-icon .pp-doodle-icon {
-  width: 1.55rem;
-  height: 1.55rem;
+  width: 1.45rem;
+  height: 1.45rem;
 }
 
 /* Jednotný obal pro horní filtry / rychlé akce pod vyhledáváním */
@@ -1123,7 +1138,7 @@ textarea {
 
 .tab-header-container > .pp-smart-bar.pp-smart-bar--fit .pp-smart-tab {
   flex: 1 1 0;
-  min-width: 0;
+  min-width: max-content;
 }
 
 /* Akce — toolbar nad obsahem (okruh + Kalendář/Seznam/Mapa), nic nepřekrývá seznam */
