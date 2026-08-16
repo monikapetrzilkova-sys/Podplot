@@ -16,6 +16,11 @@ import { PUBLIC_AREA_LABEL_HINT } from "../data/personDisplay.js";
 import { getPromptStatusStyle } from "../data/municipalityPrompts.js";
 import { MIN_PASSWORD_LENGTH } from "../data/authApi.js";
 import { isThingsModuleListing, isCommunityAnnouncementPost } from "../utils/thingsModule.js";
+import { MODULE_IDS } from "../data/moduleConfig.js";
+import ReportDetailModal from "./ReportDetailModal.jsx";
+import FeedCard from "./FeedCard.jsx";
+import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
+import AppPanelPortal from "./AppPanelPortal.jsx";
 import MyProfilesPanel, {
   ProfileTypeTestSwitcher,
   SousedRoleView,
@@ -116,9 +121,16 @@ export default function MyProfile({ registerLegalBack } = {}) {
     listingSaleOrders,
     confirmListingHandover,
     userReports,
+    extraReports,
     myMunicipalityPrompts,
     userPosts,
     userGroupPosts,
+    reportSecurityReport,
+    closeProfile,
+    selectMainTab,
+    setPendingNeighborsSection,
+    setPendingThingsItemId,
+    selectModuleItem,
     userInterests,
     toggleInterest,
     locations,
@@ -161,16 +173,36 @@ export default function MyProfile({ registerLegalBack } = {}) {
   const [editingHomeAddress, setEditingHomeAddress] = useState(false);
   const [allowPublicAreaLabel, setAllowPublicAreaLabel] = useState(Boolean(user?.allowPublicAreaLabel));
   const [publicAreaLabel, setPublicAreaLabel] = useState(user?.publicAreaLabel ?? "");
+  const [detailReport, setDetailReport] = useState(null);
+  const [detailListing, setDetailListing] = useState(null);
+  const [detailPrompt, setDetailPrompt] = useState(null);
+  const [detailLending, setDetailLending] = useState(null);
 
   useEffect(() => {
     if (!registerLegalBack) return undefined;
     registerLegalBack(() => {
+      if (detailReport) {
+        setDetailReport(null);
+        return true;
+      }
+      if (detailListing) {
+        setDetailListing(null);
+        return true;
+      }
+      if (detailPrompt) {
+        setDetailPrompt(null);
+        return true;
+      }
+      if (detailLending) {
+        setDetailLending(null);
+        return true;
+      }
       if (!legalPage) return false;
       setLegalPage(null);
       return true;
     });
     return () => registerLegalBack(null);
-  }, [legalPage, registerLegalBack]);
+  }, [legalPage, registerLegalBack, detailReport, detailListing, detailPrompt, detailLending]);
 
   useEffect(() => {
     if (!user) return;
@@ -206,12 +238,27 @@ export default function MyProfile({ registerLegalBack } = {}) {
   );
   const myReportItems = (() => {
     const byId = new Map();
+    const remember = (id, item) => {
+      if (!id || byId.has(id)) return;
+      byId.set(id, item);
+    };
     for (const r of userReports) {
-      byId.set(r.id, {
+      remember(r.id, {
         id: r.id,
         type: r.type,
         body: r.body,
         time: r.time ?? "—",
+        report: r,
+      });
+    }
+    for (const r of extraReports ?? []) {
+      if (!r?.mine) continue;
+      remember(r.id, {
+        id: r.id,
+        type: r.type,
+        body: r.body,
+        time: r.time ?? "—",
+        report: r,
       });
     }
     for (const p of userPosts) {
@@ -223,15 +270,44 @@ export default function MyProfile({ registerLegalBack } = {}) {
       if (!isReport) continue;
       const id = p.fromSecurityReportId || p.id;
       if (byId.has(id) || byId.has(p.id)) continue;
-      byId.set(id, {
+      const report = {
         id,
         type: p.title || p.type || "Hlášení",
         body: p.body || "",
-        time: p.meta || (p.createdAt ? "uloženo" : "—"),
+        time: "Právě teď",
+        createdAt: p.createdAt,
+        distance: p.meta ?? null,
+        mapPos: p.mapPos ?? null,
+        lat: p.lat ?? null,
+        lng: p.lng ?? null,
+        photos: p.photos ?? [],
+        mine: true,
+        author: p.author,
+        authorInitials: p.initials,
+        accountType: p.accountType,
+        reportCategoryId: p.reportCategoryId ?? null,
+        urgent: Boolean(p.urgent),
+      };
+      remember(id, {
+        id,
+        type: report.type,
+        body: report.body,
+        time: p.meta || "uloženo",
+        report,
       });
     }
     return [...byId.values()];
   })();
+
+  const openListingOnMap = (post) => {
+    if (!post?.id) return;
+    closeProfile?.();
+    selectMainTab?.("neighbors");
+    setPendingNeighborsSection?.("veci");
+    setPendingThingsItemId?.(post.id);
+    selectModuleItem?.(MODULE_IDS.THINGS, post.id);
+  };
+
   const addressLabel = registrationFields.addressLabel;
 
   const isCommunityVerified = (user.neighborhoodConfirmations ?? 0) >= 3;
@@ -596,8 +672,13 @@ export default function MyProfile({ registerLegalBack } = {}) {
               ))}
             {myOffers.length > 0 && <LendingAvailabilityPanel offerCount={myOffers.length} />}
             {myOffers.map((item) => (
-              <div key={item.id} className="pp-card p-3">
-                <p className="text-xs font-semibold text-emerald-700 mb-0.5">Nabízím k půjčení</p>
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setDetailLending(item)}
+                className="pp-card p-3 w-full text-left hover:bg-stone-50 transition-colors"
+              >
+                <p className="text-xs font-semibold text-emerald-700 mb-0.5">Nabízím k půjčení · klepněte pro detail</p>
                 <p className="text-sm font-medium text-stone-800">{item.item}</p>
                 <p className="text-xs text-stone-500">
                   {item.credits} Kč / {item.period}
@@ -610,7 +691,7 @@ export default function MyProfile({ registerLegalBack } = {}) {
                     Předání: {lendingAvailability.availabilityMessage.trim()}
                   </p>
                 )}
-              </div>
+              </button>
             ))}
             {reservations.map((item, i) => {
               const dateLabel =
@@ -664,9 +745,14 @@ export default function MyProfile({ registerLegalBack } = {}) {
                   (o) => o.listingId === post.id && o.status === "held"
                 );
                 return (
-                  <div key={post.id} className="pp-card p-3">
+                  <button
+                    key={post.id}
+                    type="button"
+                    onClick={() => setDetailListing(post)}
+                    className="pp-card p-3 w-full text-left hover:bg-stone-50 transition-colors"
+                  >
                     <p className="text-xs font-semibold text-stone-500 mb-0.5">
-                      {sale ? "Inzerát · V rezervaci" : "Inzerát"}
+                      {sale ? "Inzerát · V rezervaci · klepněte pro detail" : "Inzerát · klepněte pro detail"}
                     </p>
                     <p className="text-sm font-medium text-stone-800">{post.title}</p>
                     {sale && (
@@ -674,7 +760,7 @@ export default function MyProfile({ registerLegalBack } = {}) {
                         Kupující zaplatil přes Podplot — po předání potvrdí převzetí sám.
                       </p>
                     )}
-                  </div>
+                  </button>
                 );
               })}
           </div>
@@ -690,12 +776,17 @@ export default function MyProfile({ registerLegalBack } = {}) {
         ) : (
           <div className="space-y-2">
             {myReportItems.map((r) => (
-              <div key={r.id} className="pp-card p-3">
-                <p className="text-xs font-semibold text-[#3D7A68] mb-0.5">Hlášení</p>
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => setDetailReport(r.report)}
+                className="pp-card p-3 w-full text-left hover:bg-stone-50 transition-colors"
+              >
+                <p className="text-xs font-semibold text-[#3D7A68] mb-0.5">Hlášení · klepněte pro detail</p>
                 <p className="text-xs font-bold text-stone-800">{r.type}</p>
                 <p className="text-sm text-stone-600 mt-1">{r.body}</p>
                 <p className="text-xs text-stone-400 mt-2">{r.time}</p>
-              </div>
+              </button>
             ))}
           </div>
         )}
@@ -711,7 +802,12 @@ export default function MyProfile({ registerLegalBack } = {}) {
         ) : (
           <div className="space-y-2">
             {myMunicipalityPrompts.map((p) => (
-              <div key={p.id} className="bg-white border border-stone-200 rounded-2xl p-3">
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setDetailPrompt(p)}
+                className="bg-white border border-stone-200 rounded-2xl p-3 w-full text-left hover:bg-stone-50 transition-colors"
+              >
                 <div className="flex items-start justify-between gap-2 mb-1">
                   <p className="text-sm font-medium text-stone-800">{p.title}</p>
                   <span
@@ -724,8 +820,8 @@ export default function MyProfile({ registerLegalBack } = {}) {
                 {p.callTitle && (
                   <p className="text-[10px] text-blue-700 mt-1">Výzva: {p.callTitle}</p>
                 )}
-                <p className="text-xs text-stone-400 mt-2">{p.time}</p>
-              </div>
+                <p className="text-xs text-stone-400 mt-2">{p.time} · klepněte pro detail</p>
+              </button>
             ))}
           </div>
         )}
@@ -956,6 +1052,133 @@ export default function MyProfile({ registerLegalBack } = {}) {
             Odhlásit se
           </button>
         </section>
+      )}
+
+      {detailReport && (
+        <ReportDetailModal
+          report={detailReport}
+          onClose={() => setDetailReport(null)}
+          onReport={(reason) => {
+            reportSecurityReport?.(detailReport.id, reason);
+            setDetailReport(null);
+          }}
+        />
+      )}
+
+      {detailListing && (
+        <AppPanelPortal>
+          <div className="pp-app-sheet-overlay">
+            <div className="absolute inset-0 pointer-events-auto">
+              <ModalDoodleBackdrop onClose={() => setDetailListing(null)} />
+            </div>
+            <div className="pp-app-sheet flex flex-col overflow-hidden" role="dialog" aria-label="Detail inzerátu">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-stone-200 shrink-0">
+                <h2 className="text-base font-bold text-stone-900">Detail inzerátu</h2>
+                <button
+                  type="button"
+                  onClick={() => setDetailListing(null)}
+                  className="w-8 h-8 flex items-center justify-center rounded-full text-stone-500 hover:bg-stone-100 text-xl leading-none"
+                  aria-label="Zavřít"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4">
+                <FeedCard post={detailListing} detailsOnly />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const post = detailListing;
+                    setDetailListing(null);
+                    openListingOnMap(post);
+                  }}
+                  className="mt-3 w-full py-2.5 text-sm font-semibold rounded-xl border border-[#C5DDD4] text-[#3D7A68]"
+                >
+                  Otevřít v sekci Věci
+                </button>
+              </div>
+            </div>
+          </div>
+        </AppPanelPortal>
+      )}
+
+      {detailLending && (
+        <AppPanelPortal>
+          <div className="pp-app-sheet-overlay">
+            <div className="absolute inset-0 pointer-events-auto">
+              <ModalDoodleBackdrop onClose={() => setDetailLending(null)} />
+            </div>
+            <div className="pp-app-sheet p-5" role="dialog" aria-label="Detail půjčení">
+              <div className="flex items-start justify-between gap-2 mb-3">
+                <div>
+                  <p className="text-xs font-semibold text-emerald-700">Nabízím k půjčení</p>
+                  <h2 className="text-lg font-bold text-stone-900 mt-0.5">{detailLending.item}</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDetailLending(null)}
+                  className="text-stone-400 text-xl px-1"
+                  aria-label="Zavřít"
+                >
+                  ×
+                </button>
+              </div>
+              <p className="text-sm text-stone-600">
+                {detailLending.credits} Kč / {detailLending.period}
+              </p>
+              {detailLending.description && (
+                <p className="text-sm text-stone-600 mt-2 leading-relaxed">{detailLending.description}</p>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  const item = detailLending;
+                  setDetailLending(null);
+                  openListingOnMap(item);
+                }}
+                className="mt-4 w-full py-2.5 text-sm font-semibold rounded-xl border border-[#C5DDD4] text-[#3D7A68]"
+              >
+                Otevřít v sekci Věci
+              </button>
+            </div>
+          </div>
+        </AppPanelPortal>
+      )}
+
+      {detailPrompt && (
+        <AppPanelPortal>
+          <div className="pp-app-sheet-overlay">
+            <div className="absolute inset-0 pointer-events-auto">
+              <ModalDoodleBackdrop onClose={() => setDetailPrompt(null)} />
+            </div>
+            <div className="pp-app-sheet p-5" role="dialog" aria-label="Detail podnětu">
+              <div className="flex items-start justify-between gap-2 mb-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-stone-500">Podnět úřadu</p>
+                  <h2 className="text-lg font-bold text-stone-900 mt-0.5">{detailPrompt.title}</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDetailPrompt(null)}
+                  className="text-stone-400 text-xl px-1"
+                  aria-label="Zavřít"
+                >
+                  ×
+                </button>
+              </div>
+              <span
+                className={`inline-block text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg border mb-3 ${getPromptStatusStyle(detailPrompt.status)}`}
+              >
+                {detailPrompt.statusLabel}
+              </span>
+              <p className="text-sm text-stone-600 leading-relaxed">{detailPrompt.body}</p>
+              {detailPrompt.callTitle && (
+                <p className="text-xs text-blue-700 mt-3">Výzva: {detailPrompt.callTitle}</p>
+              )}
+              <p className="text-xs text-stone-400 mt-3">{detailPrompt.time}</p>
+            </div>
+          </div>
+        </AppPanelPortal>
       )}
     </div>
   );

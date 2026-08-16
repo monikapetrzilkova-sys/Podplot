@@ -101,29 +101,29 @@ export default function SecurityReportFormModal({
           </button>
         </div>
 
-        <form
+          <div className="pp-security-form-modal-map">
+            <ReportsMapModule
+              reports={[]}
+              pickMode
+              draftPin={draftPin}
+              onPickPin={onPickPin}
+              compact
+              large={false}
+              hideLegend
+              hideStats
+              singleReportMode
+              draftPinOnly
+              showHomePin={false}
+              focusDraftPin
+            />
+          </div>
+
+          <form
           id={isReport ? "map-report-form" : "municipality-prompt-form"}
           onSubmit={isReport ? onSubmitReport : onSubmitPrompt}
           className="pp-security-form-modal-form"
         >
           <div className="pp-security-form-modal-body">
-            <div className="pp-security-form-modal-map">
-              <ReportsMapModule
-                reports={[]}
-                pickMode
-                draftPin={draftPin}
-                onPickPin={onPickPin}
-                compact
-                large={false}
-                hideLegend
-                hideStats
-                singleReportMode
-                draftPinOnly
-                showHomePin={false}
-                focusDraftPin
-              />
-            </div>
-
             <div className="flex flex-wrap gap-2 shrink-0">
               <button
                 type="button"
@@ -136,16 +136,16 @@ export default function SecurityReportFormModal({
               {draftPin && (
                 <span className="inline-flex items-center px-2.5 py-2 text-xs font-medium text-teal-700 bg-teal-50 rounded-xl border border-teal-100">
                   {draftPin.lat != null && draftPin.lng != null
-                    ? "Poloha: GPS souřadnice"
+                    ? "Poloha: GPS souřadnice — na mapě výše můžete špendlík ještě posunout"
                     : draftPin.x === MAP_CENTER.x && draftPin.y === MAP_CENTER.y
-                      ? "Poloha: u vás"
-                      : posToDistanceLabel(
+                      ? "Poloha: u vás — na mapě výše můžete špendlík ještě posunout"
+                      : `${posToDistanceLabel(
                           draftPin.x,
                           draftPin.y,
                           undefined,
                           undefined,
                           reportsMapRadiusKm
-                        )}
+                        )} · mapu výše můžete upravit`}
                 </span>
               )}
             </div>
@@ -184,7 +184,7 @@ export default function SecurityReportFormModal({
                       ? "Co by měli sousedé vědět? Např. nový obchod, praktické místo…"
                       : "Popis situace…"
                   }
-                  minRows={6}
+                  minRows={3}
                   className="pp-form-textarea-grow w-full min-w-0 px-3 py-2.5 border border-stone-200 rounded-xl text-base resize-none leading-relaxed"
                   required
                 />
