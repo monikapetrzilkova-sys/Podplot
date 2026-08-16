@@ -655,10 +655,12 @@ export function AppProvider({ children }) {
       });
       if (seenSet) markTrustSeen(neighbor.id, seenSet);
       if (toast) {
-        showToast(
-          `${neighbor.name?.split(/\s+/)[0] ?? "Nový soused"} je ve vaší lokalitě — potvrďte sousedství v profilu.`,
-          "info"
-        );
+        setToast({
+          message: `${neighbor.name?.split(/\s+/)[0] ?? "Nový soused"} je ve vaší lokalitě — potvrďte sousedství v profilu.`,
+          type: "info",
+          locationId: null,
+        });
+        window.setTimeout(() => setToast(null), 3500);
       }
     };
 
@@ -730,7 +732,7 @@ export function AppProvider({ children }) {
       cancelled = true;
       unsubscribe?.();
     };
-  }, [user?.id, activeLocation?.municipality, user?.geo?.city, user?.location, showToast]);
+  }, [user?.id, activeLocation?.municipality, user?.geo?.city, user?.location]);
 
   // Sdílené příspěvky ze Supabase (kamarádi na Vercelu)
   useEffect(() => {
