@@ -167,6 +167,7 @@ import {
   GROUP_PROPOSAL_FEED_SUBTYPE,
   GROUP_PROPOSAL_VOTE_FEED_SUBTYPE,
 } from "../utils/groupProposalSync.js";
+import { ensureSupabase } from "../lib/supabaseClient.js";
 import { getAppRoleFromTestId, APP_ROLES, isB2BRole, isMobilniTestRole, isFyzickaTestRole } from "../data/userRoles.js";
 import { filterCraftsmanInquiries, isNationwideRadius } from "../data/craftsmanSettings.js";
 import {
