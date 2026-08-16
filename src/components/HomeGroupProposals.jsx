@@ -37,6 +37,7 @@ export default function HomeGroupProposals() {
         onDismiss={dismissGroupProposal}
         onRestore={restoreGroupProposal}
         compactTitle
+        hint="Podpořte vznik nové skupiny v okolí. Nezajímavé návrhy skryjte křížkem."
       />
     </section>
   );

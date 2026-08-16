@@ -40,7 +40,7 @@ export default function CreateGroupModal({ open, onClose }) {
           <div className="pp-app-sheet-body p-5">
             <h2 className="text-lg font-bold text-stone-900 mb-1">Nová skupina</h2>
             <p className="text-sm text-stone-500 mb-4">
-              Návrh se zobrazí sousedům na <strong>Domů</strong> ke podpoře. Aktivuje se po 5 hlasech.
+              Návrh uvidí sousedé ke podpoře. Skupina se aktivuje po 5 hlasech.
             </p>
 
             <form onSubmit={submit} className="space-y-4">
@@ -102,7 +102,7 @@ export default function CreateGroupModal({ open, onClose }) {
               </div>
               <div className="bg-[#E8F3EF] border border-[#C5E0D6] rounded-xl p-3">
                 <p className="text-xs text-[#1B4D3E] leading-relaxed">
-                  Po odeslání uvidí návrh sousedé na Domů. Váš hlas se započítá automaticky
+                  Po odeslání uvidí návrh sousedé (Domů, Skupiny). Váš hlas se započítá automaticky
                   (1 / 5). Po dosažení 5 podpor se skupina aktivuje.
                 </p>
               </div>

@@ -11,6 +11,7 @@ export default function GroupProposalsSection({
   onDismiss,
   onRestore,
   compactTitle = false,
+  hint = "Sousedé můžou podpořit vznik nové skupiny. Nezajímavé návrhy skryjte křížkem.",
 }) {
   const { user } = useApp();
   const [minimized, , toggleMinimized] = useUiPref(UI_KEYS.GROUP_PROPOSALS_MINIMIZED, false);
@@ -72,9 +73,7 @@ export default function GroupProposalsSection({
 
       {proposals.length > 0 && (
         <>
-          <p className="text-xs text-stone-500 mb-3">
-            Ověření sousedé mohou podpořit vznik komunity přímo tady na Domů. Nezajímavé návrhy skryjte křížkem.
-          </p>
+          <p className="text-xs text-stone-500 mb-3">{hint}</p>
           <div className="space-y-2">
             {proposals.map((p) => (
               <GroupProposalCard

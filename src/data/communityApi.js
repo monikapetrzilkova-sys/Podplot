@@ -52,6 +52,13 @@ function rowToFeedPost(row, currentUserId) {
     listingPrice: payload.listingPrice ?? null,
     groupId: payload.groupId ?? null,
     sharedRemote: true,
+    isGroupProposal: Boolean(payload.groupProposal),
+    isGroupProposalVote: Boolean(payload.groupProposalVote),
+    proposalId: payload.proposalId ?? null,
+    purpose: payload.purpose ?? null,
+    clubCategory: payload.clubCategory ?? null,
+    proposalRequired: payload.required ?? null,
+    proposalVotes: payload.votes ?? null,
     ...payload.extra,
   };
   // Fotky vždy z řádku DB (ne z payload.extra) a jako čisté URL řetězce
@@ -448,6 +455,13 @@ export async function publishRemotePost(post, user) {
     groupId: post.groupId ?? null,
     interactionType: post.interactionType ?? null,
     placeLabel: post.placeLabel ?? null,
+    groupProposal: Boolean(post.isGroupProposal),
+    groupProposalVote: Boolean(post.isGroupProposalVote),
+    proposalId: post.proposalId ?? null,
+    purpose: post.purpose ?? null,
+    clubCategory: post.clubCategory ?? null,
+    required: post.proposalRequired ?? post.required ?? null,
+    votes: post.proposalVotes ?? post.votes ?? null,
   };
 
   const { error } = await sb.from("posts").upsert(

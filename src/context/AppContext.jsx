@@ -157,7 +157,16 @@ import {
   validatePassword,
   subscribeAuth,
 } from "../data/authApi.js";
-import { ensureSupabase } from "../lib/supabaseClient.js";
+import {
+  isGroupProposalPost,
+  isGroupProposalVotePost,
+  loadStoredGroupProposals,
+  persistGroupProposals,
+  mergeProposalLists,
+  proposalsFromRemotePosts,
+  GROUP_PROPOSAL_FEED_SUBTYPE,
+  GROUP_PROPOSAL_VOTE_FEED_SUBTYPE,
+} from "../utils/groupProposalSync.js";
 import { getAppRoleFromTestId, APP_ROLES, isB2BRole, isMobilniTestRole, isFyzickaTestRole } from "../data/userRoles.js";
 import { filterCraftsmanInquiries, isNationwideRadius } from "../data/craftsmanSettings.js";
 import {
@@ -385,8 +394,14 @@ export function AppProvider({ children }) {
       : loadUserSession()?.activeLocationId ?? "domov";
     return getGroupsForLocation(locId);
   });
-  const [groupProposals, setGroupProposals] = useState(INITIAL_GROUP_PROPOSALS);
+  const [groupProposals, setGroupProposals] = useState(() =>
+    mergeProposalLists(INITIAL_GROUP_PROPOSALS, loadStoredGroupProposals())
+  );
   const [createGroupModalOpen, setCreateGroupModalOpen] = useState(false);
+
+  useEffect(() => {
+    persistGroupProposals(groupProposals);
+  }, [groupProposals]);
 
   // Ecosystem state
   const [chats, setChats] = useState(INITIAL_CHATS);
@@ -1015,9 +1030,18 @@ export function AppProvider({ children }) {
         currentUserId: user.id,
       });
       if (cancelled || remote.length === 0) return;
+
+      const fromPosts = proposalsFromRemotePosts(remote, user.id);
+      if (fromPosts.length) {
+        setGroupProposals((prev) => mergeProposalLists(prev, fromPosts));
+      }
+
+      const feedRemote = remote.filter(
+        (p) => !isGroupProposalPost(p) && !isGroupProposalVotePost(p)
+      );
       setUserPosts((prev) => {
         const byId = new Map(prev.map((p) => [p.id, p]));
-        for (const p of remote) {
+        for (const p of feedRemote) {
           if (!byId.has(p.id)) byId.set(p.id, p);
         }
         return [...byId.values()].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
@@ -1027,6 +1051,27 @@ export function AppProvider({ children }) {
         const post = rowToFeedPost(row, user.id);
         const activeMun = activeLocation?.municipality ?? user.geo?.city ?? null;
         if (activeMun && post.municipality && !municipalitiesMatch(post.municipality, activeMun)) {
+          return;
+        }
+        if (isGroupProposalPost(post)) {
+          setGroupProposals((prev) =>
+            mergeProposalLists(prev, proposalsFromRemotePosts([post], user.id))
+          );
+          return;
+        }
+        if (isGroupProposalVotePost(post) && post.proposalId) {
+          setGroupProposals((prev) =>
+            prev.map((p) => {
+              if (p.id !== post.proposalId) return p;
+              const isMineVote = Boolean(user.id && post.authorId === user.id);
+              // Vlastní hlas už je započtený při kliknutí — jen potvrď voted
+              if (isMineVote) return { ...p, voted: true };
+              return {
+                ...p,
+                votes: p.votes + 1,
+              };
+            })
+          );
           return;
         }
         setUserPosts((prev) => {
@@ -2025,14 +2070,41 @@ export function AppProvider({ children }) {
         status: "v-priprave",
         createdAt: Date.now(),
       };
-      setGroupProposals((prev) => [proposal, ...prev]);
+      setGroupProposals((prev) => mergeProposalLists([proposal], prev));
+      setUiPref(UI_KEYS.GROUP_PROPOSALS_MINIMIZED, false);
+
       void publishRemoteGroupProposal(proposal, user);
+      void publishRemotePost(
+        {
+          id: proposal.id,
+          title: proposal.name,
+          body: proposal.description,
+          type: "Návrh skupiny",
+          feedType: "skupiny",
+          feedSubtype: GROUP_PROPOSAL_FEED_SUBTYPE,
+          author: proposal.proposer,
+          authorId: user?.id ?? "me",
+          initials: user?.initials,
+          accountType: user?.accountType,
+          locationId: activeLocationId,
+          municipality: proposal.municipality,
+          meta: proposal.tag,
+          isGroupProposal: true,
+          purpose: proposal.purpose,
+          clubCategory: proposal.clubCategory,
+          proposalRequired: proposal.required,
+          proposalVotes: proposal.votes,
+          createdAt: proposal.createdAt,
+        },
+        user
+      );
+
       setNotifications((prev) => [
         {
           id: `n-group-prop-${id}`,
           type: "blue",
           title: `Návrh skupiny: ${name}`,
-          body: "Sousedé na Domů můžou návrh podpořit — po 5 hlasech se skupina aktivuje.",
+          body: "Sousedé můžou návrh podpořit — po 5 hlasech se skupina aktivuje.",
           read: false,
           time: "právě teď",
           actionType: "group_proposal",
@@ -2040,9 +2112,11 @@ export function AppProvider({ children }) {
         },
         ...prev.filter((n) => n.id !== `n-group-prop-${id}`),
       ]);
-      showToast(`Návrh „${name}" je na Domů — 1 / ${CLUB_VOTES_REQUIRED} podpor. Sousedé ho můžou podpořit.`);
+      showToast(
+        `Návrh „${name}" je připravený ke podpoře — 1 / ${CLUB_VOTES_REQUIRED}. Najdete ho v návrzích skupin.`
+      );
     },
-    [showToast, user, activeLocation?.municipality]
+    [showToast, user, activeLocation?.municipality, activeLocationId, setUiPref]
   );
 
   const activateGroupFromProposal = useCallback((activated) => {
@@ -2078,6 +2152,26 @@ export function AppProvider({ children }) {
       if (!local || local.voted || local.votes >= local.required) return;
 
       const remoteResult = await voteRemoteGroupProposal(id, user);
+      void publishRemotePost(
+        {
+          id: `gpvote-${id}-${user?.id ?? "me"}`,
+          title: `Podpora: ${local.name}`,
+          body: "",
+          type: "Podpora skupiny",
+          feedType: "skupiny",
+          feedSubtype: GROUP_PROPOSAL_VOTE_FEED_SUBTYPE,
+          author: user?.name ?? "Soused",
+          authorId: user?.id ?? "me",
+          initials: user?.initials,
+          accountType: user?.accountType,
+          locationId: activeLocationId,
+          municipality: activeLocation?.municipality ?? user?.geo?.city ?? null,
+          isGroupProposalVote: true,
+          proposalId: id,
+          createdAt: Date.now(),
+        },
+        user
+      );
 
       setGroupProposals((prev) => {
         let activated = null;
@@ -2087,8 +2181,7 @@ export function AppProvider({ children }) {
             remoteResult && !remoteResult.alreadyVoted
               ? Math.max(p.votes + 1, remoteResult.votes ?? p.votes + 1)
               : p.votes + 1;
-          const active =
-            Boolean(remoteResult?.active) || votes >= p.required;
+          const active = Boolean(remoteResult?.active) || votes >= p.required;
           if (active) activated = { ...p, votes, voted: true, active: true };
           return { ...p, votes, voted: true, active: active || p.active };
         });
@@ -2116,7 +2209,7 @@ export function AppProvider({ children }) {
         return updated;
       });
     },
-    [showToast, groupProposals, user, activateGroupFromProposal]
+    [showToast, groupProposals, user, activateGroupFromProposal, activeLocationId, activeLocation?.municipality]
   );
 
   // Návrhy skupin ze Supabase — ostatní sousedé vidí a podporují na Domů
@@ -2198,7 +2291,7 @@ export function AppProvider({ children }) {
                 id,
                 type: "blue",
                 title: `Nový návrh skupiny: ${proposal.name}`,
-                body: "Na Domů můžete podpořit vznik — po 5 hlasech se skupina aktivuje.",
+                body: "Můžete podpořit vznik — po 5 hlasech se skupina aktivuje.",
                 read: false,
                 time: "právě teď",
                 actionType: "group_proposal",
@@ -2208,7 +2301,7 @@ export function AppProvider({ children }) {
             ];
           });
           setToast({
-            message: `Nový návrh skupiny „${proposal.name}" — podpořte na Domů.`,
+            message: `Nový návrh skupiny „${proposal.name}" — můžete ho podpořit.`,
             type: "info",
             locationId: null,
           });

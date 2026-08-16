@@ -484,6 +484,7 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
               onDismiss={dismissGroupProposal}
               onRestore={restoreGroupProposal}
               compactTitle
+              hint="Podpořte vznik nové skupiny. Nezajímavé návrhy skryjte křížkem."
             />
           </div>
         )}
@@ -555,6 +556,7 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
               onDismiss={dismissGroupProposal}
               onRestore={restoreGroupProposal}
               compactTitle
+              hint="Podpořte vznik nové skupiny. Nezajímavé návrhy skryjte křížkem."
             />
           </div>
         )}
