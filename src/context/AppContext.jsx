@@ -3994,15 +3994,12 @@ export function AppProvider({ children }) {
   const addPlaceReview = useCallback(
     ({ placeKey, placeId, place, text, stars = 5 }) => {
       if (!user || !placeKey || !text?.trim()) return;
-      if (!isVerifiedNeighbor(user)) {
-        showToast("Recenzi mohou psát pouze ověření sousedé.", "error");
-        return;
-      }
       const target = place ?? { id: placeId };
       if (isPlaceOwner(user, target, institutionClaims, institutionPlaceOverrides)) {
         showToast("Na vlastní profil nelze psát recenzi.", "error");
         return;
       }
+      const verified = isVerifiedNeighbor(user);
       setPlaceReviews((prev) => [
         ...prev,
         {
@@ -4013,13 +4010,13 @@ export function AppProvider({ children }) {
           authorName: user.name,
           text: text.trim(),
           stars,
-          verified: true,
+          verified,
           reported: false,
           hiddenPendingReview: false,
           createdAt: new Date().toISOString(),
         },
       ]);
-      showToast("Komunitní recenze zveřejněna.", "success");
+      showToast("Recenze zveřejněna.", "success");
     },
     [user, institutionClaims, institutionPlaceOverrides, showToast]
   );

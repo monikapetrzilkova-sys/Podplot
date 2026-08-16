@@ -5,8 +5,11 @@ import {
   computeHybridPlaceRating,
   getVisiblePlaceReviews,
   placeReviewKey,
+  canWritePlaceReview,
 } from "../../data/placeReviews.js";
-export default function PlaceReviewList({ place, showComposer = false, compact = false }) {
+import { isVerifiedNeighbor } from "../../data/serviceReviews.js";
+
+export default function PlaceReviewList({ place, showComposer = null, compact = false }) {
   const {
     placeReviews,
     addPlaceReview,
@@ -18,6 +21,7 @@ export default function PlaceReviewList({ place, showComposer = false, compact =
 
   const [text, setText] = useState("");
   const [stars, setStars] = useState(5);
+  const [composerOpen, setComposerOpen] = useState(false);
 
   const key = placeReviewKey(place);
   if (!key) return null;
@@ -32,12 +36,17 @@ export default function PlaceReviewList({ place, showComposer = false, compact =
   );
 
   const googleReviews = place.googleReviews ?? [];
+  const canReview =
+    typeof showComposer === "boolean"
+      ? showComposer
+      : canWritePlaceReview(user, place, institutionClaims, institutionPlaceOverrides);
 
   const submit = () => {
     if (!text.trim()) return;
     addPlaceReview({ placeKey: key, placeId: place.id, place, text: text.trim(), stars });
     setText("");
     setStars(5);
+    setComposerOpen(false);
   };
 
   return (
@@ -67,22 +76,35 @@ export default function PlaceReviewList({ place, showComposer = false, compact =
         </div>
       )}
 
-      {googleReviews.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-[10px] font-bold uppercase text-stone-500">Z Google Maps</p>
-          {googleReviews.slice(0, 2).map((r, i) => (
-            <div key={`g-${i}`} className="bg-blue-50/60 rounded-lg p-2.5 text-xs border border-blue-100">
-              <p className="text-amber-600 font-semibold mb-0.5">{"★".repeat(r.rating ?? 5)}</p>
-              <p className="text-stone-700 line-clamp-3">{r.text}</p>
-              <p className="text-[10px] text-stone-400 mt-1">{r.author}{r.time ? ` · ${r.time}` : ""}</p>
-            </div>
-          ))}
-        </div>
+      {canReview && !composerOpen && (
+        <button
+          type="button"
+          onClick={() => setComposerOpen(true)}
+          className="w-full py-2.5 text-sm font-semibold text-white rounded-xl bg-[#3D7A68] hover:bg-[#346859]"
+        >
+          Napsat recenzi
+        </button>
       )}
 
-      {showComposer && (
+      {canReview && composerOpen && (
         <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 space-y-2">
-          <p className="text-[10px] font-bold uppercase text-emerald-800">Komunitní recenze (ověřený soused)</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[10px] font-bold uppercase text-emerald-800">Vaše recenze</p>
+            <button
+              type="button"
+              onClick={() => setComposerOpen(false)}
+              className="text-[11px] font-semibold text-stone-500"
+            >
+              Zrušit
+            </button>
+          </div>
+          {isVerifiedNeighbor(user) ? (
+            <p className="text-[10px] text-emerald-700">Zobrazí se jako ověřený soused.</p>
+          ) : (
+            <p className="text-[10px] text-stone-500">
+              Recenzi může napsat každý soused. Po ověření v síti důvěry bude označená jako ověřená.
+            </p>
+          )}
           <div className="flex gap-1">
             {[1, 2, 3, 4, 5].map((n) => (
               <button
@@ -90,6 +112,7 @@ export default function PlaceReviewList({ place, showComposer = false, compact =
                 type="button"
                 onClick={() => setStars(n)}
                 className={`text-lg ${n <= stars ? "text-amber-500" : "text-stone-300"}`}
+                aria-label={`${n} hvězd`}
               >
                 ★
               </button>
@@ -98,17 +121,35 @@ export default function PlaceReviewList({ place, showComposer = false, compact =
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            rows={2}
+            rows={3}
             placeholder="Vaše zkušenost s tímto místem…"
             className="w-full px-3 py-2 border border-stone-200 rounded-xl text-sm resize-none bg-white"
+            autoFocus
           />
           <button
             type="button"
             onClick={submit}
-            className="w-full py-2 text-xs font-semibold text-white rounded-xl bg-emerald-700"
+            disabled={!text.trim()}
+            className="w-full py-2.5 text-sm font-semibold text-white rounded-xl bg-emerald-700 disabled:opacity-50"
           >
-            Přidat komunitní recenzi
+            Odeslat recenzi
           </button>
+        </div>
+      )}
+
+      {googleReviews.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-[10px] font-bold uppercase text-stone-500">Z Google Maps</p>
+          {googleReviews.slice(0, 2).map((r, i) => (
+            <div key={`g-${i}`} className="bg-blue-50/60 rounded-lg p-2.5 text-xs border border-blue-100">
+              <p className="text-amber-600 font-semibold mb-0.5">{"★".repeat(r.rating ?? 5)}</p>
+              <p className="text-stone-700 line-clamp-3">{r.text}</p>
+              <p className="text-[10px] text-stone-400 mt-1">
+                {r.author}
+                {r.time ? ` · ${r.time}` : ""}
+              </p>
+            </div>
+          ))}
         </div>
       )}
 
@@ -121,9 +162,11 @@ export default function PlaceReviewList({ place, showComposer = false, compact =
               <p className="text-stone-700">{r.text}</p>
               <p className="text-[10px] text-stone-400 mt-1 flex flex-wrap items-center gap-2">
                 <span>{r.authorName}</span>
-                <span className="font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200">
-                  ✓ Ověřený soused
-                </span>
+                {r.verified ? (
+                  <span className="font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200">
+                    ✓ Ověřený soused
+                  </span>
+                ) : null}
               </p>
               {user?.id !== r.authorId && (
                 <button
@@ -139,8 +182,11 @@ export default function PlaceReviewList({ place, showComposer = false, compact =
         </div>
       )}
 
-      {community.length === 0 && !googleReviews.length && !hybrid && (
+      {community.length === 0 && !googleReviews.length && !hybrid && !canReview && (
         <p className="text-xs text-stone-500">Zatím žádná hodnocení.</p>
+      )}
+      {community.length === 0 && !googleReviews.length && !hybrid && canReview && !composerOpen && (
+        <p className="text-xs text-stone-500">Zatím žádná hodnocení — napište první recenzi.</p>
       )}
     </div>
   );

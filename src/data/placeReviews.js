@@ -1,7 +1,5 @@
 /** Hybridní recenze míst — Google + komunita PodPlotu */
 
-import { isVerifiedNeighbor } from "./serviceReviews.js";
-
 export function placeReviewKey(place) {
   if (!place) return null;
   return place.googlePlaceId ?? place.id ?? null;
@@ -19,16 +17,12 @@ export function isPlaceOwner(user, place, institutionClaims = [], institutionPla
 }
 
 export function canWritePlaceReview(user, place, institutionClaims, institutionPlaceOverrides) {
-  return (
-    isVerifiedNeighbor(user) &&
-    !isPlaceOwner(user, place, institutionClaims, institutionPlaceOverrides)
-  );
+  if (!user) return false;
+  return !isPlaceOwner(user, place, institutionClaims, institutionPlaceOverrides);
 }
 
 export function getVisiblePlaceReviews(reviews, placeKey) {
-  return reviews.filter(
-    (r) => r.placeKey === placeKey && r.verified && !r.hiddenPendingReview
-  );
+  return reviews.filter((r) => r.placeKey === placeKey && !r.hiddenPendingReview);
 }
 
 export function computeCommunityPlaceRating(reviews, placeKey) {
