@@ -467,43 +467,26 @@ export default function MyProfile({ registerLegalBack } = {}) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2 mb-1">
               <p className="text-[10px] font-bold uppercase text-stone-400">{addressLabel}</p>
-              {!editingHomeAddress && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingHomeAddress(true);
-                    setEditingLocationId("domov");
-                    setAddingLocation(false);
-                    requestAnimationFrame(() => {
-                      document.getElementById("profile-my-places")?.scrollIntoView({
-                        behavior: "smooth",
-                        block: "start",
-                      });
+              <button
+                type="button"
+                onClick={() => {
+                  setAddingLocation(false);
+                  setEditingLocationId("domov");
+                  setEditingHomeAddress(true);
+                  requestAnimationFrame(() => {
+                    document.getElementById("profile-my-places")?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
                     });
-                  }}
-                  className="text-[11px] font-semibold text-emerald-700 hover:underline shrink-0"
-                >
-                  Upravit
-                </button>
-              )}
-            </div>
-            {editingHomeAddress ? (
-              <HomeAddressForm
-                compact
-                initialAddress={user.address}
-                onSave={async (payload) => {
-                  const ok = await updateHomeAddress(payload);
-                  if (ok) setEditingHomeAddress(false);
-                  return ok;
+                  });
                 }}
-                onCancel={() => setEditingHomeAddress(false)}
-              />
-            ) : (
-              <>
-                <p className="font-medium text-stone-800">{user.address}</p>
-                <p className="text-[11px] text-stone-400 mt-2 leading-relaxed">{ADDRESS_PRIVACY_NOTE}</p>
-              </>
-            )}
+                className="text-[11px] font-semibold text-emerald-700 hover:underline shrink-0"
+              >
+                Upravit
+              </button>
+            </div>
+            <p className="font-medium text-stone-800">{user.address}</p>
+            <p className="text-[11px] text-stone-400 mt-2 leading-relaxed">{ADDRESS_PRIVACY_NOTE}</p>
           </div>
         </div>
       </div>
