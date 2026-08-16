@@ -57,7 +57,11 @@ function ServiceRow({ svc }) {
           </div>
         )}
         <div className="flex gap-2 flex-wrap pt-1">
-          <MessageButton participantId={svc.id} participantName={shortName} />
+          <MessageButton
+            participantId={svc.ownerUserId ?? svc.id}
+            participantName={shortName}
+            inactive={!svc.ownerUserId}
+          />
           <ReportUserButton targetId={svc.id} targetName={svc.name} compact />
         </div>
       </div>

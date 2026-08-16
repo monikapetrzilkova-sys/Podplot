@@ -294,7 +294,11 @@ export default function InstitutionDetailCard({ place, onClose }) {
               <PlaceReviewList place={place} showComposer={canReview} compact />
 
               <div className="mt-4 flex gap-2 flex-wrap">
-                <MessageButton participantId={place.id} participantName={place.name} />
+                <MessageButton
+                  participantId={place.id}
+                  participantName={place.name}
+                  inactive={!isOfficiallyClaimed}
+                />
                 {canClaim && (
                   <button
                     type="button"
@@ -303,6 +307,11 @@ export default function InstitutionDetailCard({ place, onClose }) {
                   >
                     Převzít profil
                   </button>
+                )}
+                {!isOfficiallyClaimed && !place.isPendingSuggestion && (
+                  <p className="text-[10px] text-stone-500 w-full">
+                    Zprávy budou dostupné, až provozovatel převezme správu tohoto profilu.
+                  </p>
                 )}
                 {canClaim && place.isGooglePlace && (
                   <p className="text-[10px] text-stone-500 w-full">

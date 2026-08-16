@@ -104,6 +104,9 @@ export default function MessagesPage({ embedded = false }) {
   );
 }
 
+export const UNCLAIMED_PROFILE_MESSAGE =
+  "Tato možnost bude aktivní, až si provozovatel převezme správu profilu daného podniku.";
+
 export function MessageButton({
   participantId,
   participantName,
@@ -116,8 +119,11 @@ export function MessageButton({
   topicTitle = null,
   topicLabel = null,
   initialMessage = null,
+  /** Profil bez provozovatele — tlačítko vypadá neaktivně, po kliknutí vysvětlení */
+  inactive = false,
+  inactiveMessage = UNCLAIMED_PROFILE_MESSAGE,
 }) {
-  const { startChat } = useApp();
+  const { startChat, showToast } = useApp();
 
   const resolvedTopic =
     topic ||
@@ -130,21 +136,35 @@ export function MessageButton({
         }
       : null);
 
+  const label = primary || !compact ? "Napsat zprávu" : "Zpráva";
+
   const base = primary
-    ? "w-full py-2.5 px-4 text-sm font-semibold text-white bg-[#3D7A68] rounded-xl border border-[#3D7A68] hover:bg-[#346859] shadow-sm"
-    : `font-semibold text-[#1B4D3E] bg-[#F1F6F5] rounded-xl border border-[#C5DDD4] hover:bg-[#E8F3EF] whitespace-nowrap shrink-0 ${
-        compact ? "text-[11px] px-2 py-1.5" : "text-xs px-3 py-1.5"
-      }`;
+    ? inactive
+      ? "w-full py-2.5 px-4 text-sm font-semibold text-stone-400 bg-stone-100 rounded-xl border border-stone-200 cursor-not-allowed opacity-70"
+      : "w-full py-2.5 px-4 text-sm font-semibold text-white bg-[#3D7A68] rounded-xl border border-[#3D7A68] hover:bg-[#346859] shadow-sm"
+    : inactive
+      ? `font-semibold text-stone-400 bg-stone-100 rounded-xl border border-stone-200 cursor-not-allowed opacity-70 whitespace-nowrap shrink-0 ${
+          compact ? "text-[11px] px-2 py-1.5" : "text-xs px-3 py-1.5"
+        }`
+      : `font-semibold text-[#1B4D3E] bg-[#F1F6F5] rounded-xl border border-[#C5DDD4] hover:bg-[#E8F3EF] whitespace-nowrap shrink-0 ${
+          compact ? "text-[11px] px-2 py-1.5" : "text-xs px-3 py-1.5"
+        }`;
 
   return (
     <button
       type="button"
-      onClick={() =>
-        startChat(participantId, participantName, initialMessage, resolvedTopic)
-      }
+      aria-disabled={inactive || undefined}
+      title={inactive ? inactiveMessage : undefined}
+      onClick={() => {
+        if (inactive) {
+          showToast(inactiveMessage, "info", { durationMs: 4500 });
+          return;
+        }
+        startChat(participantId, participantName, initialMessage, resolvedTopic);
+      }}
       className={`${base} ${className}`.trim()}
     >
-      {primary || !compact ? "Napsat zprávu" : "Zpráva"}
+      {label}
     </button>
   );
 }

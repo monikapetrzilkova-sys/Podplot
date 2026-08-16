@@ -67,7 +67,12 @@ function ServiceRow({ svc }) {
       <div className="space-y-3 text-xs">
         <div className="flex items-center gap-2">
           <div className="flex-1 min-w-0">
-            <MessageButton participantId={svc.id} participantName={shortName} primary />
+            <MessageButton
+              participantId={svc.ownerUserId ?? svc.id}
+              participantName={shortName}
+              primary
+              inactive={!svc.ownerUserId}
+            />
           </div>
           <ReportUserButton targetId={svc.id} targetName={svc.name} compact />
         </div>

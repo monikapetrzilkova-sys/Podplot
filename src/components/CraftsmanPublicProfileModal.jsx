@@ -112,6 +112,7 @@ export default function CraftsmanPublicProfileModal() {
               participantId={service.ownerUserId ?? service.id}
               participantName={shortName}
               primary
+              inactive={!service.ownerUserId}
             />
 
             <div>

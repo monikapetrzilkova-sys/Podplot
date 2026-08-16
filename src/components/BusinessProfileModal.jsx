@@ -4,6 +4,7 @@ import VerifiedBadge from "./VerifiedBadge.jsx";
 import { PlaceIcon } from "./module/placeIcons.jsx";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
 import AppPanelPortal from "./AppPanelPortal.jsx";
+import { CLAIM_STATUS } from "../data/entityManagement.js";
 
 function formatWebsiteLabel(url) {
   if (!url) return "";
@@ -12,6 +13,9 @@ function formatWebsiteLabel(url) {
 
 export default function BusinessProfileModal({ business, onClose }) {
   if (!business) return null;
+
+  const messagingActive =
+    Boolean(business.claimedByUserId) || business.claimStatus === CLAIM_STATUS.CLAIMED;
 
   return (
     <AppPanelPortal>
@@ -80,7 +84,17 @@ export default function BusinessProfileModal({ business, onClose }) {
             </div>
 
             <div className="mt-4 flex gap-2 flex-wrap">
-              <MessageButton participantId={business.id} participantName={business.name} primary />
+              <MessageButton
+                participantId={business.id}
+                participantName={business.name}
+                primary
+                inactive={!messagingActive}
+              />
+              {!messagingActive ? (
+                <p className="text-[10px] text-stone-500 w-full">
+                  Zprávy budou dostupné, až provozovatel převezme správu tohoto profilu.
+                </p>
+              ) : null}
             </div>
 
             <p className="text-[10px] text-stone-400 text-center mt-4">Sponzorovaný profil · Podplot</p>
