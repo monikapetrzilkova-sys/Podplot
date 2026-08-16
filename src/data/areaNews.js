@@ -78,11 +78,14 @@ export const AREA_NEWS = [
 
 export function getAreaNewsForLocation(location, allNews = AREA_NEWS) {
   if (!location) return [];
-  return allNews.filter(
-    (n) =>
-      n.locationIds?.includes(location.id) ||
-      n.municipality === location.municipality
-  );
+  return allNews.filter((n) => {
+    const locOk = !n.locationIds?.length || n.locationIds.includes(location.id);
+    const munOk =
+      !n.municipality ||
+      n.municipality === "all" ||
+      n.municipality === location.municipality;
+    return locOk && munOk;
+  });
 }
 
 export function getActiveCrisis(news) {

@@ -94,9 +94,12 @@ export default function MapPage({ lockedSection = null, officeOverview = false }
 
         <div className="pp-map-content flex-1 min-h-0 flex flex-col overflow-hidden">
           {activeSection === "reports" ? (
-            <SecurityReports reportsCategoryFilter={reportsCategoryFilter} />
+            <SecurityReports
+              key={`reports-${mapRootKey}`}
+              reportsCategoryFilter={reportsCategoryFilter}
+            />
           ) : (
-            <MapModule provozovnaType={provozovnaType} />
+            <MapModule key={`places-${mapRootKey}`} provozovnaType={provozovnaType} />
           )}
         </div>
       </div>

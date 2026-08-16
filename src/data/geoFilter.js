@@ -44,6 +44,14 @@ export function filterByActiveLocation(items, activeLocationId, activeLocation, 
   const radius = activeLocation?.radiusKm ?? 7;
   return items.filter((item) => {
     if (resolveLocationId(item, legacyDefault) !== activeLocationId) return false;
+    if (
+      item.municipality &&
+      item.municipality !== "all" &&
+      activeLocation?.municipality &&
+      item.municipality !== activeLocation.municipality
+    ) {
+      return false;
+    }
     if (item.lat != null && item.lng != null && activeLocation) {
       return distanceBetweenKm(activeLocation, item) <= radius;
     }

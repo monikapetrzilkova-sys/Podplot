@@ -3542,26 +3542,39 @@ export function AppProvider({ children }) {
     async ({ street, houseNumber, psc, city, fullAddress, lat, lng }) => {
       const municipality = city.trim();
       const shortLabel = municipality.split("—")[0].split("–")[0].trim() || municipality;
+      const pscNorm = pscDigits(psc);
 
       let nextLat = lat;
       let nextLng = lng;
       if (nextLat == null || nextLng == null) {
-        try {
-          const query = `${street} ${houseNumber}, ${pscDigits(psc)} ${city}`.trim();
-          const results = await fetchAddressSuggestions(query);
-          const hit = results[0];
-          if (hit?.lat != null && hit?.lon != null) {
-            nextLat = hit.lat;
-            nextLng = hit.lon;
+        const queries = [
+          `${street} ${houseNumber}, ${pscNorm} ${city}`.trim(),
+          `${street} ${houseNumber}, ${city}`.trim(),
+          `${pscNorm} ${city}`.trim(),
+          city.trim(),
+        ].filter((q) => q.length >= 3);
+
+        for (const query of queries) {
+          try {
+            const results = await fetchAddressSuggestions(query);
+            const hit = results.find((r) => r?.lat != null && r?.lon != null) ?? results[0];
+            if (hit?.lat != null && hit?.lon != null) {
+              nextLat = hit.lat;
+              nextLng = hit.lon;
+              break;
+            }
+          } catch {
+            /* zkus další dotaz */
           }
-        } catch {
-          /* ponechat stávající souřadnice */
         }
       }
 
       const currentDomov = locations.find((l) => l.id === "domov");
       const resolvedLat = nextLat ?? currentDomov?.lat ?? USER_LOCATIONS[0].lat;
       const resolvedLng = nextLng ?? currentDomov?.lng ?? USER_LOCATIONS[0].lng;
+      const coordsChanged =
+        Math.abs((currentDomov?.lat ?? 0) - resolvedLat) > 0.0005 ||
+        Math.abs((currentDomov?.lng ?? 0) - resolvedLng) > 0.0005;
 
       setUser((u) =>
         u
@@ -3569,7 +3582,12 @@ export function AppProvider({ children }) {
               ...u,
               address: fullAddress,
               location: shortLabel,
-              geo: { ...(u.geo ?? {}), city: municipality },
+              geo: {
+                ...(u.geo ?? {}),
+                city: municipality,
+                lat: resolvedLat,
+                lng: resolvedLng,
+              },
             }
           : u
       );
@@ -3589,10 +3607,23 @@ export function AppProvider({ children }) {
         )
       );
 
-      showToast("Domovská adresa uložena.", "success");
+      // Domov musí být aktivní, aby zeď / mapa / průvodce hned čerpaly z nové lokality
+      setActiveLocationId("domov");
+      setCommunityGroups(getGroupsForLocation("domov"));
+      setFeedSubFilter(getDefaultSubfilter(feedMainMode));
+      setMapRootKey((k) => k + 1);
+      clearModuleSelection();
+
+      showToast(
+        coordsChanged
+          ? `Domov: ${shortLabel} — mapa a okolí přepočítány.`
+          : `Domovská adresa uložena (${shortLabel}).`,
+        "success",
+        { locationId: "domov" }
+      );
       return true;
     },
-    [locations, showToast]
+    [locations, showToast, feedMainMode, clearModuleSelection]
   );
 
   const openEventDetail = useCallback(
