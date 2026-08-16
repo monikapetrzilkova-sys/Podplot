@@ -4,7 +4,7 @@ import { buildGlobalSearchResults } from "../utils/globalSearch.js";
 import { SECURITY_REPORTS } from "../data/mockData.js";
 import { filterSecurityReportsByLocation } from "../data/geoFilter.js";
 import { filterActiveReports } from "../data/reportExpiry.js";
-import { getMyGroups, getGroupPosts, getGroup } from "../data/groups.js";
+import { getGroupPosts, getGroup } from "../data/groups.js";
 import { PlaceIcon } from "./module/placeIcons.jsx";
 import { ReportPinIcon } from "./module/reportPinIcons.jsx";
 import InstitutionDetailCard from "./InstitutionDetailCard.jsx";
@@ -68,6 +68,7 @@ export default function GlobalSearchResults() {
     userPostsForLocation,
     feedPostsForLocation,
     userGroupPosts,
+    communityGroups,
     neighborHelp,
     areaNews,
     servicesCatalogReachable,
