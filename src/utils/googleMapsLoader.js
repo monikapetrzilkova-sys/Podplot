@@ -3,7 +3,9 @@ let cachedConfig = null;
 
 function clientEnvMapsKey() {
   try {
-    const fromVite = import.meta.env?.VITE_GOOGLE_MAPS_API_KEY;
+    // Vite injects import.meta.env; plain browser / babel server does not
+    const env = import.meta.env;
+    const fromVite = env && env.VITE_GOOGLE_MAPS_API_KEY;
     if (typeof fromVite === "string" && fromVite.trim()) return fromVite.trim();
   } catch {
     /* ignore */
@@ -103,7 +105,8 @@ export async function loadGoogleMaps() {
     };
     document.head.appendChild(script);
   }).then(async (maps) => {
-    await new Promise((r) => setTimeout(r, 800));
+    // Krátká prodleva jen pro detekci gm_authFailure; neblokuj funkční mapu
+    await new Promise((r) => setTimeout(r, 300));
     if (didMapsAuthFail()) {
       loadPromise = null;
       throw new Error(
