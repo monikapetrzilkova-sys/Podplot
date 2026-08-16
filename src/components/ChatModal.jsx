@@ -165,7 +165,6 @@ export default function ChatModal({
     sendMessage,
     getChatMessages,
     formatPersonName,
-    receiveMessage,
     resolveChatParticipantService,
     openCraftsmanPublicProfile,
     setChatActiveTopic,
@@ -247,9 +246,6 @@ export default function ChatModal({
       openSection.key === "general" ? null : topicToMessageMeta(openSection.topic);
     sendMessage(participantId, participantName, outgoing, meta);
     setText("");
-    window.setTimeout(() => {
-      receiveMessage(participantId, participantName, "Díky za zprávu, brzy se ozvu!");
-    }, 4000);
   };
 
   const threadMessages = openSection?.messages ?? [];
