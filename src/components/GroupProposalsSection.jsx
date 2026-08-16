@@ -10,10 +10,11 @@ export default function GroupProposalsSection({
   onVote,
   onDismiss,
   onRestore,
+  onEdit,
   compactTitle = false,
   hint = "Sousedé můžou podpořit vznik nové skupiny. Nezajímavé návrhy skryjte křížkem.",
 }) {
-  const { user } = useApp();
+  const { user, openEditGroupProposal } = useApp();
   const [minimized, , toggleMinimized] = useUiPref(UI_KEYS.GROUP_PROPOSALS_MINIMIZED, false);
   const [showDismissed, setShowDismissed] = useUiPref(UI_KEYS.GROUP_PROPOSALS_ARCHIVE_OPEN, false);
 
@@ -81,6 +82,7 @@ export default function GroupProposalsSection({
                 proposal={p}
                 onVote={onVote}
                 onDismiss={onDismiss}
+                onEdit={onEdit ?? openEditGroupProposal}
                 mine={isMine(p)}
               />
             ))}

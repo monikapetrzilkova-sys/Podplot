@@ -1,7 +1,7 @@
 import { useUiPref } from "../hooks/useUiPref.js";
 import { proposalDetailsKey } from "../data/uiPreferences.js";
 
-export default function GroupProposalCard({ proposal, onVote, onDismiss, mine = false }) {
+export default function GroupProposalCard({ proposal, onVote, onDismiss, onEdit, mine = false }) {
   const detailsKey = proposalDetailsKey(proposal.id);
   const [expanded, setExpanded] = useUiPref(detailsKey, false);
   const pct = Math.min(100, (proposal.votes / proposal.required) * 100);
@@ -54,9 +54,18 @@ export default function GroupProposalCard({ proposal, onVote, onDismiss, mine = 
 
       <div className="mt-2.5 flex items-center gap-2">
         {mine ? (
-          <div className="flex-1 py-2 rounded-xl text-xs font-semibold text-center bg-[#E8F3EF] text-[#1B4D3E]">
-            Čeká na sousedy
-          </div>
+          <>
+            <button
+              type="button"
+              onClick={() => onEdit?.(proposal.id)}
+              className="flex-1 py-2 rounded-xl text-xs font-semibold bg-[#3D7A68] text-white hover:bg-[#2F6354] transition-colors"
+            >
+              Upravit návrh
+            </button>
+            <span className="shrink-0 py-2 px-2.5 rounded-xl text-[10px] font-semibold text-[#1B4D3E] bg-[#E8F3EF]">
+              Čeká na sousedy
+            </span>
+          </>
         ) : (
           <button
             type="button"

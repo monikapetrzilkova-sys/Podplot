@@ -215,7 +215,7 @@ function CategoryTrunk({
   onVote,
   onDismiss,
 }) {
-  const { user } = useApp();
+  const { user, openEditGroupProposal } = useApp();
   const [open, setOpen] = useState(false);
   const expanded = forceOpen || open;
   const pendingCount = proposals.length;
@@ -288,6 +288,7 @@ function CategoryTrunk({
                       proposal={p}
                       onVote={onVote}
                       onDismiss={onDismiss}
+                      onEdit={openEditGroupProposal}
                       mine={isMine(p)}
                     />
                   ))}
@@ -337,7 +338,7 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
     userGroupPosts,
     setFeedSubFilter,
     activeLocationId,
-    setCreateGroupModalOpen,
+    openCreateGroupModal,
     groupProposals,
     voteGroupProposal,
     dismissedGroupProposalIds,
@@ -602,7 +603,7 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
             hideFilterBar ? (
               <button
                 type="button"
-                onClick={() => setCreateGroupModalOpen(true)}
+                onClick={() => openCreateGroupModal?.()}
                 aria-label="Navrhnout novou skupinu"
                 title="Navrhnout novou skupinu"
                 className="pp-groups-new-btn shrink-0 inline-flex items-center gap-0.5 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold text-[#1B4D3E] bg-[#E8F3EF] border border-[#C5E0D6] transition-colors duration-150 hover:bg-[#3D7A68] hover:border-[#3D7A68] hover:text-white active:bg-[#2F6354] active:border-[#2F6354] active:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#64A08D] focus-visible:ring-offset-1"

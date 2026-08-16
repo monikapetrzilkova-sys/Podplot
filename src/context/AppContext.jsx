@@ -399,6 +399,7 @@ export function AppProvider({ children }) {
     mergeProposalLists(INITIAL_GROUP_PROPOSALS, loadStoredGroupProposals())
   );
   const [createGroupModalOpen, setCreateGroupModalOpen] = useState(false);
+  const [editingGroupProposalId, setEditingGroupProposalId] = useState(null);
 
   useEffect(() => {
     persistGroupProposals(groupProposals);
@@ -2049,6 +2050,22 @@ export function AppProvider({ children }) {
     [goToHomeWall, clearMapFocus]
   );
 
+  const openCreateGroupModal = useCallback(() => {
+    setEditingGroupProposalId(null);
+    setCreateGroupModalOpen(true);
+  }, []);
+
+  const openEditGroupProposal = useCallback((proposalId) => {
+    if (!proposalId) return;
+    setEditingGroupProposalId(proposalId);
+    setCreateGroupModalOpen(true);
+  }, []);
+
+  const closeCreateGroupModal = useCallback(() => {
+    setCreateGroupModalOpen(false);
+    setEditingGroupProposalId(null);
+  }, []);
+
   const proposeGroup = useCallback(
     ({ name, description, purpose, clubCategory = null }) => {
       const id = `prop-${Date.now()}`;
@@ -2118,6 +2135,64 @@ export function AppProvider({ children }) {
       );
     },
     [showToast, user, activeLocation?.municipality, activeLocationId, setUiPref]
+  );
+
+  const updateGroupProposal = useCallback(
+    ({ id, name, description, purpose, clubCategory = null }) => {
+      if (!id || !name?.trim() || !description?.trim() || !purpose?.trim()) return false;
+      const existing = groupProposals.find((p) => p.id === id);
+      if (!existing) return false;
+      const isMine =
+        (user?.id && (existing.proposerId === user.id || existing.proposer_id === user.id)) ||
+        (user?.name &&
+          existing.proposer &&
+          String(existing.proposer).trim() === String(user.name).trim());
+      if (!isMine) {
+        showToast("Upravovat můžete jen vlastní návrh.", "error");
+        return false;
+      }
+
+      const cat = clubCategory ? getClubCategory(clubCategory) : null;
+      const updated = {
+        ...existing,
+        name: name.trim(),
+        description: description.trim(),
+        purpose: purpose.trim(),
+        clubCategory: clubCategory || existing.clubCategory || null,
+        categoryId: clubCategory || existing.categoryId || null,
+        tag: cat?.label ?? existing.tag ?? "Skupiny",
+      };
+
+      setGroupProposals((prev) => prev.map((p) => (p.id === id ? updated : p)));
+      void publishRemoteGroupProposal(updated, user);
+      void publishRemotePost(
+        {
+          id: updated.id,
+          title: updated.name,
+          body: updated.description,
+          type: "Návrh skupiny",
+          feedType: "skupiny",
+          feedSubtype: GROUP_PROPOSAL_FEED_SUBTYPE,
+          author: updated.proposer,
+          authorId: user?.id ?? updated.proposerId ?? "me",
+          initials: user?.initials,
+          accountType: user?.accountType,
+          locationId: activeLocationId,
+          municipality: updated.municipality,
+          meta: updated.tag,
+          isGroupProposal: true,
+          purpose: updated.purpose,
+          clubCategory: updated.clubCategory,
+          proposalRequired: updated.required,
+          proposalVotes: updated.votes,
+          createdAt: updated.createdAt,
+        },
+        user
+      );
+      showToast(`Návrh „${updated.name}" byl upraven.`);
+      return true;
+    },
+    [groupProposals, user, showToast, activeLocationId]
   );
 
   const activateGroupFromProposal = useCallback((activated) => {
@@ -5924,6 +5999,7 @@ export function AppProvider({ children }) {
         communityGroups,
         groupProposals,
         proposeGroup,
+        updateGroupProposal,
         voteGroupProposal,
         dismissedGroupProposalIds,
         dismissGroupProposal,
@@ -5933,6 +6009,12 @@ export function AppProvider({ children }) {
         toggleUiPref,
         createGroupModalOpen,
         setCreateGroupModalOpen,
+        editingGroupProposalId,
+        editingGroupProposal:
+          groupProposals.find((p) => p.id === editingGroupProposalId) ?? null,
+        openCreateGroupModal,
+        openEditGroupProposal,
+        closeCreateGroupModal,
         activeGroupId,
         openGroup,
         closeGroup,

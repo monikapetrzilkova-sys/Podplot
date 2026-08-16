@@ -217,7 +217,7 @@ function GlobalModals() {
     dismissProfileHint,
     goToProfileFromHint,
     createGroupModalOpen,
-    setCreateGroupModalOpen,
+    closeCreateGroupModal,
   } = useApp();
 
   return (
@@ -237,7 +237,7 @@ function GlobalModals() {
       <LocationAccessPrompt />
       <CreateGroupModal
         open={createGroupModalOpen}
-        onClose={() => setCreateGroupModalOpen(false)}
+        onClose={closeCreateGroupModal}
       />
       <PaymentModal
         open={!!pendingPayment}

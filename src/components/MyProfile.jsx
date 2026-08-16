@@ -256,6 +256,8 @@ export default function MyProfile({ registerLegalBack } = {}) {
     viewAsNeighbor,
     groupProposals,
     setCreateGroupModalOpen,
+    openEditGroupProposal,
+    openCreateGroupModal,
   } = useApp();
 
   const isOfficeProfile = testRoleId === "urad";
@@ -782,7 +784,7 @@ export default function MyProfile({ registerLegalBack } = {}) {
                   type="button"
                   onClick={() => {
                     closeProfile?.();
-                    setCreateGroupModalOpen?.(true);
+                    openCreateGroupModal?.();
                   }}
                   className="w-full py-2.5 rounded-xl text-xs font-semibold bg-[#E8F3EF] text-[#1B4D3E] border border-[#C5E0D6]"
                 >
@@ -798,7 +800,12 @@ export default function MyProfile({ registerLegalBack } = {}) {
                 aktivuje.
               </p>
               {mine.map((p) => (
-                <GroupProposalCard key={p.id} proposal={p} mine />
+                <GroupProposalCard
+                  key={p.id}
+                  proposal={p}
+                  mine
+                  onEdit={openEditGroupProposal}
+                />
               ))}
               <button
                 type="button"

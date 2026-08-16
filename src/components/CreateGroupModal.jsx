@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import { CLUB_CATEGORIES } from "../data/clubCategories.js";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
@@ -6,23 +6,56 @@ import AppPanelPortal from "./AppPanelPortal.jsx";
 import { ClubCategoryIcon } from "./communityNavIcons.jsx";
 
 export default function CreateGroupModal({ open, onClose }) {
-  const { proposeGroup } = useApp();
+  const { proposeGroup, updateGroupProposal, editingGroupProposal } = useApp();
+  const isEditing = Boolean(editingGroupProposal?.id);
+
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [purpose, setPurpose] = useState("");
   const [clubCategory, setClubCategory] = useState(CLUB_CATEGORIES[0]?.id ?? "");
+
+  useEffect(() => {
+    if (!open) return;
+    if (editingGroupProposal) {
+      setName(editingGroupProposal.name ?? "");
+      setDescription(editingGroupProposal.description ?? "");
+      setPurpose(editingGroupProposal.purpose ?? "");
+      setClubCategory(
+        editingGroupProposal.clubCategory ||
+          editingGroupProposal.categoryId ||
+          CLUB_CATEGORIES[0]?.id ||
+          ""
+      );
+      return;
+    }
+    setName("");
+    setDescription("");
+    setPurpose("");
+    setClubCategory(CLUB_CATEGORIES[0]?.id ?? "");
+  }, [open, editingGroupProposal]);
 
   if (!open) return null;
 
   const submit = (e) => {
     e.preventDefault();
     if (!name.trim() || !description.trim() || !purpose.trim() || !clubCategory) return;
-    proposeGroup({
-      name: name.trim(),
-      description: description.trim(),
-      purpose: purpose.trim(),
-      clubCategory,
-    });
+    if (isEditing) {
+      const ok = updateGroupProposal({
+        id: editingGroupProposal.id,
+        name: name.trim(),
+        description: description.trim(),
+        purpose: purpose.trim(),
+        clubCategory,
+      });
+      if (!ok) return;
+    } else {
+      proposeGroup({
+        name: name.trim(),
+        description: description.trim(),
+        purpose: purpose.trim(),
+        clubCategory,
+      });
+    }
     setName("");
     setDescription("");
     setPurpose("");
@@ -38,9 +71,13 @@ export default function CreateGroupModal({ open, onClose }) {
         </div>
         <div className="pp-app-sheet">
           <div className="pp-app-sheet-body p-5">
-            <h2 className="text-lg font-bold text-stone-900 mb-1">Nová skupina</h2>
+            <h2 className="text-lg font-bold text-stone-900 mb-1">
+              {isEditing ? "Upravit návrh skupiny" : "Nová skupina"}
+            </h2>
             <p className="text-sm text-stone-500 mb-4">
-              Návrh uvidí sousedé ke podpoře. Skupina se aktivuje po 5 hlasech.
+              {isEditing
+                ? "Upravte text návrhu. Počet podpor zůstane zachovaný."
+                : "Návrh uvidí sousedé ke podpoře. Skupina se aktivuje po 5 hlasech."}
             </p>
 
             <form onSubmit={submit} className="space-y-4">
@@ -100,12 +137,14 @@ export default function CreateGroupModal({ open, onClose }) {
                   required
                 />
               </div>
-              <div className="bg-[#E8F3EF] border border-[#C5E0D6] rounded-xl p-3">
-                <p className="text-xs text-[#1B4D3E] leading-relaxed">
-                  Po odeslání uvidí návrh sousedé (Domů, Skupiny). Váš hlas se započítá automaticky
-                  (1 / 5). Po dosažení 5 podpor se skupina aktivuje.
-                </p>
-              </div>
+              {!isEditing && (
+                <div className="bg-[#E8F3EF] border border-[#C5E0D6] rounded-xl p-3">
+                  <p className="text-xs text-[#1B4D3E] leading-relaxed">
+                    Po odeslání uvidí návrh sousedé (Domů, Skupiny). Váš hlas se započítá automaticky
+                    (1 / 5). Po dosažení 5 podpor se skupina aktivuje.
+                  </p>
+                </div>
+              )}
               <div className="flex gap-2 pt-2">
                 <button
                   type="button"
@@ -118,7 +157,7 @@ export default function CreateGroupModal({ open, onClose }) {
                   type="submit"
                   className="flex-1 py-3 bg-[#3D7A68] text-white rounded-2xl text-sm font-semibold"
                 >
-                  Odeslat návrh
+                  {isEditing ? "Uložit změny" : "Odeslat návrh"}
                 </button>
               </div>
             </form>

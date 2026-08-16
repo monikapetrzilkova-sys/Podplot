@@ -3,7 +3,7 @@ import { getSkupinySubfilters } from "../data/worldNavigation.js";
 import { GroupNavIcon, IconNavPlus } from "./communityNavIcons.jsx";
 
 export default function GroupFilterBar() {
-  const { feedSubFilter, setFeedSubFilter, communityGroups, setCreateGroupModalOpen } = useApp();
+  const { feedSubFilter, setFeedSubFilter, communityGroups, openCreateGroupModal } = useApp();
   const items = getSkupinySubfilters(communityGroups);
 
   return (
@@ -32,7 +32,7 @@ export default function GroupFilterBar() {
       })}
       <button
         type="button"
-        onClick={() => setCreateGroupModalOpen(true)}
+        onClick={() => openCreateGroupModal?.()}
         aria-label="Navrhnout novou skupinu"
         title="Navrhnout novou skupinu"
         className="pp-groups-new-btn shrink-0 inline-flex items-center gap-0.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold text-[#1B4D3E] bg-[#E8F3EF] border border-[#C5E0D6] transition-colors duration-150 hover:bg-[#3D7A68] hover:border-[#3D7A68] hover:text-white active:bg-[#2F6354] active:border-[#2F6354] active:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#64A08D]"
