@@ -72,6 +72,7 @@ export default function GlobalSearchResults() {
     selectMainTab,
     showModuleItemOnMap,
     openCraftsmanPublicProfile,
+    setLocalGuideSearchQuery,
   } = useApp();
 
   const [detailPlace, setDetailPlace] = useState(null);
@@ -123,6 +124,9 @@ export default function GlobalSearchResults() {
   const openListing = (post) => setDetailListing(post);
 
   const goToMapPlaces = () => {
+    const query = q;
+    setLocalGuideSearchQuery?.(query);
+    setGlobalSearchQuery("");
     setActiveTab("map");
     setMapFocus("places");
   };
