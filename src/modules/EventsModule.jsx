@@ -264,7 +264,7 @@ export default function EventsModule({
   );
 
   const toolbar = (
-    <div className="pp-events-toolbar shrink-0">
+    <div className="pp-events-toolbar tab-header-container shrink-0">
       {showLocalSearch && searchActive ? (
         <div className="w-full min-w-0">
           <CompactSearchToggle

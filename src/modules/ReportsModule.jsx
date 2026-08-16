@@ -1,13 +1,11 @@
 import { useMemo, useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import MapComponent from "../components/module/MapComponent.jsx";
-import ReportMapPreviewSheet from "../components/module/ReportMapPreviewSheet.jsx";
 import ViewToggleFab from "../components/module/ViewToggleFab.jsx";
 import MapAddMenuFab from "../components/module/MapAddMenuFab.jsx";
 import ListView, { ListItemShell } from "../components/module/ListView.jsx";
 import MapRadiusOverlay from "../components/map/MapRadiusOverlay.jsx";
 import ReportDetailModal from "../components/ReportDetailModal.jsx";
-import ReportMapPopup from "../components/ReportMapPopup.jsx";
 import { MODULE_IDS } from "../data/moduleConfig.js";
 import {
   MIN_REPORTS_MAP_RADIUS_KM,
@@ -33,7 +31,7 @@ function OfficeStatusBadge({ report }) {
   );
 }
 
-function ReportListRow({ report, onOpen, onShowOnMap }) {
+function ReportListRow({ report, onOpen }) {
   const publicNote = (report.publicOfficeNotes ?? []).at(-1);
   const meta = [
     report.distance,
@@ -46,10 +44,7 @@ function ReportListRow({ report, onOpen, onShowOnMap }) {
   const titleColor = isTipReport(report) ? REPORT_TIP_ACCENT : reportPinAccentColor(report);
 
   return (
-    <ListItemShell
-      id={report.id}
-      onShowOnMap={hasReportMapPosition(report) ? () => onShowOnMap(report) : undefined}
-    >
+    <ListItemShell id={report.id}>
       <button type="button" onClick={() => onOpen(report)} className="w-full text-left">
         <div className="flex items-start gap-3">
           <ReportListIcon report={report} />
@@ -105,7 +100,6 @@ export default function ReportsModule({
   } = useApp();
 
   const [detailReport, setDetailReport] = useState(null);
-  const [mapPopupReport, setMapPopupReport] = useState(null);
 
   const liveDetailReport = useMemo(() => {
     if (!detailReport) return null;
@@ -119,8 +113,8 @@ export default function ReportsModule({
   const fillsViewport = mapFillsViewport || listFillsViewport;
 
   const reportsInRadius = useMemo(
-    () => filterReportsForMapView(reports, reportsMapRadiusKm),
-    [reports, reportsMapRadiusKm]
+    () => filterReportsForMapView(reports, reportsMapRadiusKm, undefined, activeLocation),
+    [reports, reportsMapRadiusKm, activeLocation]
   );
 
   const mapReports = useMemo(
@@ -134,12 +128,17 @@ export default function ReportsModule({
   );
 
   const selectedId = moduleSelection?.module === moduleId ? moduleSelection.id : null;
-  const selectedReport = mapReports.find((r) => r.id === selectedId) ?? null;
   const urgentCount = reportsInRadius.filter((r) => r.urgent).length;
 
-  const openMapPopup = (report) => {
-    setMapPopupReport(report);
+  const openReportDetail = (report) => {
+    if (!report) return;
+    selectModuleItem(moduleId, report.id);
+    setDetailReport(report);
+  };
+
+  const closeReportDetail = () => {
     setDetailReport(null);
+    clearModuleSelection();
   };
 
   const showAddMenu = !pickMode && addMenuActions?.length > 0;
@@ -168,8 +167,11 @@ export default function ReportsModule({
             draftPin={draftPin}
             onPickPin={onPickPin}
             onReportPinClick={(r) => {
-              if (selectedId === r.id) clearModuleSelection();
-              else selectModuleItem(moduleId, r.id);
+              if (selectedId === r.id && liveDetailReport?.id === r.id) {
+                closeReportDetail();
+              } else {
+                openReportDetail(r);
+              }
             }}
             selectedReportId={selectedId}
             userAddress={activeLocation?.address ?? user?.address ?? ""}
@@ -202,8 +204,7 @@ export default function ReportsModule({
             <ReportListRow
               key={report.id}
               report={report}
-              onOpen={setDetailReport}
-              onShowOnMap={openMapPopup}
+              onOpen={openReportDetail}
             />
           )}
         />
@@ -216,13 +217,6 @@ export default function ReportsModule({
             onToggle={() => setModuleViewMode(moduleId, viewMode === "map" ? "list" : "map")}
           />
           {showAddMenu && <MapAddMenuFab actions={addMenuActions} />}
-          {selectedReport && viewMode === "map" && (
-            <ReportMapPreviewSheet
-              report={selectedReport}
-              onDetail={() => setDetailReport(selectedReport)}
-              onClose={clearModuleSelection}
-            />
-          )}
         </>
       )}
     </div>
@@ -239,11 +233,9 @@ export default function ReportsModule({
 
       <ReportDetailModal
         report={liveDetailReport}
-        onClose={() => setDetailReport(null)}
-        onShowMap={openMapPopup}
+        onClose={closeReportDetail}
         onReport={(reason) => liveDetailReport && reportSecurityReport(liveDetailReport.id, reason)}
       />
-      <ReportMapPopup report={mapPopupReport} onClose={() => setMapPopupReport(null)} />
     </>
   );
 

@@ -29,8 +29,8 @@ export default function ReportsMapModule({
         ? []
         : singleReportMode
           ? reports
-          : filterReportsForMapView(reports, reportsMapRadiusKm),
-    [reports, reportsMapRadiusKm, singleReportMode, draftPinOnly]
+          : filterReportsForMapView(reports, reportsMapRadiusKm, undefined, activeLocation),
+    [reports, reportsMapRadiusKm, singleReportMode, draftPinOnly, activeLocation]
   );
 
   const urgentCount = useMemo(() => reportsForMap.filter((r) => r.urgent).length, [reportsForMap]);

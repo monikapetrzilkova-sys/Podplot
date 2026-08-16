@@ -3,7 +3,6 @@ import { formatAuthorName, getAccountType } from "../data/accountTypes.js";
 import RoleBadge, { Avatar } from "./RoleBadge.jsx";
 import ReportMenu from "./ReportMenu.jsx";
 import { PostPhotos } from "./PhotoUpload.jsx";
-import { IconMapPin } from "../data/icons.jsx";
 import ReportListIcon from "./module/ReportListIcon.jsx";
 import { formatReportExpiryLabel } from "../data/reportExpiry.js";
 import { getUrgentReachLabel } from "../data/reportUrgency.js";
@@ -11,13 +10,14 @@ import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
 import AppPanelPortal from "./AppPanelPortal.jsx";
 import { getPromptStatusStyle } from "../data/municipalityPrompts.js";
 import { isTipReport, REPORT_TIP_ACCENT } from "../data/reportCategories.js";
-import { reportPinAccentColor } from "../utils/reportPinUtils.js";
+import { hasReportMapPosition, reportPinAccentColor } from "../utils/reportPinUtils.js";
 import EditedBadge from "./EditedBadge.jsx";
 import ContentEditModal from "./ContentEditModal.jsx";
 import { useApp } from "../context/AppContext.jsx";
+import MapComponent from "./module/MapComponent.jsx";
 
-export default function ReportDetailModal({ report, onClose, onShowMap, onReport }) {
-  const { updateSecurityReport } = useApp();
+export default function ReportDetailModal({ report, onClose, onReport }) {
+  const { updateSecurityReport, activeLocation, user } = useApp();
   const [editOpen, setEditOpen] = useState(false);
 
   if (!report) return null;
@@ -30,6 +30,7 @@ export default function ReportDetailModal({ report, onClose, onShowMap, onReport
   const showOfficeStatus = report.officeStatus && report.officeStatus !== "new";
   const tip = isTipReport(report);
   const titleColor = tip ? REPORT_TIP_ACCENT : reportPinAccentColor(report);
+  const showMap = hasReportMapPosition(report);
 
   return (
     <AppPanelPortal>
@@ -56,6 +57,26 @@ export default function ReportDetailModal({ report, onClose, onShowMap, onReport
             ×
           </button>
         </div>
+
+        {showMap && (
+          <div className="pp-report-detail-map shrink-0 border-b border-stone-100">
+            <MapComponent
+              mapMode="reports"
+              reports={[report]}
+              selectedReportId={report.id}
+              singleReportMode
+              showHomePin={false}
+              hideLegend
+              hideStats
+              hidePickHint
+              userAddress={activeLocation?.address ?? user?.address ?? ""}
+              userGeo={user?.geo ?? null}
+              areaLabel={activeLocation?.shortLabel}
+              homeLabel={activeLocation?.label ?? "Domov"}
+              className="h-full w-full"
+            />
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto px-4 py-4">
           <div className="flex items-start gap-3">
@@ -134,18 +155,6 @@ export default function ReportDetailModal({ report, onClose, onShowMap, onReport
             </div>
             {acc && <RoleBadge roleId={acc.role} />}
           </div>
-
-          {onShowMap && (
-            <button
-              type="button"
-              onClick={() => onShowMap(report)}
-              className="mt-4 w-full py-2.5 text-xs font-semibold text-white rounded-xl inline-flex items-center justify-center gap-1.5"
-              style={{ background: "#1B4332" }}
-            >
-              <IconMapPin className="w-3.5 h-3.5" />
-              Zobrazit na mapě
-            </button>
-          )}
         </div>
       </div>
 

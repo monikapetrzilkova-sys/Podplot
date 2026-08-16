@@ -1,8 +1,9 @@
 import ReportsMapModule from "../modules/ReportsMapModule.jsx";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
+import { hasReportMapPosition } from "../utils/reportPinUtils.js";
 
 export default function ReportMapPopup({ report, onClose }) {
-  if (!report?.mapPos) return null;
+  if (!hasReportMapPosition(report)) return null;
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">

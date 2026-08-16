@@ -84,6 +84,20 @@ const GOOGLE_TYPE_TO_CATEGORY = {
   museum: "verejny-prostor",
   church: "verejny-prostor",
   cemetery: "verejny-prostor",
+  place_of_worship: "verejny-prostor",
+  hindu_temple: "verejny-prostor",
+  mosque: "verejny-prostor",
+  synagogue: "verejny-prostor",
+  lodging: "sluzby",
+  rv_park: "verejny-prostor",
+  zoo: "verejny-prostor",
+  aquarium: "verejny-prostor",
+  amusement_park: "verejny-prostor",
+  movie_theater: "sluzby",
+  bowling_alley: "sluzby",
+  casino: "sluzby",
+  accounting: "sluzby",
+  lawyer: "sluzby",
 };
 
 /** Google type → podtyp Provozovny */
@@ -312,17 +326,8 @@ const TYPE_PRIORITY = [
 
 export function googleTypesToCategory(types = [], name = "") {
   const byName = matchNameRule(name);
-  // Název (lékárna, zubař, pizza, Orion…) má přednost před obecným „store“ / „health“
-  if (
-    byName &&
-    (byName.category === "gastro" ||
-      byName.category === "zdravi" ||
-      byName.category === "obchody" ||
-      byName.category === "sluzby" ||
-      byName.category === "verejny-prostor" ||
-      byName.provozovnaType ||
-      /gym|fitness|pizza|kebab|lékár|lekar|zub|hřišt|hrist/i.test(name))
-  ) {
+  // Název (lékárna, zubař, pizza…) má přednost — Google často vrací jen establishment
+  if (byName?.category) {
     return byName.category;
   }
 
@@ -333,12 +338,11 @@ export function googleTypesToCategory(types = [], name = "") {
       }
     }
     for (const t of types) {
+      if (IGNORED_GOOGLE_TYPES.has(t)) continue;
       const mapped = GOOGLE_TYPE_TO_CATEGORY[t];
       if (mapped) return mapped;
     }
   }
-
-  if (byName) return byName.category;
 
   return "ostatni";
 }

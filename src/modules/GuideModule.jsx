@@ -266,7 +266,7 @@ export default function GuideModule() {
           />
         )}
 
-        <div className="flex items-start gap-1 min-w-0 shrink-0">
+        <div className="tab-header-container items-start gap-1 min-w-0 shrink-0">
           <div className="flex-1 min-w-0">
             <CompactGuideGrid
               categories={GUIDE_GRID_CATEGORIES}

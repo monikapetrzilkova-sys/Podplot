@@ -251,9 +251,8 @@ export default function PodPlotGoogleMap({
 
     markersRef.current = gMarkers;
 
-    // U míst v Průvodci cluster brání přímému otevření detailu — každý špendlík musí jít kliknout
-    const useCluster =
-      !pickMode && !singleReportMode && mapMode !== "institutions" && gMarkers.length > 1;
+    // Cluster brání spolehlivému kliknutí na špendlík — u hlášení i průvodce vypnout
+    const useCluster = false;
 
     (async () => {
       if (!useCluster) {

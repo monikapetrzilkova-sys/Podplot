@@ -102,13 +102,30 @@ export function filterSecurityReportsByLocation(
 export function filterReportsForMapView(
   reports,
   radiusKm,
-  referenceRadiusKm = DEFAULT_REPORTS_MAP_RADIUS_KM
+  referenceRadiusKm = DEFAULT_REPORTS_MAP_RADIUS_KM,
+  center = null
 ) {
   return reports.filter((report) => {
-    if (report.urgent && report.urgentScope === URGENT_SCOPE.MUNICIPALITY) return Boolean(report.mapPos);
-    if (!report.mapPos || !Number.isFinite(Number(report.mapPos.x)) || !Number.isFinite(Number(report.mapPos.y))) {
-      return false;
+    const hasGps = report?.lat != null && report?.lng != null;
+    const hasPct =
+      report?.mapPos &&
+      Number.isFinite(Number(report.mapPos.x)) &&
+      Number.isFinite(Number(report.mapPos.y));
+    const hasPos = hasGps || hasPct || (report?.mapPos?.lat != null && report?.mapPos?.lng != null);
+
+    if (report.urgent && report.urgentScope === URGENT_SCOPE.MUNICIPALITY) {
+      return hasPos;
     }
+
+    if (hasGps && center?.lat != null && center?.lng != null) {
+      return distanceBetweenKm(center, report) <= radiusKm;
+    }
+
+    if (report?.mapPos?.lat != null && report?.mapPos?.lng != null && center?.lat != null) {
+      return distanceBetweenKm(center, { lat: report.mapPos.lat, lng: report.mapPos.lng }) <= radiusKm;
+    }
+
+    if (!hasPct) return false;
     return mapPosToDistanceKm(report.mapPos, referenceRadiusKm) <= radiusKm;
   });
 }

@@ -43,38 +43,40 @@ export default function CatalogPage() {
 
   return (
     <div className="pp-page pp-page--doodle flex flex-col min-h-full px-3 pt-2 pb-8 gap-2 bg-abstract-organic has-deco">
-      {searchActive ? (
-        <CompactSearchToggle
-          value={catalogSearch}
-          onChange={setCatalogSearch}
-          expanded={searchExpanded || Boolean(catalogSearch.trim())}
-          onExpandedChange={setSearchExpanded}
-          placeholder="Hledat v katalogu…"
-          ariaLabel="Hledat v katalogu"
-        />
-      ) : (
-        <div className="flex items-center gap-1.5 min-w-0">
-          <div className="flex-1 min-w-0">
-            <SmartSectionBar
-              mode="main"
-              mainItems={CATALOG_MAIN}
-              activeId={homeSub ?? "vse"}
-              onSelectMain={handleSelectMain}
-              ariaLabel="Katalog — kategorie"
-              prominent
-              fit
-            />
-          </div>
+      <div className="tab-header-container">
+        {searchActive ? (
           <CompactSearchToggle
             value={catalogSearch}
             onChange={setCatalogSearch}
-            expanded={false}
+            expanded={searchExpanded || Boolean(catalogSearch.trim())}
             onExpandedChange={setSearchExpanded}
             placeholder="Hledat v katalogu…"
             ariaLabel="Hledat v katalogu"
           />
-        </div>
-      )}
+        ) : (
+          <>
+            <div className="flex-1 min-w-0">
+              <SmartSectionBar
+                mode="main"
+                mainItems={CATALOG_MAIN}
+                activeId={homeSub ?? "vse"}
+                onSelectMain={handleSelectMain}
+                ariaLabel="Katalog — kategorie"
+                prominent
+                fit
+              />
+            </div>
+            <CompactSearchToggle
+              value={catalogSearch}
+              onChange={setCatalogSearch}
+              expanded={false}
+              onExpandedChange={setSearchExpanded}
+              placeholder="Hledat v katalogu…"
+              ariaLabel="Hledat v katalogu"
+            />
+          </>
+        )}
+      </div>
 
       <div className="flex-1 min-h-0 flex flex-col">
         <ServicesList searchQuery={catalogSearch} homeSubCategory={homeSub} />

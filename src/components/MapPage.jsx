@@ -67,18 +67,18 @@ export default function MapPage({ lockedSection = null, officeOverview = false }
   return (
     <div className="pp-map-screen pp-page--doodle flex flex-col flex-1 min-h-0 overflow-hidden bg-abstract-organic has-deco">
       {!lockedSection && (
-        <div className="px-3 pt-2 pb-1 shrink-0 pp-map-main-nav">
+        <div className="px-3 pt-2 pb-1 shrink-0 pp-map-main-nav min-w-0">
           <MapGrid activeId={activeSection} onSelect={handleSelect} prominent />
         </div>
       )}
 
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden px-2 pb-2">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden px-2 pb-2 min-w-0 max-w-full">
         {officeOverview && (
           <p className="px-1 pb-1.5 text-[11px] text-stone-500 shrink-0">
             Přehled dění v obci — ztráty, výpadky, závady a výzvy. Akce najdete v Agendě.
           </p>
         )}
-        <div className="pp-map-toolbar shrink-0">
+        <div className="pp-map-toolbar shrink-0 min-w-0">
           {activeSection === "places" ? (
             <MapGuideToolbar
               provozovnaType={provozovnaType}

@@ -132,22 +132,25 @@ export default function MapModule({ provozovnaType = null }) {
   const sheetPlace = previewPlace ?? selectedPlace;
 
   const handleInstitutionPinClick = async (place) => {
-    if (selectedId === place.id) {
+    if (selectedId === place.id && detailPlace?.id === place.id) {
       clearModuleSelection();
       setPreviewPlace(null);
+      setDetailPlace(null);
       return;
     }
 
     selectModuleItem(moduleId, place.id);
     setPreviewPlace(place);
-    setDetailPlace(null);
+    setDetailPlace(place);
     setPreviewLoading(Boolean(place.isGooglePlace && place.googlePlaceId));
 
     if (place.isGooglePlace && place.googlePlaceId) {
       try {
         const details = await fetchPlaceDetails(place.googlePlaceId);
         if (details && !details.error) {
-          setPreviewPlace(mergeGooglePlaceDetails(place, details));
+          const merged = mergeGooglePlaceDetails(place, details);
+          setPreviewPlace(merged);
+          setDetailPlace(merged);
         }
       } finally {
         setPreviewLoading(false);

@@ -179,7 +179,7 @@ export default function NeighborsPage() {
 
   return (
     <div className="pp-page pp-page--doodle flex flex-col min-h-full bg-abstract-organic has-deco">
-      <div className="px-3 pt-2 pb-1.5 shrink-0">
+      <div className="tab-header-container px-3 pt-2 pb-0 shrink-0">
         <SmartSectionBar
           mode={activeSection ? "sub" : "main"}
           mainItems={NEIGHBORS_MAIN}
