@@ -100,13 +100,31 @@ export function topicToMessageMeta(topic, extra = null) {
 }
 
 /**
- * Seskupí zprávy do sekcí podle tématu.
- * Pořadí sekcí = podle nejnovější zprávy v sekci (nejnovější nahoře? → v chatu spíš chronologicky zdola).
- * Vrací sekce v pořadí první zmínky (chronologicky), vhodné pro scroll dolů.
+ * Seskupí zprávy do vláken podle tématu.
+ * `ensureTopic` — vždy zahrnout (nové vlákno z inzerátu ještě bez historie).
+ * Pořadí: nejnovější aktivita nahoře.
  */
-export function groupMessagesByTopic(messages = []) {
+export function groupMessagesByTopic(messages = [], { ensureTopic = null } = {}) {
   const sections = [];
   const indexByKey = new Map();
+
+  const pushTopic = (topic, seedMessages = []) => {
+    const normalized = normalizeChatTopic(topic) || {
+      kind: "general",
+      refId: "",
+      title: "",
+      label: KIND_LABELS.general,
+    };
+    const key = topicSectionKey(normalized);
+    let section = indexByKey.get(key);
+    if (!section) {
+      section = { key, topic: normalized, messages: [] };
+      indexByKey.set(key, section);
+      sections.push(section);
+    }
+    seedMessages.forEach((m) => section.messages.push(m));
+    return section;
+  };
 
   messages.forEach((m) => {
     const topic = topicFromMessageMeta(m?.meta) || {
@@ -115,17 +133,51 @@ export function groupMessagesByTopic(messages = []) {
       title: "",
       label: KIND_LABELS.general,
     };
-    const key = topicSectionKey(topic);
-    let section = indexByKey.get(key);
-    if (!section) {
-      section = { key, topic: normalizeChatTopic(topic), messages: [] };
-      indexByKey.set(key, section);
-      sections.push(section);
+    pushTopic(topic, [m]);
+  });
+
+  if (ensureTopic) {
+    pushTopic(ensureTopic);
+  }
+
+  // Obecná konverzace vždy dostupná jako volba
+  if (!indexByKey.has("general")) {
+    pushTopic({ kind: "general", refId: "", title: "", label: KIND_LABELS.general });
+  }
+
+  const lastActivity = (section) => {
+    const last = section.messages[section.messages.length - 1];
+    if (!last) return 0;
+    if (last.createdAt) {
+      const t = Date.parse(last.createdAt);
+      if (!Number.isNaN(t)) return t;
     }
-    section.messages.push(m);
+    return section.messages.length;
+  };
+
+  sections.sort((a, b) => {
+    // prázdné ensure topic (právě otevřené) nahoru, pokud je to ensureTopic
+    const ensureKey = ensureTopic ? topicSectionKey(ensureTopic) : null;
+    if (ensureKey) {
+      if (a.key === ensureKey && a.messages.length === 0) return -1;
+      if (b.key === ensureKey && b.messages.length === 0) return 1;
+    }
+    return lastActivity(b) - lastActivity(a);
   });
 
   return sections;
+}
+
+export function topicPreviewText(section) {
+  const last = section?.messages?.[section.messages.length - 1];
+  if (!last?.text) return "Zatím bez zpráv — napište první";
+  const text = String(last.text).replace(/\s+/g, " ").trim();
+  return text.length > 72 ? `${text.slice(0, 72)}…` : text;
+}
+
+export function topicLastTime(section) {
+  const last = section?.messages?.[section.messages.length - 1];
+  return last?.time || "";
 }
 
 /** Téma z inzerátu / feed postu */
