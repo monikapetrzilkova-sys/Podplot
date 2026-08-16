@@ -143,6 +143,9 @@ export default function MyProfile({ registerLegalBack } = {}) {
     neighbors,
     confirmNeighbor,
     confirmationsGiven,
+    trustVerifiers,
+    unreadTrustVerifiersCount,
+    markTrustVerifiersSeen,
     triggerSos,
     craftsmanRadius,
     setCraftsmanRadius,
@@ -212,22 +215,31 @@ export default function MyProfile({ registerLegalBack } = {}) {
   }, [user?.allowPublicAreaLabel, user?.publicAreaLabel, user]);
 
   useEffect(() => {
-    if (profileScrollTarget !== "my-lending-offers" && profileScrollTarget !== "trust-network") {
+    if (
+      profileScrollTarget !== "my-lending-offers" &&
+      profileScrollTarget !== "trust-network" &&
+      profileScrollTarget !== "trust-received"
+    ) {
       return;
     }
     const targetId =
       profileScrollTarget === "trust-network"
         ? "profile-trust-network"
-        : "profile-my-lending-offers";
+        : profileScrollTarget === "trust-received"
+          ? "profile-trust-received"
+          : "profile-my-lending-offers";
     const frame = requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         const section = document.getElementById(targetId);
         section?.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (profileScrollTarget === "trust-received") {
+          markTrustVerifiersSeen?.();
+        }
         clearProfileScrollTarget();
       });
     });
     return () => cancelAnimationFrame(frame);
-  }, [profileScrollTarget, clearProfileScrollTarget]);
+  }, [profileScrollTarget, clearProfileScrollTarget, markTrustVerifiersSeen]);
 
   if (!user) return null;
 
@@ -348,9 +360,30 @@ export default function MyProfile({ registerLegalBack } = {}) {
       ) : null}
       <div className="pp-card p-5 mb-4">
         <div className="flex items-start gap-4 mb-4">
-          <div className="pp-avatar-ring shrink-0">
+          <button
+            type="button"
+            className="pp-avatar-ring shrink-0 relative"
+            onClick={() => {
+              if (unreadTrustVerifiersCount > 0 || trustVerifiers.length > 0) {
+                document
+                  .getElementById("profile-trust-received")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                markTrustVerifiersSeen?.();
+              }
+            }}
+            aria-label={
+              unreadTrustVerifiersCount > 0
+                ? `${unreadTrustVerifiersCount} nová potvrzení sousedství`
+                : "Profilová fotka"
+            }
+          >
             <Avatar initials={user.initials} roleId={acc.role} size="lg" photo={user.profilePhoto} />
-          </div>
+            {unreadTrustVerifiersCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[1.15rem] h-[1.15rem] px-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center shadow-sm border-2 border-white">
+                {unreadTrustVerifiersCount > 9 ? "9+" : unreadTrustVerifiersCount}
+              </span>
+            )}
+          </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-lg font-bold text-stone-900">{user.name}</h2>
@@ -515,6 +548,50 @@ export default function MyProfile({ registerLegalBack } = {}) {
             );
           })}
         </div>
+      </section>
+
+      <section id="profile-trust-received" className="pp-card p-4 mb-4 scroll-mt-4">
+        <ProfileSectionTitle icon={PROFILE_DOODLE_ICONS.trust}>
+          Kdo mě ověřil
+        </ProfileSectionTitle>
+        {trustVerifiers.length === 0 ? (
+          <p className="text-xs text-stone-500 leading-relaxed">
+            Zatím vás nikdo nepotvrdil. Až soused potvrdí vaše sousedství, uvidíte ho tady — a na
+            avataru se objeví číslo nových potvrzení.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-xs text-stone-500 mb-1">
+              {trustVerifiers.length}{" "}
+              {trustVerifiers.length === 1
+                ? "potvrzení"
+                : trustVerifiers.length < 5
+                  ? "potvrzení"
+                  : "potvrzení"}{" "}
+              ·{" "}
+              {isCommunityVerified
+                ? "jste komunitou ověřený soused"
+                : `do ověření zbývá ${Math.max(0, 3 - trustVerifiers.length)}`}
+            </p>
+            {trustVerifiers.map((v) => (
+              <div
+                key={v.confirmerId}
+                className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50/80 border border-emerald-100"
+              >
+                <Avatar initials={v.initials || "??"} roleId="soused" size="sm" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-stone-800 truncate">
+                    <PersonLabel personId={v.confirmerId} name={v.name} />
+                  </p>
+                  <p className="text-[11px] text-stone-500">Potvrdil/a vaše sousedství</p>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-md shrink-0">
+                  Ověřeno
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section id="profile-trust-network" className="pp-card p-4 mb-4 scroll-mt-4">

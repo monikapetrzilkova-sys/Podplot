@@ -9,8 +9,10 @@ export default function TopBar() {
   const {
     user,
     openProfile,
+    openTrustVerifiers,
     openMessages,
     unreadMessagesCount,
+    unreadTrustVerifiersCount,
     globalSearchQuery,
     setGlobalSearchQuery,
     goToHomeWall,
@@ -36,11 +38,22 @@ export default function TopBar() {
         <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
-            onClick={openProfile}
-            className="pp-header-avatar-btn"
-            aria-label="Můj profil"
+            onClick={() =>
+              unreadTrustVerifiersCount > 0 ? openTrustVerifiers() : openProfile()
+            }
+            className="pp-header-avatar-btn relative"
+            aria-label={
+              unreadTrustVerifiersCount > 0
+                ? `Můj profil · ${unreadTrustVerifiersCount} nová potvrzení sousedství`
+                : "Můj profil"
+            }
           >
             <span className="pp-header-avatar">{user.initials}</span>
+            {unreadTrustVerifiersCount > 0 && (
+              <span className="pp-header-notify-dot">
+                {unreadTrustVerifiersCount > 9 ? "9+" : unreadTrustVerifiersCount}
+              </span>
+            )}
           </button>
 
           <button

@@ -117,6 +117,8 @@ import {
   profileRowToNeighbor,
   fetchMyNeighborConfirmations,
   fetchNeighborConfirmationCounts,
+  fetchReceivedNeighborConfirmations,
+  subscribeReceivedNeighborConfirmations,
   publishNeighborConfirmation,
 } from "../data/communityApi.js";
 import {
@@ -435,6 +437,11 @@ export function AppProvider({ children }) {
   const [confirmationsGiven, setConfirmationsGiven] = useState([]);
   const confirmationsGivenRef = useRef(confirmationsGiven);
   confirmationsGivenRef.current = confirmationsGiven;
+  /** Kdo potvrdil mě — [{ confirmerId, name, initials, createdAt }] */
+  const [trustVerifiers, setTrustVerifiers] = useState([]);
+  const [trustVerifiersSeenIds, setTrustVerifiersSeenIds] = useState([]);
+  const trustVerifiersRef = useRef(trustVerifiers);
+  trustVerifiersRef.current = trustVerifiers;
   const [craftsmanRadius, setCraftsmanRadiusState] = useState(15);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [craftsmanInvoices, setCraftsmanInvoices] = useState([]);
@@ -739,6 +746,165 @@ export function AppProvider({ children }) {
       unsubscribe?.();
     };
   }, [user?.id, activeLocation?.municipality, user?.geo?.city, user?.location]);
+
+  // Síť důvěry: kdo potvrdil mě + badge na avataru
+  useEffect(() => {
+    if (!user?.id) {
+      setTrustVerifiers([]);
+      setTrustVerifiersSeenIds([]);
+      return undefined;
+    }
+
+    let cancelled = false;
+    let unsubscribe = () => {};
+    const myId = user.id;
+
+    const loadSeen = () => {
+      try {
+        const raw = localStorage.getItem(`podplot-trust-verifiers-seen-v1-${myId}`);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+      } catch {
+        return [];
+      }
+    };
+
+    const persistSeen = (ids) => {
+      try {
+        localStorage.setItem(`podplot-trust-verifiers-seen-v1-${myId}`, JSON.stringify(ids));
+      } catch {
+        /* ignore */
+      }
+    };
+
+    const applyReceived = (list, { notifyNew = false } = {}) => {
+      if (cancelled) return;
+      const seen = new Set(loadSeen());
+      setTrustVerifiersSeenIds([...seen]);
+      setTrustVerifiers(list);
+      setUser((u) =>
+        u && u.id === myId ? { ...u, neighborhoodConfirmations: list.length } : u
+      );
+
+      if (!notifyNew) return;
+      list.forEach((v) => {
+        if (!v?.confirmerId || seen.has(v.confirmerId)) return;
+        const notifId = `n-trust-received-${v.confirmerId}`;
+        setNotifications((prev) => {
+          if (prev.some((n) => n.id === notifId)) return prev;
+          return [
+            {
+              id: notifId,
+              type: "green",
+              title: `${(v.name || "Soused").split(/\s+/)[0]} vás potvrdil/a`,
+              body: "Nové potvrzení v síti důvěry — podívejte se v profilu, kdo vás ověřil.",
+              read: false,
+              time: "právě teď",
+              actionType: "trust_received",
+              confirmerId: v.confirmerId,
+            },
+            ...prev,
+          ];
+        });
+      });
+    };
+
+    (async () => {
+      await ensureSupabase();
+      if (cancelled) return;
+      const seen = loadSeen();
+      setTrustVerifiersSeenIds(seen);
+      const received = await fetchReceivedNeighborConfirmations(myId);
+      if (cancelled) return;
+      applyReceived(received, { notifyNew: false });
+
+      unsubscribe = await subscribeReceivedNeighborConfirmations(myId, async (row) => {
+        const confirmerId = row?.confirmer_id;
+        if (!confirmerId) return;
+        let name = "Soused";
+        let initials = "??";
+        try {
+          const profile = await fetchRemoteProfile(confirmerId);
+          if (profile?.name) name = profile.name;
+          if (profile?.initials) initials = profile.initials;
+        } catch {
+          /* ignore */
+        }
+        const entry = {
+          confirmerId,
+          name,
+          initials,
+          createdAt: row.created_at || new Date().toISOString(),
+        };
+        setTrustVerifiers((prev) => {
+          if (prev.some((p) => p.confirmerId === confirmerId)) return prev;
+          const next = [entry, ...prev];
+          setUser((u) =>
+            u && u.id === myId ? { ...u, neighborhoodConfirmations: next.length } : u
+          );
+          return next;
+        });
+        const seenNow = new Set(loadSeen());
+        if (!seenNow.has(confirmerId)) {
+          const notifId = `n-trust-received-${confirmerId}`;
+          setNotifications((prev) => {
+            if (prev.some((n) => n.id === notifId)) return prev;
+            return [
+              {
+                id: notifId,
+                type: "green",
+                title: `${name.split(/\s+/)[0]} vás potvrdil/a`,
+                body: "Nové potvrzení v síti důvěry — podívejte se v profilu, kdo vás ověřil.",
+                read: false,
+                time: "právě teď",
+                actionType: "trust_received",
+                confirmerId,
+              },
+              ...prev,
+            ];
+          });
+          setToast({
+            message: `${name.split(/\s+/)[0]} potvrdil/a vaše sousedství.`,
+            type: "success",
+            locationId: null,
+          });
+          window.setTimeout(() => setToast(null), 3500);
+        }
+      });
+    })();
+
+    // Poll lokálního mostu (stejné zařízení, druhý účet)
+    const poll = window.setInterval(async () => {
+      if (cancelled) return;
+      const received = await fetchReceivedNeighborConfirmations(myId);
+      if (cancelled) return;
+      const prev = trustVerifiersRef.current;
+      const prevIds = new Set(prev.map((p) => p.confirmerId));
+      const newer = received.filter((r) => !prevIds.has(r.confirmerId));
+      if (newer.length === 0 && received.length === prev.length) return;
+      applyReceived(received, { notifyNew: newer.length > 0 });
+    }, 4000);
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+      window.clearInterval(poll);
+    };
+  }, [user?.id]);
+
+  const markTrustVerifiersSeen = useCallback(() => {
+    if (!user?.id) return;
+    const ids = trustVerifiersRef.current.map((v) => v.confirmerId).filter(Boolean);
+    setTrustVerifiersSeenIds(ids);
+    try {
+      localStorage.setItem(`podplot-trust-verifiers-seen-v1-${user.id}`, JSON.stringify(ids));
+    } catch {
+      /* ignore */
+    }
+    setNotifications((prev) =>
+      prev.map((n) => (n.actionType === "trust_received" ? { ...n, read: true } : n))
+    );
+  }, [user?.id]);
 
   // Sdílené příspěvky ze Supabase (kamarádi na Vercelu)
   useEffect(() => {
@@ -1490,10 +1656,10 @@ export function AppProvider({ children }) {
       } catch {
         /* ignore */
       }
-      void publishNeighborConfirmation(user?.id, neighborId);
-      setUser((u) =>
-        u ? { ...u, neighborhoodConfirmations: (u.neighborhoodConfirmations ?? 0) + 1 } : u
-      );
+      void publishNeighborConfirmation(user?.id, neighborId, {
+        name: user?.name,
+        initials: user?.initials,
+      });
       setNeighbors((prev) =>
         prev.map((n) =>
           n.id === neighborId
@@ -1510,7 +1676,7 @@ export function AppProvider({ children }) {
       );
       showToast("Potvrzení přidáno — děkujeme za budování důvěry.", "success");
     },
-    [confirmationsGiven, showToast, user?.id]
+    [confirmationsGiven, showToast, user?.id, user?.name, user?.initials]
   );
 
   const switchFeedMainMode = useCallback((mode) => {
@@ -4593,6 +4759,11 @@ export function AppProvider({ children }) {
         setProfileScrollTarget("trust-network");
         return;
       }
+      if (target.actionType === "trust_received") {
+        openProfile();
+        setProfileScrollTarget("trust-received");
+        return;
+      }
       if (target.participantId) {
         openMessages();
         openChat(target.participantId, target.participantName ?? "Soused");
@@ -4602,6 +4773,16 @@ export function AppProvider({ children }) {
   );
 
   const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
+
+  const unreadTrustVerifiersCount = useMemo(() => {
+    const seen = new Set(trustVerifiersSeenIds);
+    return trustVerifiers.filter((v) => v?.confirmerId && !seen.has(v.confirmerId)).length;
+  }, [trustVerifiers, trustVerifiersSeenIds]);
+
+  const openTrustVerifiers = useCallback(() => {
+    openProfile();
+    setProfileScrollTarget("trust-received");
+  }, [openProfile]);
 
   const unreadMessagesCount = useMemo(
     () => chats.reduce((sum, c) => sum + (c.unread ?? 0), 0),
@@ -5219,6 +5400,10 @@ export function AppProvider({ children }) {
         neighbors,
         confirmNeighbor,
         confirmationsGiven,
+        trustVerifiers,
+        unreadTrustVerifiersCount,
+        markTrustVerifiersSeen,
+        openTrustVerifiers,
         adminReports,
         blockedUserIds,
         reportUser,

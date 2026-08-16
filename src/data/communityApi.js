@@ -198,10 +198,30 @@ export async function fetchNeighborConfirmationCounts(neighborIds = []) {
   return counts;
 }
 
-export async function publishNeighborConfirmation(confirmerId, neighborId) {
+export async function publishNeighborConfirmation(confirmerId, neighborId, confirmerMeta = null) {
   if (!confirmerId || !neighborId || confirmerId === neighborId) return false;
+
+  // Lokální most pro testování na stejném zařízení / bez realtime
+  try {
+    const key = `podplot-trust-received-v1-${neighborId}`;
+    const raw = localStorage.getItem(key);
+    const list = raw ? JSON.parse(raw) : [];
+    const arr = Array.isArray(list) ? list : [];
+    if (!arr.some((r) => r?.confirmerId === confirmerId)) {
+      arr.unshift({
+        confirmerId,
+        name: confirmerMeta?.name || "Soused",
+        initials: confirmerMeta?.initials || "??",
+        createdAt: new Date().toISOString(),
+      });
+      localStorage.setItem(key, JSON.stringify(arr.slice(0, 100)));
+    }
+  } catch {
+    /* ignore */
+  }
+
   const sb = await ensureSupabase();
-  if (!sb) return false;
+  if (!sb) return true; // lokální zápis stačí pro demo
   const { error } = await sb.from("neighbor_confirmations").upsert(
     {
       confirmer_id: confirmerId,
@@ -215,6 +235,102 @@ export async function publishNeighborConfirmation(confirmerId, neighborId) {
     return false;
   }
   return true;
+}
+
+function loadLocalReceivedConfirmations(neighborId) {
+  try {
+    const raw = localStorage.getItem(`podplot-trust-received-v1-${neighborId}`);
+    const list = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(list)) return [];
+    return list
+      .filter((r) => r?.confirmerId)
+      .map((r) => ({
+        confirmerId: r.confirmerId,
+        name: r.name || "Soused",
+        initials: r.initials || "??",
+        createdAt: r.createdAt || null,
+      }));
+  } catch {
+    return [];
+  }
+}
+
+/** Kdo potvrdil mě (jsem neighbor_id) */
+export async function fetchReceivedNeighborConfirmations(neighborId) {
+  if (!neighborId) return [];
+  const local = loadLocalReceivedConfirmations(neighborId);
+  const byId = new Map(local.map((r) => [r.confirmerId, r]));
+
+  const sb = await ensureSupabase();
+  if (sb) {
+    const { data, error } = await sb
+      .from("neighbor_confirmations")
+      .select("confirmer_id, created_at")
+      .eq("neighbor_id", neighborId)
+      .order("created_at", { ascending: false });
+    if (error) {
+      if (!String(error.message || "").includes("does not exist")) {
+        console.warn("[supabase] received confirmations", error.message);
+      }
+    } else {
+      const rows = data ?? [];
+      const confirmerIds = rows.map((r) => r.confirmer_id).filter(Boolean);
+      let profilesById = {};
+      if (confirmerIds.length) {
+        const { data: profiles } = await sb
+          .from("profiles")
+          .select("id, name, initials")
+          .in("id", confirmerIds);
+        (profiles ?? []).forEach((p) => {
+          if (p?.id) profilesById[p.id] = p;
+        });
+      }
+      rows.forEach((row) => {
+        const id = row.confirmer_id;
+        if (!id) return;
+        const profile = profilesById[id];
+        const prev = byId.get(id);
+        byId.set(id, {
+          confirmerId: id,
+          name: profile?.name || prev?.name || "Soused",
+          initials: profile?.initials || prev?.initials || "??",
+          createdAt: row.created_at || prev?.createdAt || null,
+        });
+      });
+    }
+  }
+
+  return Array.from(byId.values()).sort((a, b) => {
+    const ta = a.createdAt ? Date.parse(a.createdAt) : 0;
+    const tb = b.createdAt ? Date.parse(b.createdAt) : 0;
+    return tb - ta;
+  });
+}
+
+/** Realtime: někdo potvrdil mě */
+export async function subscribeReceivedNeighborConfirmations(neighborId, onInsert) {
+  const sb = await ensureSupabase();
+  if (!sb || !neighborId || typeof onInsert !== "function") return () => {};
+
+  const channel = sb
+    .channel(`podplot-trust-received-${neighborId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "neighbor_confirmations",
+        filter: `neighbor_id=eq.${neighborId}`,
+      },
+      (payload) => {
+        if (payload?.new) onInsert(payload.new);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    sb.removeChannel(channel);
+  };
 }
 
 /** Mapuje řádek profiles (+ auth metadata) na objekt user v appce. */

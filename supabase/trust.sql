@@ -23,6 +23,7 @@ create policy "neighbor_confirmations_insert_public"
 
 -- Realtime: Database → Publications → supabase_realtime → zapni
 --   profiles
---   neighbor_confirmations (volitelné)
+--   neighbor_confirmations
 -- nebo:
 -- alter publication supabase_realtime add table public.profiles;
+-- alter publication supabase_realtime add table public.neighbor_confirmations;
