@@ -243,6 +243,7 @@ export default function LiveNeighborFeed() {
                 })}
                 preview={item.body}
                 onReport={reportGeneric}
+                mine={Boolean(item.mine)}
               >
                 <HelpFeedActions
                   help={item}
@@ -278,6 +279,7 @@ export default function LiveNeighborFeed() {
                 preview={post.body}
                 editedItem={post}
                 onReport={(reason) => reportPost(post.id, reason)}
+                mine={Boolean(post.mine || item.mine)}
               >
                 <FeedCard post={post} detailsOnly />
                 {(placeLabel || distance || canOpenMap) && (
@@ -334,6 +336,7 @@ export default function LiveNeighborFeed() {
                 onReport={(reason) => reportPost(item.post.id, reason)}
                 expandable={false}
                 onSummaryClick={() => openLendingFromHome(item.post.id)}
+                mine={Boolean(item.mine || item.post?.mine)}
               />
             );
           }
@@ -353,6 +356,7 @@ export default function LiveNeighborFeed() {
               priceLabel={item.reserved ? null : item.price}
               editedItem={item.post}
               onReport={(reason) => reportPost(item.post.id, reason)}
+              mine={Boolean(item.mine || item.post?.mine)}
             >
               <FeedCard post={item.post} detailsOnly />
             </LiveFeedCard>

@@ -65,6 +65,7 @@ export default function LiveFeedCard({
   expanded: expandedProp,
   onToggle,
   domId,
+  mine = false,
 }) {
   const [prefOpen, , togglePref] = useUiPref(accordionKey("liveFeed", itemId), false);
   const canExpand = expandable && Boolean(children);
@@ -82,11 +83,16 @@ export default function LiveFeedCard({
   };
 
   return (
-    <article id={domId} className="pp-feed-card overflow-hidden relative">
+    <article
+      id={domId}
+      className={`pp-feed-card overflow-hidden relative ${mine ? "pp-feed-card--mine" : ""}`.trim()}
+    >
       <button
         type="button"
         onClick={handleSummaryClick}
-        className="w-full text-left px-3 py-2 hover:bg-[#FAFAFA]/80 transition-colors pr-9 box-border"
+        className={`w-full text-left px-3 py-2 transition-colors pr-9 box-border ${
+          mine ? "hover:bg-[#EEF5F1]/90" : "hover:bg-[#FAFAFA]/80"
+        }`}
         aria-expanded={isOpen}
       >
         <div className="flex items-start gap-2 min-w-0">
