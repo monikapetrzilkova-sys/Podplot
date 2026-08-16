@@ -14,8 +14,20 @@ export const LISTING_SALE_STATUS_LABEL = {
 export function isSameAppUser(a, b) {
   if (a == null || b == null) return false;
   if (a === b) return true;
+  const left = String(a);
+  const right = String(b);
+  if (left === right) return true;
   const self = new Set(["me", "monika"]);
-  return self.has(a) && self.has(b);
+  return self.has(left) && self.has(right);
+}
+
+/** Je kandidát aktuálně přihlášený uživatel? (síť důvěry, zprávy…) */
+export function isCurrentUserRef(candidateId, user) {
+  if (!candidateId || !user) return false;
+  if (candidateId === "me") return true;
+  if (isSameAppUser(candidateId, user.id)) return true;
+  if (user.id && String(candidateId) === String(user.id)) return true;
+  return false;
 }
 
 /** Aktivní (neuzavřená) objednávka pro inzerát. */

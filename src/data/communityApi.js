@@ -98,6 +98,7 @@ export function profileRowToNeighbor(row, { confirmationCount = 0, isNew = false
     id: row.id,
     name: row.name,
     initials: row.initials || "??",
+    email: row.email ?? null,
     profilePhoto: row.profile_photo || null,
     confirmations: confirmationCount,
     geolocVerified: true,
@@ -114,7 +115,7 @@ export function profileRowToNeighbor(row, { confirmationCount = 0, isNew = false
 }
 
 /** Sousedi (účty typu soused) ve stejné obci */
-export async function fetchRemoteNeighbors({ municipality = null, excludeId = null } = {}) {
+export async function fetchRemoteNeighbors({ municipality = null, excludeId = null, excludeEmail = null } = {}) {
   const sb = await ensureSupabase();
   if (!sb) return [];
 
@@ -129,9 +130,15 @@ export async function fetchRemoteNeighbors({ municipality = null, excludeId = nu
     return [];
   }
 
+  const excludeEmailNorm = excludeEmail ? String(excludeEmail).trim().toLowerCase() : "";
+
   return (data ?? [])
     .filter((row) => {
-      if (!row?.id || row.id === excludeId) return false;
+      if (!row?.id) return false;
+      if (excludeId && String(row.id) === String(excludeId)) return false;
+      if (excludeEmailNorm && String(row.email ?? "").trim().toLowerCase() === excludeEmailNorm) {
+        return false;
+      }
       const type = String(row.account_type ?? "soused").toLowerCase();
       if (type && type !== "soused") return false;
       if (municipality && !municipalityMatches(row.municipality, municipality)) return false;

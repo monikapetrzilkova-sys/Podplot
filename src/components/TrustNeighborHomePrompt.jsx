@@ -2,10 +2,12 @@ import { useApp } from "../context/AppContext.jsx";
 import { Avatar } from "./RoleBadge.jsx";
 import PersonLabel from "./PersonLabel.jsx";
 import { PROFILE_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
+import { isCurrentUserRef } from "../data/listingSales.js";
 
 /** Domů — výzva k potvrzení nového souseda v síti důvěry */
 export default function TrustNeighborHomePrompt() {
   const {
+    user,
     neighbors,
     confirmationsGiven,
     trustDismissedIds,
@@ -17,6 +19,7 @@ export default function TrustNeighborHomePrompt() {
   const pending = (neighbors ?? []).filter(
     (n) =>
       n?.id &&
+      !isCurrentUserRef(n.id, user) &&
       n.isNew &&
       !(confirmationsGiven ?? []).includes(n.id) &&
       !(trustDismissedIds ?? []).includes(n.id)

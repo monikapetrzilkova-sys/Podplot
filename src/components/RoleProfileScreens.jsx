@@ -237,7 +237,7 @@ export function SousedRoleView() {
         <h3 className="text-sm font-bold mb-2">Sousedé k potvrzení</h3>
         <div className="space-y-2">
           {neighbors
-            .filter((n) => !confirmationsGiven.includes(n.id))
+            .filter((n) => n?.id && n.id !== user?.id && n.id !== "me" && !confirmationsGiven.includes(n.id))
             .sort((a, b) => Number(Boolean(b.isNew)) - Number(Boolean(a.isNew)))
             .map((n) => (
             <div

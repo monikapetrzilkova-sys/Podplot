@@ -17,6 +17,7 @@ import {
   applyListingSaleVisibility,
   getActiveListingSale,
   isSameAppUser,
+  isCurrentUserRef,
   LISTING_SALE_STATUS,
 } from "../data/listingSales.js";
 import {
@@ -599,13 +600,25 @@ export function AppProvider({ children }) {
       }
     };
 
+    const isSelfNeighbor = (neighborOrId) => {
+      const id = typeof neighborOrId === "object" ? neighborOrId?.id : neighborOrId;
+      if (isCurrentUserRef(id, user)) return true;
+      const email =
+        typeof neighborOrId === "object" ? neighborOrId?.email : null;
+      if (email && user.email && String(email).trim().toLowerCase() === String(user.email).trim().toLowerCase()) {
+        return true;
+      }
+      return false;
+    };
+
     const mergeNeighborLists = (base, remote) => {
       const map = new Map();
       (base ?? []).forEach((n) => {
-        if (n?.id) map.set(n.id, n);
+        if (!n?.id || isSelfNeighbor(n)) return;
+        map.set(n.id, n);
       });
       (remote ?? []).forEach((n) => {
-        if (!n?.id) return;
+        if (!n?.id || isSelfNeighbor(n)) return;
         const prev = map.get(n.id);
         map.set(
           n.id,
@@ -651,7 +664,7 @@ export function AppProvider({ children }) {
     };
 
     const notifyNewNeighbor = (neighbor, { toast = true, seenSet = null } = {}) => {
-      if (!neighbor?.id || neighbor.id === user.id) return;
+      if (!neighbor?.id || isSelfNeighbor(neighbor)) return;
       if (confirmationsGivenRef.current.includes(neighbor.id)) return;
       if (trustDismissedIdsRef.current.includes(neighbor.id)) return;
       if (seenSet?.has(neighbor.id)) return;
@@ -709,6 +722,7 @@ export function AppProvider({ children }) {
       const remoteNeighbors = await fetchRemoteNeighbors({
         municipality,
         excludeId: user.id,
+        excludeEmail: user.email,
       });
       if (cancelled) return;
 
@@ -731,12 +745,18 @@ export function AppProvider({ children }) {
         };
       });
 
-      setNeighbors((prev) => mergeNeighborLists(prev, withCounts));
+      setNeighbors((prev) =>
+        mergeNeighborLists(
+          prev.filter((n) => !isSelfNeighbor(n)),
+          withCounts
+        )
+      );
 
       // Jednou upozornit na nedávno přidané sousedy (ne při každém refreshi)
       const seen = loadSeenTrustIds();
       const threeDays = 1000 * 60 * 60 * 24 * 3;
       withCounts.forEach((n) => {
+        if (isSelfNeighbor(n)) return;
         if (
           n.isNew &&
           !given.includes(n.id) &&
@@ -748,17 +768,30 @@ export function AppProvider({ children }) {
         }
       });
 
-      // Dismissnutí / potvrzení → už ne „Nový“
+      // Dismissnutí / potvrzení / já sama → už ne „Nový“
       setNeighbors((prev) =>
-        prev.map((n) =>
-          trustDismissedIdsRef.current.includes(n.id) || given.includes(n.id)
-            ? { ...n, isNew: false }
-            : n
+        prev
+          .filter((n) => !isSelfNeighbor(n))
+          .map((n) =>
+            trustDismissedIdsRef.current.includes(n.id) || given.includes(n.id)
+              ? { ...n, isNew: false }
+              : n
+          )
+      );
+
+      // Zruš případné notifikace o sobě samé
+      setNotifications((prev) =>
+        prev.filter(
+          (n) =>
+            !(
+              n.actionType === "trust_network" &&
+              (isCurrentUserRef(n.neighborId, user) || n.neighborId === user.id)
+            )
         )
       );
 
       unsubscribe = await subscribeRemoteProfiles((row) => {
-        if (!row?.id || row.id === user.id) return;
+        if (!row?.id || isSelfNeighbor(row)) return;
         const type = String(row.account_type ?? "soused").toLowerCase();
         if (type && type !== "soused") return;
         if (municipality) {
@@ -769,10 +802,11 @@ export function AppProvider({ children }) {
           }
         }
         const neighbor = profileRowToNeighbor(row, { isNew: true, confirmationCount: 0 });
-        if (!neighbor) return;
+        if (!neighbor || isSelfNeighbor(neighbor)) return;
         setNeighbors((prev) => {
-          if (prev.some((p) => p.id === neighbor.id)) return prev;
-          return mergeNeighborLists(prev, [neighbor]);
+          const cleaned = prev.filter((p) => !isSelfNeighbor(p));
+          if (cleaned.some((p) => p.id === neighbor.id)) return cleaned;
+          return mergeNeighborLists(cleaned, [neighbor]);
         });
         const liveSeen = loadSeenTrustIds();
         notifyNewNeighbor(neighbor, { toast: true, seenSet: liveSeen });
@@ -1681,6 +1715,10 @@ export function AppProvider({ children }) {
 
   const confirmNeighbor = useCallback(
     (neighborId) => {
+      if (!neighborId || isCurrentUserRef(neighborId, user)) {
+        showToast("Sama sebe jako souseda potvrdit nemůžete.", "info");
+        return;
+      }
       if (confirmationsGiven.includes(neighborId)) {
         showToast("Totoho souseda jste už potvrdili.", "info");
         return;
@@ -1714,7 +1752,7 @@ export function AppProvider({ children }) {
       );
       showToast("Potvrzení přidáno — děkujeme za budování důvěry.", "success");
     },
-    [confirmationsGiven, showToast, user?.id, user?.name, user?.initials]
+    [confirmationsGiven, showToast, user]
   );
 
   const dismissTrustNeighbor = useCallback(

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import PersonLabel from "./PersonLabel.jsx";
 import { useApp } from "../context/AppContext.jsx";
-import { isSameAppUser } from "../data/listingSales.js";
+import { isSameAppUser, isCurrentUserRef } from "../data/listingSales.js";
 import { getAccountType, ADDRESS_PRIVACY_NOTE, getPodnikatelSubtypeLabel, isBusinessAccount, getRegistrationFields, resolveBusinessSubtype } from "../data/accountTypes.js";
 import { getVerifiedLabel } from "../data/domainVerification.js";
 import { Avatar } from "./RoleBadge.jsx";
@@ -618,10 +618,11 @@ export default function MyProfile({ registerLegalBack } = {}) {
         <ProfileSectionTitle icon={PROFILE_DOODLE_ICONS.trust}>Síť důvěry</ProfileSectionTitle>
         {(() => {
           const dismissed = trustDismissedIds ?? [];
-          const pending = neighbors.filter(
+          const others = neighbors.filter((n) => n?.id && !isCurrentUserRef(n.id, user));
+          const pending = others.filter(
             (n) => !confirmationsGiven.includes(n.id) && !dismissed.includes(n.id)
           );
-          const confirmed = neighbors.filter((n) => confirmationsGiven.includes(n.id));
+          const confirmed = others.filter((n) => confirmationsGiven.includes(n.id));
           const pendingNew = pending.filter((n) => n.isNew);
           const pendingRest = pending.filter((n) => !n.isNew);
           const ordered = [...pendingNew, ...pendingRest, ...confirmed];
