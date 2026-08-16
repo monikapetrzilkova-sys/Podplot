@@ -10,7 +10,7 @@ import CompactAccordion from "./CompactAccordion.jsx";
 import { accordionKey } from "../data/uiPreferences.js";
 import { MessageButton } from "./MessagesPage.jsx";
 import ReportUserButton from "./ReportUserButton.jsx";
-import { formatAuthorName, displayCreatorLabel } from "../data/accountTypes.js";
+import { displayCreatorLabel } from "../data/accountTypes.js";
 import { topicFromLending } from "../data/chatTopics.js";
 
 function formatReservationDates(r) {
@@ -142,7 +142,6 @@ export default function LendingLibrary() {
                     <p className="text-xs text-stone-500">{item.item}</p>
                   )}
                 <p className={inactive ? "text-stone-500" : "text-stone-600"}>{item.description}</p>
-                <p className="text-xs text-stone-500">{formatAuthorName(item.author, item.accountType)}</p>
                 <LendingOwnerStatus
                   onVacation={item.onVacation}
                   availabilityMessage={item.availabilityMessage}

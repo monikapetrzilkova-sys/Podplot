@@ -16,7 +16,7 @@ import { getPujcovnaSubFilter } from "../data/lendingCategories.js";
 import { lendingDisplayTitle } from "../data/lendingItemTypes.js";
 import { IconNavSearch } from "../components/communityNavIcons.jsx";
 import PrimaryAddButton from "../components/PrimaryAddButton.jsx";
-import { formatAuthorName, displayCreatorLabel } from "../data/accountTypes.js";
+import { displayCreatorLabel } from "../data/accountTypes.js";
 import { topicFromLending, topicFromPost } from "../data/chatTopics.js";
 
 function addListingLabel(categoryId) {
@@ -42,7 +42,6 @@ function ThingLendingDetail({ item, onReserve }) {
   return (
     <div className="space-y-1.5 pp-thing-detail">
       <p className="pp-text-body">{item.description ?? item.subtitle}</p>
-      <p className="pp-text-meta">{formatAuthorName(item.author, item.accountType)}</p>
       <LendingOwnerStatus
         onVacation={onVacation}
         availabilityMessage={item.availabilityMessage}

@@ -7,7 +7,7 @@ import DoodleEmptyState from "./doodle/DoodleEmptyState.jsx";
 import { extractListingPrice } from "./CompactListingRow.jsx";
 import { isThingsModuleListing } from "../utils/thingsModule.js";
 import { getRecentGroupPosts, getGroup } from "../data/groups.js";
-import { formatAuthorName, displayCreatorLabel } from "../data/accountTypes.js";
+import { displayCreatorLabel } from "../data/accountTypes.js";
 
 const SECTION_LABELS = {
   veci: "Věci",
@@ -207,11 +207,6 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
                 authorLabel={item.authorLabel}
                 preview={item.preview}
               >
-                <p className="pp-text-meta">
-                  {item.mine
-                    ? "Vy"
-                    : formatAuthorName(item.help?.author, item.help?.accountType)}
-                </p>
                 {item.mine ? (
                   <p className="pp-text-body text-sm">{item.help.body}</p>
                 ) : (
@@ -255,7 +250,6 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
                 authorLabel={item.authorLabel}
                 preview={item.preview}
               >
-                <p className="pp-text-meta">{item.authorLabel}</p>
                 <p className="pp-text-body text-sm">
                   {item.event.address ?? item.event.location}
                   {item.event.categoryLabel ? ` · ${item.event.categoryLabel}` : ""}

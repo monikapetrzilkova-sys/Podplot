@@ -206,10 +206,6 @@ export default function FeedCard({ post, compact = false, detailsOnly = false })
   if (detailsOnly) {
     return (
       <div className="space-y-2">
-        <p className="pp-text-meta">
-          {post.mine ? "Vy" : authorLabel}
-          {distance && !post.mine ? ` · ${distance}` : ""}
-        </p>
         <EditedBadge item={post} />
         <p className="pp-text-body">{post.body}</p>
         <PostPhotos photos={post.photos} compact />
