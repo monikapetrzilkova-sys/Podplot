@@ -443,6 +443,10 @@ export function AppProvider({ children }) {
   const [trustVerifiersSeenIds, setTrustVerifiersSeenIds] = useState([]);
   const trustVerifiersRef = useRef(trustVerifiers);
   trustVerifiersRef.current = trustVerifiers;
+  /** Sousedi označení „Neznám ho“ — už nepřipomínat na Domů */
+  const [trustDismissedIds, setTrustDismissedIds] = useState([]);
+  const trustDismissedIdsRef = useRef(trustDismissedIds);
+  trustDismissedIdsRef.current = trustDismissedIds;
   const [craftsmanRadius, setCraftsmanRadiusState] = useState(15);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [craftsmanInvoices, setCraftsmanInvoices] = useState([]);
@@ -649,6 +653,7 @@ export function AppProvider({ children }) {
     const notifyNewNeighbor = (neighbor, { toast = true, seenSet = null } = {}) => {
       if (!neighbor?.id || neighbor.id === user.id) return;
       if (confirmationsGivenRef.current.includes(neighbor.id)) return;
+      if (trustDismissedIdsRef.current.includes(neighbor.id)) return;
       if (seenSet?.has(neighbor.id)) return;
       setNotifications((prev) => {
         const id = `n-trust-${neighbor.id}`;
@@ -658,7 +663,7 @@ export function AppProvider({ children }) {
             id,
             type: "blue",
             title: `Nový soused: ${neighbor.name?.split(/\s+/)[0] ?? "Soused"}`,
-            body: "Potvrďte sousedství v síti důvěry, pokud se znáte.",
+            body: "Potvrďte sousedství na Domů, pokud se znáte — nebo zvolte Neznám ho.",
             read: false,
             time: "právě teď",
             actionType: "trust_network",
@@ -670,7 +675,7 @@ export function AppProvider({ children }) {
       if (seenSet) markTrustSeen(neighbor.id, seenSet);
       if (toast) {
         setToast({
-          message: `${neighbor.name?.split(/\s+/)[0] ?? "Nový soused"} je ve vaší lokalitě — potvrďte sousedství v profilu.`,
+          message: `${neighbor.name?.split(/\s+/)[0] ?? "Nový soused"} je ve vaší lokalitě — potvrďte sousedství na Domů.`,
           type: "info",
           locationId: null,
         });
@@ -689,6 +694,17 @@ export function AppProvider({ children }) {
       setConfirmationsGiven(given);
       persistLocalConfirmations(given);
       confirmationsGivenRef.current = given;
+
+      try {
+        const rawDismissed = localStorage.getItem(`podplot-trust-dismissed-v1-${user.id}`);
+        const parsedDismissed = rawDismissed ? JSON.parse(rawDismissed) : [];
+        const dismissed = Array.isArray(parsedDismissed) ? parsedDismissed.filter(Boolean) : [];
+        setTrustDismissedIds(dismissed);
+        trustDismissedIdsRef.current = dismissed;
+      } catch {
+        setTrustDismissedIds([]);
+        trustDismissedIdsRef.current = [];
+      }
 
       const remoteNeighbors = await fetchRemoteNeighbors({
         municipality,
@@ -724,12 +740,22 @@ export function AppProvider({ children }) {
         if (
           n.isNew &&
           !given.includes(n.id) &&
+          !trustDismissedIdsRef.current.includes(n.id) &&
           !seen.has(n.id) &&
           Date.now() - (n.joinedAt ?? 0) < threeDays
         ) {
           notifyNewNeighbor(n, { toast: false, seenSet: seen });
         }
       });
+
+      // Dismissnutí / potvrzení → už ne „Nový“
+      setNeighbors((prev) =>
+        prev.map((n) =>
+          trustDismissedIdsRef.current.includes(n.id) || given.includes(n.id)
+            ? { ...n, isNew: false }
+            : n
+        )
+      );
 
       unsubscribe = await subscribeRemoteProfiles((row) => {
         if (!row?.id || row.id === user.id) return;
@@ -1689,6 +1715,34 @@ export function AppProvider({ children }) {
       showToast("Potvrzení přidáno — děkujeme za budování důvěry.", "success");
     },
     [confirmationsGiven, showToast, user?.id, user?.name, user?.initials]
+  );
+
+  const dismissTrustNeighbor = useCallback(
+    (neighborId) => {
+      if (!neighborId) return;
+      const next = [...new Set([...trustDismissedIdsRef.current, neighborId])];
+      setTrustDismissedIds(next);
+      trustDismissedIdsRef.current = next;
+      try {
+        if (user?.id) {
+          localStorage.setItem(`podplot-trust-dismissed-v1-${user.id}`, JSON.stringify(next));
+        }
+      } catch {
+        /* ignore */
+      }
+      setNeighbors((prev) =>
+        prev.map((n) => (n.id === neighborId ? { ...n, isNew: false } : n))
+      );
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.neighborId === neighborId || n.id === `n-trust-${neighborId}`
+            ? { ...n, read: true }
+            : n
+        )
+      );
+      showToast("V pořádku — tohoto souseda už nebudeme připomínat.", "info");
+    },
+    [showToast, user?.id]
   );
 
   const switchFeedMainMode = useCallback((mode) => {
@@ -4797,8 +4851,7 @@ export function AppProvider({ children }) {
         return;
       }
       if (target.actionType === "trust_network") {
-        openProfile();
-        setProfileScrollTarget("trust-network");
+        goToHomeWall();
         return;
       }
       if (target.actionType === "trust_received") {
@@ -4811,7 +4864,7 @@ export function AppProvider({ children }) {
         openChat(target.participantId, target.participantName ?? "Soused");
       }
     },
-    [notifications, openMessages, openChat, openCraftsmanPublicProfile, openProfile]
+    [notifications, openMessages, openChat, openCraftsmanPublicProfile, openProfile, goToHomeWall]
   );
 
   const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
@@ -5464,7 +5517,9 @@ export function AppProvider({ children }) {
         unreadCount,
         neighbors,
         confirmNeighbor,
+        dismissTrustNeighbor,
         confirmationsGiven,
+        trustDismissedIds,
         trustVerifiers,
         unreadTrustVerifiersCount,
         markTrustVerifiersSeen,

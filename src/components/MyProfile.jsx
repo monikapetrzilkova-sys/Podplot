@@ -143,6 +143,8 @@ export default function MyProfile({ registerLegalBack } = {}) {
     neighbors,
     confirmNeighbor,
     confirmationsGiven,
+    trustDismissedIds,
+    dismissTrustNeighbor,
     trustVerifiers,
     unreadTrustVerifiersCount,
     markTrustVerifiersSeen,
@@ -615,7 +617,10 @@ export default function MyProfile({ registerLegalBack } = {}) {
       <section id="profile-trust-network" className="pp-card p-4 mb-4 scroll-mt-4">
         <ProfileSectionTitle icon={PROFILE_DOODLE_ICONS.trust}>Síť důvěry</ProfileSectionTitle>
         {(() => {
-          const pending = neighbors.filter((n) => !confirmationsGiven.includes(n.id));
+          const dismissed = trustDismissedIds ?? [];
+          const pending = neighbors.filter(
+            (n) => !confirmationsGiven.includes(n.id) && !dismissed.includes(n.id)
+          );
           const confirmed = neighbors.filter((n) => confirmationsGiven.includes(n.id));
           const pendingNew = pending.filter((n) => n.isNew);
           const pendingRest = pending.filter((n) => !n.isNew);
@@ -635,13 +640,13 @@ export default function MyProfile({ registerLegalBack } = {}) {
                   return (
                     <div
                       key={n.id}
-                      className={`flex items-center justify-between p-3 rounded-xl ${
+                      className={`flex items-center justify-between gap-2 p-3 rounded-xl ${
                         n.isNew && !already
                           ? "bg-emerald-50 border border-emerald-200"
                           : "bg-stone-50"
                       }`}
                     >
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-sm font-semibold text-stone-800 flex items-center gap-2 flex-wrap">
                           <PersonLabel personId={n.id} name={n.name} />
                           {n.isNew && !already && (
@@ -656,13 +661,24 @@ export default function MyProfile({ registerLegalBack } = {}) {
                         </p>
                       </div>
                       {!already && (
-                        <button
-                          type="button"
-                          onClick={() => confirmNeighbor(n.id)}
-                          className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200 shrink-0"
-                        >
-                          Potvrdit sousedství
-                        </button>
+                        <div className="flex flex-col gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => confirmNeighbor(n.id)}
+                            className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200"
+                          >
+                            Potvrdit
+                          </button>
+                          {n.isNew && (
+                            <button
+                              type="button"
+                              onClick={() => dismissTrustNeighbor(n.id)}
+                              className="text-[10px] font-semibold text-stone-500 bg-white px-2 py-1 rounded-lg border border-stone-200"
+                            >
+                              Neznám ho
+                            </button>
+                          )}
+                        </div>
                       )}
                       {already && (
                         <span className="text-[10px] font-semibold text-stone-400 px-2 py-1 shrink-0">
