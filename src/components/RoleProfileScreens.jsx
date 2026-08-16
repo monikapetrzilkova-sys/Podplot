@@ -236,22 +236,37 @@ export function SousedRoleView() {
       <section className="bg-white border border-stone-200 rounded-2xl p-4">
         <h3 className="text-sm font-bold mb-2">Sousedé k potvrzení</h3>
         <div className="space-y-2">
-          {neighbors.map((n) => (
-            <div key={n.id} className="flex items-center justify-between gap-2 p-2 bg-stone-50 rounded-xl">
+          {neighbors
+            .filter((n) => !confirmationsGiven.includes(n.id))
+            .sort((a, b) => Number(Boolean(b.isNew)) - Number(Boolean(a.isNew)))
+            .map((n) => (
+            <div
+              key={n.id}
+              className={`flex items-center justify-between gap-2 p-2 rounded-xl ${
+                n.isNew ? "bg-emerald-50 border border-emerald-200" : "bg-stone-50"
+              }`}
+            >
               <div>
-                <p className="text-sm font-medium">{n.name}</p>
-                <p className="text-xs text-stone-500">{n.distance}</p>
+                <p className="text-sm font-medium">
+                  {n.name}
+                  {n.isNew ? (
+                    <span className="ml-2 text-[10px] font-bold uppercase text-emerald-700">Nový</span>
+                  ) : null}
+                </p>
+                <p className="text-xs text-stone-500">{n.distance ?? n.location}</p>
               </div>
               <button
                 type="button"
-                disabled={confirmationsGiven.includes(n.id)}
                 onClick={() => confirmNeighbor(n.id)}
-                className="text-xs font-semibold px-2 py-1 rounded-lg bg-emerald-600 text-white disabled:opacity-50"
+                className="text-xs font-semibold px-2 py-1 rounded-lg bg-emerald-600 text-white"
               >
-                {confirmationsGiven.includes(n.id) ? "Potvrzeno" : "Potvrdit, že se známe"}
+                Potvrdit, že se známe
               </button>
             </div>
           ))}
+          {neighbors.every((n) => confirmationsGiven.includes(n.id)) && (
+            <p className="text-xs text-stone-500">Zatím nemáte nikoho nového k potvrzení.</p>
+          )}
         </div>
       </section>
       {lunchSubscriptions.length > 0 && (

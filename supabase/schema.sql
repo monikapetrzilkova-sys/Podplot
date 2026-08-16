@@ -98,3 +98,28 @@ create policy "direct_messages_update_public" on public.direct_messages for upda
 -- Realtime: Database → Publications → supabase_realtime → zapni direct_messages
 -- nebo:
 -- alter publication supabase_realtime add table public.direct_messages;
+
+-- ---------------------------------------------------------------------------
+-- Síť důvěry: potvrzení sousedství (viz také supabase/trust.sql)
+-- Realtime: zapni i tabulku profiles
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.neighbor_confirmations (
+  confirmer_id text not null,
+  neighbor_id text not null,
+  created_at timestamptz not null default now(),
+  primary key (confirmer_id, neighbor_id)
+);
+
+create index if not exists neighbor_confirmations_neighbor_idx
+  on public.neighbor_confirmations (neighbor_id);
+
+alter table public.neighbor_confirmations enable row level security;
+
+drop policy if exists "neighbor_confirmations_select_public" on public.neighbor_confirmations;
+drop policy if exists "neighbor_confirmations_insert_public" on public.neighbor_confirmations;
+
+create policy "neighbor_confirmations_select_public"
+  on public.neighbor_confirmations for select using (true);
+create policy "neighbor_confirmations_insert_public"
+  on public.neighbor_confirmations for insert with check (true);

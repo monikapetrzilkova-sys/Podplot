@@ -212,10 +212,16 @@ export default function MyProfile({ registerLegalBack } = {}) {
   }, [user?.allowPublicAreaLabel, user?.publicAreaLabel, user]);
 
   useEffect(() => {
-    if (profileScrollTarget !== "my-lending-offers") return;
+    if (profileScrollTarget !== "my-lending-offers" && profileScrollTarget !== "trust-network") {
+      return;
+    }
+    const targetId =
+      profileScrollTarget === "trust-network"
+        ? "profile-trust-network"
+        : "profile-my-lending-offers";
     const frame = requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        const section = document.getElementById("profile-my-lending-offers");
+        const section = document.getElementById(targetId);
         section?.scrollIntoView({ behavior: "smooth", block: "start" });
         clearProfileScrollTarget();
       });
@@ -511,32 +517,70 @@ export default function MyProfile({ registerLegalBack } = {}) {
         </div>
       </section>
 
-      <section className="pp-card p-4 mb-4">
+      <section id="profile-trust-network" className="pp-card p-4 mb-4 scroll-mt-4">
         <ProfileSectionTitle icon={PROFILE_DOODLE_ICONS.trust}>Síť důvěry</ProfileSectionTitle>
-        <div className="space-y-2">
-          {neighbors.map((n) => (
-            <div key={n.id} className="flex items-center justify-between p-3 bg-stone-50 rounded-xl">
-              <div>
-                <p className="text-sm font-semibold text-stone-800">
-                  <PersonLabel personId={n.id} name={n.name} />
+        {(() => {
+          const pending = neighbors.filter((n) => !confirmationsGiven.includes(n.id));
+          const confirmed = neighbors.filter((n) => confirmationsGiven.includes(n.id));
+          const pendingNew = pending.filter((n) => n.isNew);
+          const pendingRest = pending.filter((n) => !n.isNew);
+          const ordered = [...pendingNew, ...pendingRest, ...confirmed];
+          return (
+            <>
+              {pendingNew.length > 0 && (
+                <p className="text-xs text-emerald-800 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2 mb-3">
+                  {pendingNew.length === 1
+                    ? "Nový soused ve vaší lokalitě — potvrďte sousedství, pokud se znáte."
+                    : `${pendingNew.length} noví sousedé ve vaší lokalitě — potvrďte sousedství, pokud se znáte.`}
                 </p>
-                <p className="text-xs text-stone-500">
-                  {n.confirmations} potvrzení · {n.location}
-                  {n.confirmations >= 3 && " · ✓ ověřený"}
-                </p>
-              </div>
-              {!confirmationsGiven.includes(n.id) && (
-                <button
-                  type="button"
-                  onClick={() => confirmNeighbor(n.id)}
-                  className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg"
-                >
-                  Potvrdit sousedství
-                </button>
               )}
-            </div>
-          ))}
-        </div>
+              <div className="space-y-2">
+                {ordered.map((n) => {
+                  const already = confirmationsGiven.includes(n.id);
+                  return (
+                    <div
+                      key={n.id}
+                      className={`flex items-center justify-between p-3 rounded-xl ${
+                        n.isNew && !already
+                          ? "bg-emerald-50 border border-emerald-200"
+                          : "bg-stone-50"
+                      }`}
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-stone-800 flex items-center gap-2 flex-wrap">
+                          <PersonLabel personId={n.id} name={n.name} />
+                          {n.isNew && !already && (
+                            <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-md">
+                              Nový
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs text-stone-500">
+                          {n.confirmations} potvrzení · {n.location}
+                          {n.confirmations >= 3 && " · ✓ ověřený"}
+                        </p>
+                      </div>
+                      {!already && (
+                        <button
+                          type="button"
+                          onClick={() => confirmNeighbor(n.id)}
+                          className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200 shrink-0"
+                        >
+                          Potvrdit sousedství
+                        </button>
+                      )}
+                      {already && (
+                        <span className="text-[10px] font-semibold text-stone-400 px-2 py-1 shrink-0">
+                          Potvrzeno
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          );
+        })()}
       </section>
 
       <section className="pp-card p-4 mb-4">

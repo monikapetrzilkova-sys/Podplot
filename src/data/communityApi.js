@@ -76,6 +76,147 @@ export async function fetchRemoteProfile(id) {
   return data ?? null;
 }
 
+function municipalityMatches(a, b) {
+  const left = String(a ?? "").trim().toLowerCase();
+  const right = String(b ?? "").trim().toLowerCase();
+  if (!left || !right) return false;
+  return left === right || left.includes(right) || right.includes(left);
+}
+
+/** Profil → položka sítě důvěry / sousedů */
+export function profileRowToNeighbor(row, { confirmationCount = 0, isNew = false } = {}) {
+  if (!row?.id || !row?.name) return null;
+  const createdAt = row.created_at ? Date.parse(row.created_at) || Date.now() : Date.now();
+  const joinedRecently = Date.now() - createdAt < 1000 * 60 * 60 * 24 * 14;
+  return {
+    id: row.id,
+    name: row.name,
+    initials: row.initials || "??",
+    confirmations: confirmationCount,
+    geolocVerified: true,
+    location: "ve vaší lokalitě",
+    distance: "ve vaší lokalitě",
+    municipality: row.municipality ?? null,
+    accountType: row.account_type ?? "soused",
+    allowPublicAreaLabel: false,
+    publicAreaLabel: "",
+    fromRemote: true,
+    isNew: Boolean(isNew || joinedRecently),
+    joinedAt: createdAt,
+  };
+}
+
+/** Sousedi (účty typu soused) ve stejné obci */
+export async function fetchRemoteNeighbors({ municipality = null, excludeId = null } = {}) {
+  const sb = await ensureSupabase();
+  if (!sb) return [];
+
+  const { data, error } = await sb
+    .from("profiles")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  if (error) {
+    console.warn("[supabase] fetch profiles", error.message);
+    return [];
+  }
+
+  return (data ?? [])
+    .filter((row) => {
+      if (!row?.id || row.id === excludeId) return false;
+      const type = String(row.account_type ?? "soused").toLowerCase();
+      if (type && type !== "soused") return false;
+      if (municipality && !municipalityMatches(row.municipality, municipality)) return false;
+      return true;
+    })
+    .map((row) => profileRowToNeighbor(row))
+    .filter(Boolean);
+}
+
+/** Realtime nový profil — vrať unsubscribe */
+export async function subscribeRemoteProfiles(onInsert) {
+  const sb = await ensureSupabase();
+  if (!sb || typeof onInsert !== "function") return () => {};
+
+  const channel = sb
+    .channel("podplot-profiles")
+    .on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "profiles" },
+      (payload) => {
+        if (payload?.new) onInsert(payload.new);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    sb.removeChannel(channel);
+  };
+}
+
+/** Potvrzení sousedství, která jsem dal/a */
+export async function fetchMyNeighborConfirmations(confirmerId) {
+  if (!confirmerId) return [];
+  const sb = await ensureSupabase();
+  if (!sb) return [];
+  const { data, error } = await sb
+    .from("neighbor_confirmations")
+    .select("neighbor_id")
+    .eq("confirmer_id", confirmerId);
+  if (error) {
+    // tabulka ještě nemusí existovat
+    if (!String(error.message || "").includes("does not exist")) {
+      console.warn("[supabase] fetch confirmations", error.message);
+    }
+    return [];
+  }
+  return (data ?? []).map((r) => r.neighbor_id).filter(Boolean);
+}
+
+/** Počty potvrzení pro sadu sousedů */
+export async function fetchNeighborConfirmationCounts(neighborIds = []) {
+  const ids = [...new Set(neighborIds.filter(Boolean))];
+  if (!ids.length) return {};
+  const sb = await ensureSupabase();
+  if (!sb) return {};
+  const { data, error } = await sb
+    .from("neighbor_confirmations")
+    .select("neighbor_id")
+    .in("neighbor_id", ids);
+  if (error) {
+    if (!String(error.message || "").includes("does not exist")) {
+      console.warn("[supabase] confirmation counts", error.message);
+    }
+    return {};
+  }
+  const counts = {};
+  (data ?? []).forEach((row) => {
+    const id = row.neighbor_id;
+    counts[id] = (counts[id] ?? 0) + 1;
+  });
+  return counts;
+}
+
+export async function publishNeighborConfirmation(confirmerId, neighborId) {
+  if (!confirmerId || !neighborId || confirmerId === neighborId) return false;
+  const sb = await ensureSupabase();
+  if (!sb) return false;
+  const { error } = await sb.from("neighbor_confirmations").upsert(
+    {
+      confirmer_id: confirmerId,
+      neighbor_id: neighborId,
+      created_at: new Date().toISOString(),
+    },
+    { onConflict: "confirmer_id,neighbor_id" }
+  );
+  if (error) {
+    console.warn("[supabase] confirm neighbor", error.message);
+    return false;
+  }
+  return true;
+}
+
 /** Mapuje řádek profiles (+ auth metadata) na objekt user v appce. */
 export function profileToAppUser(row, authUser, fallback = {}) {
   const meta = authUser?.user_metadata && typeof authUser.user_metadata === "object"

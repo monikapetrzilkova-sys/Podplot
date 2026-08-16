@@ -46,6 +46,13 @@ Na Vercelu už mají být nastavené; lokálně v `app/.env`.
 
 Bez kroku 5 odpovědi na inzerát zůstanou jen u odesílatele.
 
+## 6) Síť důvěry — nový soused v lokalitě
+
+1. SQL Editor → spusť celý `supabase/trust.sql`
+2. **Database → Publications** → u `supabase_realtime` zapni **`profiles`** (a volitelně `neighbor_confirmations`)
+
+Když se v obci zaregistruje nový soused, ostatní v téže lokalitě dostanou oznámení a v **Profil → Síť důvěry** uvidí tlačítko **Potvrdit sousedství**.
+
 ## Poznámka k bezpečnosti
 
 MVP RLS u `profiles` / `posts` je stále otevřené pro testery. Později navážeme politiky na `auth.uid()`.
