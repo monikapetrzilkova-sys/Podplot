@@ -1,9 +1,12 @@
+import { municipalitiesMatch } from "../data/geoFilter.js";
+
 /** Návrhy skupin — localStorage + rozpoznání v remote posts */
 
 export const GROUP_PROPOSAL_FEED_SUBTYPE = "group-proposal";
 export const GROUP_PROPOSAL_VOTE_FEED_SUBTYPE = "group-proposal-vote";
 
 const STORAGE_KEY = "podplot-group-proposals-v1";
+const USER_GROUPS_STORAGE_KEY = "podplot-user-groups-v1";
 
 export function isGroupProposalPost(post) {
   if (!post) return false;
@@ -188,4 +191,62 @@ export function extractSupportsForMyProposals(posts, myUserId, myProposals = [])
   }
 
   return [...byKey.values()].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+}
+
+/** Návrhy jen pro aktivní obec — bez obce se nezobrazí (musí mít municipality při založení). */
+export function filterProposalsForMunicipality(proposals, municipality) {
+  if (!municipality) return [];
+  return (proposals ?? []).filter(
+    (p) => p?.municipality && municipalitiesMatch(p.municipality, municipality)
+  );
+}
+
+export function loadStoredUserGroups() {
+  try {
+    const raw = localStorage.getItem(USER_GROUPS_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((g) => g?.id && g?.name && g?.municipality);
+  } catch {
+    return [];
+  }
+}
+
+export function persistUserGroups(list) {
+  try {
+    const slim = (list ?? [])
+      .filter((g) => g?.id && g?.name && g?.municipality)
+      .map((g) => ({
+        id: g.id,
+        name: g.name,
+        emoji: g.emoji ?? "👥",
+        members: g.members ?? 1,
+        clubCategory: g.clubCategory ?? null,
+        description: g.description ?? "",
+        municipality: g.municipality,
+        locationId: g.locationId ?? null,
+        fromProposal: true,
+        proposalId: g.proposalId ?? null,
+        createdAt: g.createdAt ?? Date.now(),
+      }));
+    localStorage.setItem(USER_GROUPS_STORAGE_KEY, JSON.stringify(slim));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function filterUserGroupsForMunicipality(groups, municipality) {
+  if (!municipality) return [];
+  return (groups ?? []).filter(
+    (g) => g?.municipality && municipalitiesMatch(g.municipality, municipality)
+  );
+}
+
+export function mergeCommunityGroups(baseGroups, userGroups) {
+  const byId = new Map();
+  for (const g of [...(baseGroups ?? []), ...(userGroups ?? [])]) {
+    if (!g?.id || !g?.name) continue;
+    byId.set(g.id, { ...byId.get(g.id), ...g });
+  }
+  return [...byId.values()];
 }

@@ -113,6 +113,7 @@ export const INITIAL_GROUP_PROPOSALS = [
     active: false,
     proposer: "Eva K.",
     status: "v-priprave",
+    municipality: "Jesenice",
   },
   {
     id: "prop-pejskar",
@@ -127,6 +128,7 @@ export const INITIAL_GROUP_PROPOSALS = [
     active: false,
     proposer: "Honza P.",
     status: "v-priprave",
+    municipality: "Jesenice",
   },
 ];
 

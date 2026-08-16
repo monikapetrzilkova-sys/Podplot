@@ -165,6 +165,11 @@ import {
   mergeProposalLists,
   proposalsFromRemotePosts,
   extractSupportsForMyProposals,
+  filterProposalsForMunicipality,
+  loadStoredUserGroups,
+  persistUserGroups,
+  filterUserGroupsForMunicipality,
+  mergeCommunityGroups,
   GROUP_PROPOSAL_FEED_SUBTYPE,
   GROUP_PROPOSAL_VOTE_FEED_SUBTYPE,
 } from "../utils/groupProposalSync.js";
@@ -394,8 +399,17 @@ export function AppProvider({ children }) {
     const locId = SKIP_REGISTRATION
       ? "domov"
       : loadUserSession()?.activeLocationId ?? "domov";
-    return getGroupsForLocation(locId);
+    const sessionLocs = SKIP_REGISTRATION
+      ? null
+      : loadUserSession()?.locations;
+    const locs = Array.isArray(sessionLocs) && sessionLocs.length ? sessionLocs : DEFAULT_LOCATIONS;
+    const loc = locs.find((l) => l.id === locId) ?? locs[0];
+    return mergeCommunityGroups(
+      getGroupsForLocation(locId),
+      filterUserGroupsForMunicipality(loadStoredUserGroups(), loc?.municipality)
+    );
   });
+  const [userCreatedGroups, setUserCreatedGroups] = useState(() => loadStoredUserGroups());
   const [groupProposals, setGroupProposals] = useState(() =>
     mergeProposalLists(INITIAL_GROUP_PROPOSALS, loadStoredGroupProposals())
   );
@@ -412,6 +426,18 @@ export function AppProvider({ children }) {
   useEffect(() => {
     persistGroupProposals(groupProposals);
   }, [groupProposals]);
+
+  useEffect(() => {
+    persistUserGroups(userCreatedGroups);
+  }, [userCreatedGroups]);
+
+  const rebuildCommunityGroups = useCallback((locationId, municipality, extraUserGroups = null) => {
+    const userGroups = filterUserGroupsForMunicipality(
+      extraUserGroups ?? userCreatedGroups,
+      municipality
+    );
+    return mergeCommunityGroups(getGroupsForLocation(locationId), userGroups);
+  }, [userCreatedGroups]);
 
   // Ecosystem state
   const [chats, setChats] = useState(INITIAL_CHATS);
@@ -1615,7 +1641,12 @@ export function AppProvider({ children }) {
         USER_LOCATIONS[2],
       ]);
       setActiveLocationId("domov");
-      setCommunityGroups(getGroupsForLocation("domov"));
+      setCommunityGroups(
+        mergeCommunityGroups(
+          getGroupsForLocation("domov"),
+          filterUserGroupsForMunicipality(loadStoredUserGroups(), municipality)
+        )
+      );
       setCredits(CURRENT_USER.credits);
 
       if (normalizedType === "podnik" && resolvedSubtype === "mobilni") {
@@ -1715,8 +1746,15 @@ export function AppProvider({ children }) {
       setUser(nextUser);
       if (saved?.user?.id === nextUser.id && Array.isArray(saved.locations) && saved.locations.length) {
         setLocations(saved.locations);
-        setActiveLocationId(saved.activeLocationId || "domov");
-        setCommunityGroups(getGroupsForLocation(saved.activeLocationId || "domov"));
+        const locId = saved.activeLocationId || "domov";
+        setActiveLocationId(locId);
+        const loc = saved.locations.find((l) => l.id === locId) ?? saved.locations[0];
+        setCommunityGroups(
+          mergeCommunityGroups(
+            getGroupsForLocation(locId),
+            filterUserGroupsForMunicipality(loadStoredUserGroups(), loc?.municipality)
+          )
+        );
         if (typeof saved.credits === "number") setCredits(saved.credits);
         if (Array.isArray(saved.userProfileIds)) setUserProfileIds(saved.userProfileIds);
         if (saved.testRoleId) setTestRoleId(saved.testRoleId);
@@ -1735,7 +1773,12 @@ export function AppProvider({ children }) {
           USER_LOCATIONS[2],
         ]);
         setActiveLocationId("domov");
-        setCommunityGroups(getGroupsForLocation("domov"));
+        setCommunityGroups(
+          mergeCommunityGroups(
+            getGroupsForLocation("domov"),
+            filterUserGroupsForMunicipality(loadStoredUserGroups(), municipality)
+          )
+        );
       }
       void upsertRemoteProfile(nextUser);
       showToast(`Vítejte zpět, ${nextUser.name}.`, "success");
@@ -1819,7 +1862,15 @@ export function AppProvider({ children }) {
     setPasswordRecovery(false);
     setLocations(DEFAULT_LOCATIONS);
     setActiveLocationId("domov");
-    setCommunityGroups(getGroupsForLocation("domov"));
+    setCommunityGroups(
+      mergeCommunityGroups(
+        getGroupsForLocation("domov"),
+        filterUserGroupsForMunicipality(
+          loadStoredUserGroups(),
+          DEFAULT_LOCATIONS[0]?.municipality
+        )
+      )
+    );
     setCredits(CURRENT_USER.credits);
     setTestRoleId("soused");
     setUserProfileIds(["soused"]);
@@ -1842,7 +1893,7 @@ export function AppProvider({ children }) {
       if (id === activeLocationId) return;
       setActiveLocationId(id);
       const loc = locations.find((l) => l.id === id);
-      setCommunityGroups(getGroupsForLocation(id));
+      setCommunityGroups(rebuildCommunityGroups(id, loc?.municipality));
       setFeedSubFilter(getDefaultSubfilter(feedMainMode));
       setMapRootKey((k) => k + 1);
       setNeighborsRootKey((k) => k + 1);
@@ -1860,7 +1911,15 @@ export function AppProvider({ children }) {
       );
       notifyLocationRemap(id, loc);
     },
-    [activeLocationId, locations, notifyLocationRemap, feedMainMode, clearModuleSelection, user]
+    [
+      activeLocationId,
+      locations,
+      notifyLocationRemap,
+      feedMainMode,
+      clearModuleSelection,
+      user,
+      rebuildCommunityGroups,
+    ]
   );
 
   const reportPost = useCallback(
@@ -2331,33 +2390,65 @@ export function AppProvider({ children }) {
     [groupProposals, user, showToast, activeLocationId]
   );
 
-  const activateGroupFromProposal = useCallback((activated) => {
-    if (!activated?.name) return;
-    const groupId =
-      activated.name
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "")
-        .slice(0, 24) || `skupina-${Date.now()}`;
+  const activateGroupFromProposal = useCallback(
+    (activated) => {
+      if (!activated?.name) return;
+      const municipality =
+        activated.municipality ??
+        activeLocation?.municipality ??
+        user?.geo?.city ??
+        user?.location ??
+        null;
+      if (!municipality) return;
 
-    setCommunityGroups((groups) => {
-      if (groups.some((g) => g.id === groupId || g.name === activated.name)) return groups;
-      return [
-        ...groups,
-        {
-          id: groupId,
-          name: activated.name,
-          emoji: "👥",
-          members: activated.votes ?? 1,
-          clubCategory: activated.clubCategory || activated.categoryId || null,
-          description: activated.description,
-        },
-      ];
-    });
-  }, []);
+      const groupId =
+        activated.id?.startsWith("prop-")
+          ? `grp-${activated.id.replace(/^prop-/, "")}`
+          : activated.name
+              .toLowerCase()
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/^-|-$/g, "")
+              .slice(0, 24) || `skupina-${Date.now()}`;
 
+      const group = {
+        id: groupId,
+        name: activated.name,
+        emoji: "👥",
+        members: activated.votes ?? 1,
+        clubCategory: activated.clubCategory || activated.categoryId || null,
+        description: activated.description,
+        municipality,
+        locationId: activated.locationId ?? activeLocationId ?? null,
+        fromProposal: true,
+        proposalId: activated.id ?? null,
+        createdAt: Date.now(),
+      };
+
+      setUserCreatedGroups((prev) => {
+        if (prev.some((g) => g.id === group.id || g.name === group.name)) {
+          return prev.map((g) =>
+            g.id === group.id || g.name === group.name ? { ...g, ...group } : g
+          );
+        }
+        return [group, ...prev];
+      });
+
+      const activeMun = activeLocation?.municipality ?? user?.geo?.city ?? null;
+      if (activeMun && municipalitiesMatch(municipality, activeMun)) {
+        setCommunityGroups((groups) => {
+          if (groups.some((g) => g.id === group.id || g.name === group.name)) {
+            return groups.map((g) =>
+              g.id === group.id || g.name === group.name ? { ...g, ...group } : g
+            );
+          }
+          return [...groups, group];
+        });
+      }
+    },
+    [activeLocation?.municipality, activeLocationId, user?.geo?.city, user?.location]
+  );
   const voteGroupProposal = useCallback(
     async (id) => {
       const local = groupProposals.find((p) => p.id === id);
@@ -2377,7 +2468,7 @@ export function AppProvider({ children }) {
           initials: user?.initials,
           accountType: user?.accountType,
           locationId: activeLocationId,
-          municipality: activeLocation?.municipality ?? user?.geo?.city ?? null,
+          municipality: local.municipality ?? activeLocation?.municipality ?? user?.geo?.city ?? null,
           isGroupProposalVote: true,
           proposalId: id,
           createdAt: Date.now(),
@@ -5259,7 +5350,8 @@ export function AppProvider({ children }) {
   const applyActiveLocationRemap = useCallback(
     (locationId, { silent = false } = {}) => {
       setActiveLocationId(locationId);
-      setCommunityGroups(getGroupsForLocation(locationId));
+      const loc = locations.find((l) => l.id === locationId);
+      setCommunityGroups(rebuildCommunityGroups(locationId, loc?.municipality));
       setFeedSubFilter(getDefaultSubfilter(feedMainMode));
       setMapRootKey((k) => k + 1);
       setNeighborsRootKey((k) => k + 1);
@@ -5272,11 +5364,10 @@ export function AppProvider({ children }) {
         )
       );
       if (!silent) {
-        const loc = locations.find((l) => l.id === locationId);
         notifyLocationRemap(locationId, loc);
       }
     },
-    [feedMainMode, clearModuleSelection, locations, notifyLocationRemap, user]
+    [feedMainMode, clearModuleSelection, locations, notifyLocationRemap, user, rebuildCommunityGroups]
   );
 
   const updateUserLocation = useCallback(
@@ -6058,7 +6149,16 @@ export function AppProvider({ children }) {
     ]
   );
 
-  const proposedClubs = groupProposals;
+  const groupProposalsForLocation = useMemo(
+    () =>
+      filterProposalsForMunicipality(
+        groupProposals,
+        activeLocation?.municipality ?? user?.geo?.city ?? user?.location ?? null
+      ),
+    [groupProposals, activeLocation?.municipality, user?.geo?.city, user?.location]
+  );
+
+  const proposedClubs = groupProposalsForLocation;
   const activeClubs = communityGroups.map((g) => ({
     ...g,
     active: true,
@@ -6175,7 +6275,7 @@ export function AppProvider({ children }) {
         togglePillar,
         goToHomeWall,
         communityGroups,
-        groupProposals,
+        groupProposals: groupProposalsForLocation,
         proposeGroup,
         updateGroupProposal,
         voteGroupProposal,
@@ -6189,7 +6289,9 @@ export function AppProvider({ children }) {
         setCreateGroupModalOpen,
         editingGroupProposalId,
         editingGroupProposal:
-          groupProposals.find((p) => p.id === editingGroupProposalId) ?? null,
+          groupProposalsForLocation.find((p) => p.id === editingGroupProposalId) ??
+          groupProposals.find((p) => p.id === editingGroupProposalId) ??
+          null,
         openCreateGroupModal,
         openEditGroupProposal,
         closeCreateGroupModal,
