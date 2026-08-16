@@ -106,7 +106,7 @@ export default function TabBar() {
   };
 
   return (
-    <nav className="pp-tabbar flex items-end px-1 pt-1 pb-4 shrink-0">
+    <nav className="pp-tabbar flex items-end px-1 pt-1 shrink-0">
       {tabs.map((tab) => {
         if (tab.isPlus) {
           return (
