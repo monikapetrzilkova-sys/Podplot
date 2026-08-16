@@ -98,6 +98,12 @@ import {
 import { inferLendingMeta } from "../data/lendingCategories.js";
 import { lendingCategoryToMarket } from "../data/marketCategories.js";
 import { SKIP_REGISTRATION, getDevTestUser } from "../data/devConfig.js";
+import {
+  loadUserSession,
+  persistUserSession,
+  clearUserSession,
+  createUserId,
+} from "../data/userSession.js";
 import { getAppRoleFromTestId, APP_ROLES, isB2BRole, isMobilniTestRole, isFyzickaTestRole } from "../data/userRoles.js";
 import { filterCraftsmanInquiries, isNationwideRadius } from "../data/craftsmanSettings.js";
 import {
@@ -175,8 +181,15 @@ const INITIAL_SERVICE_ORDERS = [
 ];
 
 export function AppProvider({ children }) {
-  const [user, setUser] = useState(() => (SKIP_REGISTRATION ? getDevTestUser() : null));
-  const [credits, setCredits] = useState(CURRENT_USER.credits);
+  const [user, setUser] = useState(() => {
+    if (SKIP_REGISTRATION) return getDevTestUser();
+    return loadUserSession()?.user ?? null;
+  });
+  const [credits, setCredits] = useState(() => {
+    if (SKIP_REGISTRATION) return CURRENT_USER.credits;
+    const saved = loadUserSession()?.credits;
+    return typeof saved === "number" ? saved : CURRENT_USER.credits;
+  });
   const creditsRef = useRef(credits);
   creditsRef.current = credits;
   const [activeTab, setActiveTab] = useState("home");
@@ -214,9 +227,15 @@ export function AppProvider({ children }) {
   const [createEventOpen, setCreateEventOpen] = useState(false);
   const [reportFormOpen, setReportFormOpen] = useState(false);
   const [placeSuggestionOpen, setPlaceSuggestionOpen] = useState(false);
-  const [testRoleId, setTestRoleId] = useState("soused");
+  const [testRoleId, setTestRoleId] = useState(() => {
+    if (SKIP_REGISTRATION) return "soused";
+    return loadUserSession()?.testRoleId ?? "soused";
+  });
   /** Osobní profily uživatele (bez úřadu) — pro sekci Moje profily */
-  const [userProfileIds, setUserProfileIds] = useState(["soused"]);
+  const [userProfileIds, setUserProfileIds] = useState(() => {
+    if (SKIP_REGISTRATION) return ["soused"];
+    return loadUserSession()?.userProfileIds ?? ["soused"];
+  });
   const [viewAsNeighbor, setViewAsNeighbor] = useState(false);
   /** Záloha pracovního uživatele při „Přepnout na sousedský profil“ */
   const workUserBackupRef = useRef(null);
@@ -295,7 +314,12 @@ export function AppProvider({ children }) {
   const [eventReporterIds, setEventReporterIds] = useState({});
   const [userReports, setUserReports] = useState([]);
   const [extraReports, setExtraReports] = useState([]);
-  const [communityGroups, setCommunityGroups] = useState(() => getGroupsForLocation("domov"));
+  const [communityGroups, setCommunityGroups] = useState(() => {
+    const locId = SKIP_REGISTRATION
+      ? "domov"
+      : loadUserSession()?.activeLocationId ?? "domov";
+    return getGroupsForLocation(locId);
+  });
   const [groupProposals, setGroupProposals] = useState(INITIAL_GROUP_PROPOSALS);
   const [createGroupModalOpen, setCreateGroupModalOpen] = useState(false);
 
@@ -313,9 +337,26 @@ export function AppProvider({ children }) {
   const [blockedUserIds, setBlockedUserIds] = useState([]);
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [userInterests, setUserInterests] = useState({ rodina: true, sport: false, zahrada: true, kultura: false });
-  const [locations, setLocations] = useState(DEFAULT_LOCATIONS);
-  const [activeLocationId, setActiveLocationId] = useState("domov");
-  const [servicesCatalog, setServicesCatalog] = useState(SERVICES_CATALOG);
+  const [locations, setLocations] = useState(() => {
+    if (SKIP_REGISTRATION) return DEFAULT_LOCATIONS;
+    const saved = loadUserSession()?.locations;
+    return Array.isArray(saved) && saved.length ? saved : DEFAULT_LOCATIONS;
+  });
+  const [activeLocationId, setActiveLocationId] = useState(() => {
+    if (SKIP_REGISTRATION) return "domov";
+    return loadUserSession()?.activeLocationId ?? "domov";
+  });
+  const [servicesCatalog, setServicesCatalog] = useState(() => {
+    if (SKIP_REGISTRATION) return SERVICES_CATALOG;
+    const owned = loadUserSession()?.ownedService;
+    if (!owned?.id) return SERVICES_CATALOG;
+    return [
+      owned,
+      ...SERVICES_CATALOG.filter(
+        (s) => s.id !== owned.id && s.ownerUserId !== owned.ownerUserId
+      ),
+    ];
+  });
   const [serviceReviews, setServiceReviews] = useState(() => initReviewsFromCatalog(SERVICES_CATALOG));
   const [placeReviews, setPlaceReviews] = useState([]);
   const [placeSuggestions, setPlaceSuggestions] = useState([]);
@@ -342,6 +383,28 @@ export function AppProvider({ children }) {
   const reportsMapRadiusKm = mapRadiusSettings.reports;
   const eventsMapRadiusKm = mapRadiusSettings.events;
   const thingsMapRadiusKm = mapRadiusSettings.things;
+
+  // Účet testera v prohlížeči — přežije refresh i nový deploy na Vercelu
+  useEffect(() => {
+    if (SKIP_REGISTRATION) return;
+    if (!user) {
+      clearUserSession();
+      return;
+    }
+    const ownedService =
+      servicesCatalog.find(
+        (s) => s.id === "svc-mine" || (user.id && s.ownerUserId === user.id)
+      ) ?? null;
+    persistUserSession({
+      user,
+      locations,
+      activeLocationId,
+      credits,
+      userProfileIds,
+      testRoleId,
+      ownedService,
+    });
+  }, [user, locations, activeLocationId, credits, userProfileIds, testRoleId, servicesCatalog]);
 
   const [moduleViewModes, setModuleViewModes] = useState({
     [MODULE_IDS.REPORTS]: DEFAULT_MODULE_VIEW,
@@ -541,7 +604,7 @@ export function AppProvider({ children }) {
   );
 
   const register = useCallback(
-    ({
+    async ({
       name,
       email,
       address,
@@ -567,9 +630,12 @@ export function AppProvider({ children }) {
         domain = extractEmailDomain(email);
       }
       const cityFromGeo = geo?.city || address.split(",").pop()?.trim() || address;
+      const municipality = String(cityFromGeo).trim();
+      const shortLabel =
+        municipality.split("—")[0].split("–")[0].trim() || municipality;
       const resolvedSubtype =
         normalizedType === "podnik" ? businessSubtype ?? resolveBusinessSubtype(accountType) : null;
-      const userId = "me";
+      const userId = createUserId();
       const subIds =
         resolvedSubtype === "mobilni"
           ? [
@@ -585,7 +651,25 @@ export function AppProvider({ children }) {
           : [];
       const primarySub = subIds[0] ?? null;
       const labelsJoined = formatServiceSubcategoryLabels(subIds);
-      setUser({
+
+      let nextLat = geo?.lat ?? null;
+      let nextLng = geo?.lng ?? null;
+      if (nextLat == null || nextLng == null) {
+        try {
+          const results = await fetchAddressSuggestions(address);
+          const hit = results.find((r) => r?.lat != null && r?.lon != null) ?? results[0];
+          if (hit?.lat != null && hit?.lon != null) {
+            nextLat = hit.lat;
+            nextLng = hit.lon;
+          }
+        } catch {
+          /* výchozí souřadnice Domova */
+        }
+      }
+      const homeLat = nextLat ?? USER_LOCATIONS[0].lat;
+      const homeLng = nextLng ?? USER_LOCATIONS[0].lng;
+
+      const nextUser = {
         id: userId,
         name,
         email,
@@ -594,11 +678,11 @@ export function AppProvider({ children }) {
         businessSubtype: resolvedSubtype,
         initials: initialsFromName(name),
         role: acc.role,
-        location: cityFromGeo.split(/\d{3}\s?\d{2}/).pop()?.trim() || cityFromGeo,
+        location: shortLabel,
         radius: normalizedType === "podnik" && resolvedSubtype === "mobilni" ? "15 km" : "1,2 km",
         isVerified,
         verifiedDomain: isVerified ? domain : null,
-        geo,
+        geo: { ...(geo ?? {}), city: municipality, lat: homeLat, lng: homeLng },
         geolocVerified: true,
         neighborhoodConfirmations: 0,
         isPremium: false,
@@ -612,16 +696,29 @@ export function AppProvider({ children }) {
         serviceKeywords: resolvedSubtype === "mobilni" ? serviceKeywords : [],
         institutionId: normalizedType === "urad" ? institutionId : null,
         institutionRole: normalizedType === "urad" ? institutionRole ?? "editor" : null,
-      });
+      };
+      setUser(nextUser);
       if (normalizedType === "urad") {
         setTestRoleId("urad");
         setUserProfileIds(["urad"]);
+      } else {
+        setTestRoleId("soused");
+        setUserProfileIds(["soused"]);
       }
       setLocations([
-        { ...USER_LOCATIONS[0], address },
+        {
+          ...USER_LOCATIONS[0],
+          address,
+          municipality,
+          shortLabel,
+          lat: homeLat,
+          lng: homeLng,
+        },
         USER_LOCATIONS[1],
         USER_LOCATIONS[2],
       ]);
+      setActiveLocationId("domov");
+      setCommunityGroups(getGroupsForLocation("domov"));
       setCredits(CURRENT_USER.credits);
 
       if (normalizedType === "podnik" && resolvedSubtype === "mobilni") {
@@ -684,7 +781,15 @@ export function AppProvider({ children }) {
   }, []);
 
   const logout = useCallback(() => {
+    clearUserSession();
     setUser(null);
+    setLocations(DEFAULT_LOCATIONS);
+    setActiveLocationId("domov");
+    setCommunityGroups(getGroupsForLocation("domov"));
+    setCredits(CURRENT_USER.credits);
+    setTestRoleId("soused");
+    setUserProfileIds(["soused"]);
+    setServicesCatalog(SERVICES_CATALOG);
     setShowDiscoveryWall(true);
     setShowPodplotStory(false);
     setViewAsNeighbor(false);

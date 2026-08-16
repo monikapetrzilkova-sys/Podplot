@@ -122,7 +122,7 @@ export default function RegisterScreen() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitError("");
 
@@ -173,7 +173,7 @@ export default function RegisterScreen() {
       .map((k) => k.trim())
       .filter(Boolean);
 
-    register({
+    await register({
       name: name.trim(),
       email: email.trim(),
       address: fullAddress,

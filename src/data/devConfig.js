@@ -1,12 +1,15 @@
 import { CURRENT_USER } from "./mockData.js";
 import { getAccountType } from "./accountTypes.js";
 
-/** Pro testování: true = rovnou přihlášená Monika, bez registrační obrazovky */
-export const SKIP_REGISTRATION = true;
+/**
+ * Přeskočit registraci jen při lokálním vývoji.
+ * Na Vercelu (produkční build) je vždy registrační obrazovka + uložený účet v prohlížeči.
+ */
+export const SKIP_REGISTRATION = import.meta.env?.PROD !== true;
 
 /**
  * Developer Mode — přepínač rolí v profilu.
- * V ostré verzi nastavte false (nebo VITE_ENABLE_DEV_ROLE_SWITCH=false).
+ * V ostré verzi vypnuto.
  */
 export const ENABLE_DEV_ROLE_SWITCH =
   import.meta.env?.VITE_ENABLE_DEV_ROLE_SWITCH === "true" ||
@@ -30,7 +33,7 @@ export function getDevTestUser() {
     radius: "7 km",
     isVerified: true,
     verifiedDomain: null,
-    geo: { city: "Jesenice" },
+    geo: { city: "Jesenice", lat: 49.966, lng: 14.512 },
     geolocVerified: true,
     neighborhoodConfirmations: 2,
     isPremium: false,
