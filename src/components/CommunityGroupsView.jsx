@@ -9,6 +9,7 @@ import { extractListingPrice } from "./CompactListingRow.jsx";
 import FeedCard from "./FeedCard.jsx";
 import GroupFilterBar from "./GroupFilterBar.jsx";
 import GroupProposalCard from "./GroupProposalCard.jsx";
+import GroupProposalsSection from "./GroupProposalsSection.jsx";
 import PrimaryAddButton from "./PrimaryAddButton.jsx";
 import PhotoUpload from "./PhotoUpload.jsx";
 import DoodleEmptyState from "./doodle/DoodleEmptyState.jsx";
@@ -214,9 +215,17 @@ function CategoryTrunk({
   onVote,
   onDismiss,
 }) {
+  const { user } = useApp();
   const [open, setOpen] = useState(false);
   const expanded = forceOpen || open;
   const pendingCount = proposals.length;
+  const isMine = (p) => {
+    if (user?.id && (p.proposerId === user.id || p.proposer_id === user.id)) return true;
+    if (user?.name && p.proposer && String(p.proposer).trim() === String(user.name).trim()) {
+      return true;
+    }
+    return false;
+  };
 
   return (
     <article className={`pp-group-category-card ${expanded ? "pp-group-category-card--open" : ""}`}>
@@ -279,6 +288,7 @@ function CategoryTrunk({
                       proposal={p}
                       onVote={onVote}
                       onDismiss={onDismiss}
+                      mine={isMine(p)}
                     />
                   ))}
                 </div>
@@ -332,6 +342,7 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
     voteGroupProposal,
     dismissedGroupProposalIds,
     dismissGroupProposal,
+    restoreGroupProposal,
   } = useApp();
 
   const [search, setSearch] = useState("");
@@ -369,11 +380,14 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
   const visibleProposals = useMemo(
     () =>
       (groupProposals ?? []).filter(
-        (p) =>
-          !p.active &&
-          (p.status === "pending" || p.status === "v-priprave") &&
-          !dismissedGroupProposalIds?.includes(p.id)
+        (p) => !p.active && !dismissedGroupProposalIds?.includes(p.id)
       ),
+    [groupProposals, dismissedGroupProposalIds]
+  );
+
+  const dismissedProposals = useMemo(
+    () =>
+      (groupProposals ?? []).filter((p) => dismissedGroupProposalIds?.includes(p.id)),
     [groupProposals, dismissedGroupProposalIds]
   );
 
@@ -461,6 +475,18 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
 
     body = (
       <div className={`px-3 ${atTop ? "pt-1" : "py-1"} flex flex-col flex-1 min-h-0 gap-1.5 pb-14`}>
+        {(visibleProposals.length > 0 || dismissedProposals.length > 0) && (
+          <div className="shrink-0 pt-0.5">
+            <GroupProposalsSection
+              proposals={visibleProposals}
+              dismissedProposals={dismissedProposals}
+              onVote={voteGroupProposal}
+              onDismiss={dismissGroupProposal}
+              onRestore={restoreGroupProposal}
+              compactTitle
+            />
+          </div>
+        )}
         {myGroups.length === 0 ? (
           <DoodleEmptyState illustration="group" message="Zatím nejste členem žádné skupiny." />
         ) : (
@@ -520,6 +546,18 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
 
     body = (
       <div className={`px-3 ${atTop ? "pt-1" : "py-1"} overflow-y-auto flex-1 min-h-0 space-y-2 pb-14`}>
+        {(visibleProposals.length > 0 || dismissedProposals.length > 0) && (
+          <div className="pt-1 pb-1">
+            <GroupProposalsSection
+              proposals={visibleProposals}
+              dismissedProposals={dismissedProposals}
+              onVote={voteGroupProposal}
+              onDismiss={dismissGroupProposal}
+              onRestore={restoreGroupProposal}
+              compactTitle
+            />
+          </div>
+        )}
         {catsToShow.map((cat) => {
           const catProposals = visibleProposals.filter(
             (p) =>

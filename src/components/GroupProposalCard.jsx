@@ -1,15 +1,15 @@
 import { useUiPref } from "../hooks/useUiPref.js";
 import { proposalDetailsKey } from "../data/uiPreferences.js";
 
-export default function GroupProposalCard({ proposal, onVote, onDismiss }) {
+export default function GroupProposalCard({ proposal, onVote, onDismiss, mine = false }) {
   const detailsKey = proposalDetailsKey(proposal.id);
   const [expanded, setExpanded] = useUiPref(detailsKey, false);
   const pct = Math.min(100, (proposal.votes / proposal.required) * 100);
   const full = proposal.votes >= proposal.required;
 
   return (
-    <article className="pp-card p-3 max-w-md relative">
-      {onDismiss && (
+    <article className={`pp-card p-3 max-w-md relative ${mine ? "ring-1 ring-[#C5E0D6]" : ""}`}>
+      {onDismiss && !mine && (
         <button
           type="button"
           onClick={() => onDismiss(proposal.id)}
@@ -20,9 +20,16 @@ export default function GroupProposalCard({ proposal, onVote, onDismiss }) {
           ×
         </button>
       )}
-      <span className="inline-block text-[10px] font-bold uppercase text-[#1B4D3E] bg-[#E8F3EF] px-2 py-0.5 rounded-md">
-        V přípravě
-      </span>
+      <div className="flex items-center gap-1.5 flex-wrap pr-6">
+        <span className="inline-block text-[10px] font-bold uppercase text-[#1B4D3E] bg-[#E8F3EF] px-2 py-0.5 rounded-md">
+          V přípravě
+        </span>
+        {mine && (
+          <span className="inline-block text-[10px] font-bold uppercase text-[#3D7A68] bg-white border border-[#C5E0D6] px-2 py-0.5 rounded-md">
+            Váš návrh
+          </span>
+        )}
+      </div>
 
       <p className="text-sm font-bold text-stone-900 mt-2 leading-snug pr-6">{proposal.name}</p>
 
@@ -37,21 +44,33 @@ export default function GroupProposalCard({ proposal, onVote, onDismiss }) {
           {proposal.votes}/{proposal.required}
         </span>
       </div>
-      <p className="text-[10px] text-stone-400 mt-0.5">podpor od sousedů</p>
+      <p className="text-[10px] text-stone-400 mt-0.5">
+        {mine
+          ? full
+            ? "Dostatek podpor — skupina se aktivuje"
+            : `Ještě ${Math.max(0, proposal.required - proposal.votes)} podpor do aktivace`
+          : "podpor od sousedů"}
+      </p>
 
       <div className="mt-2.5 flex items-center gap-2">
-        <button
-          type="button"
-          disabled={proposal.voted || full}
-          onClick={() => onVote(proposal.id)}
-          className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-colors ${
-            proposal.voted || full
-              ? "bg-stone-100 text-stone-400 cursor-default"
-              : "bg-[#3D7A68] text-white hover:bg-[#2F6354]"
-          }`}
-        >
-          {proposal.voted ? "✓ Podpořeno" : "Podpořit vznik"}
-        </button>
+        {mine ? (
+          <div className="flex-1 py-2 rounded-xl text-xs font-semibold text-center bg-[#E8F3EF] text-[#1B4D3E]">
+            Čeká na sousedy
+          </div>
+        ) : (
+          <button
+            type="button"
+            disabled={proposal.voted || full}
+            onClick={() => onVote(proposal.id)}
+            className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-colors ${
+              proposal.voted || full
+                ? "bg-stone-100 text-stone-400 cursor-default"
+                : "bg-[#3D7A68] text-white hover:bg-[#2F6354]"
+            }`}
+          >
+            {proposal.voted ? "✓ Podpořeno" : "Podpořit vznik"}
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
@@ -75,7 +94,7 @@ export default function GroupProposalCard({ proposal, onVote, onDismiss }) {
               <span className="font-semibold text-stone-700">Účel:</span> {proposal.purpose}
             </p>
           )}
-          {proposal.proposer && (
+          {proposal.proposer && !mine && (
             <p className="text-[11px] text-stone-400">Navrhuje: {proposal.proposer}</p>
           )}
         </div>

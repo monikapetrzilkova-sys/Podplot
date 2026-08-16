@@ -562,6 +562,7 @@ export const PROFILE_DOODLE_ICONS = {
   card: DoodleCardIcon,
   car: DoodleCarIcon,
   promote: DoodleMegaphoneIcon,
+  groups: DoodleGroupsIcon,
 };
 
 /** Propagace — push / banner / topování katalogu */

@@ -2,6 +2,7 @@ import { useUiPref } from "../hooks/useUiPref.js";
 import { UI_KEYS } from "../data/uiPreferences.js";
 import GroupProposalCard from "./GroupProposalCard.jsx";
 import { DoodleListIcon } from "./doodle/doodleIcons.jsx";
+import { useApp } from "../context/AppContext.jsx";
 
 export default function GroupProposalsSection({
   proposals,
@@ -11,8 +12,15 @@ export default function GroupProposalsSection({
   onRestore,
   compactTitle = false,
 }) {
+  const { user } = useApp();
   const [minimized, , toggleMinimized] = useUiPref(UI_KEYS.GROUP_PROPOSALS_MINIMIZED, false);
   const [showDismissed, setShowDismissed] = useUiPref(UI_KEYS.GROUP_PROPOSALS_ARCHIVE_OPEN, false);
+
+  const isMine = (p) => {
+    if (user?.id && (p.proposerId === user.id || p.proposer_id === user.id)) return true;
+    if (user?.name && p.proposer && String(p.proposer).trim() === String(user.name).trim()) return true;
+    return false;
+  };
 
   if (proposals.length === 0 && dismissedProposals.length === 0) return null;
 
@@ -69,7 +77,13 @@ export default function GroupProposalsSection({
           </p>
           <div className="space-y-2">
             {proposals.map((p) => (
-              <GroupProposalCard key={p.id} proposal={p} onVote={onVote} onDismiss={onDismiss} />
+              <GroupProposalCard
+                key={p.id}
+                proposal={p}
+                onVote={onVote}
+                onDismiss={onDismiss}
+                mine={isMine(p)}
+              />
             ))}
           </div>
         </>

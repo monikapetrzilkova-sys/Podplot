@@ -19,6 +19,7 @@ import { isThingsModuleListing, isCommunityAnnouncementPost } from "../utils/thi
 import { MODULE_IDS } from "../data/moduleConfig.js";
 import ReportDetailModal from "./ReportDetailModal.jsx";
 import FeedCard from "./FeedCard.jsx";
+import GroupProposalCard from "./GroupProposalCard.jsx";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
 import AppPanelPortal from "./AppPanelPortal.jsx";
 import MyProfilesPanel, {
@@ -172,6 +173,8 @@ export default function MyProfile({ registerLegalBack } = {}) {
     myHelpOffers,
     lendingAvailability,
     viewAsNeighbor,
+    groupProposals,
+    setCreateGroupModalOpen,
   } = useApp();
 
   const isOfficeProfile = testRoleId === "urad";
@@ -675,6 +678,61 @@ export default function MyProfile({ registerLegalBack } = {}) {
             />
           </div>
         ) : null}
+      </section>
+
+      <section id="profile-my-group-proposals" className="pp-card p-4 mb-4 scroll-mt-4">
+        <ProfileSectionTitle icon={PROFILE_DOODLE_ICONS.groups}>Moje návrhy skupin</ProfileSectionTitle>
+        {(() => {
+          const mine = (groupProposals ?? []).filter((p) => {
+            if (p.active) return false;
+            if (user?.id && (p.proposerId === user.id || p.proposer_id === user.id)) return true;
+            if (user?.name && p.proposer && String(p.proposer).trim() === String(user.name).trim()) {
+              return true;
+            }
+            return false;
+          });
+          if (mine.length === 0) {
+            return (
+              <div className="space-y-3">
+                <p className="text-xs text-stone-500 leading-relaxed">
+                  Zatím jste nenavrhli žádnou skupinu. Návrh uvidíte tady s počtem podpor od sousedů.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeProfile?.();
+                    setCreateGroupModalOpen?.(true);
+                  }}
+                  className="w-full py-2.5 rounded-xl text-xs font-semibold bg-[#E8F3EF] text-[#1B4D3E] border border-[#C5E0D6]"
+                >
+                  Navrhnout novou skupinu
+                </button>
+              </div>
+            );
+          }
+          return (
+            <div className="space-y-3">
+              <p className="text-xs text-stone-500 leading-relaxed">
+                Sousedé návrh vidí na Domů a ve Skupinách. Po {mine[0]?.required ?? 5} podporách se skupina
+                aktivuje.
+              </p>
+              {mine.map((p) => (
+                <GroupProposalCard key={p.id} proposal={p} mine />
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  closeProfile?.();
+                  selectMainTab?.("neighbors");
+                  setPendingNeighborsSection?.("skupiny");
+                }}
+                className="w-full py-2 rounded-xl text-xs font-semibold text-[#3D7A68]"
+              >
+                Zobrazit ve Skupinách ›
+              </button>
+            </div>
+          );
+        })()}
       </section>
 
       <section className="pp-card p-4 mb-4">
