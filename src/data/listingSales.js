@@ -21,12 +21,46 @@ export function isSameAppUser(a, b) {
   return self.has(left) && self.has(right);
 }
 
+function normalizeTrustName(name = "") {
+  return String(name)
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+}
+
+function emailsMatch(a, b) {
+  const left = String(a ?? "").trim().toLowerCase();
+  const right = String(b ?? "").trim().toLowerCase();
+  return Boolean(left && right && left === right);
+}
+
 /** Je kandidát aktuálně přihlášený uživatel? (síť důvěry, zprávy…) */
 export function isCurrentUserRef(candidateId, user) {
   if (!candidateId || !user) return false;
   if (candidateId === "me") return true;
   if (isSameAppUser(candidateId, user.id)) return true;
   if (user.id && String(candidateId) === String(user.id)) return true;
+  return false;
+}
+
+/**
+ * Soused / profil = já sama (id, e-mail, nebo stejné jméno při chybějícím/stejném e-mailu).
+ * Při přepínání lokalit nesmí vlastní profil vyskakovat jako „nový soused“.
+ */
+export function isSelfNeighborCandidate(neighborOrId, user) {
+  if (!user || neighborOrId == null) return false;
+  if (typeof neighborOrId !== "object") {
+    return isCurrentUserRef(neighborOrId, user);
+  }
+  const n = neighborOrId;
+  if (n.id && isCurrentUserRef(n.id, user)) return true;
+  if (emailsMatch(n.email, user.email)) return true;
+  if (user.name && n.name && normalizeTrustName(user.name) === normalizeTrustName(n.name)) {
+    // Stejné jméno + žádný cizí e-mail → bereme jako sebe (duplicitní profil / drift id)
+    if (!n.email || !user.email || emailsMatch(n.email, user.email)) return true;
+  }
   return false;
 }
 

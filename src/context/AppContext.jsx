@@ -18,6 +18,7 @@ import {
   getActiveListingSale,
   isSameAppUser,
   isCurrentUserRef,
+  isSelfNeighborCandidate,
   LISTING_SALE_STATUS,
 } from "../data/listingSales.js";
 import {
@@ -604,16 +605,7 @@ export function AppProvider({ children }) {
       }
     };
 
-    const isSelfNeighbor = (neighborOrId) => {
-      const id = typeof neighborOrId === "object" ? neighborOrId?.id : neighborOrId;
-      if (isCurrentUserRef(id, user)) return true;
-      const email =
-        typeof neighborOrId === "object" ? neighborOrId?.email : null;
-      if (email && user.email && String(email).trim().toLowerCase() === String(user.email).trim().toLowerCase()) {
-        return true;
-      }
-      return false;
-    };
+    const isSelfNeighbor = (neighborOrId) => isSelfNeighborCandidate(neighborOrId, user);
 
     const mergeNeighborLists = (base, remote) => {
       const map = new Map();
@@ -631,7 +623,8 @@ export function AppProvider({ children }) {
                 ...prev,
                 ...n,
                 confirmations: Math.max(prev.confirmations ?? 0, n.confirmations ?? 0),
-                isNew: Boolean(n.isNew || prev.isNew),
+                // Už známý soused — při přepnutí lokality znovu neoznačovat jako nového
+                isNew: Boolean(prev.isNew),
               }
             : n
         );
@@ -704,6 +697,16 @@ export function AppProvider({ children }) {
       await ensureSupabase();
       if (cancelled) return;
 
+      // Synchronizuj obec v profilu s aktivním místem — bez sebe jako „nového souseda“
+      void upsertRemoteProfile({
+        ...user,
+        geo: {
+          ...(user.geo ?? {}),
+          city: municipality ?? user.geo?.city ?? user.location,
+        },
+        location: municipality ?? user.location,
+      });
+
       const localGiven = loadLocalConfirmations();
       const remoteGiven = await fetchMyNeighborConfirmations(user.id);
       if (cancelled) return;
@@ -735,6 +738,7 @@ export function AppProvider({ children }) {
         municipality,
         excludeId: user.id,
         excludeEmail: user.email,
+        excludeName: user.name,
       });
       if (cancelled) return;
 
@@ -797,7 +801,8 @@ export function AppProvider({ children }) {
           (n) =>
             !(
               n.actionType === "trust_network" &&
-              (isCurrentUserRef(n.neighborId, user) || n.neighborId === user.id)
+              (isSelfNeighborCandidate(n.neighborId, user) ||
+                isSelfNeighborCandidate({ id: n.neighborId, name: n.title }, user))
             )
         )
       );
@@ -1658,9 +1663,20 @@ export function AppProvider({ children }) {
       setMapRootKey((k) => k + 1);
       setNeighborsRootKey((k) => k + 1);
       clearModuleSelection();
+      // Nikdy neukazovat sebe jako nového souseda po přepnutí místa
+      setNeighbors((prev) => prev.filter((n) => !isSelfNeighborCandidate(n, user)));
+      setNotifications((prev) =>
+        prev.filter(
+          (n) =>
+            !(
+              n.actionType === "trust_network" &&
+              isSelfNeighborCandidate(n.neighborId, user)
+            )
+        )
+      );
       notifyLocationRemap(id, loc);
     },
-    [activeLocationId, locations, notifyLocationRemap, feedMainMode, clearModuleSelection]
+    [activeLocationId, locations, notifyLocationRemap, feedMainMode, clearModuleSelection, user]
   );
 
   const reportPost = useCallback(
@@ -1766,7 +1782,7 @@ export function AppProvider({ children }) {
 
   const confirmNeighbor = useCallback(
     (neighborId) => {
-      if (!neighborId || isCurrentUserRef(neighborId, user)) {
+      if (!neighborId || isSelfNeighborCandidate(neighborId, user) || isCurrentUserRef(neighborId, user)) {
         showToast("Sama sebe jako souseda potvrdit nemůžete.", "info");
         return;
       }
@@ -4802,12 +4818,19 @@ export function AppProvider({ children }) {
       setMapRootKey((k) => k + 1);
       setNeighborsRootKey((k) => k + 1);
       clearModuleSelection();
+      setNeighbors((prev) => prev.filter((n) => !isSelfNeighborCandidate(n, user)));
+      setNotifications((prev) =>
+        prev.filter(
+          (n) =>
+            !(n.actionType === "trust_network" && isSelfNeighborCandidate(n.neighborId, user))
+        )
+      );
       if (!silent) {
         const loc = locations.find((l) => l.id === locationId);
         notifyLocationRemap(locationId, loc);
       }
     },
-    [feedMainMode, clearModuleSelection, locations, notifyLocationRemap]
+    [feedMainMode, clearModuleSelection, locations, notifyLocationRemap, user]
   );
 
   const updateUserLocation = useCallback(
