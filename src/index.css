@@ -150,6 +150,28 @@ textarea {
   touch-action: manipulation;
 }
 
+/* Celá appka: žádný pinch-zoom stránky (iOS/Android) */
+html,
+body,
+#root {
+  touch-action: manipulation;
+}
+
+/* Google mapa: prohlížeč nezoomuje stránku — gesta bere Maps API */
+.pp-map-google-wrap,
+.pp-map-container--google,
+.pp-map-google-canvas,
+.pp-map-module-viewport .pp-map-container--google,
+.pp-map-module-viewport > .pp-map-google-wrap {
+  touch-action: none;
+}
+
+/* Mock / procentová mapa: posun ano, pinch stránky ne */
+.pp-map-container:not(.pp-map-container--google),
+.pp-map-reports-wrap .pp-map-container {
+  touch-action: pan-x pan-y;
+}
+
 @media (pointer: coarse) {
   .pp-back-fab {
     width: 3rem;
@@ -2659,7 +2681,7 @@ textarea {
 .subfilter-scroll {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
-  touch-action: pan-x pinch-zoom;
+  touch-action: pan-x;
   scrollbar-width: thin;
   max-width: 100%;
   min-width: 0;
@@ -2667,7 +2689,7 @@ textarea {
 }
 
 form .subfilter-scroll {
-  touch-action: pan-x pan-y pinch-zoom;
+  touch-action: pan-x pan-y;
 }
 
 .subfilter-scroll::-webkit-scrollbar {
