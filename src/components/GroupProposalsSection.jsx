@@ -65,7 +65,7 @@ export default function GroupProposalsSection({
       {proposals.length > 0 && (
         <>
           <p className="text-xs text-stone-500 mb-3">
-            Ověření sousedé mohou podpořit vznik komunity. Nezajímavé návrhy skryjte křížkem.
+            Ověření sousedé mohou podpořit vznik komunity přímo tady na Domů. Nezajímavé návrhy skryjte křížkem.
           </p>
           <div className="space-y-2">
             {proposals.map((p) => (

@@ -532,4 +532,191 @@ export async function subscribeRemotePosts(onInsert) {
   };
 }
 
-export { rowToFeedPost };
+function rowToGroupProposal(row, { voted = false } = {}) {
+  if (!row?.id || !row?.name) return null;
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description ?? "",
+    purpose: row.purpose ?? "",
+    clubCategory: row.club_category ?? null,
+    categoryId: row.club_category ?? null,
+    tag: row.tag ?? "Skupiny",
+    votes: Number(row.votes) || 0,
+    required: Number(row.required) || 5,
+    voted: Boolean(voted),
+    active: Boolean(row.active),
+    proposer: row.proposer_name ?? "Soused",
+    proposerId: row.proposer_id ?? null,
+    municipality: row.municipality ?? null,
+    status: row.status ?? "v-priprave",
+    createdAt: row.created_at ? Date.parse(row.created_at) || Date.now() : Date.now(),
+    sharedRemote: true,
+  };
+}
+
+/** Publikuj návrh skupiny do společné DB */
+export async function publishRemoteGroupProposal(proposal, user) {
+  if (!proposal?.id || !proposal?.name) return false;
+  const sb = await ensureSupabase();
+  if (!sb) return false;
+  if (user) await upsertRemoteProfile(user);
+
+  const { error } = await sb.from("group_proposals").upsert(
+    {
+      id: proposal.id,
+      name: proposal.name,
+      description: proposal.description ?? "",
+      purpose: proposal.purpose ?? "",
+      club_category: proposal.clubCategory ?? proposal.categoryId ?? null,
+      tag: proposal.tag ?? null,
+      votes: proposal.votes ?? 1,
+      required: proposal.required ?? 5,
+      proposer_id: user?.id ?? proposal.proposerId ?? null,
+      proposer_name: proposal.proposer ?? user?.name ?? "Soused",
+      municipality: proposal.municipality ?? user?.geo?.city ?? user?.location ?? null,
+      status: proposal.status ?? "v-priprave",
+      active: Boolean(proposal.active),
+      created_at: proposal.createdAt
+        ? new Date(proposal.createdAt).toISOString()
+        : new Date().toISOString(),
+    },
+    { onConflict: "id" }
+  );
+
+  if (error) {
+    console.warn("[supabase] publish group proposal", error.message);
+    return false;
+  }
+
+  const voterId = user?.id;
+  if (voterId) {
+    const { error: voteErr } = await sb.from("group_proposal_votes").upsert(
+      { proposal_id: proposal.id, voter_id: voterId },
+      { onConflict: "proposal_id,voter_id" }
+    );
+    if (voteErr) console.warn("[supabase] proposal self-vote", voteErr.message);
+  }
+  return true;
+}
+
+export async function fetchRemoteGroupProposals({
+  municipality = null,
+  currentUserId = null,
+} = {}) {
+  const sb = await ensureSupabase();
+  if (!sb) return [];
+
+  const { data, error } = await sb
+    .from("group_proposals")
+    .select("*")
+    .eq("active", false)
+    .order("created_at", { ascending: false })
+    .limit(80);
+
+  if (error) {
+    console.warn("[supabase] fetch group proposals", error.message);
+    return [];
+  }
+
+  let rows = data ?? [];
+  if (municipality) {
+    rows = rows.filter((r) => {
+      if (!r.municipality) return true;
+      return municipalitiesMatch(r.municipality, municipality);
+    });
+  }
+
+  let myVotes = new Set();
+  if (currentUserId && rows.length) {
+    const { data: votes, error: votesErr } = await sb
+      .from("group_proposal_votes")
+      .select("proposal_id")
+      .eq("voter_id", currentUserId)
+      .in(
+        "proposal_id",
+        rows.map((r) => r.id)
+      );
+    if (votesErr) console.warn("[supabase] fetch proposal votes", votesErr.message);
+    myVotes = new Set((votes ?? []).map((v) => v.proposal_id));
+  }
+
+  return rows
+    .map((row) => rowToGroupProposal(row, { voted: myVotes.has(row.id) }))
+    .filter(Boolean);
+}
+
+/** Podpora návrhu — zapíše hlas a zvýší počet (atomicky dle DB stavu). */
+export async function voteRemoteGroupProposal(proposalId, user) {
+  if (!proposalId || !user?.id) return null;
+  const sb = await ensureSupabase();
+  if (!sb) return null;
+
+  const { error: voteErr } = await sb.from("group_proposal_votes").insert({
+    proposal_id: proposalId,
+    voter_id: user.id,
+  });
+  if (voteErr) {
+    // už hlasoval
+    if (String(voteErr.code) === "23505" || /duplicate|unique/i.test(voteErr.message || "")) {
+      return { alreadyVoted: true };
+    }
+    console.warn("[supabase] vote group proposal", voteErr.message);
+    return null;
+  }
+
+  const { data: row, error: getErr } = await sb
+    .from("group_proposals")
+    .select("*")
+    .eq("id", proposalId)
+    .maybeSingle();
+  if (getErr || !row) {
+    console.warn("[supabase] read proposal after vote", getErr?.message);
+    return null;
+  }
+
+  const nextVotes = (Number(row.votes) || 0) + 1;
+  const activated = nextVotes >= (Number(row.required) || 5);
+  const { data: updated, error: updErr } = await sb
+    .from("group_proposals")
+    .update({
+      votes: nextVotes,
+      active: activated,
+      status: activated ? "aktivni" : row.status,
+    })
+    .eq("id", proposalId)
+    .select("*")
+    .maybeSingle();
+
+  if (updErr) {
+    console.warn("[supabase] update proposal votes", updErr.message);
+    return null;
+  }
+
+  return rowToGroupProposal(updated ?? { ...row, votes: nextVotes, active: activated }, {
+    voted: true,
+  });
+}
+
+/** Realtime nové / aktualizované návrhy skupin */
+export async function subscribeRemoteGroupProposals(onChange) {
+  const sb = await ensureSupabase();
+  if (!sb || typeof onChange !== "function") return () => {};
+
+  const channel = sb
+    .channel("podplot-group-proposals")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "group_proposals" },
+      (payload) => {
+        if (payload?.new) onChange(payload.new, payload.eventType);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    sb.removeChannel(channel);
+  };
+}
+
+export { rowToFeedPost, rowToGroupProposal };

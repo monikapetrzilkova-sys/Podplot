@@ -123,6 +123,11 @@ import {
   fetchReceivedNeighborConfirmations,
   subscribeReceivedNeighborConfirmations,
   publishNeighborConfirmation,
+  publishRemoteGroupProposal,
+  fetchRemoteGroupProposals,
+  voteRemoteGroupProposal,
+  subscribeRemoteGroupProposals,
+  rowToGroupProposal,
 } from "../data/communityApi.js";
 import {
   fetchRemoteMessages,
@@ -2002,65 +2007,94 @@ export function AppProvider({ children }) {
     ({ name, description, purpose, clubCategory = null }) => {
       const id = `prop-${Date.now()}`;
       const cat = clubCategory ? getClubCategory(clubCategory) : null;
-      setGroupProposals((prev) => [
+      const proposal = {
+        id,
+        name,
+        description,
+        purpose,
+        clubCategory: clubCategory || null,
+        categoryId: clubCategory || null,
+        tag: cat?.label ?? "Skupiny",
+        votes: 1,
+        required: CLUB_VOTES_REQUIRED,
+        voted: true,
+        active: false,
+        proposer: user?.name ?? "Vy",
+        proposerId: user?.id ?? null,
+        municipality: activeLocation?.municipality ?? user?.geo?.city ?? user?.location ?? null,
+        status: "v-priprave",
+        createdAt: Date.now(),
+      };
+      setGroupProposals((prev) => [proposal, ...prev]);
+      void publishRemoteGroupProposal(proposal, user);
+      setNotifications((prev) => [
         {
-          id,
-          name,
-          description,
-          purpose,
-          clubCategory: clubCategory || null,
-          categoryId: clubCategory || null,
-          tag: cat?.label ?? "Skupiny",
-          votes: 1,
-          required: CLUB_VOTES_REQUIRED,
-          voted: true,
-          active: false,
-          proposer: user?.name ?? "Vy",
-          status: "v-priprave",
+          id: `n-group-prop-${id}`,
+          type: "blue",
+          title: `Návrh skupiny: ${name}`,
+          body: "Sousedé na Domů můžou návrh podpořit — po 5 hlasech se skupina aktivuje.",
+          read: false,
+          time: "právě teď",
+          actionType: "group_proposal",
+          proposalId: id,
         },
-        ...prev,
+        ...prev.filter((n) => n.id !== `n-group-prop-${id}`),
       ]);
-      showToast(`Skupina „${name}" je V přípravě — 1 / ${CLUB_VOTES_REQUIRED} podpor.`);
+      showToast(`Návrh „${name}" je na Domů — 1 / ${CLUB_VOTES_REQUIRED} podpor. Sousedé ho můžou podpořit.`);
     },
-    [showToast, user]
+    [showToast, user, activeLocation?.municipality]
   );
 
+  const activateGroupFromProposal = useCallback((activated) => {
+    if (!activated?.name) return;
+    const groupId =
+      activated.name
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .slice(0, 24) || `skupina-${Date.now()}`;
+
+    setCommunityGroups((groups) => {
+      if (groups.some((g) => g.id === groupId || g.name === activated.name)) return groups;
+      return [
+        ...groups,
+        {
+          id: groupId,
+          name: activated.name,
+          emoji: "👥",
+          members: activated.votes ?? 1,
+          clubCategory: activated.clubCategory || activated.categoryId || null,
+          description: activated.description,
+        },
+      ];
+    });
+  }, []);
+
   const voteGroupProposal = useCallback(
-    (id) => {
+    async (id) => {
+      const local = groupProposals.find((p) => p.id === id);
+      if (!local || local.voted || local.votes >= local.required) return;
+
+      const remoteResult = await voteRemoteGroupProposal(id, user);
+
       setGroupProposals((prev) => {
         let activated = null;
         const updated = prev.map((p) => {
           if (p.id !== id || p.voted || p.votes >= p.required) return p;
-          const votes = p.votes + 1;
-          const active = votes >= p.required;
+          const votes =
+            remoteResult && !remoteResult.alreadyVoted
+              ? Math.max(p.votes + 1, remoteResult.votes ?? p.votes + 1)
+              : p.votes + 1;
+          const active =
+            Boolean(remoteResult?.active) || votes >= p.required;
           if (active) activated = { ...p, votes, voted: true, active: true };
           return { ...p, votes, voted: true, active: active || p.active };
         });
 
         if (activated) {
-          const groupId = activated.name
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-|-$/g, "")
-            .slice(0, 24) || `skupina-${Date.now()}`;
-
-          setCommunityGroups((groups) => {
-            if (groups.some((g) => g.id === groupId)) return groups;
-            return [
-              ...groups,
-              {
-                id: groupId,
-                name: activated.name,
-                emoji: "👥",
-                members: 1,
-                clubCategory: activated.clubCategory || activated.categoryId || null,
-                description: activated.description,
-              },
-            ];
-          });
-
+          activateGroupFromProposal(activated);
           setTimeout(
             () =>
               showToast(
@@ -2068,19 +2102,126 @@ export function AppProvider({ children }) {
               ),
             0
           );
-
           return updated.filter((p) => p.id !== id);
         }
 
         const proposal = prev.find((p) => p.id === id);
         if (proposal && !proposal.voted && proposal.votes < proposal.required) {
-          showToast(`Podpora přičtena — ${proposal.votes + 1} / ${proposal.required}.`);
+          const nextVotes =
+            remoteResult && !remoteResult.alreadyVoted
+              ? Math.max(proposal.votes + 1, remoteResult.votes ?? proposal.votes + 1)
+              : proposal.votes + 1;
+          showToast(`Podpora přičtena — ${nextVotes} / ${proposal.required}.`);
         }
         return updated;
       });
     },
-    [showToast]
+    [showToast, groupProposals, user, activateGroupFromProposal]
   );
+
+  // Návrhy skupin ze Supabase — ostatní sousedé vidí a podporují na Domů
+  useEffect(() => {
+    if (!user?.id) return undefined;
+    let cancelled = false;
+    let unsubscribe = () => {};
+
+    const mergeProposals = (incoming) => {
+      if (!incoming?.length) return;
+      setGroupProposals((prev) => {
+        const byId = new Map(prev.map((p) => [p.id, p]));
+        for (const p of incoming) {
+          if (p.active) {
+            byId.delete(p.id);
+            activateGroupFromProposal(p);
+            continue;
+          }
+          const existing = byId.get(p.id);
+          byId.set(p.id, {
+            ...existing,
+            ...p,
+            voted: Boolean(existing?.voted || p.voted),
+            votes: Math.max(existing?.votes ?? 0, p.votes ?? 0),
+          });
+        }
+        return [...byId.values()].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+      });
+    };
+
+    (async () => {
+      await ensureSupabase();
+      if (cancelled) return;
+      const remote = await fetchRemoteGroupProposals({
+        municipality: activeLocation?.municipality ?? user.geo?.city ?? null,
+        currentUserId: user.id,
+      });
+      if (cancelled) return;
+      mergeProposals(remote);
+
+      unsubscribe = await subscribeRemoteGroupProposals((row, eventType) => {
+        const activeMun = activeLocation?.municipality ?? user.geo?.city ?? null;
+        if (activeMun && row.municipality && !municipalitiesMatch(row.municipality, activeMun)) {
+          return;
+        }
+        const proposal = rowToGroupProposal(row, {
+          voted: row.proposer_id === user.id,
+        });
+        if (!proposal) return;
+
+        if (proposal.active || eventType === "DELETE") {
+          setGroupProposals((prev) => prev.filter((p) => p.id !== proposal.id));
+          if (proposal.active) activateGroupFromProposal(proposal);
+          return;
+        }
+
+        setGroupProposals((prev) => {
+          if (prev.some((p) => p.id === proposal.id)) {
+            return prev.map((p) =>
+              p.id === proposal.id
+                ? {
+                    ...p,
+                    ...proposal,
+                    voted: p.voted || proposal.voted,
+                    votes: Math.max(p.votes, proposal.votes),
+                  }
+                : p
+            );
+          }
+          return [proposal, ...prev];
+        });
+
+        if (eventType === "INSERT" && proposal.proposerId !== user.id) {
+          setNotifications((prev) => {
+            const id = `n-group-prop-${proposal.id}`;
+            if (prev.some((n) => n.id === id)) return prev;
+            return [
+              {
+                id,
+                type: "blue",
+                title: `Nový návrh skupiny: ${proposal.name}`,
+                body: "Na Domů můžete podpořit vznik — po 5 hlasech se skupina aktivuje.",
+                read: false,
+                time: "právě teď",
+                actionType: "group_proposal",
+                proposalId: proposal.id,
+              },
+              ...prev,
+            ];
+          });
+          setToast({
+            message: `Nový návrh skupiny „${proposal.name}" — podpořte na Domů.`,
+            type: "info",
+            locationId: null,
+          });
+          window.setTimeout(() => setToast(null), 3500);
+        }
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [user?.id, activeLocation?.municipality, user?.geo?.city, user, activateGroupFromProposal]);
 
   const addSecurityReport = useCallback(
     ({ type, body, urgent = false, urgentScope = URGENT_SCOPE.LOCAL, mapPos = null, alsoAsPrompt = false, photos = [], validUntil = null, reportCategoryId = null, lossKind = null }) => {
