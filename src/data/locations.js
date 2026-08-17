@@ -38,6 +38,55 @@ export const USER_LOCATIONS = [
   },
 ];
 
+/** Demo Práce/Chata — nesmí se propisovat cizím uživatelům. */
+export function isStockDemoExtraLocation(loc) {
+  if (!loc?.id || (loc.id !== "prace" && loc.id !== "chata")) return false;
+  const demo = USER_LOCATIONS.find((d) => d.id === loc.id);
+  if (!demo) return false;
+  const sameAddress = String(loc.address ?? "").trim() === String(demo.address).trim();
+  const sameMun = String(loc.municipality ?? "").trim() === String(demo.municipality).trim();
+  const sameCoords =
+    Number(loc.lat) === Number(demo.lat) && Number(loc.lng) === Number(demo.lng);
+  return sameAddress || (sameMun && sameCoords);
+}
+
+/** Jen místa, která uživatel opravdu má (bez stock demo Práce/Chata). */
+export function sanitizeUserLocations(locations, homeFallback = null) {
+  const cleaned = (locations ?? []).filter((loc) => loc?.id && !isStockDemoExtraLocation(loc));
+  if (cleaned.length) return cleaned;
+  if (homeFallback?.id) return [homeFallback];
+  return [
+    {
+      ...USER_LOCATIONS[0],
+      label: "Domov",
+    },
+  ];
+}
+
+/** Domov z registrace / profilu — bez cizích demo lokalit. */
+export function buildHomeLocation({
+  address,
+  municipality,
+  shortLabel,
+  lat,
+  lng,
+  radiusKm = DEFAULT_RADIUS_KM,
+} = {}) {
+  const mun = String(municipality || shortLabel || "Obec").trim() || "Obec";
+  const label = String(shortLabel || mun).trim() || mun;
+  return {
+    id: "domov",
+    emoji: "🏠",
+    label: "Domov",
+    shortLabel: label,
+    municipality: mun,
+    address: String(address || mun).trim() || mun,
+    lat: lat ?? null,
+    lng: lng ?? null,
+    radiusKm,
+  };
+}
+
 export const GROUPS_BY_LOCATION = {
   domov: [
     {

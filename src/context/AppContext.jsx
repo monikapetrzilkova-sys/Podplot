@@ -6,7 +6,7 @@ import { calculateTopCost, getTopPlan, canTopCategory } from "../data/pricing.js
 import { getAccountType, normalizeAccountType, resolveBusinessSubtype } from "../data/accountTypes.js";
 import { CLUB_VOTES_REQUIRED, getClubCategory } from "../data/clubCategories.js";
 import { inferFeedClassification, getDefaultSubfilter } from "../data/feedNavigation.js";
-import { USER_LOCATIONS, getGroupsForLocation, DEFAULT_RADIUS_KM } from "../data/locations.js";
+import { USER_LOCATIONS, getGroupsForLocation, DEFAULT_RADIUS_KM, sanitizeUserLocations, buildHomeLocation } from "../data/locations.js";
 import { filterByRadius, filterByMunicipality, filterByActiveLocation, municipalitiesMatch } from "../data/geoFilter.js";
 import { FEED_POSTS, LENDING_ITEMS } from "../data/mockData.js";
 import { AREA_NEWS, getAreaNewsForLocation, getActiveCrisis } from "../data/areaNews.js";
@@ -401,12 +401,11 @@ export function AppProvider({ children }) {
       ? "domov"
       : loadUserSession()?.activeLocationId ?? "domov";
     const sessionLocs = SKIP_REGISTRATION
-      ? null
-      : loadUserSession()?.locations;
-    const locs = Array.isArray(sessionLocs) && sessionLocs.length ? sessionLocs : DEFAULT_LOCATIONS;
-    const loc = locs.find((l) => l.id === locId) ?? locs[0];
+      ? DEFAULT_LOCATIONS
+      : sanitizeUserLocations(loadUserSession()?.locations);
+    const loc = sessionLocs.find((l) => l.id === locId) ?? sessionLocs[0];
     return mergeCommunityGroups(
-      getGroupsForLocation(locId),
+      getGroupsForLocation(loc?.id || locId),
       filterUserGroupsForMunicipality(loadStoredUserGroups(), loc?.municipality)
     );
   });
@@ -457,7 +456,10 @@ export function AppProvider({ children }) {
   const [locations, setLocations] = useState(() => {
     if (SKIP_REGISTRATION) return DEFAULT_LOCATIONS;
     const saved = loadUserSession()?.locations;
-    return Array.isArray(saved) && saved.length ? saved : DEFAULT_LOCATIONS;
+    if (Array.isArray(saved) && saved.length) {
+      return sanitizeUserLocations(saved);
+    }
+    return [];
   });
   const [activeLocationId, setActiveLocationId] = useState(() => {
     if (SKIP_REGISTRATION) return "domov";
@@ -540,6 +542,34 @@ export function AppProvider({ children }) {
       ownedService,
     });
   }, [user, locations, activeLocationId, credits, userProfileIds, testRoleId, servicesCatalog]);
+
+  // Odstraní stock demo Práce/Chata u reálných účtů (starší session)
+  useEffect(() => {
+    if (SKIP_REGISTRATION || !user?.id) return;
+    setLocations((prev) => {
+      const homeFallback = buildHomeLocation({
+        address: user.address,
+        municipality: user.geo?.city || user.location,
+        shortLabel: user.geo?.city || user.location,
+        lat: user.geo?.lat,
+        lng: user.geo?.lng,
+      });
+      const next = sanitizeUserLocations(prev, homeFallback);
+      if (
+        next.length === prev.length &&
+        next.every((loc, i) => loc.id === prev[i]?.id && loc.address === prev[i]?.address)
+      ) {
+        return prev;
+      }
+      return next;
+    });
+  }, [user?.id, user?.address, user?.geo?.city, user?.geo?.lat, user?.geo?.lng, user?.location]);
+
+  useEffect(() => {
+    if (SKIP_REGISTRATION || !user?.id || !locations.length) return;
+    if (locations.some((l) => l.id === activeLocationId)) return;
+    setActiveLocationId(locations[0].id);
+  }, [user?.id, locations, activeLocationId]);
 
   // Obnova hesla z e-mailového odkazu (Supabase Auth)
   useEffect(() => {
@@ -1630,16 +1660,13 @@ export function AppProvider({ children }) {
         setUserProfileIds(["soused"]);
       }
       setLocations([
-        {
-          ...USER_LOCATIONS[0],
+        buildHomeLocation({
           address,
           municipality,
           shortLabel,
           lat: homeLat,
           lng: homeLng,
-        },
-        USER_LOCATIONS[1],
-        USER_LOCATIONS[2],
+        }),
       ]);
       setActiveLocationId("domov");
       setCommunityGroups(
@@ -1746,10 +1773,22 @@ export function AppProvider({ children }) {
 
       setUser(nextUser);
       if (saved?.user?.id === nextUser.id && Array.isArray(saved.locations) && saved.locations.length) {
-        setLocations(saved.locations);
-        const locId = saved.activeLocationId || "domov";
+        const cleaned = sanitizeUserLocations(
+          saved.locations,
+          buildHomeLocation({
+            address: nextUser.address,
+            municipality: nextUser.geo?.city || nextUser.location,
+            shortLabel: nextUser.geo?.city || nextUser.location,
+            lat: nextUser.geo?.lat,
+            lng: nextUser.geo?.lng,
+          })
+        );
+        setLocations(cleaned);
+        const locId = cleaned.some((l) => l.id === saved.activeLocationId)
+          ? saved.activeLocationId
+          : cleaned[0]?.id || "domov";
         setActiveLocationId(locId);
-        const loc = saved.locations.find((l) => l.id === locId) ?? saved.locations[0];
+        const loc = cleaned.find((l) => l.id === locId) ?? cleaned[0];
         setCommunityGroups(
           mergeCommunityGroups(
             getGroupsForLocation(locId),
@@ -1760,19 +1799,15 @@ export function AppProvider({ children }) {
         if (Array.isArray(saved.userProfileIds)) setUserProfileIds(saved.userProfileIds);
         if (saved.testRoleId) setTestRoleId(saved.testRoleId);
       } else {
-        const municipality = nextUser.geo?.city || nextUser.location || "Jesenice";
-        setLocations([
-          {
-            ...USER_LOCATIONS[0],
-            address: nextUser.address || USER_LOCATIONS[0].address,
-            municipality,
-            shortLabel: municipality,
-            lat: nextUser.geo?.lat ?? USER_LOCATIONS[0].lat,
-            lng: nextUser.geo?.lng ?? USER_LOCATIONS[0].lng,
-          },
-          USER_LOCATIONS[1],
-          USER_LOCATIONS[2],
-        ]);
+        const municipality = nextUser.geo?.city || nextUser.location || "Obec";
+        const home = buildHomeLocation({
+          address: nextUser.address || municipality,
+          municipality,
+          shortLabel: municipality,
+          lat: nextUser.geo?.lat ?? null,
+          lng: nextUser.geo?.lng ?? null,
+        });
+        setLocations([home]);
         setActiveLocationId("domov");
         setCommunityGroups(
           mergeCommunityGroups(
