@@ -13,7 +13,6 @@ import {
 } from "../data/mapRadiusSettings.js";
 import { filterEventsForMapView } from "../data/geoFilter.js";
 import ReportMenu, { EVENT_REPORT_REASONS } from "../components/ReportMenu.jsx";
-import { getNeighborCategoryAccent } from "../utils/categoryAccents.js";
 import CompactSearchToggle from "../components/CompactSearchToggle.jsx";
 import { displayCreatorLabel } from "../data/accountTypes.js";
 
@@ -38,7 +37,6 @@ function EventListRow({ event, selected, onShowOnMap, onOpen, onJoin, joined, on
       id={event.id}
       selected={selected}
       onShowOnMap={event.mapPos ? onShowOnMap : undefined}
-      accentColor={getNeighborCategoryAccent("akce")}
     >
       <div className="flex items-center gap-2">
         <button type="button" onClick={() => onOpen(event.id)} className="flex-1 min-w-0 text-left">

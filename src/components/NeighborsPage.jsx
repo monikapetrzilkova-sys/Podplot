@@ -183,9 +183,8 @@ export default function NeighborsPage() {
         <>
           <div className="tab-header-container px-3 pt-2 pb-0 shrink-0 w-full">
             {activeSection === "akce" ? (
-              <div className="flex items-center gap-2 w-full py-1">
+              <div className="flex items-center gap-2 w-full py-0.5">
                 <SectionBackButton onClick={handleBack} />
-                <p className="text-sm font-bold text-stone-900">Akce</p>
               </div>
             ) : (
               <SmartSectionBar

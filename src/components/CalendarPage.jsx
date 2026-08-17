@@ -2,7 +2,6 @@ import { useApp } from "../context/AppContext.jsx";
 import EventsModule from "../modules/EventsModule.jsx";
 import CompactAccordion from "./CompactAccordion.jsx";
 import { UI_KEYS } from "../data/uiPreferences.js";
-import { DoodleEventsIntro } from "./doodle/doodleIllustrations.jsx";
 import { DoodleCalendarIcon, DoodleCameraIcon } from "./doodle/doodleIcons.jsx";
 
 function formatAttendeePreview(attendees = [], formatPersonName) {
@@ -108,7 +107,7 @@ export default function CalendarPage({ embedded = false, hideTopFilters = false 
     <div
       className={
         embedded
-          ? "pp-events-page flex flex-col flex-1 min-h-0 overflow-hidden px-3 pb-3"
+          ? "pp-events-page flex flex-col flex-1 min-h-0 overflow-hidden px-2 pb-2"
           : "pp-page px-4 py-4 pb-8"
       }
     >
@@ -142,29 +141,20 @@ export default function CalendarPage({ embedded = false, hideTopFilters = false 
         </div>
       )}
 
-      {embedded && (
-        <div className="pp-events-meta-row shrink-0 mb-1">
-          {unreadCalendarGalleryCount > 0 ? (
-            <button
-              type="button"
-              onClick={openUnreadGalleryPhotos}
-              className="pp-text-meta font-semibold text-[#3D7A68] text-left hover:underline min-w-0"
-            >
-              {unreadCalendarGalleryCount}{" "}
-              {unreadCalendarGalleryCount === 1
-                ? "nová fotka"
-                : unreadCalendarGalleryCount < 5
-                  ? "nové fotky"
-                  : "nových fotek"}
-            </button>
-          ) : (
-            <span className="min-w-0" />
-          )}
-          <div className="pp-events-doodle" aria-hidden>
-            <DoodleEventsIntro className="w-[7.5rem] h-9" />
-          </div>
-        </div>
-      )}
+      {embedded && unreadCalendarGalleryCount > 0 ? (
+        <button
+          type="button"
+          onClick={openUnreadGalleryPhotos}
+          className="pp-text-meta font-semibold text-[#3D7A68] text-left hover:underline shrink-0 mb-1 px-0.5"
+        >
+          {unreadCalendarGalleryCount}{" "}
+          {unreadCalendarGalleryCount === 1
+            ? "nová fotka"
+            : unreadCalendarGalleryCount < 5
+              ? "nové fotky"
+              : "nových fotek"}
+        </button>
+      ) : null}
 
       <EventsModule
         compact
@@ -175,7 +165,7 @@ export default function CalendarPage({ embedded = false, hideTopFilters = false 
       />
 
       {pastMine.length > 0 && (
-        <section className={`shrink-0 ${embedded ? "mt-2 overflow-y-auto max-h-[28vh]" : "mt-5"}`}>
+        <section className={`shrink-0 ${embedded ? "mt-1.5 overflow-y-auto max-h-[28vh]" : "mt-5"}`}>
           <CompactAccordion
             prefKey={UI_KEYS.EVENTS_PAST_ARCHIVE_OPEN}
             summary={

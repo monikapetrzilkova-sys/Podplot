@@ -1220,10 +1220,10 @@ body,
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 6px;
+  margin-bottom: 4px;
   min-width: 0;
-  min-height: 76px;
+  min-height: 0;
 }
 
 .pp-events-view-toggle {
@@ -1233,33 +1233,18 @@ body,
   margin-left: auto;
 }
 
-/* Doodle vpravo nad Seznam / Mapa / Kalendář — celý viditelný v řádku */
-.pp-events-meta-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: 2.25rem;
-  overflow: visible;
+.pp-events-page .pp-events-calendar-legend {
+  padding: 0 2px 0;
+  gap: 8px 12px;
+  margin-bottom: 2px;
 }
 
-.pp-events-doodle {
-  flex-shrink: 0;
-  margin-left: auto;
-  margin-right: 2.25rem;
-  color: #2d6a4f;
-  line-height: 0;
-  pointer-events: none;
+.pp-events-page .pp-events-calendar-nav {
+  margin-bottom: 2px;
 }
 
-.pp-events-doodle .pp-doodle-characters {
-  display: block;
-  overflow: visible;
-}
-
-.pp-events-doodle .pp-doodle-characters path,
-.pp-events-doodle .pp-doodle-characters circle {
-  stroke-width: 2;
+.pp-events-page .pp-events-calendar-daylist-title {
+  margin: 0 0 4px;
 }
 
 .pp-map-radius-chip-wrap {
