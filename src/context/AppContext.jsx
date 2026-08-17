@@ -80,10 +80,11 @@ import {
 } from "../data/personDisplay.js";
 import {
   formatCzechEventSchedule,
+  formatCzechEventScheduleFromParts,
   eventDateSortValue,
   isEventPast,
   nowCzechTime,
-  normalizeCzechTime,
+  combineDateAndTime,
 } from "../data/czechDateTime.js";
 import { EVENT_REPORT_DELETE_THRESHOLD } from "../data/eventFormatting.js";
 import { calcServiceFee, getMonetizationPlan } from "../data/monetization.js";
@@ -5565,13 +5566,16 @@ export function AppProvider({ children }) {
       if (!user) return;
       const cat = INTEREST_OPTIONS.find((i) => i.id === category);
       const id = `ev-${Date.now()}`;
-      const time = timeTbd ? "12:00" : normalizeCzechTime(eventTime) || "12:00";
-      const startsAt = eventDate ? new Date(`${eventDate}T${time}`).toISOString() : null;
+      const startsAt = eventDate
+        ? combineDateAndTime(eventDate, eventTime, timeTbd)
+        : null;
       const locationLabel = address?.trim() || activeLocation?.address || activeLocation?.shortLabel;
       const newEv = {
         id,
         title: title.trim(),
-        date: formatCzechEventSchedule(startsAt, timeTbd),
+        date: eventDate
+          ? formatCzechEventScheduleFromParts(eventDate, eventTime, timeTbd)
+          : formatCzechEventSchedule(startsAt, timeTbd),
         dateSort: eventDateSortValue(startsAt),
         startsAt,
         timeTbd,

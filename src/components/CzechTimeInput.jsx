@@ -1,6 +1,6 @@
 import { normalizeCzechTime } from "../data/czechDateTime.js";
 
-/** Textové pole ve 24hodinovém formátu HH:mm (bez AM/PM) */
+/** Textové pole ve 24hodinovém formátu HH:mm (bez AM/PM, vhodné pro iPhone). */
 export default function CzechTimeInput({
   id,
   value = "",
@@ -9,11 +9,16 @@ export default function CzechTimeInput({
   required = false,
   className = "",
   placeholder = "17:00",
-  "aria-label": ariaLabel = "Čas",
+  "aria-label": ariaLabel = "Čas (24 hodin)",
 }) {
+  const formatAsYouType = (raw) => {
+    const digits = String(raw ?? "").replace(/\D/g, "").slice(0, 4);
+    if (digits.length <= 2) return digits;
+    return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+  };
+
   const handleChange = (e) => {
-    const next = e.target.value.replace(/[^\d:]/g, "").slice(0, 5);
-    onChange?.(next);
+    onChange?.(formatAsYouType(e.target.value));
   };
 
   const handleBlur = () => {
@@ -31,7 +36,7 @@ export default function CzechTimeInput({
       id={id}
       type="text"
       inputMode="numeric"
-      lang="cs"
+      lang="cs-CZ"
       autoComplete="off"
       placeholder={placeholder}
       value={value}
@@ -41,7 +46,7 @@ export default function CzechTimeInput({
       required={required}
       aria-label={ariaLabel}
       title="Čas ve formátu 24 hodin, např. 17:00"
-      pattern="^([01]?\d|2[0-3]):[0-5]\d$"
+      pattern="^([01]\d|2[0-3]):[0-5]\d$"
       className={className}
     />
   );

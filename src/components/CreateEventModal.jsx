@@ -188,7 +188,7 @@ export default function CreateEventModal() {
                 required={!form.timeTbd}
                 className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm disabled:bg-stone-100 disabled:text-stone-400"
               />
-              <p className="text-[10px] text-stone-400 mt-1">24 hodin · např. 17:00</p>
+              <p className="text-[10px] text-stone-400 mt-1">24 hodin · napište např. 1700 nebo 17:00</p>
             </div>
           </div>
 

@@ -2,6 +2,7 @@
 
 export {
   formatCzechEventSchedule as formatEventDateLabel,
+  formatCzechEventScheduleFromParts,
   eventDateSortValue,
   isEventPast,
   combineDateAndTime,

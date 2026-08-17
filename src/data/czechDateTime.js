@@ -3,9 +3,29 @@
 export const CS_LOCALE = "cs-CZ";
 export const TIME_TBD_LABEL = "čas upřesníme";
 
+/** Lokální kalendářní datum z YYYY-MM-DD (bez UTC posunu). */
+export function parseLocalDateParts(dateValue) {
+  if (!dateValue) return null;
+  const m = String(dateValue).trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  const day = Number(m[3]);
+  if (!year || month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return { year, month, day };
+}
+
 export function parseDateInput(value) {
   if (!value) return null;
-  const d = value instanceof Date ? value : new Date(value);
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+  const asLocalDate = parseLocalDateParts(value);
+  if (asLocalDate) {
+    const d = new Date(asLocalDate.year, asLocalDate.month - 1, asLocalDate.day, 12, 0, 0, 0);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  const d = new Date(value);
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
@@ -119,11 +139,28 @@ export function isEventPast(event, now = new Date()) {
   return new Date(event.startsAt).getTime() < now.getTime();
 }
 
+/** Spojí lokální datum + čas (HH:mm) bez UTC posunu Safari/iOS. */
 export function combineDateAndTime(dateValue, timeValue, timeTbd = false) {
-  if (!dateValue) return null;
-  const time = timeTbd ? "12:00" : timeValue || "12:00";
-  const iso = new Date(`${dateValue}T${time}`).toISOString();
-  return Number.isNaN(new Date(iso).getTime()) ? null : iso;
+  const parts = parseLocalDateParts(dateValue);
+  if (!parts) return null;
+  const normalized = timeTbd ? "12:00" : normalizeCzechTime(timeValue) || "12:00";
+  if (!normalized) return null;
+  const [hour, minute] = normalized.split(":").map(Number);
+  const dt = new Date(parts.year, parts.month - 1, parts.day, hour, minute, 0, 0);
+  if (Number.isNaN(dt.getTime())) return null;
+  return dt.toISOString();
+}
+
+/** Popisek termínu přímo z formuláře (nezávislé na timezone parse). */
+export function formatCzechEventScheduleFromParts(dateValue, timeValue, timeTbd = false) {
+  const parts = parseLocalDateParts(dateValue);
+  if (!parts) return "Termín upřesníme";
+  const d = new Date(parts.year, parts.month - 1, parts.day, 12, 0, 0, 0);
+  const datePart = formatCzechDate(d, { weekday: true, year: false });
+  if (timeTbd) return `${datePart} · ${TIME_TBD_LABEL}`;
+  const time = normalizeCzechTime(timeValue);
+  if (!time) return `${datePart} · ${TIME_TBD_LABEL}`;
+  return `${datePart} · ${time}`;
 }
 
 /** @deprecated alias */
