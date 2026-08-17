@@ -4,8 +4,7 @@ import { getGroupPosts } from "../data/groups.js";
 import { getMyMemberGroups } from "../data/locations.js";
 import { CLUB_CATEGORIES } from "../data/clubCategories.js";
 import { buildGroupHierarchy, countPendingProposalsForCategory } from "../utils/groupHierarchy.js";
-import LiveFeedCard, { getNeighborSectionBadge } from "./LiveFeedCard.jsx";
-import { extractListingPrice } from "./CompactListingRow.jsx";
+import LiveFeedCard from "./LiveFeedCard.jsx";
 import FeedCard from "./FeedCard.jsx";
 import GroupFilterBar from "./GroupFilterBar.jsx";
 import GroupProposalCard from "./GroupProposalCard.jsx";
@@ -30,19 +29,18 @@ function matchesQuery(query, ...parts) {
 }
 
 function GroupPostRow({ post, groupName, expanded, onToggle }) {
-  const resolvedGroupName = groupName ?? post.groupName;
-  const sectionBadge = getNeighborSectionBadge("skupiny");
+  const resolvedGroupName = groupName ?? post.groupName ?? "Skupina";
 
   return (
     <LiveFeedCard
       itemId={`group-post-${post.id}`}
-      badge={sectionBadge.label}
-      badgeClassName={sectionBadge.className}
+      badge={resolvedGroupName}
+      badgeClassName="pp-badge--skupina"
       title={post.title}
       authorLabel={displayCreatorLabel(post.author, post.accountType, { mine: post.mine })}
-      preview={post.body || resolvedGroupName}
+      preview={post.body}
       editedItem={post}
-      priceLabel={extractListingPrice(post)}
+      priceLabel={null}
       expanded={expanded}
       onToggle={onToggle}
     >

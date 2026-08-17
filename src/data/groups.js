@@ -1,6 +1,7 @@
-/** Skupiny, nástěnky a propojení s kategoriemi inzerátů */
+/** Skupiny, nástěnky a propojení — nástěnka je na seznámení a tipy, ne na tržiště */
 
 import { MY_GROUP_IDS_BY_LOCATION } from "./locations.js";
+import { isThingsModuleListing } from "../utils/thingsModule.js";
 
 export const GROUPS = [
   {
@@ -42,6 +43,7 @@ export const GROUPS = [
 
 export const MY_GROUP_IDS = MY_GROUP_IDS_BY_LOCATION.domov;
 
+/** Doplňkové kategorie jen pro starší create flow — nástěnka používá „Přidat příspěvek“. */
 export const GROUP_EXTRA_CATEGORIES = {
   maminky: [
     { id: "hlidani", label: "Hlídání", hint: "Nabídnu hlídání dětí", type: "Hlídání" },
@@ -51,92 +53,107 @@ export const GROUP_EXTRA_CATEGORIES = {
   pejskari: [
     { id: "nabidka", label: "Nabízím", hint: "Venčení, hlídání psa", type: "Nabízím" },
   ],
-  zahradkari: [
-    { id: "pujcovna", label: "Půjčovna", hint: "Nářadí ke zapůjčení", type: "Půjčovna", priceField: true, priceLabel: "Cena (Kč / den)", isLending: true },
-  ],
+  zahradkari: [],
 };
 
-/** Příspěvky na nástěnkách skupin */
+/** Příspěvky na nástěnkách — tipy a seznámení, ne inzeráty Věcí */
 export const GROUP_POSTS = [
   {
     id: "gp1",
     groupId: "maminky",
-    categoryId: "daruji",
+    groupName: "Maminky",
+    categoryId: "diskuse",
     role: "soused",
     author: "Lucie H.",
     initials: "LH",
-    title: "Daruji balíček chlapeckého oblečení 62–74",
-    body: "Celkem asi 15 ks — body, trička, tepláky. Uklidím do tašky.",
+    title: "Ahoj, jsme noví v ulici — máte tip na dětské hřiště?",
+    body: "Stěhujeme se s dvouletým synem. Kde se u vás nejčastěji scházíte s dětmi?",
     meta: "před 2 h · Maminky",
-    type: "Daruji",
-    photos: ["https://images.unsplash.com/photo-1519238263530-9822fec6b934?w=400&h=300&fit=crop"],
+    type: "Příspěvek",
   },
   {
     id: "gp2",
     groupId: "maminky",
-    categoryId: "prodam",
+    groupName: "Maminky",
+    categoryId: "diskuse",
     role: "soused",
     author: "Katka M.",
     initials: "KM",
-    title: "Prodám kočárek Britax — málo jetý",
-    body: "Včetně pláštěnky a adaptéru. Možnost vyzkoušet u nás.",
-    meta: "500 Kč · před 5 h · Maminky",
-    type: "Prodám",
-    topped: true,
-    topPlanId: "7d",
-    topDays: 7,
-    listingPrice: 500,
-    photos: ["https://images.unsplash.com/photo-1515488042361-ee00e945bfa0?w=400&h=300&fit=crop"],
+    title: "Společné odpoledne na hřišti v sobotu?",
+    body: "Kdyby měl někdo chuť, můžeme dát sraz kolem 15:00 u pískoviště.",
+    meta: "před 5 h · Maminky",
+    type: "Příspěvek",
   },
   {
     id: "gp3",
     groupId: "maminky",
-    categoryId: "hlidani",
-    role: "soused",
-    author: "Monika V.",
-    initials: "MV",
-    title: "Nabízím hlídání večer o víkendu",
-    body: "Zkušená maminka dvou dětí, okruh do 500 m od hřiště.",
-    meta: "200 Kč/h · před 1 dnem · Maminky",
-    type: "Hlídání",
-  },
-  {
-    id: "gp4",
-    groupId: "maminky",
+    groupName: "Maminky",
     categoryId: "krouzek",
     role: "instituce",
     author: "Kulturní dům Lhotka",
     initials: "KD",
     title: "Dětský taneční kroužek — volná místa od září",
-    body: "Pro děti 4–7 let, úterý 15:30. První lekce zdarma.",
+    body: "Pro děti 4–7 let, úterý 15:30. První lekce zdarma — napište do komentáře.",
     meta: "800 m · Maminky",
     type: "Kroužek",
   },
   {
-    id: "gp5",
+    id: "gp4",
     groupId: "pejskari",
-    categoryId: "nabidka",
+    groupName: "Pejskaři",
+    categoryId: "diskuse",
     role: "soused",
     author: "Honza P.",
     initials: "HP",
-    title: "Venčení psů ráno před prací",
-    body: "Projdu se psem v okolí parku, 30–45 min. Mám zkušenost s většími plemeny.",
-    meta: "150 Kč · před 3 h · Pejskaři",
-    type: "Nabízím",
+    title: "Nový pejskař v okolí — tipy na venčení?",
+    body: "Máme labradora, rádi bychom věděli, kde se dají potkat ostatní pejskaři ráno.",
+    meta: "před 3 h · Pejskaři",
+    type: "Příspěvek",
   },
   {
-    id: "gp6",
+    id: "gp5",
     groupId: "zahradkari",
-    categoryId: "daruji",
+    groupName: "Zahrádkáři",
+    categoryId: "diskuse",
     role: "soused",
     author: "Franta Z.",
     initials: "FZ",
-    title: "Daruji sazenice rajčat a paprik",
-    body: "Mám přebytek ze skleníku — cca 20 sazenic.",
+    title: "Kdo pěstuje rajčata — jaká odrůda se vám osvědčila?",
+    body: "Letos zkouším nové semínka, rád si porovnám zkušenosti se sousedy.",
     meta: "před 6 h · Zahrádkáři",
-    type: "Daruji",
+    type: "Příspěvek",
+  },
+  {
+    id: "gp6",
+    groupId: "sport",
+    groupName: "Sport",
+    categoryId: "diskuse",
+    role: "soused",
+    author: "Petr D.",
+    initials: "PD",
+    title: "Ranní běh kolem rybníka — přidá se někdo?",
+    body: "Úterý a čtvrtek v 6:30, tempo pohodové. Stačí napsat.",
+    meta: "před 1 dnem · Sport",
+    type: "Příspěvek",
   },
 ];
+
+/** Inzeráty Věcí nepatří na nástěnku skupiny */
+export function isGroupWallPost(post) {
+  if (!post) return false;
+  if (isThingsModuleListing(post)) return false;
+  const type = String(post.type ?? "").toLowerCase();
+  if (/prodám|prodam|daruji|půjčovna|pujcovna|sháním|shanim/.test(type)) return false;
+  return true;
+}
+
+export function resolveGroupName(post, communityGroups = []) {
+  if (post?.groupName) return post.groupName;
+  const fromStatic = getGroup(post?.groupId);
+  if (fromStatic?.name) return fromStatic.name;
+  const fromLive = communityGroups.find((g) => g.id === post?.groupId);
+  return fromLive?.name ?? "Skupina";
+}
 
 export function getGroup(id) {
   return GROUPS.find((g) => g.id === id);
@@ -148,12 +165,14 @@ export function getMyGroups(locationId = "domov") {
 }
 
 export function getGroupPosts(groupId, userGroupPosts = []) {
-  const mock = GROUP_POSTS.filter((p) => p.groupId === groupId);
-  const user = userGroupPosts.filter((p) => p.groupId === groupId);
+  const mock = GROUP_POSTS.filter((p) => p.groupId === groupId && isGroupWallPost(p));
+  const user = userGroupPosts.filter((p) => p.groupId === groupId && isGroupWallPost(p));
   return [...user, ...mock];
 }
 
 export function getRecentGroupPosts(userGroupPosts = [], limit = 5) {
-  const all = [...userGroupPosts, ...GROUP_POSTS].filter((p) => MY_GROUP_IDS.includes(p.groupId));
+  const all = [...userGroupPosts, ...GROUP_POSTS].filter(
+    (p) => MY_GROUP_IDS.includes(p.groupId) && isGroupWallPost(p)
+  );
   return all.slice(0, limit);
 }

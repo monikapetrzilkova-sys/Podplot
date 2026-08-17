@@ -104,20 +104,20 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
 
     const skupiny = getRecentGroupPosts(userGroupPosts, PER_CATEGORY).map((post) => {
       const group = getGroup(post.groupId) ?? communityGroups.find((g) => g.id === post.groupId);
-      const sectionBadge = getNeighborSectionBadge("skupiny");
+      const groupName = post.groupName ?? group?.name ?? "Skupina";
       return {
         id: `group-${post.id}`,
         section: "skupiny",
         title: post.title,
-        badge: sectionBadge.label,
-        badgeClassName: sectionBadge.className,
+        badge: groupName,
+        badgeClassName: "pp-badge--skupina",
         preview: post.body,
         authorLabel: displayCreatorLabel(post.author, post.accountType, { mine: post.mine }),
-        meta: group?.name ?? post.author,
-        post,
+        meta: groupName,
+        post: { ...post, groupName },
         mine: Boolean(post.mine),
         createdAt: post.createdAt ?? 0,
-        price: extractListingPrice(post),
+        price: null,
       };
     });
 

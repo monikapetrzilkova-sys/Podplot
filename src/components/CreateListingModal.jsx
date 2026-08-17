@@ -63,7 +63,8 @@ export default function CreateListingModal() {
     setGroupId(nextGroupId);
     setCategoryId((prev) => {
       const cats = getCategoriesForGroup(nextGroupId || null);
-      return prev && cats.some((c) => c.id === prev) ? prev : "";
+      if (prev && cats.some((c) => c.id === prev)) return prev;
+      return nextGroupId ? "diskuse" : "";
     });
     setTopPlanId("");
   }, []);
@@ -94,7 +95,12 @@ export default function CreateListingModal() {
     const initialGroup = createGroupId ?? "";
     const preset = resolvePresetCategory(createCategory, feedMainMode, feedSubFilter);
     const cats = getCategoriesForGroup(initialGroup || null);
-    const validCategory = preset && cats.some((c) => c.id === preset) ? preset : "";
+    const validCategory =
+      preset && cats.some((c) => c.id === preset)
+        ? preset
+        : initialGroup
+          ? "diskuse"
+          : "";
     setGroupId(initialGroup);
     setCategoryId(validCategory);
     const presetFromMatrix = thingsLendingSubCategory
@@ -251,9 +257,9 @@ export default function CreateListingModal() {
                   </button>
                 ))}
               </div>
-              {groupId === "maminky" && (
+              {groupId && (
                 <p className="text-[11px] text-stone-500 mt-2">
-                  Tip: oblečení darovat/prodat, hlídání, kroužek nebo školka.
+                  Ve skupině jde o tipy a seznámení — prodej a darování patří do Věcí.
                 </p>
               )}
             </fieldset>

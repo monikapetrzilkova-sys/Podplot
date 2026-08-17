@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { CURRENT_USER } from "../data/mockData.js";
 import { getCategory } from "../data/listingCategories.js";
-import { getGroup } from "../data/groups.js";
+import { getGroup, isGroupWallPost } from "../data/groups.js";
 import { calculateTopCost, getTopPlan, canTopCategory } from "../data/pricing.js";
 import { getAccountType, normalizeAccountType, resolveBusinessSubtype } from "../data/accountTypes.js";
 import { CLUB_VOTES_REQUIRED, getClubCategory } from "../data/clubCategories.js";
@@ -4033,10 +4033,10 @@ export function AppProvider({ children }) {
         post = applyTop(post, topPlanId);
       }
 
-      // Vždy na domovský feed; při skupině i na nástěnku skupiny
+      // Věci (prodej/dar/půjčovna) patří do Sousedé → Věci, ne na nástěnku skupiny
       setUserPosts((prev) => [post, ...prev]);
       void publishRemotePost(post, user);
-      if (groupId) {
+      if (groupId && isGroupWallPost(post)) {
         setUserGroupPosts((prev) => [post, ...prev]);
       }
 
@@ -4076,12 +4076,14 @@ export function AppProvider({ children }) {
       closeCreate();
       const plan = topPlanId ? getTopPlan(topPlanId) : null;
       const topMsg = plan ? ` Boost ${plan.days} dní (${topCost} Kč).` : "";
-      if (groupId) {
+      if (groupId && isGroupWallPost(post)) {
         showToast(`Příspěvek je na nástěnce ${group.name}.${topMsg}`);
-        setFeedMainMode("skupiny");
-        setFeedSubFilter(groupId);
-        setShowDiscoveryWall(false);
-        setActiveTab("home");
+        setPendingNeighborsSection("skupiny");
+        setActiveTab("neighbors");
+      } else if (groupId) {
+        showToast((cat?.isLending ? "Nabídka je ve Věcech." : "Inzerát je ve Věcech.") + topMsg);
+        setPendingNeighborsSection("veci");
+        setActiveTab("neighbors");
       } else {
         showToast((cat?.isLending ? "Nabídka ve zdi i půjčovně." : "Inzerát zveřejněn.") + topMsg);
         setFeedMainMode("zbozi");
@@ -4090,7 +4092,17 @@ export function AppProvider({ children }) {
         setActiveTab("home");
       }
     },
-    [closeCreate, showToast, payAmount, user, activeLocationId, activeLocation, showProfileHint, isB2BWorkMode]
+    [
+      closeCreate,
+      showToast,
+      payAmount,
+      user,
+      activeLocationId,
+      activeLocation,
+      showProfileHint,
+      isB2BWorkMode,
+      setPendingNeighborsSection,
+    ]
   );
 
   const rentItem = useCallback(

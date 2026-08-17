@@ -30,28 +30,32 @@ export const FEED_FILTERS = [
   { id: "pujcovna", label: "Půjčovna" },
 ];
 
+/** Nástěnka skupiny = seznámení a tipy, ne tržiště Věcí */
+const GROUP_WALL_BASE = {
+  id: "diskuse",
+  label: "Příspěvek",
+  hint: "Otázka, tip nebo seznámení se sousedy",
+  type: "Příspěvek",
+};
+
 export function getCategoriesForGroup(groupId) {
   if (!groupId) return BASE_CATEGORIES;
   const extras = GROUP_EXTRA_CATEGORIES[groupId] ?? [];
-  const merged = [...BASE_CATEGORIES];
+  const merged = [GROUP_WALL_BASE];
   for (const extra of extras) {
     if (!merged.some((c) => c.id === extra.id)) merged.push(extra);
-  }
-  if (groupId === "maminky") {
-    return merged.filter((c) => ["daruji", "prodam", "shanim", "hlidani", "krouzek", "skolka"].includes(c.id));
-  }
-  if (groupId === "pejskari") {
-    return merged.filter((c) => ["daruji", "prodam", "nabidka", "shanim"].includes(c.id));
-  }
-  if (groupId === "zahradkari") {
-    return merged.filter((c) => ["daruji", "prodam", "shanim", "pujcovna"].includes(c.id));
   }
   return merged;
 }
 
 export function getCategory(id, groupId = null) {
-  const all = getCategoriesForGroup(groupId);
-  return all.find((c) => c.id === id) ?? BASE_CATEGORIES.find((c) => c.id === id);
+  if (!id) return null;
+  if (groupId) {
+    const inGroup = getCategoriesForGroup(groupId).find((c) => c.id === id);
+    if (inGroup) return inGroup;
+  }
+  if (id === GROUP_WALL_BASE.id) return GROUP_WALL_BASE;
+  return BASE_CATEGORIES.find((c) => c.id === id) ?? null;
 }
 
 export function postMatchesCategory(post, categoryId) {

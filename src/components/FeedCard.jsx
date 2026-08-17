@@ -317,7 +317,7 @@ export default function FeedCard({ post, compact = false, detailsOnly = false })
       {group && !post.mine && !post.topped && !isReported && !isReserved && (
         <div className="px-4 py-1.5 bg-stone-100 border-b border-stone-200">
           <span className="text-[10px] font-bold uppercase tracking-wider text-stone-600">
-            Skupina · {group}
+            {group}
           </span>
         </div>
       )}
