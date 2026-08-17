@@ -17,22 +17,22 @@ const STEPS = [
       {
         icon: IconTabHome,
         label: "Domů",
-        text: "Novinky od sousedů.",
+        text: "Novinky v sousedství — co se právě děje u vás.",
       },
       {
         icon: IconTabMap,
         label: "Okolí",
-        text: "Mapa — hlášení a místa. Tlačítka Nahlásit / Přidat místo.",
+        text: "Mapa. V Hlášeních najdete třeba ztracenou čepici nebo nahlásíte výpadek proudu. V Místech restaurace, doktory a otevírací dobu — a když něco chybí, můžete to doplnit.",
       },
       {
         icon: IconTabNeighbors,
         label: "Sousedé",
-        text: "Věci, výpomoc, skupiny a akce — čtyři dlaždice.",
+        text: "Věci na prodej, darování nebo půjčení, výpomoc, skupiny a akce.",
       },
       {
         icon: IconTabCatalog,
         label: "Služby",
-        text: "Řemeslníci a firmy v okolí.",
+        text: "Řemeslníci, uklízečky a další, kteří k vám dojedou a nabídnou své služby.",
       },
     ],
   },
