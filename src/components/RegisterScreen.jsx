@@ -201,7 +201,7 @@ export default function RegisterScreen() {
         address: fullAddress,
         accountType,
         businessSubtype: accountType === "podnik" ? businessSubtype : null,
-        geo: { city: city.trim() },
+        geo: { city: city.trim(), street: street.trim(), houseNumber: houseNumber.trim(), psc: pscDigits(psc) },
         allowPublicAreaLabel,
         publicAreaLabel: allowPublicAreaLabel ? publicAreaLabel.trim() : "",
         serviceHomeGroup: isMobilniCraft ? serviceHomeGroup : null,

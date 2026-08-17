@@ -6,7 +6,7 @@ import { calculateTopCost, getTopPlan, canTopCategory } from "../data/pricing.js
 import { getAccountType, normalizeAccountType, resolveBusinessSubtype } from "../data/accountTypes.js";
 import { CLUB_VOTES_REQUIRED, getClubCategory } from "../data/clubCategories.js";
 import { inferFeedClassification, getDefaultSubfilter } from "../data/feedNavigation.js";
-import { USER_LOCATIONS, getGroupsForLocation, DEFAULT_RADIUS_KM, sanitizeUserLocations, buildHomeLocation } from "../data/locations.js";
+import { USER_LOCATIONS, getGroupsForLocation, DEFAULT_RADIUS_KM, sanitizeUserLocations, buildHomeLocation, isStockJeseniceCoords } from "../data/locations.js";
 import { filterByRadius, filterByMunicipality, filterByActiveLocation, municipalitiesMatch } from "../data/geoFilter.js";
 import { FEED_POSTS, LENDING_ITEMS } from "../data/mockData.js";
 import { AREA_NEWS, getAreaNewsForLocation, getActiveCrisis } from "../data/areaNews.js";
@@ -26,7 +26,7 @@ import {
 } from "../data/communityGroups.js";
 import { clampMapPos, posToDistanceLabel } from "../data/mapData.js";
 import { pscDigits } from "../data/addressValidation.js";
-import { fetchAddressSuggestions } from "../data/addressAutocomplete.js";
+import { fetchAddressSuggestions, geocodeCzechAddress } from "../data/addressAutocomplete.js";
 import { isValidMapPos } from "../utils/reportPinUtils.js";
 import { latLngToMapPos } from "../utils/geoCoordinates.js";
 import {
@@ -570,6 +570,53 @@ export function AppProvider({ children }) {
     if (locations.some((l) => l.id === activeLocationId)) return;
     setActiveLocationId(locations[0].id);
   }, [user?.id, locations, activeLocationId]);
+
+  // Domov má text jiné obce, ale souřadnice pořád demo Jesenice → přemapovat
+  useEffect(() => {
+    if (SKIP_REGISTRATION || !user?.id) return undefined;
+    let cancelled = false;
+
+    (async () => {
+      const targets = (locations ?? []).filter((loc) => {
+        const mun = loc?.municipality || loc?.shortLabel || "";
+        if (!mun || municipalitiesMatch(mun, "Jesenice")) return false;
+        return isStockJeseniceCoords(loc.lat, loc.lng) || loc.lat == null || loc.lng == null;
+      });
+      if (!targets.length) return;
+
+      for (const loc of targets) {
+        const geocoded = await geocodeCzechAddress({
+          city: loc.municipality || loc.shortLabel,
+          fullAddress: loc.address,
+        });
+        if (cancelled || !geocoded) continue;
+        setLocations((prev) =>
+          prev.map((l) =>
+            l.id === loc.id ? { ...l, lat: geocoded.lat, lng: geocoded.lng } : l
+          )
+        );
+        if (loc.id === "domov") {
+          setUser((u) =>
+            u
+              ? {
+                  ...u,
+                  geo: {
+                    ...(u.geo ?? {}),
+                    city: loc.municipality || u.geo?.city || u.location,
+                    lat: geocoded.lat,
+                    lng: geocoded.lng,
+                  },
+                }
+              : u
+          );
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, locations]);
 
   // Obnova hesla z e-mailového odkazu (Supabase Auth)
   useEffect(() => {
@@ -1608,19 +1655,30 @@ export function AppProvider({ children }) {
       let nextLat = geo?.lat ?? null;
       let nextLng = geo?.lng ?? null;
       if (nextLat == null || nextLng == null) {
-        try {
-          const results = await fetchAddressSuggestions(address);
-          const hit = results.find((r) => r?.lat != null && r?.lon != null) ?? results[0];
-          if (hit?.lat != null && hit?.lon != null) {
-            nextLat = hit.lat;
-            nextLng = hit.lon;
-          }
-        } catch {
-          /* výchozí souřadnice Domova */
+        const geocoded = await geocodeCzechAddress({
+          street: geo?.street,
+          houseNumber: geo?.houseNumber,
+          psc: geo?.psc,
+          city: municipality,
+          fullAddress: address,
+        });
+        if (geocoded) {
+          nextLat = geocoded.lat;
+          nextLng = geocoded.lng;
         }
       }
-      const homeLat = nextLat ?? USER_LOCATIONS[0].lat;
-      const homeLng = nextLng ?? USER_LOCATIONS[0].lng;
+      // Nikdy nenasazovat Jesenici, když uživatel zadal jinou obec
+      const useJeseniceFallback =
+        nextLat == null &&
+        (!municipality || municipalitiesMatch(municipality, "Jesenice"));
+      const homeLat = nextLat ?? (useJeseniceFallback ? USER_LOCATIONS[0].lat : null);
+      const homeLng = nextLng ?? (useJeseniceFallback ? USER_LOCATIONS[0].lng : null);
+      if (homeLat == null || homeLng == null) {
+        showToast(
+          "Adresu jsme uložili, ale mapu se nepodařilo přesně zaměřit. Upravte Domov v profilu.",
+          "info"
+        );
+      }
 
       const nextUser = {
         id: userId,
@@ -5350,34 +5408,32 @@ export function AppProvider({ children }) {
 
   const resolveLocationCoords = useCallback(
     async ({ street, houseNumber, psc, city, lat, lng, fallbackLat, fallbackLng }) => {
-      const pscNorm = pscDigits(psc);
-      let nextLat = lat;
-      let nextLng = lng;
-      if (nextLat == null || nextLng == null) {
-        const queries = [
-          `${street} ${houseNumber}, ${pscNorm} ${city}`.trim(),
-          `${street} ${houseNumber}, ${city}`.trim(),
-          `${pscNorm} ${city}`.trim(),
-          city.trim(),
-        ].filter((q) => q.length >= 3);
-
-        for (const query of queries) {
-          try {
-            const results = await fetchAddressSuggestions(query);
-            const hit = results.find((r) => r?.lat != null && r?.lon != null) ?? results[0];
-            if (hit?.lat != null && hit?.lon != null) {
-              nextLat = hit.lat;
-              nextLng = hit.lon;
-              break;
-            }
-          } catch {
-            /* zkus další dotaz */
-          }
-        }
+      if (lat != null && lng != null) {
+        return { lat, lng };
       }
+      const geocoded = await geocodeCzechAddress({
+        street,
+        houseNumber,
+        psc,
+        city,
+        fullAddress: [street, houseNumber, psc, city].filter(Boolean).join(" "),
+      });
+      if (geocoded) {
+        return { lat: geocoded.lat, lng: geocoded.lng };
+      }
+      const cityName = String(city ?? "").trim();
+      const stockFallback =
+        fallbackLat != null &&
+        fallbackLng != null &&
+        cityName &&
+        !municipalitiesMatch(cityName, "Jesenice") &&
+        isStockJeseniceCoords(fallbackLat, fallbackLng);
+      const safeLat = stockFallback ? null : fallbackLat;
+      const safeLng = stockFallback ? null : fallbackLng;
+      const allowJesenice = !cityName || municipalitiesMatch(cityName, "Jesenice");
       return {
-        lat: nextLat ?? fallbackLat ?? USER_LOCATIONS[0].lat,
-        lng: nextLng ?? fallbackLng ?? USER_LOCATIONS[0].lng,
+        lat: safeLat ?? (allowJesenice ? USER_LOCATIONS[0].lat : null),
+        lng: safeLng ?? (allowJesenice ? USER_LOCATIONS[0].lng : null),
       };
     },
     []

@@ -38,7 +38,16 @@ export const USER_LOCATIONS = [
   },
 ];
 
-/** Demo Práce/Chata — nesmí se propisovat cizím uživatelům. */
+export const STOCK_JESENICE_COORDS = { lat: 49.966, lng: 14.512 };
+
+/** Souřadnice stále ukazují na demo Domov (Jesenice), i když obec je jiná. */
+export function isStockJeseniceCoords(lat, lng, epsilon = 0.02) {
+  if (lat == null || lng == null) return false;
+  return (
+    Math.abs(Number(lat) - STOCK_JESENICE_COORDS.lat) < epsilon &&
+    Math.abs(Number(lng) - STOCK_JESENICE_COORDS.lng) < epsilon
+  );
+}
 export function isStockDemoExtraLocation(loc) {
   if (!loc?.id || (loc.id !== "prace" && loc.id !== "chata")) return false;
   const demo = USER_LOCATIONS.find((d) => d.id === loc.id);

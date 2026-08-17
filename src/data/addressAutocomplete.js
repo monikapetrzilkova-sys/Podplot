@@ -2,6 +2,8 @@
  * Našeptávání adres pro celou ČR — OpenStreetMap přes server Podplot.
  */
 
+import { municipalitiesMatch } from "./geoFilter.js";
+
 const MIN_QUERY_LENGTH = 3;
 const DEBOUNCE_MS = 450;
 
@@ -106,6 +108,66 @@ export async function fetchAddressSuggestions(query) {
     return dedupeItems(data.items.map(mapNominatimItem).filter(Boolean)).slice(0, 8);
   }
   return [];
+}
+
+function pickBestGeocodeHit(results, preferredCity = null) {
+  const withCoords = (results ?? []).filter((r) => r?.lat != null && (r?.lon != null || r?.lng != null));
+  if (!withCoords.length) return null;
+  const city = String(preferredCity ?? "").trim();
+  if (city) {
+    const match = withCoords.find((r) => {
+      if (r.city && municipalitiesMatch(r.city, city)) return true;
+      const label = `${r.formatted || ""} ${r.label || ""}`.toLowerCase();
+      return label.includes(city.toLowerCase());
+    });
+    if (match) return match;
+  }
+  return withCoords[0];
+}
+
+/**
+ * Geokóduje českou adresu / obec. Nikdy nevrací Jesenici „naslepo“.
+ * @returns {{ lat: number, lng: number, city?: string } | null}
+ */
+export async function geocodeCzechAddress({
+  street = "",
+  houseNumber = "",
+  psc = "",
+  city = "",
+  fullAddress = "",
+} = {}) {
+  const cityTrim = String(city || "").trim();
+  const pscTrim = String(psc || "").replace(/\s/g, "");
+  const queries = [
+    String(fullAddress || "").trim(),
+    `${street} ${houseNumber}, ${pscTrim} ${cityTrim}`.replace(/\s+/g, " ").trim(),
+    `${street} ${houseNumber}, ${cityTrim}`.replace(/\s+/g, " ").trim(),
+    `${pscTrim} ${cityTrim}`.trim(),
+    cityTrim ? `${cityTrim}, Česko` : "",
+    cityTrim,
+  ].filter((q) => q && q.replace(/\s/g, "").length >= 3);
+
+  const seen = new Set();
+  for (const query of queries) {
+    const key = query.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    try {
+      const results = await fetchAddressSuggestions(query);
+      const hit = pickBestGeocodeHit(results, cityTrim);
+      if (hit?.lat == null) continue;
+      const lng = hit.lon ?? hit.lng;
+      if (lng == null) continue;
+      return {
+        lat: Number(hit.lat),
+        lng: Number(lng),
+        city: hit.city || cityTrim || null,
+      };
+    } catch {
+      /* další dotaz */
+    }
+  }
+  return null;
 }
 
 export function createAddressAutocomplete(onResults, onLoading, onError) {
