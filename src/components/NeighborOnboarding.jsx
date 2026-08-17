@@ -21,7 +21,7 @@ const STEPS = [
       {
         icon: IconTabNeighbors,
         label: "Sousedé",
-        text: "Věci, výpomoc, skupiny a akce.",
+        text: "Čtyři dlaždice: věci, výpomoc, skupiny a akce.",
       },
     ],
   },

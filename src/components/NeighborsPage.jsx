@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
-import { NEIGHBORS_TILES } from "./NeighborsGrid.jsx";
-import NeighborsLatestFeed from "./NeighborsLatestFeed.jsx";
+import NeighborsGrid, { NEIGHBORS_TILES } from "./NeighborsGrid.jsx";
 import SmartSectionBar from "./SmartSectionBar.jsx";
 import ThingsModule from "../modules/ThingsModule.jsx";
 import NeighborHelp from "./NeighborHelp.jsx";
@@ -72,6 +71,22 @@ function NeighborsContent({ section, helpFilter, onHelpFilterChange }) {
   return null;
 }
 
+function NeighborsHub({ onSelectSection }) {
+  const { activeLocation } = useApp();
+  const place = activeLocation?.municipality || activeLocation?.shortLabel || "okolí";
+
+  return (
+    <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-3 pb-8">
+      <h1 className="text-lg font-bold text-stone-900 leading-snug">Sousedé</h1>
+      <p className="text-xs text-stone-500 mt-0.5 mb-4 leading-relaxed">
+        Čtyři věci od lidí v {place}. Novinky jsou na Domů.
+      </p>
+
+      <NeighborsGrid activeId={null} onSelect={onSelectSection} />
+    </div>
+  );
+}
+
 export default function NeighborsPage() {
   const {
     selectFeedSubFilter,
@@ -127,11 +142,12 @@ export default function NeighborsPage() {
   ]);
 
   const skupinySubs = useMemo(
-    () => getSkupinySubfilters(communityGroups).map((s) => ({
-      id: s.id,
-      label: s.label,
-      shortLabel: s.shortLabel ?? s.label,
-    })),
+    () =>
+      getSkupinySubfilters(communityGroups).map((s) => ({
+        id: s.id,
+        label: s.label,
+        shortLabel: s.shortLabel ?? s.label,
+      })),
     [communityGroups]
   );
 
@@ -179,32 +195,31 @@ export default function NeighborsPage() {
 
   return (
     <div className="pp-page pp-page--doodle flex flex-col min-h-full bg-abstract-organic has-deco">
-      <div className="tab-header-container px-3 pt-2 pb-0 shrink-0 w-full">
-        <SmartSectionBar
-          mode={activeSection ? "sub" : "main"}
-          mainItems={NEIGHBORS_MAIN}
-          subItems={subItems}
-          activeId={activeSection ? subActiveId : null}
-          onSelectMain={handleSelectMain}
-          onSelectSub={handleSelectSub}
-          onBack={handleBack}
-          ariaLabel={activeSection ? "Podkategorie" : "Sousedé — sekce"}
-          prominent
-          fit
-          className="w-full"
-        />
-      </div>
-
       {activeSection ? (
-        <NeighborsContent
-          section={activeSection}
-          helpFilter={helpFilter}
-          onHelpFilterChange={setHelpFilter}
-        />
+        <>
+          <div className="tab-header-container px-3 pt-2 pb-0 shrink-0 w-full">
+            <SmartSectionBar
+              mode="sub"
+              mainItems={NEIGHBORS_MAIN}
+              subItems={subItems}
+              activeId={subActiveId}
+              onSelectMain={handleSelectMain}
+              onSelectSub={handleSelectSub}
+              onBack={handleBack}
+              ariaLabel="Podkategorie"
+              prominent
+              fit
+              className="w-full"
+            />
+          </div>
+          <NeighborsContent
+            section={activeSection}
+            helpFilter={helpFilter}
+            onHelpFilterChange={setHelpFilter}
+          />
+        </>
       ) : (
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          <NeighborsLatestFeed onSelectSection={handleSelectMain} />
-        </div>
+        <NeighborsHub onSelectSection={handleSelectMain} />
       )}
     </div>
   );

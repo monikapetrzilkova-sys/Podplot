@@ -10,10 +10,10 @@ const TILE_BORDERS = {
 };
 
 export const NEIGHBORS_TILES = [
-  { id: "veci", label: "Věci" },
-  { id: "vypomoc", label: "Výpomoc" },
-  { id: "skupiny", label: "Skupiny" },
-  { id: "akce", label: "Kalendář akcí" },
+  { id: "veci", label: "Věci", hint: "Daruji, prodám, sháním…" },
+  { id: "vypomoc", label: "Výpomoc", hint: "Hledám nebo nabízím" },
+  { id: "skupiny", label: "Skupiny", hint: "Komunity v okolí" },
+  { id: "akce", label: "Akce", hint: "Kalendář událostí" },
 ];
 
 export default function NeighborsGrid({ activeId, onSelect }) {
@@ -31,12 +31,17 @@ export default function NeighborsGrid({ activeId, onSelect }) {
             onClick={() => onSelect(tile.id)}
             aria-pressed={active}
             className={`pp-tile-grid-item pp-pressable ${active ? "pp-tile-grid-item--active" : ""}`}
-            style={{ borderColor: active ? borderColor : borderColor }}
+            style={{ borderColor }}
           >
             <span className={active ? "text-[#3D7A68]" : "text-[#64A08D]"}>
               {Icon ? <Icon /> : null}
             </span>
             <span className="pp-text-title text-center leading-snug">{tile.label}</span>
+            {tile.hint ? (
+              <span className="text-[10px] text-stone-400 text-center leading-snug px-1">
+                {tile.hint}
+              </span>
+            ) : null}
           </button>
         );
       })}
