@@ -10,6 +10,7 @@ import { VECI_TYPE_FILTERS } from "../utils/thingsModule.js";
 import { getSkupinySubfilters } from "../data/worldNavigation.js";
 import { getMyMemberGroups } from "../data/locations.js";
 import { NEIGHBOR_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
+import SectionBackButton from "./SectionBackButton.jsx";
 
 const NEIGHBORS_MAIN = NEIGHBORS_TILES.map((tile) => ({
   ...tile,
@@ -183,14 +184,7 @@ export default function NeighborsPage() {
           <div className="tab-header-container px-3 pt-2 pb-0 shrink-0 w-full">
             {activeSection === "akce" ? (
               <div className="flex items-center gap-2 w-full py-1">
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  className="shrink-0 w-9 h-9 rounded-xl border border-[#C5DDD4] bg-white text-[#1B4D3E] text-lg font-bold leading-none"
-                  aria-label="Zpět"
-                >
-                  ←
-                </button>
+                <SectionBackButton onClick={handleBack} />
                 <p className="text-sm font-bold text-stone-900">Akce</p>
               </div>
             ) : (

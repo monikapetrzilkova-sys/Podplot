@@ -979,25 +979,50 @@ body,
   min-width: 0;
 }
 
-.pp-smart-bar-back {
+.pp-smart-bar-back,
+.pp-section-back-btn {
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  border: 1px solid rgba(61, 122, 104, 0.22);
-  background: #ffffff;
-  color: #1b4d3e;
-  font-size: 22px;
-  font-weight: 600;
-  line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--pp-shadow-soft);
+  gap: 5px;
+  min-height: 40px;
+  padding: 0 12px 0 10px;
+  border-radius: 12px;
+  border: 2px solid #1b4d3e;
+  background: #1b4d3e;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 3px 10px rgba(27, 77, 62, 0.28);
+  transition: background 0.15s ease, transform 0.12s ease;
 }
 
-.pp-smart-bar-back:hover {
-  background: #e8f0ed;
+.pp-smart-bar-back {
+  width: auto;
+  height: auto;
+}
+
+.pp-section-back-btn-arrow {
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.pp-section-back-btn-label {
+  letter-spacing: 0.01em;
+}
+
+.pp-smart-bar-back:hover,
+.pp-section-back-btn:hover {
+  background: #163d32;
+  border-color: #163d32;
+}
+
+.pp-smart-bar-back:active,
+.pp-section-back-btn:active {
+  transform: scale(0.97);
 }
 
 .pp-smart-bar-pills {

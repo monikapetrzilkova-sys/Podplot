@@ -1,5 +1,7 @@
 /** Jediná inteligentní lišta: hlavní sekce ↔ podkategorie se šipkou zpět */
 
+import SectionBackButton from "./SectionBackButton.jsx";
+
 export default function SmartSectionBar({
   mode = "main",
   mainItems = [],
@@ -36,15 +38,7 @@ export default function SmartSectionBar({
       aria-label={ariaLabel}
     >
       {mode === "sub" && (
-        <button
-          type="button"
-          className="pp-smart-bar-back"
-          onClick={onBack}
-          aria-label="Zpět na hlavní sekce"
-          title="Zpět"
-        >
-          ‹
-        </button>
+        <SectionBackButton onClick={onBack} ariaLabel="Zpět na hlavní sekce" />
       )}
       <div
         className={`pp-smart-bar-pills ${fit ? "pp-smart-bar-pills--fit" : "pp-category-pills"}`}

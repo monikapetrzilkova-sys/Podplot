@@ -3,6 +3,7 @@ import { useApp } from "../context/AppContext.jsx";
 import CatalogGrid, { CATALOG_TILES } from "./CatalogGrid.jsx";
 import ServicesList from "../modules/ServicesList.jsx";
 import CompactSearchToggle from "./CompactSearchToggle.jsx";
+import SectionBackButton from "./SectionBackButton.jsx";
 import { CATALOG_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
 
 export default function CatalogPage() {
@@ -25,18 +26,14 @@ export default function CatalogPage() {
     return (
       <div className="pp-page pp-page--doodle flex flex-col min-h-full bg-abstract-organic has-deco">
         <div className="tab-header-container px-3 pt-2 pb-0 shrink-0 w-full flex items-center gap-2">
-          <button
-            type="button"
+          <SectionBackButton
             onClick={() => {
               setHomeSub(null);
               setCatalogSearch("");
               setSearchExpanded(false);
             }}
-            className="shrink-0 w-9 h-9 rounded-xl border border-[#C5DDD4] bg-white text-[#1B4D3E] text-lg font-bold leading-none"
-            aria-label="Zpět na kategorie"
-          >
-            ←
-          </button>
+            ariaLabel="Zpět na kategorie"
+          />
           <div className="flex-1 min-w-0 flex items-center gap-2">
             {ActiveIcon ? (
               <span className="text-[#3D7A68] shrink-0">
