@@ -52,7 +52,9 @@ export default function LiveNeighborFeed() {
     feedPostsForLocation,
     lendingItemsForLocation,
     feedGalleryActivities,
+    upcomingEvents,
     openEventGalleryFromFeed,
+    openEventDetail,
     openLendingFromHome,
     openReportOnMapFromHome,
     offerHelpOnPost,
@@ -65,6 +67,7 @@ export default function LiveNeighborFeed() {
     getSearchHelpCount,
     getHelpOffers,
     listingSaleOrders,
+    user,
   } = useApp();
 
   const reportGeneric = () => showToast("Děkujeme za nahlášení.", "info");
@@ -106,6 +109,24 @@ export default function LiveNeighborFeed() {
       photoId: a.photoId,
       engagement: 0,
     }));
+
+    const events = (upcomingEvents ?? []).slice(0, 6).map((ev) => {
+      const mine =
+        Boolean(ev.mine) ||
+        ev.organizer === "Vy" ||
+        (user?.name && ev.organizer === user.name);
+      return {
+        id: `event-${ev.id}`,
+        kind: "event",
+        title: ev.title,
+        subtitle: [ev.date, ev.address ?? ev.location].filter(Boolean).join(" · "),
+        eventId: ev.id,
+        event: ev,
+        mine,
+        createdAt: ev.createdAt ?? (mine ? Date.now() : 0),
+        engagement: ev.participants ?? 0,
+      };
+    });
 
     const news = areaNews
       .filter((n) => n.type !== "crisis")
@@ -183,7 +204,7 @@ export default function LiveNeighborFeed() {
       .sort((a, b) => b.engagement - a.engagement || (b.createdAt ?? 0) - (a.createdAt ?? 0))
       .slice(0, 8);
 
-    const ordered = [...announcements, ...gallery, ...news, ...help, ...listings];
+    const ordered = [...announcements, ...events, ...gallery, ...news, ...help, ...listings];
 
     const isFresh = (item) =>
       Boolean(item.mine) ||
@@ -211,6 +232,8 @@ export default function LiveNeighborFeed() {
     feedPostsForLocation,
     lendingItemsForLocation,
     feedGalleryActivities,
+    upcomingEvents,
+    user?.name,
     formatPersonName,
     getUsefulCount,
     getSearchHelpCount,
@@ -250,6 +273,25 @@ export default function LiveNeighborFeed() {
                 onReport={reportGeneric}
                 expandable={false}
                 onSummaryClick={() => openEventGalleryFromFeed(item.activityId, item.eventId)}
+              />
+            );
+          }
+
+          if (item.kind === "event") {
+            return (
+              <LiveFeedCard
+                key={item.id}
+                itemId={item.id}
+                badge="Akce"
+                badgeClassName="pp-badge--akce"
+                title={item.title}
+                authorLabel={displayCreatorLabel(item.event?.organizer, item.event?.accountType, {
+                  mine: item.mine,
+                })}
+                preview={item.subtitle || null}
+                mine={Boolean(item.mine)}
+                expandable={false}
+                onSummaryClick={() => openEventDetail(item.eventId)}
               />
             );
           }

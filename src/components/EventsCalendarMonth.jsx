@@ -48,6 +48,12 @@ function buildMonthCells(monthDate) {
 }
 
 function eventDay(event) {
+  if (event?.eventDate) {
+    const parts = String(event.eventDate).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (parts) {
+      return new Date(Number(parts[1]), Number(parts[2]) - 1, Number(parts[3]), 12, 0, 0, 0);
+    }
+  }
   return parseDateInput(event.startsAt);
 }
 

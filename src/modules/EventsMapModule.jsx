@@ -22,8 +22,8 @@ export default function EventsMapModule({ showRadiusControl = true, large = true
   const [selectedEventId, setSelectedEventId] = useState(null);
 
   const eventsForMap = useMemo(
-    () => filterEventsForMapView(upcomingEvents, eventsMapRadiusKm),
-    [upcomingEvents, eventsMapRadiusKm]
+    () => filterEventsForMapView(upcomingEvents, eventsMapRadiusKm, undefined, activeLocation),
+    [upcomingEvents, eventsMapRadiusKm, activeLocation]
   );
 
   const selectedEvent = eventsForMap.find((e) => e.id === selectedEventId) ?? null;

@@ -103,6 +103,8 @@ export function filterByMapRadius(
   center = null
 ) {
   return items.filter((item) => {
+    if (item?.mine) return true;
+
     const lat = item.lat ?? item.mapPos?.lat;
     const lng = item.lng ?? item.mapPos?.lng;
     if (

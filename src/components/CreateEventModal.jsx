@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import { INTEREST_OPTIONS } from "../data/ecosystemMock.js";
 import { minEventDateValue } from "../data/eventFormatting.js";
-import { isValidCzechTime } from "../data/czechDateTime.js";
+import { isValidCzechTime, combineDateAndTime } from "../data/czechDateTime.js";
 import { addressToMapPos } from "../data/mapData.js";
 import { geocodeCzechAddress } from "../data/addressAutocomplete.js";
 import { buildMapPickResult } from "../utils/geoCoordinates.js";
@@ -114,6 +114,11 @@ export default function CreateEventModal() {
     }
     if (!form.timeTbd && !isValidCzechTime(form.eventTime)) {
       setFormError("Zadejte čas ve formátu 24 hodin (např. 17:00), nebo zaškrtněte, že bude upřesněn.");
+      return;
+    }
+    const startsAtCheck = combineDateAndTime(form.eventDate, form.eventTime, form.timeTbd);
+    if (startsAtCheck && !form.timeTbd && new Date(startsAtCheck).getTime() < Date.now()) {
+      setFormError("Zvolte datum a čas v budoucnosti — jinak by se akce hned přesunula do archivu.");
       return;
     }
     const center = {

@@ -7,7 +7,7 @@ import { getAccountType, normalizeAccountType, resolveBusinessSubtype } from "..
 import { CLUB_VOTES_REQUIRED, getClubCategory } from "../data/clubCategories.js";
 import { inferFeedClassification, getDefaultSubfilter } from "../data/feedNavigation.js";
 import { USER_LOCATIONS, getGroupsForLocation, DEFAULT_RADIUS_KM, sanitizeUserLocations, buildHomeLocation, isStockJeseniceCoords } from "../data/locations.js";
-import { filterByRadius, filterByMunicipality, filterByActiveLocation, municipalitiesMatch } from "../data/geoFilter.js";
+import { filterByRadius, filterByMunicipality, filterByActiveLocation, municipalitiesMatch, distanceBetweenKm } from "../data/geoFilter.js";
 import { FEED_POSTS, LENDING_ITEMS } from "../data/mockData.js";
 import { AREA_NEWS, getAreaNewsForLocation, getActiveCrisis } from "../data/areaNews.js";
 import { LUNCH_MENUS, sortLunchMenus } from "../data/lunchMenus.js";
@@ -5642,11 +5642,28 @@ export function AppProvider({ children }) {
         ? combineDateAndTime(eventDate, eventTime, timeTbd)
         : null;
       const locationLabel = address?.trim() || activeLocation?.address || activeLocation?.shortLabel;
-      const pinLat = mapPos?.lat != null ? Number(mapPos.lat) : activeLocation?.lat ?? null;
-      const pinLng = mapPos?.lng != null ? Number(mapPos.lng) : activeLocation?.lng ?? null;
+      let pinLat = mapPos?.lat != null ? Number(mapPos.lat) : activeLocation?.lat ?? null;
+      let pinLng = mapPos?.lng != null ? Number(mapPos.lng) : activeLocation?.lng ?? null;
+      // Geocode někdy vrátí bod mimo okruh lokality — špendlík držíme u středu, ať akce nezmizí z feedu
+      if (
+        pinLat != null &&
+        pinLng != null &&
+        activeLocation?.lat != null &&
+        activeLocation?.lng != null
+      ) {
+        const radius = activeLocation.radiusKm ?? 7;
+        if (distanceBetweenKm(activeLocation, { lat: pinLat, lng: pinLng }) > radius) {
+          pinLat = activeLocation.lat;
+          pinLng = activeLocation.lng;
+        }
+      }
       const resolvedMapPos =
-        mapPos && Number.isFinite(Number(mapPos.x)) && Number.isFinite(Number(mapPos.y))
-          ? mapPos
+        mapPos &&
+        Number.isFinite(Number(mapPos.x)) &&
+        Number.isFinite(Number(mapPos.y)) &&
+        pinLat === (mapPos.lat != null ? Number(mapPos.lat) : pinLat) &&
+        pinLng === (mapPos.lng != null ? Number(mapPos.lng) : pinLng)
+          ? { ...mapPos, lat: pinLat, lng: pinLng }
           : pinLat != null && pinLng != null
             ? {
                 x: 50,
@@ -5663,6 +5680,7 @@ export function AppProvider({ children }) {
           : formatCzechEventSchedule(startsAt, timeTbd),
         dateSort: eventDateSortValue(startsAt),
         startsAt,
+        eventDate: eventDate || null,
         timeTbd,
         location: locationLabel,
         address: locationLabel,
@@ -5696,6 +5714,7 @@ export function AppProvider({ children }) {
         chat: [],
         galleryPhotos: [],
         mine: true,
+        createdAt: Date.now(),
       };
       setEvents((prev) => [newEv, ...prev]);
       setJoinedEventIds((prev) => (prev.includes(id) ? prev : [...prev, id]));

@@ -57,6 +57,7 @@ export function resolveLocationId(item, legacyDefault = "domov") {
  * Stejná obec = viditelné napříč osobními sloty (domov / vlastní místo),
  * aby sousedé ve stejné obci viděli stejné příspěvky.
  * Bez obce (starý mock) → fallback na locationId.
+ * Vlastní položky (mine) vždy zůstanou viditelné — geocode nesmí akci „schovat“.
  */
 export function filterByActiveLocation(items, activeLocationId, activeLocation, legacyDefault = "domov") {
   if (!activeLocationId) return items;
@@ -64,6 +65,8 @@ export function filterByActiveLocation(items, activeLocationId, activeLocation, 
   const activeMun = activeLocation?.municipality ?? activeLocation?.shortLabel ?? null;
 
   return items.filter((item) => {
+    if (item?.mine) return true;
+
     const itemMun = item.municipality;
 
     if (itemMun && itemMun !== "all" && activeMun) {
