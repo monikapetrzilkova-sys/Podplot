@@ -26,7 +26,7 @@ import {
 } from "../data/communityGroups.js";
 import { clampMapPos, posToDistanceLabel } from "../data/mapData.js";
 import { pscDigits } from "../data/addressValidation.js";
-import { fetchAddressSuggestions, geocodeCzechAddress } from "../data/addressAutocomplete.js";
+import { geocodeCzechAddress } from "../data/addressAutocomplete.js";
 import { isValidMapPos } from "../utils/reportPinUtils.js";
 import { latLngToMapPos } from "../utils/geoCoordinates.js";
 import {
