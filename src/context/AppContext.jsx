@@ -1510,7 +1510,11 @@ export function AppProvider({ children }) {
     setActiveTab("map");
     setReportFormOpen(true);
   }, []);
-  const openPlaceSuggestion = useCallback(() => setPlaceSuggestionOpen(true), []);
+  const openPlaceSuggestion = useCallback(() => {
+    setActiveTab("map");
+    setMapFocus("places");
+    setPlaceSuggestionOpen(true);
+  }, []);
   const closePlaceSuggestion = useCallback(() => setPlaceSuggestionOpen(false), []);
   const openCreateEvent = useCallback(() => {
     setCreateEventOpen(true);

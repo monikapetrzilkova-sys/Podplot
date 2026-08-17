@@ -6,6 +6,7 @@ import {
   IconBook,
   IconBulb,
   IconHammer,
+  IconMapPin,
   IconShop,
   IconTabCalendar,
   IconTabCatalog,
@@ -53,6 +54,13 @@ const NEIGHBOR_MORE = [
     hint: "Událost do kalendáře",
     icon: IconTabCalendar,
     action: "event",
+  },
+  {
+    id: "place",
+    label: "Přidat místo",
+    hint: "Navrhnout místo na mapě Okolí",
+    icon: IconMapPin,
+    action: "place",
   },
 ];
 
@@ -158,6 +166,7 @@ export default function PlusActionMenu() {
     closePlusMenu,
     openCreate,
     openMapReport,
+    openPlaceSuggestion,
     openCreateEvent,
     openOfficePromptCall,
     openOfficeAnnouncementComposer,
@@ -194,6 +203,10 @@ export default function PlusActionMenu() {
     setMoreOpen(false);
     if (item.action === "report") {
       openMapReport();
+      return;
+    }
+    if (item.action === "place") {
+      openPlaceSuggestion();
       return;
     }
     if (item.action === "event") {

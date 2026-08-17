@@ -1962,7 +1962,7 @@ body,
 }
 
 .pp-map-list-with-fab {
-  padding-bottom: 3.5rem;
+  padding-bottom: 4.25rem;
 }
 
 .pp-map-add-fab {
@@ -1974,6 +1974,12 @@ body,
   flex-direction: column-reverse;
   align-items: flex-start;
   gap: 8px;
+}
+
+.pp-map-add-fab-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .pp-map-add-fab-btn {
@@ -1990,8 +1996,31 @@ body,
   transition: transform 0.15s ease, background 0.15s ease;
 }
 
+.pp-map-add-fab-btn--labeled {
+  width: auto;
+  min-height: 42px;
+  padding: 0 14px 0 12px;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.pp-map-add-fab-btn--more {
+  width: 36px;
+  height: 36px;
+  font-size: 12px;
+  font-weight: 800;
+  background: #3d7a68;
+}
+
 .pp-map-add-fab-btn:hover {
   background: #163d32;
+}
+
+.pp-map-add-fab-btn--more:hover {
+  background: #326557;
 }
 
 .pp-map-add-fab-btn:active {

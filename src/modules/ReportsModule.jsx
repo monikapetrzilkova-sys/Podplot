@@ -238,7 +238,7 @@ export default function ReportsModule({
             viewMode={viewMode}
             onToggle={() => setModuleViewMode(moduleId, viewMode === "map" ? "list" : "map")}
           />
-          {showAddMenu && <MapAddMenuFab actions={addMenuActions} />}
+          {showAddMenu && <MapAddMenuFab actions={addMenuActions} label="Nahlásit" />}
         </>
       )}
     </div>

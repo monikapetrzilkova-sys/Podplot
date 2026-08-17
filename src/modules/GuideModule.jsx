@@ -409,7 +409,7 @@ export default function GuideModule() {
 
             <ViewToggleFab viewMode={viewMode} onToggle={toggleView} />
 
-            <MapFab onClick={openPlaceSuggestion} label="Označit místo" />
+            <MapFab onClick={openPlaceSuggestion} label="Přidat místo" />
 
           </div>
 

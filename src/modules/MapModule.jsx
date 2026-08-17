@@ -228,7 +228,7 @@ export default function MapModule({ provozovnaType = null }) {
               viewMode={viewMode}
               onToggle={() => setModuleViewMode(moduleId, viewMode === "map" ? "list" : "map")}
             />
-            <MapFab onClick={openPlaceSuggestion} label="Označit místo" />
+            <MapFab onClick={openPlaceSuggestion} label="Přidat místo" />
           </div>
         ) : null}
       </div>
