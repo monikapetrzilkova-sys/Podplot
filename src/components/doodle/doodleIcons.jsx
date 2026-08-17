@@ -456,6 +456,57 @@ export function DoodleJoinIcon({ className }) {
   );
 }
 
+/** Daruji — dárková krabička */
+export function DoodleGiveIcon({ className }) {
+  return (
+    <DoodleIcon className={className}>
+      <path {...s} d="M6 10.5h12v8.2c0 .7-.5 1.3-1.2 1.3H7.2c-.7 0-1.2-.6-1.2-1.3V10.5z" />
+      <path {...s} d="M5.5 7.8h13v2.7H5.5z" />
+      <path {...s} d="M12 7.8v12.2" opacity="0.75" />
+      <path {...s} d="M9.2 5.8c0-1.2.8-2 1.6-2 .7 0 1.2.5 1.2 1.2 0 .9-.8 1.6-1.6 2.8" />
+      <path {...s} d="M14.8 5.8c0-1.2-.8-2-1.6-2-.7 0-1.2.5-1.2 1.2 0 .9.8 1.6 1.6 2.8" />
+    </DoodleIcon>
+  );
+}
+
+/** Prodám — cedulka s cenou */
+export function DoodleSellIcon({ className }) {
+  return (
+    <DoodleIcon className={className}>
+      <path
+        {...s}
+        d="M5.5 9.2l6.2-4.4c.4-.3.9-.3 1.3 0l5.5 4.4c.3.2.5.6.5 1v8.2c0 .8-.6 1.4-1.4 1.4H6.4c-.8 0-1.4-.6-1.4-1.4v-8.2c0-.4.2-.8.5-1z"
+      />
+      <circle {...s} cx="12" cy="12.5" r="2.2" />
+      <path {...s} d="M12 10.8v-.8M12 15v.8" opacity="0.7" />
+    </DoodleIcon>
+  );
+}
+
+/** Sháním — lupa nad krabičkou */
+export function DoodleWantIcon({ className }) {
+  return (
+    <DoodleIcon className={className}>
+      <rect {...s} x="4.5" y="11.5" width="9.5" height="7" rx="1.2" />
+      <path {...s} d="M7 11.5v-1.5c0-1.2 1-2.2 2.2-2.2h.6c1.2 0 2.2 1 2.2 2.2v1.5" opacity="0.75" />
+      <circle {...s} cx="16.2" cy="9.2" r="3.2" />
+      <path {...s} d="M18.5 11.5L21 14" />
+    </DoodleIcon>
+  );
+}
+
+/** Půjčovna — výměna / šipky */
+export function DoodleLendIcon({ className }) {
+  return (
+    <DoodleIcon className={className}>
+      <path {...s} d="M7.5 9.5H16l-2.2-2.2" />
+      <path {...s} d="M16.5 14.5H8l2.2 2.2" />
+      <path {...s} d="M6.5 12.2c0-3 2.4-5.4 5.4-5.4" opacity="0.55" />
+      <path {...s} d="M17.5 11.8c0 3-2.4 5.4-5.4 5.4" opacity="0.55" />
+    </DoodleIcon>
+  );
+}
+
 export function DoodleSearchIcon({ className }) {
   return (
     <DoodleIcon className={className}>
@@ -671,4 +722,13 @@ export const SERVICE_PARENT_DOODLE_ICONS = {
   uklid: DoodleHomeGardenIcon,
   doucovani: DoodleFamilyIcon,
   krasa: DoodleBeautyIcon,
+};
+
+/** Typy nabídky Věci — Vše / Daruji / Prodám / Sháním / Půjčovna */
+export const VECI_TYPE_DOODLE_ICONS = {
+  vse: DoodleAllIcon,
+  daruji: DoodleGiveIcon,
+  prodam: DoodleSellIcon,
+  shanim: DoodleWantIcon,
+  pujcovna: DoodleLendIcon,
 };

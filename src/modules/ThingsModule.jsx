@@ -153,6 +153,7 @@ export default function ThingsModule({ hideCategoryFilters = false }) {
   };
 
   const handleCategoryChange = (cat) => {
+    if (cat !== thingsCategory) setThingsLendingSubCategory(null);
     setThingsCategory(cat);
   };
 
@@ -199,11 +200,17 @@ export default function ThingsModule({ hideCategoryFilters = false }) {
         </div>
       )}
 
-      <LendingSubFilterRow
-        value={thingsLendingSubCategory}
-        onChange={setThingsLendingSubCategory}
-        className="shrink-0 px-0.5 pb-0.5"
-      />
+      {thingsCategory === "vse" ? (
+        <p className="shrink-0 px-0.5 text-[11px] text-stone-500 leading-snug">
+          Nahoře vyberte Daruji, Prodám, Sháním nebo Půjčovnu — pak můžete filtrovat i podle kategorie.
+        </p>
+      ) : (
+        <LendingSubFilterRow
+          value={thingsLendingSubCategory}
+          onChange={setThingsLendingSubCategory}
+          className="shrink-0 px-0.5 pb-0.5"
+        />
+      )}
 
       {hideCategoryFilters && (searchOpen || thingsSearchQuery) ? (
         <div className="shrink-0 flex items-center gap-1.5">

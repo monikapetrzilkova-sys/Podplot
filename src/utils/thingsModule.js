@@ -53,7 +53,7 @@ export const VECI_TYPE_FILTERS = [
   { id: "daruji", label: "Daruji" },
   { id: "prodam", label: "Prodám" },
   { id: "shanim", label: "Sháním" },
-  { id: "pujcovna", label: "Půjčovna", emoji: "🔄" },
+  { id: "pujcovna", label: "Půjčovna" },
 ];
 
 export const THINGS_CATEGORIES = VECI_TYPE_FILTERS.map((c) => ({ ...c, emoji: c.emoji ?? "" }));

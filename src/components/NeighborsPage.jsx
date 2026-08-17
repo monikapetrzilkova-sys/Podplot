@@ -9,13 +9,19 @@ import CalendarPage from "./CalendarPage.jsx";
 import { VECI_TYPE_FILTERS } from "../utils/thingsModule.js";
 import { getSkupinySubfilters } from "../data/worldNavigation.js";
 import { getMyMemberGroups } from "../data/locations.js";
-import { NEIGHBOR_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
+import { NEIGHBOR_DOODLE_ICONS, VECI_TYPE_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
 import SectionBackButton from "./SectionBackButton.jsx";
 
 const NEIGHBORS_MAIN = NEIGHBORS_TILES.map((tile) => ({
   ...tile,
   shortLabel: tile.id === "akce" ? "Akce" : tile.label,
   Icon: NEIGHBOR_DOODLE_ICONS[tile.id],
+}));
+
+const VECI_SUBS = VECI_TYPE_FILTERS.map((f) => ({
+  ...f,
+  shortLabel: f.label,
+  Icon: VECI_TYPE_DOODLE_ICONS[f.id],
 }));
 
 const VYPOMOC_SUBS = [
@@ -83,6 +89,7 @@ export default function NeighborsPage() {
     neighborsRootKey,
     thingsCategory,
     setThingsCategory,
+    setThingsLendingSubCategory,
     communityGroups,
     setFeedSubFilter,
     setCalendarFilter,
@@ -139,7 +146,7 @@ export default function NeighborsPage() {
   );
 
   const subItems = useMemo(() => {
-    if (activeSection === "veci") return VECI_TYPE_FILTERS;
+    if (activeSection === "veci") return VECI_SUBS;
     if (activeSection === "vypomoc") return VYPOMOC_SUBS;
     if (activeSection === "skupiny") return skupinySubs;
     return [];
@@ -157,6 +164,7 @@ export default function NeighborsPage() {
     if (id === "veci") {
       selectFeedSubFilter("veci");
       setThingsCategory("vse");
+      setThingsLendingSubCategory(null);
     }
     if (id === "skupiny") {
       applySkupinyFilter(hasMyGroups ? "moje" : "vse");
@@ -166,7 +174,10 @@ export default function NeighborsPage() {
   };
 
   const handleSelectSub = (id) => {
-    if (activeSection === "veci") setThingsCategory(id);
+    if (activeSection === "veci") {
+      if (id !== thingsCategory) setThingsLendingSubCategory(null);
+      setThingsCategory(id);
+    }
     if (activeSection === "vypomoc") setHelpFilter(id);
     if (activeSection === "skupiny") {
       applySkupinyFilter(id);

@@ -21,7 +21,7 @@ export default function SmartSectionBar({
 }) {
   const items = mode === "sub" ? subItems : mainItems;
   const onSelect = mode === "sub" ? onSelectSub : onSelectMain;
-  const showProminent = prominent && mode === "main";
+  const showProminent = Boolean(prominent);
 
   return (
     <div
