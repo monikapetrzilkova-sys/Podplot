@@ -72,17 +72,9 @@ function NeighborsContent({ section, helpFilter, onHelpFilterChange }) {
 }
 
 function NeighborsHub({ onSelectSection }) {
-  const { activeLocation } = useApp();
-  const place = activeLocation?.municipality || activeLocation?.shortLabel || "okolí";
-
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-3 pb-8">
-      <h1 className="text-lg font-bold text-stone-900 leading-snug">Sousedé</h1>
-      <p className="text-xs text-stone-500 mt-0.5 mb-4 leading-relaxed">
-        Čtyři věci od lidí v {place}. Novinky jsou na Domů.
-      </p>
-
-      <NeighborsGrid activeId={null} onSelect={onSelectSection} />
+    <div className="flex-1 min-h-0 flex flex-col px-4 pt-3 pb-6">
+      <NeighborsGrid activeId={null} onSelect={onSelectSection} large />
     </div>
   );
 }

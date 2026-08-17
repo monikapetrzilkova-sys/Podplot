@@ -691,6 +691,35 @@ body,
   gap: 8px;
 }
 
+.pp-tile-grid--hub {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  gap: 12px;
+  grid-template-rows: 1fr 1fr;
+}
+
+.pp-tile-grid--hub .pp-tile-grid-item {
+  min-height: 0;
+  height: 100%;
+  padding: 18px 14px;
+  gap: 8px;
+}
+
+.pp-tile-grid--hub .pp-tile-grid-item .pp-doodle-icon,
+.pp-tile-grid--hub .pp-tile-grid-item svg {
+  width: 40px;
+  height: 40px;
+}
+
+.pp-tile-grid--hub .pp-text-title {
+  font-size: 1rem;
+}
+
+.pp-tile-grid--hub .pp-tile-grid-item .text-\[10px\] {
+  font-size: 11px;
+}
+
 .pp-tile-grid-item {
   position: relative;
   display: flex;

@@ -16,9 +16,13 @@ export const NEIGHBORS_TILES = [
   { id: "akce", label: "Akce", hint: "Kalendář událostí" },
 ];
 
-export default function NeighborsGrid({ activeId, onSelect }) {
+export default function NeighborsGrid({ activeId, onSelect, large = false }) {
   return (
-    <div className="pp-tile-grid pp-tile-grid--doodle" role="group" aria-label="Sousedé — kategorie">
+    <div
+      className={`pp-tile-grid pp-tile-grid--doodle${large ? " pp-tile-grid--hub" : ""}`}
+      role="group"
+      aria-label="Sousedé — kategorie"
+    >
       {NEIGHBORS_TILES.map((tile) => {
         const active = activeId === tile.id;
         const Icon = NEIGHBOR_DOODLE_ICONS[tile.id];
