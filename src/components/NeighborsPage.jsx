@@ -73,7 +73,7 @@ function NeighborsContent({ section, helpFilter, onHelpFilterChange }) {
 
 function NeighborsHub({ onSelectSection }) {
   return (
-    <div className="flex-1 min-h-0 flex flex-col px-4 pt-3 pb-6">
+    <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-6">
       <NeighborsGrid activeId={null} onSelect={onSelectSection} large />
     </div>
   );
