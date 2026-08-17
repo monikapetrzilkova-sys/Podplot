@@ -139,8 +139,8 @@ export default function NeighborOnboarding({ onContinue }) {
         ) : (
           <div className="mb-6 p-4 rounded-2xl bg-[#E8F3EF] border border-[#C5DDD4]">
             <p className="text-sm text-[#1B4D3E] leading-relaxed">
-              Tip: na Okolí jsou dole tlačítka <strong>Nahlásit</strong> a <strong>Přidat místo</strong> —
-              nemusíte je hledat jen v Plus.
+              Uvidíte jen lidi a dění z vašeho okolí. Čím víc sousedů se zapojí, tím to bude
+              užitečnější — klidně začněte drobností.
             </p>
           </div>
         )}
