@@ -23,11 +23,6 @@ const VYPOMOC_SUBS = [
   { id: "nabizim", label: "Nabízím" },
 ];
 
-const AKCE_SUBS = [
-  { id: "all", label: "Všechny akce", shortLabel: "Všechny" },
-  { id: "mine", label: "Moje akce", shortLabel: "Moje" },
-];
-
 function NeighborsContent({ section, helpFilter, onHelpFilterChange }) {
   const { communityGroups } = useApp();
 
@@ -89,7 +84,6 @@ export default function NeighborsPage() {
     setThingsCategory,
     communityGroups,
     setFeedSubFilter,
-    calendarFilter,
     setCalendarFilter,
     activeLocationId,
   } = useApp();
@@ -147,7 +141,6 @@ export default function NeighborsPage() {
     if (activeSection === "veci") return VECI_TYPE_FILTERS;
     if (activeSection === "vypomoc") return VYPOMOC_SUBS;
     if (activeSection === "skupiny") return skupinySubs;
-    if (activeSection === "akce") return AKCE_SUBS;
     return [];
   }, [activeSection, skupinySubs]);
 
@@ -155,9 +148,8 @@ export default function NeighborsPage() {
     if (activeSection === "veci") return thingsCategory;
     if (activeSection === "vypomoc") return helpFilter;
     if (activeSection === "skupiny") return skupinyListFilter;
-    if (activeSection === "akce") return calendarFilter;
     return null;
-  }, [activeSection, thingsCategory, helpFilter, skupinyListFilter, calendarFilter]);
+  }, [activeSection, thingsCategory, helpFilter, skupinyListFilter]);
 
   const handleSelectMain = (id) => {
     setActiveSection(id);
@@ -175,7 +167,6 @@ export default function NeighborsPage() {
   const handleSelectSub = (id) => {
     if (activeSection === "veci") setThingsCategory(id);
     if (activeSection === "vypomoc") setHelpFilter(id);
-    if (activeSection === "akce") setCalendarFilter(id);
     if (activeSection === "skupiny") {
       applySkupinyFilter(id);
     }
@@ -190,19 +181,33 @@ export default function NeighborsPage() {
       {activeSection ? (
         <>
           <div className="tab-header-container px-3 pt-2 pb-0 shrink-0 w-full">
-            <SmartSectionBar
-              mode="sub"
-              mainItems={NEIGHBORS_MAIN}
-              subItems={subItems}
-              activeId={subActiveId}
-              onSelectMain={handleSelectMain}
-              onSelectSub={handleSelectSub}
-              onBack={handleBack}
-              ariaLabel="Podkategorie"
-              prominent
-              fit
-              className="w-full"
-            />
+            {activeSection === "akce" ? (
+              <div className="flex items-center gap-2 w-full py-1">
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="shrink-0 w-9 h-9 rounded-xl border border-[#C5DDD4] bg-white text-[#1B4D3E] text-lg font-bold leading-none"
+                  aria-label="Zpět"
+                >
+                  ←
+                </button>
+                <p className="text-sm font-bold text-stone-900">Akce</p>
+              </div>
+            ) : (
+              <SmartSectionBar
+                mode="sub"
+                mainItems={NEIGHBORS_MAIN}
+                subItems={subItems}
+                activeId={subActiveId}
+                onSelectMain={handleSelectMain}
+                onSelectSub={handleSelectSub}
+                onBack={handleBack}
+                ariaLabel="Podkategorie"
+                prominent
+                fit
+                className="w-full"
+              />
+            )}
           </div>
           <NeighborsContent
             section={activeSection}

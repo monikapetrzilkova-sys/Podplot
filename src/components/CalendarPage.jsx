@@ -77,8 +77,6 @@ function PastEventListItem({
 export default function CalendarPage({ embedded = false, hideTopFilters = false }) {
   const {
     pastEvents,
-    calendarFilter,
-    setCalendarFilter,
     openEventDetail,
     eventHasUnreadGallery,
     getEventUnreadGalleryCount,
@@ -97,7 +95,7 @@ export default function CalendarPage({ embedded = false, hideTopFilters = false 
     );
   };
 
-  const pastMine = calendarFilter === "mine" ? pastEvents.filter(isMine) : [];
+  const pastMine = pastEvents.filter(isMine);
   const pastMineUnreadCount = pastMine.reduce(
     (sum, ev) => sum + getEventUnreadGalleryCount(ev.id),
     0
@@ -171,14 +169,12 @@ export default function CalendarPage({ embedded = false, hideTopFilters = false 
       <EventsModule
         compact
         embedded={embedded}
-        calendarFilter={calendarFilter}
-        setCalendarFilter={setCalendarFilter}
         unreadBadge={unreadCalendarGalleryCount}
         onCreateEvent={embedded ? openCreate : undefined}
         hideTopFilters={hideTopFilters}
       />
 
-      {calendarFilter === "mine" && pastMine.length > 0 && (
+      {pastMine.length > 0 && (
         <section className={`shrink-0 ${embedded ? "mt-2 overflow-y-auto max-h-[28vh]" : "mt-5"}`}>
           <CompactAccordion
             prefKey={UI_KEYS.EVENTS_PAST_ARCHIVE_OPEN}

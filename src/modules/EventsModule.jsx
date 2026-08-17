@@ -69,18 +69,10 @@ function EventListRow({ event, selected, onShowOnMap, onOpen, onJoin, joined, on
   );
 }
 
-const CALENDAR_FILTERS = [
-  { id: "all", label: "Všechny akce" },
-  { id: "mine", label: "Moje akce" },
-];
-
 export default function EventsModule({
   listEvents,
   compact = false,
   embedded = false,
-  calendarFilter,
-  setCalendarFilter,
-  unreadBadge = 0,
   onCreateEvent,
   hideTopFilters = false,
   searchQuery = "",
@@ -118,8 +110,6 @@ export default function EventsModule({
   const moduleId = MODULE_IDS.EVENTS;
   const rawViewMode = moduleViewModes[moduleId];
   const viewMode = EVENTS_VIEW_MODES.some((m) => m.id === rawViewMode) ? rawViewMode : "list";
-  const showCalendarFilters =
-    !hideTopFilters && compact && calendarFilter != null && setCalendarFilter;
   const mapFillsViewport = compact && viewMode === "map";
   const listFillsViewport = compact && (viewMode === "list" || viewMode === "calendar");
   const fillsViewport = mapFillsViewport || listFillsViewport;
@@ -133,22 +123,9 @@ export default function EventsModule({
 
   const baseUpcoming = listEvents ?? upcomingEvents;
 
-  const allUpcomingInRadius = useMemo(
-    () => filterEventsForMapView(baseUpcoming, eventsMapRadiusKm),
-    [baseUpcoming, eventsMapRadiusKm]
-  );
-
-  const allUpcomingCount = allUpcomingInRadius.length;
-  const mineUpcomingCount = useMemo(
-    () => allUpcomingInRadius.filter(isMine).length,
-    [allUpcomingInRadius, user?.id, user?.name, isJoinedEvent]
-  );
-
   const sourceEvents = useMemo(() => {
-    // Platí i když je horní filtr mimo modul (Sousedé → Akce → Moje)
-    const base = calendarFilter !== "mine" ? baseUpcoming : baseUpcoming.filter(isMine);
-    return base.filter((e) => matchesEventSearch(e, effectiveSearch));
-  }, [baseUpcoming, calendarFilter, user?.id, user?.name, isJoinedEvent, effectiveSearch]);
+    return baseUpcoming.filter((e) => matchesEventSearch(e, effectiveSearch));
+  }, [baseUpcoming, effectiveSearch]);
 
   const eventsForMap = useMemo(
     () => filterEventsForMapView(sourceEvents, eventsMapRadiusKm),
@@ -242,7 +219,7 @@ export default function EventsModule({
           onJoin={compact ? joinEvent : undefined}
           isJoined={isJoinedEvent}
           isAttending={isMine}
-          attendanceMode={calendarFilter === "mine" ? "mine" : "all"}
+          attendanceMode="all"
         />
       ) : (
         <ListView
@@ -320,58 +297,6 @@ export default function EventsModule({
   if (compact) {
     return (
       <div className="pp-map-module-root flex flex-col min-h-0 flex-1 overflow-hidden">
-        {showCalendarFilters && (
-          <div className="flex gap-1.5 shrink-0 mb-1.5 pt-2 pr-1.5 overflow-visible">
-            {CALENDAR_FILTERS.map((f) => {
-              const active = calendarFilter === f.id;
-              const upcomingCount = f.id === "all" ? allUpcomingCount : mineUpcomingCount;
-              const showNews = f.id === "mine" && unreadBadge > 0;
-
-              return (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => setCalendarFilter(f.id)}
-                  className={`pp-events-filter-btn flex-1 py-1.5 px-2 rounded-lg text-[11px] font-semibold relative overflow-visible inline-flex items-center justify-center gap-1.5 ${
-                    active
-                      ? "bg-emerald-600 text-white"
-                      : "bg-white border border-stone-200 text-stone-600"
-                  }`}
-                >
-                  <span className="truncate">{f.label}</span>
-                  <span
-                    className={`pp-events-filter-count ${
-                      active ? "pp-events-filter-count--on-active" : ""
-                    }`}
-                    title="Budoucí akce v okruhu"
-                  >
-                    {upcomingCount > 99 ? "99+" : upcomingCount}
-                  </span>
-                  {showNews && (
-                    <span
-                      className={`pp-events-filter-news ${
-                        active ? "pp-events-filter-news--on-active" : ""
-                      }`}
-                      title="Novinky u proběhlých akcí"
-                    >
-                      {unreadBadge > 9 ? "9+" : unreadBadge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-            {onCreateEvent && (
-              <button
-                type="button"
-                onClick={onCreateEvent}
-                className="w-8 h-8 shrink-0 bg-[#3D7A68] text-white rounded-lg text-lg font-bold leading-none"
-                aria-label="Nová událost"
-              >
-                +
-              </button>
-            )}
-          </div>
-        )}
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">{body}</div>
       </div>
     );

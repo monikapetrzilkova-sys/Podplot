@@ -1397,24 +1397,24 @@ body,
   opacity: 0.55;
 }
 
-/** Akce v okolí — neúčastním se */
+/** Akce v okolí — zelená jako text „nové fotky“ */
 .pp-events-calendar-cell--other {
-  background: #f3e8d0;
-  color: #78716c;
+  background: #e8f3ef;
+  color: #3d7a68;
 }
 
 /** Akce, na kterou jdu */
 .pp-events-calendar-cell--attending {
-  background: #c5ddd4;
-  color: #1b4d3e;
+  background: #1b4d3e;
+  color: #ffffff;
 }
 
 .pp-events-calendar-cell--other:hover {
-  background: #ebd9b5;
+  background: #d8ebe3;
 }
 
 .pp-events-calendar-cell--attending:hover {
-  background: #b3d2c7;
+  background: #163d32;
 }
 
 .pp-events-calendar-cell--today .pp-events-calendar-daynum {
@@ -1427,11 +1427,11 @@ body,
 }
 
 .pp-events-calendar-cell--selected.pp-events-calendar-cell--other {
-  background: #e6d4a8;
+  background: #c5ddd4;
 }
 
 .pp-events-calendar-cell--selected.pp-events-calendar-cell--attending {
-  background: #a7cfc0;
+  background: #163d32;
 }
 
 .pp-events-calendar-daynum {
@@ -1464,13 +1464,13 @@ body,
 }
 
 .pp-events-calendar-legend-swatch--other {
-  background: #f3e8d0;
-  border: 1px solid #e8d4a8;
+  background: #e8f3ef;
+  border: 1px solid #3d7a68;
 }
 
 .pp-events-calendar-legend-swatch--attending {
-  background: #c5ddd4;
-  border: 1px solid #a7cfc0;
+  background: #1b4d3e;
+  border: 1px solid #1b4d3e;
 }
 
 .pp-events-calendar-daylist-title {
