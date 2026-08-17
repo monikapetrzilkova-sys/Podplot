@@ -521,6 +521,22 @@ export function AppProvider({ children }) {
   const eventsMapRadiusKm = mapRadiusSettings.events;
   const thingsMapRadiusKm = mapRadiusSettings.things;
 
+  // Jednoduchý UX onboarding — jednou u každého přihlášeného (i stávající účty)
+  useEffect(() => {
+    if (!user?.id) return;
+    try {
+      if (sessionStorage.getItem("pp-show-podplot-story") === "1") {
+        setShowPodplotStory(true);
+        return;
+      }
+      if (localStorage.getItem("pp-ux-onboarding-v1") !== "1") {
+        setShowPodplotStory(true);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [user?.id]);
+
   // Účet testera v prohlížeči — přežije refresh i nový deploy na Vercelu
   useEffect(() => {
     if (SKIP_REGISTRATION) return;
@@ -1937,6 +1953,7 @@ export function AppProvider({ children }) {
   const dismissPodplotStory = useCallback(() => {
     try {
       sessionStorage.removeItem("pp-show-podplot-story");
+      localStorage.setItem("pp-ux-onboarding-v1", "1");
     } catch {
       /* ignore */
     }
@@ -1947,6 +1964,10 @@ export function AppProvider({ children }) {
     setShowDiscoveryWall(true);
     setHomeModule(null);
     setExpandedPillar(null);
+  }, []);
+
+  const openNeighborOnboarding = useCallback(() => {
+    setShowPodplotStory(true);
   }, []);
 
   const logout = useCallback(async () => {
@@ -6281,6 +6302,7 @@ export function AppProvider({ children }) {
         passwordRecovery,
         showPodplotStory,
         dismissPodplotStory,
+        openNeighborOnboarding,
         credits,
         activeTab,
         setActiveTab,

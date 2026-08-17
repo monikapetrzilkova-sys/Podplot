@@ -1,34 +1,45 @@
 import { useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
-import { IconTabHome, IconTabMap, IconTabNeighbors, IconShop } from "../data/icons.jsx";
+import {
+  IconShop,
+  IconTabCatalog,
+  IconTabHome,
+  IconTabMap,
+  IconTabNeighbors,
+} from "../data/icons.jsx";
 
 const STEPS = [
   {
     id: "tabs",
-    title: "Tři místa, která budete používat",
-    body: "Nic složitého — většina věcí je na těchto třech záložkách.",
+    title: "Kam klepnout",
+    body: "Čtyři záložky dole + plus uprostřed. To je skoro všechno.",
     cards: [
       {
         icon: IconTabHome,
         label: "Domů",
-        text: "Novinky od sousedů ve vaší obci.",
+        text: "Novinky od sousedů.",
       },
       {
         icon: IconTabMap,
         label: "Okolí",
-        text: "Mapa — hlášení a místa poblíž.",
+        text: "Mapa — hlášení a místa. Tlačítka Nahlásit / Přidat místo.",
       },
       {
         icon: IconTabNeighbors,
         label: "Sousedé",
-        text: "Čtyři dlaždice: věci, výpomoc, skupiny a akce.",
+        text: "Věci, výpomoc, skupiny a akce — čtyři dlaždice.",
+      },
+      {
+        icon: IconTabCatalog,
+        label: "Služby",
+        text: "Řemeslníci a firmy v okolí.",
       },
     ],
   },
   {
     id: "plus",
     title: "Plus uprostřed = něco přidat",
-    body: "Nabídnout věc, požádat o pomoc, nebo nahlásit problém. Ostatní možnosti jsou pod Další.",
+    body: "Tři hlavní volby. Ostatní jsou pod Další.",
     cards: [
       {
         icon: IconShop,
@@ -38,29 +49,29 @@ const STEPS = [
       {
         icon: IconTabNeighbors,
         label: "Požádat",
-        text: "Potřebujete pomoc od sousedů.",
+        text: "Pomoc od sousedů.",
       },
       {
         icon: IconTabMap,
         label: "Nahlásit",
-        text: "Závada, ztráta, tip na mapě.",
+        text: "Závada, ztráta nebo tip na mapě.",
       },
     ],
   },
   {
     id: "start",
-    title: "Hotovo — jdete na Domů",
-    body: "Začněte prohlížením novinek. Když budete chtít něco přidat, klepněte na +.",
+    title: "Hotovo",
+    body: "Začněte na Domů. Chcete něco přidat? Klepněte na +.",
     cards: [],
   },
 ];
 
-/** Krátký onboarding po registraci — místo dlouhého brand story. */
+/** Krátký onboarding — místo dlouhého brand story. */
 export default function NeighborOnboarding({ onContinue }) {
   const { activeLocation, openPlusMenu, setActiveTab } = useApp();
   const [step, setStep] = useState(0);
   const current = STEPS[step];
-  const place = activeLocation?.municipality || activeLocation?.shortLabel || "vaší obci";
+  const place = activeLocation?.municipality || activeLocation?.shortLabel || null;
 
   const finish = () => {
     onContinue?.();
@@ -90,7 +101,7 @@ export default function NeighborOnboarding({ onContinue }) {
         </p>
         <p className="text-xs text-stone-500 mb-4">
           Krok {step + 1} / {STEPS.length}
-          {step === 0 ? ` · ${place}` : ""}
+          {step === 0 && place ? ` · ${place}` : ""}
         </p>
 
         <div className="flex gap-1.5 mb-5" aria-hidden>
@@ -128,8 +139,8 @@ export default function NeighborOnboarding({ onContinue }) {
         ) : (
           <div className="mb-6 p-4 rounded-2xl bg-[#E8F3EF] border border-[#C5DDD4]">
             <p className="text-sm text-[#1B4D3E] leading-relaxed">
-              Tip: reklamní proužek <strong>Partner</strong> uvidíte nahoře na Domů — je malý a označený,
-              aby neotravoval. Podnikatelé ho platí jako propagaci v okolí.
+              Tip: na Okolí jsou dole tlačítka <strong>Nahlásit</strong> a <strong>Přidat místo</strong> —
+              nemusíte je hledat jen v Plus.
             </p>
           </div>
         )}
