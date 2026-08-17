@@ -14,7 +14,7 @@ export const HOME_SERVICE_SUB_FILTERS = [
   { id: "domov-zahrada", label: "Domov a zahrada", shortLabel: "Domov" },
   { id: "pece-krasa", label: "Péče a krása", shortLabel: "Péče" },
   { id: "deti-rodina", label: "Děti a rodina", shortLabel: "Děti" },
-  { id: "ostatni", label: "Catering a další", shortLabel: "Catering" },
+  { id: "ostatni", label: "Další", shortLabel: "Další" },
 ];
 
 export const SUBCATEGORY_TO_HOME_GROUP = {

@@ -14,7 +14,7 @@ const TILE_HINTS = {
   "domov-zahrada": "Řemeslo, úklid, zahrada k vám",
   "pece-krasa": "Kosmetika, masáže, péče doma",
   "deti-rodina": "Hlídání, doučování u vás",
-  ostatni: "Catering, jídlo a další k vám",
+  ostatni: "Catering, právo a další k vám",
 };
 
 export const CATALOG_TILES = HOME_SERVICE_SUB_FILTERS.map((cat) => ({
