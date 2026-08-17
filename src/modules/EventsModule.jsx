@@ -126,9 +126,12 @@ export default function EventsModule({
   }, [baseUpcoming, effectiveSearch]);
 
   const eventsForMap = useMemo(
-    () => filterEventsForMapView(sourceEvents, eventsMapRadiusKm),
-    [sourceEvents, eventsMapRadiusKm]
+    () => filterEventsForMapView(sourceEvents, eventsMapRadiusKm, undefined, activeLocation),
+    [sourceEvents, eventsMapRadiusKm, activeLocation]
   );
+
+  /** Seznam a kalendář ukazují všechny nadcházející v lokalitě — okruh platí jen na mapě. */
+  const eventsForList = sourceEvents;
 
   const selectedId = moduleSelection?.module === moduleId ? moduleSelection.id : null;
   const selectedEvent = eventsForMap.find((e) => e.id === selectedId) ?? null;
@@ -212,7 +215,7 @@ export default function EventsModule({
       ) : viewMode === "calendar" ? (
         <EventsCalendarMonth
           className="flex-1 min-h-0"
-          events={eventsForMap}
+          events={eventsForList}
           onOpenEvent={openEventDetail}
           onJoin={compact ? joinEvent : undefined}
           isJoined={isJoinedEvent}
@@ -222,8 +225,8 @@ export default function EventsModule({
       ) : (
         <ListView
           className={`flex-1 min-h-0 overflow-y-auto ${fillsViewport ? "" : "max-h-72"}`}
-          items={eventsForMap}
-          emptyMessage="V tomto okruhu zatím žádné akce."
+          items={eventsForList}
+          emptyMessage="Zatím žádné nadcházející akce."
           renderItem={(event) => (
             <EventListRow
               key={event.id}

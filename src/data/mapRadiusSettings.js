@@ -95,13 +95,42 @@ export function formatMapRadiusKm(km) {
   return `${String(km).replace(".", ",")} km`;
 }
 
-/** Filtr podle vzdálenosti na simulované mapě (mapPos nebo distanceKm). */
-export function filterByMapRadius(items, radiusKm, referenceRadiusKm = DEFAULT_REPORTS_MAP_RADIUS_KM) {
+/** Filtr podle vzdálenosti — GPS když je, jinak mapPos %, jinak distanceKm. */
+export function filterByMapRadius(
+  items,
+  radiusKm,
+  referenceRadiusKm = DEFAULT_REPORTS_MAP_RADIUS_KM,
+  center = null
+) {
   return items.filter((item) => {
-    if (item.mapPos) {
+    const lat = item.lat ?? item.mapPos?.lat;
+    const lng = item.lng ?? item.mapPos?.lng;
+    if (
+      lat != null &&
+      lng != null &&
+      Number.isFinite(Number(lat)) &&
+      Number.isFinite(Number(lng)) &&
+      center?.lat != null &&
+      center?.lng != null
+    ) {
+      const R = 6371;
+      const φ1 = (center.lat * Math.PI) / 180;
+      const φ2 = (Number(lat) * Math.PI) / 180;
+      const Δφ = ((Number(lat) - center.lat) * Math.PI) / 180;
+      const Δλ = ((Number(lng) - center.lng) * Math.PI) / 180;
+      const h =
+        Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+      const distKm = R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+      return distKm <= radiusKm;
+    }
+
+    const x = Number(item.mapPos?.x);
+    const y = Number(item.mapPos?.y);
+    if (item.mapPos && Number.isFinite(x) && Number.isFinite(y)) {
       return mapPosToDistanceKm(item.mapPos, referenceRadiusKm) <= radiusKm;
     }
     if (item.distanceKm != null) return item.distanceKm <= radiusKm;
-    return false;
+    // Bez spolehlivé vzdálenosti necháme viditelné (např. právě vytvořená akce)
+    return true;
   });
 }

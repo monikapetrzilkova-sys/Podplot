@@ -133,10 +133,17 @@ export function eventDateSortValue(startsAtIso) {
   return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
 }
 
-/** Akce je minulá, pokud už proběhl začátek */
+/** Akce je minulá, pokud už proběhl začátek (u „čas upřesníme“ až po konci dne). */
 export function isEventPast(event, now = new Date()) {
   if (!event?.startsAt) return false;
-  return new Date(event.startsAt).getTime() < now.getTime();
+  const start = new Date(event.startsAt);
+  if (Number.isNaN(start.getTime())) return false;
+  if (event.timeTbd) {
+    const endOfDay = new Date(start);
+    endOfDay.setHours(23, 59, 59, 999);
+    return endOfDay.getTime() < now.getTime();
+  }
+  return start.getTime() < now.getTime();
 }
 
 /** Spojí lokální datum + čas (HH:mm) bez UTC posunu Safari/iOS. */

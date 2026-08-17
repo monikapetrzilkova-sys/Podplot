@@ -5632,13 +5632,29 @@ export function AppProvider({ children }) {
       photo = null,
       notifyInterested,
     }) => {
-      if (!user) return;
+      if (!user) {
+        showToast("Pro vytvoření akce se nejdřív přihlaste.", "error");
+        return null;
+      }
       const cat = INTEREST_OPTIONS.find((i) => i.id === category);
       const id = `ev-${Date.now()}`;
       const startsAt = eventDate
         ? combineDateAndTime(eventDate, eventTime, timeTbd)
         : null;
       const locationLabel = address?.trim() || activeLocation?.address || activeLocation?.shortLabel;
+      const pinLat = mapPos?.lat != null ? Number(mapPos.lat) : activeLocation?.lat ?? null;
+      const pinLng = mapPos?.lng != null ? Number(mapPos.lng) : activeLocation?.lng ?? null;
+      const resolvedMapPos =
+        mapPos && Number.isFinite(Number(mapPos.x)) && Number.isFinite(Number(mapPos.y))
+          ? mapPos
+          : pinLat != null && pinLng != null
+            ? {
+                x: 50,
+                y: 50,
+                lat: pinLat,
+                lng: pinLng,
+              }
+            : mapPos ?? { x: 50, y: 50 };
       const newEv = {
         id,
         title: title.trim(),
@@ -5650,14 +5666,18 @@ export function AppProvider({ children }) {
         timeTbd,
         location: locationLabel,
         address: locationLabel,
-        mapPos: mapPos ?? null,
+        mapPos: resolvedMapPos,
+        lat: pinLat,
+        lng: pinLng,
         locationId: activeLocationId,
-        distanceKm: 0.5,
+        municipality: activeLocation?.municipality ?? activeLocation?.shortLabel ?? null,
+        distanceKm: 0,
         category,
         categoryLabel: cat?.label ?? category,
         description: description?.trim() || "",
         photo,
         organizer: user.name ?? "Vy",
+        accountType: user.accountType,
         fromOffice:
           user.accountType === "urad" ||
           user.accountType === "instituce" ||
@@ -5675,9 +5695,13 @@ export function AppProvider({ children }) {
         notifyInterested: notifyInterested,
         chat: [],
         galleryPhotos: [],
+        mine: true,
       };
       setEvents((prev) => [newEv, ...prev]);
-      setJoinedEventIds((prev) => [...prev, id]);
+      setJoinedEventIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+      setPendingNeighborsSection("akce");
+      setActiveTab("neighbors");
+      setSelectedEventId(id);
       if (notifyInterested) {
         setNotifications((prev) => [
           {
@@ -5694,6 +5718,7 @@ export function AppProvider({ children }) {
       } else {
         showToast("Událost vytvořena.", "success");
       }
+      return id;
     },
     [user, activeLocation, activeLocationId, showToast]
   );

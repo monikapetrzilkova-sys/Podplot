@@ -156,7 +156,8 @@ export function filterReportsForMapView(
 export function filterEventsForMapView(
   events,
   radiusKm,
-  referenceRadiusKm = DEFAULT_EVENTS_MAP_RADIUS_KM
+  referenceRadiusKm = DEFAULT_EVENTS_MAP_RADIUS_KM,
+  center = null
 ) {
-  return filterByMapRadius(events, radiusKm, referenceRadiusKm);
+  return filterByMapRadius(events, radiusKm, referenceRadiusKm, center);
 }

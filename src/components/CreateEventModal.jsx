@@ -6,6 +6,7 @@ import { isValidCzechTime } from "../data/czechDateTime.js";
 import { addressToMapPos } from "../data/mapData.js";
 import { geocodeCzechAddress } from "../data/addressAutocomplete.js";
 import { buildMapPickResult } from "../utils/geoCoordinates.js";
+import { DEFAULT_EVENTS_MAP_RADIUS_KM } from "../data/mapRadiusSettings.js";
 import EventLocationMap from "./EventLocationMap.jsx";
 import PhotoUpload from "./PhotoUpload.jsx";
 import CzechTimeInput from "./CzechTimeInput.jsx";
@@ -76,7 +77,14 @@ export default function CreateEventModal() {
       const geocoded = await geocodeCzechAddress({ fullAddress: addr });
       if (cancelled) return;
       if (geocoded?.lat != null && geocoded?.lng != null) {
-        setDraftPin(buildMapPickResult(geocoded.lat, geocoded.lng, center, activeLocation?.radiusKm ?? 2));
+        setDraftPin(
+          buildMapPickResult(
+            geocoded.lat,
+            geocoded.lng,
+            center,
+            DEFAULT_EVENTS_MAP_RADIUS_KM
+          )
+        );
         setPinError("");
         return;
       }
@@ -91,7 +99,7 @@ export default function CreateEventModal() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [form.address, createEventOpen, activeLocation?.lat, activeLocation?.lng, activeLocation?.radiusKm]);
+  }, [form.address, createEventOpen, activeLocation?.lat, activeLocation?.lng]);
 
   const submitEvent = (e) => {
     e.preventDefault();
@@ -108,22 +116,35 @@ export default function CreateEventModal() {
       setFormError("Zadejte čas ve formátu 24 hodin (např. 17:00), nebo zaškrtněte, že bude upřesněn.");
       return;
     }
-    if (!draftPin) {
+    const center = {
+      lat: activeLocation?.lat ?? 49.966,
+      lng: activeLocation?.lng ?? 14.512,
+    };
+    let pin = draftPin;
+    if (!pin) {
       const autoPos = addressToMapPos(form.address.trim());
       if (!autoPos) {
         setPinError("Zadejte platnou adresu — místo na mapě se doplní automaticky.");
         return;
       }
-      setDraftPin(autoPos);
+      pin = {
+        ...autoPos,
+        lat: center.lat,
+        lng: center.lng,
+      };
+      setDraftPin(pin);
+    } else if (pin.lat == null || pin.lng == null) {
+      pin = { ...pin, lat: center.lat, lng: center.lng };
     }
     setFormError("");
     setPinError("");
     const photo = eventPhotos[0]?.url ?? null;
-    createEvent({
+    const createdId = createEvent({
       ...form,
-      mapPos: draftPin ?? addressToMapPos(form.address.trim()),
+      mapPos: pin,
       photo,
     });
+    if (!createdId) return;
     close();
   };
 
