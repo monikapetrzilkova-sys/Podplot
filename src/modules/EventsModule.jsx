@@ -15,6 +15,7 @@ import { filterEventsForMapView } from "../data/geoFilter.js";
 import ReportMenu, { EVENT_REPORT_REASONS } from "../components/ReportMenu.jsx";
 import CompactSearchToggle from "../components/CompactSearchToggle.jsx";
 import { displayCreatorLabel } from "../data/accountTypes.js";
+import { DoodleCheckIcon, DoodleJoinIcon } from "../components/doodle/doodleIcons.jsx";
 
 function matchesEventSearch(event, query) {
   const q = String(query ?? "").trim().toLowerCase();
@@ -55,11 +56,21 @@ function EventListRow({ event, selected, onShowOnMap, onOpen, onJoin, joined, on
           <button
             type="button"
             onClick={() => onJoin(event.id)}
-            className={`shrink-0 px-2 py-1 rounded-lg text-[10px] font-semibold ${
+            className={`shrink-0 px-2 py-1 rounded-lg text-[10px] font-semibold inline-flex items-center gap-1 ${
               joined ? "bg-emerald-100 text-emerald-800" : "bg-emerald-600 text-white"
             }`}
           >
-            {joined ? "✓ Jdu" : "Jdu"}
+            {joined ? (
+              <>
+                <DoodleCheckIcon className="w-3 h-3" />
+                Jdu
+              </>
+            ) : (
+              <>
+                <DoodleJoinIcon className="w-3 h-3" />
+                Jdu
+              </>
+            )}
           </button>
         )}
       </div>

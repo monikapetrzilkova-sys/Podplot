@@ -11,6 +11,11 @@ import AppPanelPortal from "./AppPanelPortal.jsx";
 import ReportMenu, { EVENT_REPORT_REASONS } from "./ReportMenu.jsx";
 import { isSameAppUser } from "../data/listingSales.js";
 import { displayCreatorLabel } from "../data/accountTypes.js";
+import {
+  DoodleCheckIcon,
+  DoodleJoinIcon,
+  DoodleChatIcon,
+} from "./doodle/doodleIcons.jsx";
 
 export default function EventDetailModal() {
   const {
@@ -129,11 +134,21 @@ export default function EventDetailModal() {
           <button
             type="button"
             onClick={() => joinEvent(ev.id)}
-            className={`mt-4 w-full py-2.5 rounded-2xl text-sm font-semibold ${
+            className={`mt-4 w-full py-2.5 rounded-2xl text-sm font-semibold inline-flex items-center justify-center gap-2 ${
               isJoinedEvent(ev.id) ? "bg-emerald-100 text-emerald-800" : "bg-emerald-600 text-white"
             }`}
           >
-            {isJoinedEvent(ev.id) ? "✓ Jste přihlášeni" : "⭐ Zúčastním se"}
+            {isJoinedEvent(ev.id) ? (
+              <>
+                <DoodleCheckIcon className="w-4 h-4" />
+                Jste přihlášeni
+              </>
+            ) : (
+              <>
+                <DoodleJoinIcon className="w-4 h-4" />
+                Zúčastním se
+              </>
+            )}
           </button>
         )}
 
@@ -165,7 +180,10 @@ export default function EventDetailModal() {
 
         {canChat && (
           <section className="mt-6">
-            <h3 className="text-sm font-bold text-stone-800 mb-3">💬 Chat akce</h3>
+            <h3 className="text-sm font-bold text-stone-800 mb-3 inline-flex items-center gap-1.5">
+              <DoodleChatIcon className="w-4 h-4 text-[#3D7A68]" />
+              Chat akce
+            </h3>
             <div className="space-y-2 mb-3">
               {(ev.chat ?? []).map((m, i) => (
                 <div key={i} className="bg-stone-50 rounded-xl p-3">
@@ -192,7 +210,10 @@ export default function EventDetailModal() {
 
         {past && (ev.chat ?? []).length > 0 && (
           <section className="mt-6">
-            <h3 className="text-sm font-bold text-stone-800 mb-3">💬 Chat akce</h3>
+            <h3 className="text-sm font-bold text-stone-800 mb-3 inline-flex items-center gap-1.5">
+              <DoodleChatIcon className="w-4 h-4 text-[#3D7A68]" />
+              Chat akce
+            </h3>
             <div className="space-y-2">
               {(ev.chat ?? []).map((m, i) => (
                 <div key={i} className="bg-stone-50 rounded-xl p-3">

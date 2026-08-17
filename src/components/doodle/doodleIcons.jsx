@@ -445,6 +445,17 @@ export function DoodleCheckIcon({ className }) {
   );
 }
 
+/** Účast na akci — postava + fajfka (místo hvězdy) */
+export function DoodleJoinIcon({ className }) {
+  return (
+    <DoodleIcon className={className}>
+      <circle {...s} cx="9.2" cy="8" r="2.6" />
+      <path {...s} d="M4.2 18.5c0-2.8 2.1-4.8 5-4.8s5 2 5 4.8" />
+      <path {...s} d="M14.2 10.2l2.2 2.2 4-4.2" />
+    </DoodleIcon>
+  );
+}
+
 export function DoodleSearchIcon({ className }) {
   return (
     <DoodleIcon className={className}>

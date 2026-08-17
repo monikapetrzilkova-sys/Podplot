@@ -1,5 +1,5 @@
 import { useApp } from "../context/AppContext.jsx";
-import { DoodleCalendarIcon, DoodleCheckIcon, DoodleStarIcon } from "./doodle/doodleIcons.jsx";
+import { DoodleCalendarIcon, DoodleCheckIcon, DoodleJoinIcon } from "./doodle/doodleIcons.jsx";
 import { displayCreatorLabel } from "../data/accountTypes.js";
 
 export default function EventsWidget() {
@@ -50,7 +50,7 @@ export default function EventsWidget() {
                   </>
                 ) : (
                   <>
-                    <DoodleStarIcon className="w-3.5 h-3.5" />
+                    <DoodleJoinIcon className="w-3.5 h-3.5" />
                     Zúčastním se
                   </>
                 )}
