@@ -670,16 +670,19 @@ export default function RegisterScreen() {
 
             <div>
               <label className="block text-xs font-semibold text-stone-600 mb-2">Typ účtu</label>
+              <p className="text-[11px] text-stone-500 mb-2 leading-relaxed">
+                Většina lidí volí Soused — ostatní typy až když máte provozovnu nebo úřad.
+              </p>
               <div className="space-y-2">
-                {ACCOUNT_TYPE_LIST.map((type) => (
+                {ACCOUNT_TYPE_LIST.filter((t) => t.id === "soused").map((type) => (
                   <button
                     key={type.id}
                     type="button"
                     onClick={() => {
                       setAccountType(type.id);
-                      if (type.id !== "podnik") setBusinessSubtype("fyzicka");
+                      setBusinessSubtype("fyzicka");
                     }}
-                    className={`w-full text-left p-3 rounded-2xl border transition-colors ${
+                    className={`w-full text-left p-3.5 rounded-2xl border transition-colors ${
                       accountType === type.id
                         ? "border-teal-700 bg-teal-50 ring-1 ring-teal-700"
                         : "border-stone-200 hover:border-stone-300"
@@ -690,10 +693,47 @@ export default function RegisterScreen() {
                         <AccountTypeIcon accountType={type.id} className="w-4 h-4" />
                       </span>
                       {type.label}
+                      <span className="text-[10px] font-bold uppercase tracking-wide text-[#3D7A68] bg-[#E8F3EF] px-1.5 py-0.5 rounded-md">
+                        doporučeno
+                      </span>
                     </span>
                     <p className="text-xs text-stone-500 mt-0.5">{type.hint}</p>
                   </button>
                 ))}
+                <details
+                  className="rounded-2xl border border-stone-200 open:border-[#C5DDD4] open:bg-[#FAFCFA]"
+                  open={accountType !== "soused"}
+                >
+                  <summary className="cursor-pointer list-none p-3 text-xs font-semibold text-stone-600 flex items-center justify-between">
+                    Jiné typy (podnik, úřad…)
+                    <span className="text-stone-400 font-normal">rozbalit</span>
+                  </summary>
+                  <div className="px-2 pb-2 space-y-2">
+                    {ACCOUNT_TYPE_LIST.filter((t) => t.id !== "soused").map((type) => (
+                      <button
+                        key={type.id}
+                        type="button"
+                        onClick={() => {
+                          setAccountType(type.id);
+                          if (type.id !== "podnik") setBusinessSubtype("fyzicka");
+                        }}
+                        className={`w-full text-left p-3 rounded-2xl border transition-colors ${
+                          accountType === type.id
+                            ? "border-teal-700 bg-teal-50 ring-1 ring-teal-700"
+                            : "border-stone-200 hover:border-stone-300 bg-white"
+                        }`}
+                      >
+                        <span className="text-sm font-semibold text-stone-800 inline-flex items-center gap-2">
+                          <span className="w-8 h-8 rounded-xl bg-[#F1F6F5] border border-[#C5DDD4] text-[#3D7A68] inline-flex items-center justify-center shrink-0">
+                            <AccountTypeIcon accountType={type.id} className="w-4 h-4" />
+                          </span>
+                          {type.label}
+                        </span>
+                        <p className="text-xs text-stone-500 mt-0.5">{type.hint}</p>
+                      </button>
+                    ))}
+                  </div>
+                </details>
               </div>
             </div>
 

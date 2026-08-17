@@ -28,7 +28,7 @@ import ProfileHintModal from "./components/ProfileHintModal.jsx";
 import PlaceSuggestionModal from "./components/entity/PlaceSuggestionModal.jsx";
 import HomeEventGalleryOverlay from "./components/HomeEventGalleryOverlay.jsx";
 import LocationAccessPrompt from "./components/LocationAccessPrompt.jsx";
-import { PodplotStoryWelcome } from "./components/LegalPages.jsx";
+import NeighborOnboarding from "./components/NeighborOnboarding.jsx";
 
 import BusinessAdsPage from "./components/BusinessAdsPage.jsx";
 import GlobalSearchResults from "./components/GlobalSearchResults.jsx";
@@ -307,7 +307,7 @@ export default function AppShell() {
       </div>
       <Toast />
       {showPodplotStory ? (
-        <PodplotStoryWelcome onContinue={dismissPodplotStory} />
+        <NeighborOnboarding onContinue={dismissPodplotStory} />
       ) : null}
     </>
   );

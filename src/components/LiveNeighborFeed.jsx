@@ -234,7 +234,7 @@ export default function LiveNeighborFeed() {
   return (
     <section className="px-4 pt-2 pb-3 shrink-0">
       <h2 className="text-xs font-bold uppercase tracking-widest mb-2 text-[#3D7A68]">
-        Živé sousedské dění
+        Živé dění v okolí
       </h2>
       <div className="space-y-1.5">
         {filteredItems.map((item) => {

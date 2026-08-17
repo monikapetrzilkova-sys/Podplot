@@ -1,4 +1,4 @@
-/** Kompaktní přepínač Hlášení / Průvodce na stránce Mapa */
+/** Kompaktní přepínač Hlášení / Místa na stránce Okolí */
 
 import { useEffect, useState } from "react";
 import { MAP_DOODLE_ICONS, LOCATION_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
@@ -12,7 +12,7 @@ import AppPanelPortal from "./AppPanelPortal.jsx";
 
 export const MAP_TILES = [
   { id: "reports", label: "Hlášení" },
-  { id: "places", label: "Průvodce" },
+  { id: "places", label: "Místa" },
 ];
 
 /** Žárovka — tip / více informací u aktivního Hlášení */
@@ -131,12 +131,12 @@ export default function MapGrid({ activeId, onSelect, compact = false, prominent
   if (prominent) {
     return (
       <div className="pp-map-main-tabs-wrap">
-        <div className="pp-map-main-tabs" role="tablist" aria-label="Mapa — hlavní kategorie">
+        <div className="pp-map-main-tabs" role="tablist" aria-label="Okolí — hlavní kategorie">
           {MAP_TILES.map((tile) => {
             const active = activeId === tile.id;
             const Icon = MAP_DOODLE_ICONS[tile.id];
             const subtitle =
-              tile.id === "reports" ? "Sousedská hlášení na mapě" : "Katalog míst v okolí";
+              tile.id === "reports" ? "Sousedská hlášení na mapě" : "Místa v okolí";
 
             return (
               <div

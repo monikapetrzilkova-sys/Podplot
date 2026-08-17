@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import { APP_ROLES } from "../data/userRoles.js";
 import {
@@ -11,42 +12,50 @@ import {
   IconTabNeighbors,
 } from "../data/icons.jsx";
 
-const NEIGHBOR_ACTIONS = [
+/** Hlavní 3 akce souseda — zbytek pod Další */
+const NEIGHBOR_PRIMARY = [
   {
-    id: "market",
-    label: "Prodám / Daruji / Sháním",
+    id: "offer",
+    label: "Nabídnout",
+    hint: "Prodej, dar nebo půjčení sousedům",
     icon: IconShop,
     action: "create",
     category: null,
   },
   {
-    id: "lend",
-    label: "Půjčím",
-    icon: IconHammer,
-    action: "create",
-    category: "pujcovna",
-  },
-  {
-    id: "help",
-    label: "Potřebuji / Nabízím pomoc",
+    id: "ask",
+    label: "Požádat o pomoc",
+    hint: "Výpomoc od lidí v okolí",
     icon: IconTabNeighbors,
     action: "help",
   },
   {
-    id: "event",
-    label: "Nová akce",
-    icon: IconTabCalendar,
-    action: "event",
-  },
-  {
     id: "report",
     label: "Nahlásit",
+    hint: "Závada, ztráta nebo tip na mapě",
     icon: IconAlert,
     action: "report",
   },
 ];
 
-/** Mobilní řemeslník — bez reklam do sousedského feedu */
+const NEIGHBOR_MORE = [
+  {
+    id: "lend",
+    label: "Půjčím věc",
+    hint: "Přidat do půjčovny",
+    icon: IconHammer,
+    action: "create",
+    category: "pujcovna",
+  },
+  {
+    id: "event",
+    label: "Nová akce",
+    hint: "Událost do kalendáře",
+    icon: IconTabCalendar,
+    action: "event",
+  },
+];
+
 const CRAFTSMAN_ACTIONS = [
   {
     id: "invoice",
@@ -71,7 +80,6 @@ const CRAFTSMAN_ACTIONS = [
   },
 ];
 
-/** Provozovna — rychlá aktualita / změna provozu */
 const BUSINESS_ACTIONS = [
   {
     id: "note",
@@ -96,7 +104,6 @@ const BUSINESS_ACTIONS = [
   },
 ];
 
-/** Pouze oficiální akce instituce / úřadu — pořadí: oznámení → výzva → akce */
 const OFFICE_ACTIONS = [
   {
     id: "announce",
@@ -121,6 +128,30 @@ const OFFICE_ACTIONS = [
   },
 ];
 
+function ActionRow({ item, onPick }) {
+  const Icon = item.icon;
+  return (
+    <button
+      type="button"
+      onClick={() => onPick(item)}
+      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left hover:bg-[#F1F6F5] transition-colors"
+    >
+      <span
+        className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+        style={{ background: "#E8F3EF", color: "#3D7A68" }}
+      >
+        <Icon className="w-5 h-5" />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm font-semibold text-stone-900 leading-snug">{item.label}</span>
+        {item.hint ? (
+          <span className="block text-[11px] text-stone-500 mt-0.5">{item.hint}</span>
+        ) : null}
+      </span>
+    </button>
+  );
+}
+
 export default function PlusActionMenu() {
   const {
     plusMenuOpen,
@@ -142,20 +173,25 @@ export default function PlusActionMenu() {
     isFyzickaWorkMode,
     isMobilniWorkMode,
   } = useApp();
+  const [moreOpen, setMoreOpen] = useState(false);
 
   if (!plusMenuOpen) return null;
 
   const isOfficeMode = appUserRole === APP_ROLES.OFFICE && !viewAsNeighbor;
-  const actions = isOfficeMode
+  const isNeighbor =
+    !isOfficeMode && !isFyzickaWorkMode && !isMobilniWorkMode && !isB2BWorkMode;
+
+  const workActions = isOfficeMode
     ? OFFICE_ACTIONS
     : isFyzickaWorkMode
       ? BUSINESS_ACTIONS
       : isMobilniWorkMode || isB2BWorkMode
         ? CRAFTSMAN_ACTIONS
-        : NEIGHBOR_ACTIONS;
+        : null;
 
   const handleAction = (item) => {
     closePlusMenu();
+    setMoreOpen(false);
     if (item.action === "report") {
       openMapReport();
       return;
@@ -199,7 +235,15 @@ export default function PlusActionMenu() {
 
   return (
     <div className="pp-plus-menu" role="dialog" aria-label="Akční menu">
-      <button type="button" className="pp-plus-menu-backdrop" onClick={closePlusMenu} aria-label="Zavřít" />
+      <button
+        type="button"
+        className="pp-plus-menu-backdrop"
+        onClick={() => {
+          setMoreOpen(false);
+          closePlusMenu();
+        }}
+        aria-label="Zavřít"
+      />
       <div className="pp-plus-menu-panel">
         {isOfficeMode && (
           <p className="px-4 pb-2 text-[11px] font-semibold uppercase tracking-wide text-[#3D7A68]">
@@ -216,30 +260,37 @@ export default function PlusActionMenu() {
             Pracovní akce
           </p>
         )}
-        {actions.map((item) => {
-          const Icon = item.icon;
-          return (
+        {isNeighbor && (
+          <p className="px-4 pb-2 text-[11px] font-semibold uppercase tracking-wide text-[#3D7A68]">
+            Co chcete udělat?
+          </p>
+        )}
+
+        {isNeighbor
+          ? NEIGHBOR_PRIMARY.map((item) => (
+              <ActionRow key={item.id} item={item} onPick={handleAction} />
+            ))
+          : workActions.map((item) => (
+              <ActionRow key={item.id} item={item} onPick={handleAction} />
+            ))}
+
+        {isNeighbor ? (
+          <>
             <button
-              key={item.id}
               type="button"
-              onClick={() => handleAction(item)}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left hover:bg-[#F1F6F5] transition-colors"
+              onClick={() => setMoreOpen((v) => !v)}
+              className="w-full px-4 py-2.5 text-left text-xs font-semibold text-[#3D7A68]"
+              aria-expanded={moreOpen}
             >
-              <span
-                className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
-                style={{ background: "#E8F3EF", color: "#3D7A68" }}
-              >
-                <Icon className="w-5 h-5" />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-sm font-semibold text-stone-900 leading-snug">{item.label}</span>
-                {item.hint && (
-                  <span className="block text-[11px] text-stone-500 mt-0.5">{item.hint}</span>
-                )}
-              </span>
+              {moreOpen ? "Méně možností ▴" : "Další možnosti ▾"}
             </button>
-          );
-        })}
+            {moreOpen
+              ? NEIGHBOR_MORE.map((item) => (
+                  <ActionRow key={item.id} item={item} onPick={handleAction} />
+                ))
+              : null}
+          </>
+        ) : null}
       </div>
     </div>
   );

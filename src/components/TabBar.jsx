@@ -13,10 +13,10 @@ import {
 
 const NEIGHBOR_TABS = [
   { id: "home", label: "Domů", icon: IconTabHome },
-  { id: "map", label: "Mapa", icon: IconTabMap },
+  { id: "map", label: "Okolí", icon: IconTabMap },
   { id: "plus", label: "", isPlus: true },
   { id: "neighbors", label: "Sousedé", icon: IconTabNeighbors },
-  { id: "catalog", label: "Katalog", icon: IconTabCatalog },
+  { id: "catalog", label: "Služby", icon: IconTabCatalog },
 ];
 
 /**

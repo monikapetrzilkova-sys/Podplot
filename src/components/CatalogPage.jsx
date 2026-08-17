@@ -50,8 +50,8 @@ export default function CatalogPage() {
             onChange={setCatalogSearch}
             expanded={searchExpanded || Boolean(catalogSearch.trim())}
             onExpandedChange={setSearchExpanded}
-            placeholder="Hledat v katalogu…"
-            ariaLabel="Hledat v katalogu"
+            placeholder="Hledat ve službách…"
+            ariaLabel="Hledat ve službách"
           />
         ) : (
           <>
@@ -61,7 +61,7 @@ export default function CatalogPage() {
                 mainItems={CATALOG_MAIN}
                 activeId={homeSub ?? "vse"}
                 onSelectMain={handleSelectMain}
-                ariaLabel="Katalog — kategorie"
+                ariaLabel="Služby — kategorie"
                 prominent
                 fit
               />
@@ -71,8 +71,8 @@ export default function CatalogPage() {
               onChange={setCatalogSearch}
               expanded={false}
               onExpandedChange={setSearchExpanded}
-              placeholder="Hledat v katalogu…"
-              ariaLabel="Hledat v katalogu"
+              placeholder="Hledat ve službách…"
+              ariaLabel="Hledat ve službách"
             />
           </>
         )}

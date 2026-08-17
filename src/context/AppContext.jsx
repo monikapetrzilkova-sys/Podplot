@@ -1481,11 +1481,7 @@ export function AppProvider({ children }) {
         "zvolené místo";
       const label = loc?.label && loc.label !== place ? loc.label : null;
       const where = label ? `${label} · ${place}` : place;
-      showToast(
-        `Vše je přemapováno na ${where} — příspěvky, mapa, akce i okolí.`,
-        "info",
-        { locationId, durationMs: 4500 }
-      );
+      showToast(`Teď jste v ${where}.`, "info", { locationId, durationMs: 3200 });
     },
     [showToast]
   );

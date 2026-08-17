@@ -29,9 +29,9 @@ export default function SponsoredStrip() {
 
   return (
     <>
-      <section className="px-4 pt-1.5 pb-0 shrink-0">
+      <section className="px-4 pt-1 pb-2 shrink-0">
         <article
-          className="pp-home-card pp-partner-card-compact relative"
+          className="pp-home-card pp-partner-card-compact relative border border-dashed border-[#C5DDD4] bg-[#FAFCFA]"
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
         >
@@ -39,7 +39,7 @@ export default function SponsoredStrip() {
           <button
             type="button"
             onClick={() => setSelected(b)}
-            className="w-full h-full box-border flex items-center gap-2 px-3 pt-8 pb-2 text-left transition-colors hover:bg-[#FAFAFA] rounded-2xl"
+            className="w-full h-full box-border flex items-center gap-2 px-3 pt-8 pb-2 text-left transition-colors hover:bg-[#F7FAF9] rounded-2xl"
           >
             <PlaceIcon place={b} className="w-4 h-4 shrink-0 pp-icon-meta" />
             <span className="flex-1 min-w-0 pp-text-meta line-clamp-1 leading-snug">
