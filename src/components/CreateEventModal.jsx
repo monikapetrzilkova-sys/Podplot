@@ -4,6 +4,8 @@ import { INTEREST_OPTIONS } from "../data/ecosystemMock.js";
 import { minEventDateValue } from "../data/eventFormatting.js";
 import { isValidCzechTime } from "../data/czechDateTime.js";
 import { addressToMapPos } from "../data/mapData.js";
+import { geocodeCzechAddress } from "../data/addressAutocomplete.js";
+import { buildMapPickResult } from "../utils/geoCoordinates.js";
 import EventLocationMap from "./EventLocationMap.jsx";
 import PhotoUpload from "./PhotoUpload.jsx";
 import CzechTimeInput from "./CzechTimeInput.jsx";
@@ -64,15 +66,32 @@ export default function CreateEventModal() {
       setDraftPin(null);
       return;
     }
-    const timer = setTimeout(() => {
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      const center = {
+        lat: activeLocation?.lat ?? 49.966,
+        lng: activeLocation?.lng ?? 14.512,
+      };
+      const geocoded = await geocodeCzechAddress({ fullAddress: addr });
+      if (cancelled) return;
+      if (geocoded?.lat != null && geocoded?.lng != null) {
+        setDraftPin(buildMapPickResult(geocoded.lat, geocoded.lng, center, activeLocation?.radiusKm ?? 2));
+        setPinError("");
+        return;
+      }
       const pos = addressToMapPos(addr);
       if (pos) {
         setDraftPin(pos);
         setPinError("");
       }
-    }, 350);
-    return () => clearTimeout(timer);
-  }, [form.address, createEventOpen]);
+    }, 400);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [form.address, createEventOpen, activeLocation?.lat, activeLocation?.lng, activeLocation?.radiusKm]);
 
   const submitEvent = (e) => {
     e.preventDefault();

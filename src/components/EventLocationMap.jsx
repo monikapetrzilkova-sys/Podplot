@@ -1,6 +1,7 @@
-import ReportsMap from "./ReportsMap.jsx";
+import MapComponent from "./module/MapComponent.jsx";
+import { useApp } from "../context/AppContext.jsx";
 
-/** Mapa místa akce — oddělená od hlášení, jen pro události */
+/** Mapa místa akce — Google Maps (stejně jako hlášení), s fallbackem */
 export default function EventLocationMap({
   mapPos = null,
   pickMode = false,
@@ -9,31 +10,43 @@ export default function EventLocationMap({
   address = "",
   compact = false,
 }) {
+  const { activeLocation, user } = useApp();
   const pin = pickMode ? draftPin : mapPos;
-  const reports = pin && !pickMode ? [{ id: "event-pin", mapPos: pin, type: "Místo akce", urgent: false }] : [];
+  const events =
+    pin && !pickMode
+      ? [{ id: "event-pin", mapPos: pin, title: "Místo akce", lat: pin.lat, lng: pin.lng }]
+      : [];
 
   return (
-    <div>
-      <ReportsMap
-        reports={reports}
+    <div className="min-w-0 overflow-hidden rounded-xl border border-stone-200">
+      <MapComponent
+        mapMode="events"
+        events={events}
         pickMode={pickMode}
         draftPin={draftPin}
         onPickPin={onPickPin}
-        selectedReportId={!pickMode && pin ? "event-pin" : null}
-        singleReportMode={!pickMode && Boolean(pin)}
+        selectedEventId={!pickMode && pin ? "event-pin" : null}
         showHomePin={!pickMode}
         compact={compact}
         hideLegend
         hideStats={pickMode}
-        userAddress={address}
-        areaLabel={address ? address.split(",").pop()?.trim() : undefined}
+        userAddress={address || activeLocation?.address || user?.address || ""}
+        areaLabel={
+          address
+            ? address.split(",").pop()?.trim()
+            : activeLocation?.shortLabel
+        }
         homeLabel="Vaše okolí"
+        focusDraftPin={pickMode && Boolean(draftPin)}
+        draftPinOnly={pickMode}
+        large={false}
+        className="mb-0"
       />
       {pickMode && (
-        <p className="text-[11px] text-stone-500 mt-1.5">
+        <p className="text-[11px] text-stone-500 px-2.5 py-2 bg-stone-50 border-t border-stone-100">
           {draftPin
-            ? "Místo se doplnilo z adresy. Klepnutím na mapu ho můžete upřesnit."
-            : "Po zadání adresy se místo na mapě doplní samo."}
+            ? "Místo je na mapě — klepnutím nebo posunutím špendlíku ho můžete upřesnit."
+            : "Klepněte na mapu, nebo zadejte adresu výše — místo se doplní samo."}
         </p>
       )}
     </div>
