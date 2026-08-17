@@ -131,7 +131,7 @@ export default function BusinessAdsPage() {
   const bannerDetail = (
     <>
       <p className="text-[11px] text-stone-500 pt-3">
-        Proužek Partner dole na Domů u sousedů v okolí — malý, označený Partner. Platba z kreditů (1 kredit = 1 Kč).
+        Proužek Partner nahoře na Domů u sousedů v okolí — označený Partner. Platba z kreditů (1 kredit = 1 Kč).
       </p>
 
       <div className="space-y-2">
@@ -338,7 +338,7 @@ export default function BusinessAdsPage() {
           <PromoTypeRow
             id="banner"
             title="Banner Partner"
-            summary={`Proužek dole na Domů · od ${SPONSORED_STRIP_PLANS[0].price} Kč`}
+            summary={`Proužek nahoře na Domů · od ${SPONSORED_STRIP_PLANS[0].price} Kč`}
             status={hasActiveBanner ? "Aktivní" : null}
             statusActive={hasActiveBanner}
             open={openPromo === "banner"}
@@ -407,7 +407,7 @@ export default function BusinessAdsPage() {
   return (
     <div className="pp-page flex flex-col min-h-full px-4 pt-4 pb-8 gap-4">
       <p className="text-xs text-stone-500">
-        Banner Partner dole na Domů u sousedů v okolí
+        Banner Partner nahoře na Domů u sousedů v okolí
       </p>
 
       {creditsBar}

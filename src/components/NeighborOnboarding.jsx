@@ -128,7 +128,7 @@ export default function NeighborOnboarding({ onContinue }) {
         ) : (
           <div className="mb-6 p-4 rounded-2xl bg-[#E8F3EF] border border-[#C5DDD4]">
             <p className="text-sm text-[#1B4D3E] leading-relaxed">
-              Tip: reklamní proužek <strong>Partner</strong> uvidíte dole na Domů — je malý a označený,
+              Tip: reklamní proužek <strong>Partner</strong> uvidíte nahoře na Domů — je malý a označený,
               aby neotravoval. Podnikatelé ho platí jako propagaci v okolí.
             </p>
           </div>
