@@ -28,7 +28,6 @@ import ProfileHintModal from "./components/ProfileHintModal.jsx";
 import PlaceSuggestionModal from "./components/entity/PlaceSuggestionModal.jsx";
 import HomeEventGalleryOverlay from "./components/HomeEventGalleryOverlay.jsx";
 import LocationAccessPrompt from "./components/LocationAccessPrompt.jsx";
-import NeighborOnboarding from "./components/NeighborOnboarding.jsx";
 
 import BusinessAdsPage from "./components/BusinessAdsPage.jsx";
 import GlobalSearchResults from "./components/GlobalSearchResults.jsx";
@@ -259,7 +258,7 @@ function GlobalModals() {
 }
 
 export default function AppShell() {
-  const { user, showPodplotStory, dismissPodplotStory, passwordRecovery } = useApp();
+  const { user, passwordRecovery } = useApp();
   /** Telefonní rámeček jen na desktopu s myší — telefony/touch vždy full-bleed */
   const [desktopFrame, setDesktopFrame] = useState(false);
 
@@ -306,9 +305,6 @@ export default function AppShell() {
         </div>
       </div>
       <Toast />
-      {showPodplotStory ? (
-        <NeighborOnboarding onContinue={dismissPodplotStory} />
-      ) : null}
     </>
   );
 }

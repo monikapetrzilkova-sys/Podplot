@@ -283,13 +283,6 @@ export function AppProvider({ children }) {
   const [feedMainMode, setFeedMainMode] = useState("komunita");
   const [feedSubFilter, setFeedSubFilter] = useState("veci");
   const [showDiscoveryWall, setShowDiscoveryWall] = useState(true);
-  const [showPodplotStory, setShowPodplotStory] = useState(() => {
-    try {
-      return sessionStorage.getItem("pp-show-podplot-story") === "1";
-    } catch {
-      return false;
-    }
-  });
   /** Po odkazu z e-mailu „zapomenuté heslo“ — vynutí obrazovku nového hesla */
   const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [expandedPillar, setExpandedPillar] = useState(null);
@@ -520,22 +513,6 @@ export function AppProvider({ children }) {
   const reportsMapRadiusKm = mapRadiusSettings.reports;
   const eventsMapRadiusKm = mapRadiusSettings.events;
   const thingsMapRadiusKm = mapRadiusSettings.things;
-
-  // Jednoduchý UX onboarding — jednou u každého přihlášeného (i stávající účty)
-  useEffect(() => {
-    if (!user?.id) return;
-    try {
-      if (sessionStorage.getItem("pp-show-podplot-story") === "1") {
-        setShowPodplotStory(true);
-        return;
-      }
-      if (localStorage.getItem("pp-ux-onboarding-v1") !== "1") {
-        setShowPodplotStory(true);
-      }
-    } catch {
-      /* ignore */
-    }
-  }, [user?.id]);
 
   // Účet testera v prohlížeči — přežije refresh i nový deploy na Vercelu
   useEffect(() => {
@@ -1807,12 +1784,6 @@ export function AppProvider({ children }) {
       setShowDiscoveryWall(true);
       setHomeModule(null);
       setExpandedPillar(null);
-      try {
-        sessionStorage.setItem("pp-show-podplot-story", "1");
-      } catch {
-        /* ignore */
-      }
-      setShowPodplotStory(true);
       return { ok: true };
     },
     [showToast]
@@ -1950,26 +1921,6 @@ export function AppProvider({ children }) {
     [showToast]
   );
 
-  const dismissPodplotStory = useCallback(() => {
-    try {
-      sessionStorage.removeItem("pp-show-podplot-story");
-      localStorage.setItem("pp-ux-onboarding-v1", "1");
-    } catch {
-      /* ignore */
-    }
-    setShowPodplotStory(false);
-    setActiveTab("home");
-    setFeedMainMode("komunita");
-    setFeedSubFilter("veci");
-    setShowDiscoveryWall(true);
-    setHomeModule(null);
-    setExpandedPillar(null);
-  }, []);
-
-  const openNeighborOnboarding = useCallback(() => {
-    setShowPodplotStory(true);
-  }, []);
-
   const logout = useCallback(async () => {
     await authSignOut();
     clearUserSession();
@@ -1991,12 +1942,6 @@ export function AppProvider({ children }) {
     setUserProfileIds(["soused"]);
     setServicesCatalog(SERVICES_CATALOG);
     setShowDiscoveryWall(true);
-    setShowPodplotStory(false);
-    try {
-      sessionStorage.removeItem("pp-show-podplot-story");
-    } catch {
-      /* ignore */
-    }
     setViewAsNeighbor(false);
     workUserBackupRef.current = null;
     setActiveTab("home");
@@ -6300,9 +6245,6 @@ export function AppProvider({ children }) {
         completePasswordRecovery,
         changePassword,
         passwordRecovery,
-        showPodplotStory,
-        dismissPodplotStory,
-        openNeighborOnboarding,
         credits,
         activeTab,
         setActiveTab,

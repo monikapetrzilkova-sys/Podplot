@@ -208,7 +208,6 @@ export default function MyProfile({ registerLegalBack } = {}) {
     userGroupPosts,
     reportSecurityReport,
     closeProfile,
-    openNeighborOnboarding,
     selectMainTab,
     setPendingNeighborsSection,
     setPendingThingsItemId,
@@ -1460,17 +1459,7 @@ export default function MyProfile({ registerLegalBack } = {}) {
         )}
       </section>
 
-      <div className="mt-6 space-y-3">
-        <button
-          type="button"
-          onClick={() => {
-            closeProfile();
-            openNeighborOnboarding?.();
-          }}
-          className="w-full py-3 rounded-2xl text-sm font-semibold text-[#1B4D3E] bg-[#E8F3EF] border border-[#C5DDD4]"
-        >
-          Jak Podplot funguje
-        </button>
+      <div className="mt-6">
         <LegalLinksSection onOpen={setLegalPage} />
       </div>
 

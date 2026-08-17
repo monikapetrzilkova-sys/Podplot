@@ -25,17 +25,16 @@ function markPromptDone() {
 }
 
 export default function LocationAccessPrompt() {
-  const { user, showToast, showPodplotStory } = useApp();
+  const { user, showToast } = useApp();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!user) return;
-    if (showPodplotStory) return;
     if (wasPromptDone()) return;
     const t = window.setTimeout(() => setOpen(true), 600);
     return () => window.clearTimeout(t);
-  }, [user?.id, showPodplotStory]);
+  }, [user?.id]);
 
   if (!user || !open) return null;
 
