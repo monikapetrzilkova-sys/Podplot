@@ -299,10 +299,10 @@ export default function AppShell() {
           <CreateEventModal />
           <PlaceSuggestionModal />
           <PlusActionMenu />
+          <div id="app-modal-root" className="pp-app-modal-root" />
           <ProfileOverlay />
           <MessagesOverlay />
           <GlobalModals />
-          <div id="app-modal-root" className="absolute inset-0 z-[70] pointer-events-none" />
         </div>
       </div>
       <Toast />

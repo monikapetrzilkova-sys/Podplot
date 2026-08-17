@@ -2079,6 +2079,72 @@ body,
   }
 }
 
+/* Host pro portálové modály — prázdný nesmí blokovat klepnutí (iOS Safari bug) */
+.pp-app-modal-root,
+#app-modal-root {
+  position: absolute;
+  inset: 0;
+  z-index: 70;
+  pointer-events: none;
+}
+
+#app-modal-root:empty {
+  display: none;
+}
+
+/* Chat přes portál — plná výška, spolehlivé zavření na iPhonu */
+.pp-chat-overlay {
+  justify-content: stretch;
+  pointer-events: none;
+}
+
+.pp-chat-sheet {
+  pointer-events: auto;
+  max-height: 100%;
+  height: 100%;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.pp-chat-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: max(0.5rem, env(safe-area-inset-top, 0px)) 0.75rem 0.625rem;
+  border-bottom: 1px solid #e7e5e4;
+  background: #ffffff;
+  position: relative;
+  z-index: 2;
+}
+
+.pp-chat-close-text {
+  flex-shrink: 0;
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  border-radius: 999px;
+  border: 1px solid #d6e5df;
+  background: #f1f6f5;
+  color: #1b4d3e;
+  font-size: 0.75rem;
+  font-weight: 700;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pp-chat-close-text:active {
+  background: #e8f3ef;
+  transform: scale(0.96);
+}
+
+@media (pointer: coarse) {
+  .pp-chat-close-text {
+    min-height: 3rem;
+    padding: 0 0.9rem;
+    font-size: 0.8125rem;
+  }
+}
+
 /* Obecné sheet modály uvnitř telefonního rámu (portál do #app-modal-root) */
 .pp-app-sheet-overlay {
   position: absolute;
@@ -2418,17 +2484,20 @@ body,
   display: flex;
   flex-direction: column;
   min-height: 0;
+  pointer-events: auto;
 }
 
 .pp-profile-overlay-header {
   flex-shrink: 0;
   background: var(--pp-pure-white);
   border-bottom: 1px solid #eeeeee;
-  padding: 8px 12px;
+  padding: max(8px, env(safe-area-inset-top, 0px)) 12px 8px;
   display: flex;
   align-items: center;
   gap: 8px;
   min-height: 3rem;
+  position: relative;
+  z-index: 2;
 }
 
 .pp-profile-overlay-body {
@@ -2453,6 +2522,9 @@ body,
   align-items: center;
   justify-content: center;
   touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  z-index: 3;
 }
 
 .pp-overlay-back-btn:active {

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import { Avatar } from "./RoleBadge.jsx";
+import AppPanelPortal from "./AppPanelPortal.jsx";
 import {
   groupMessagesByTopic,
   formatTopicHeading,
@@ -257,109 +258,129 @@ export default function ChatModal({
   })();
 
   return (
-    <div className="absolute inset-0 z-[60] flex flex-col bg-white">
-      <header className="flex items-center gap-2 px-3 py-2.5 border-b border-stone-200 shrink-0">
-        <button
-          type="button"
-          onClick={onClose}
-          className="pp-overlay-back-btn"
-          aria-label="Zavřít"
-          title="Zavřít"
-        >
-          ×
-        </button>
-        <Avatar
-          initials={participantInitials || "??"}
-          roleId="soused"
-          size="sm"
-          photo={participantPhoto}
-        />
-        {participantService ? (
-          <button
-            type="button"
-            onClick={() =>
-              openCraftsmanPublicProfile({
-                serviceId: participantService.id,
-                userId: participantService.ownerUserId,
-                name: participantService.name,
-              })
-            }
-            className="font-semibold text-[#1B4D3E] truncate text-left hover:underline underline-offset-2 min-w-0"
-            title="Zobrazit profil a recenze"
-          >
-            {displayName}
-          </button>
-        ) : (
-          <h2 className="font-semibold text-stone-900 truncate min-w-0">{displayName}</h2>
-        )}
-      </header>
-
-      <p className="shrink-0 px-3.5 py-2 text-[11px] text-stone-500 border-b border-stone-100 bg-stone-50">
-        Všechna témata zůstávají nahoře — klepnutím rozbalíte jiné vlákno.
-      </p>
-
-      <div className="flex-1 min-h-0 overflow-y-auto">
-        {sections.map((section) => {
-          const expanded = section.key === activeKey;
-          return (
-            <section
-              key={section.key}
-              ref={expanded ? openPanelRef : null}
-              className="border-b border-stone-200"
+    <AppPanelPortal>
+      <div className="pp-app-sheet-overlay pp-chat-overlay" role="dialog" aria-label={`Chat · ${displayName}`}>
+        <div className="pp-app-sheet pp-app-sheet--full pp-chat-sheet flex flex-col">
+          <header className="pp-chat-header">
+            <button
+              type="button"
+              onClick={onClose}
+              className="pp-overlay-back-btn"
+              aria-label="Zpět na zprávy"
+              title="Zpět"
             >
-              <ThreadHeader
-                section={section}
-                expanded={expanded}
-                onToggle={() => selectThread(section)}
-              />
-              {expanded ? (
-                <div className="bg-[#F7F8F7] border-t border-emerald-100">
-                  <div
-                    ref={listRef}
-                    className="max-h-[min(42vh,360px)] overflow-y-auto px-3 py-3 space-y-2.5"
-                  >
-                    {threadMessages.length === 0 ? (
-                      <p className="text-sm text-stone-400 text-center py-6 px-3 leading-relaxed">
-                        Nové vlákno. Napište první zprávu níže — ostatní témata zůstanou vidět.
-                      </p>
-                    ) : (
-                      threadMessages.map((m) => {
-                        const mine = m.sender === "me";
-                        const showReadLabel = mine && m.id === lastMineId && m.status === "read";
-                        return (
-                          <ChatBubble key={m.id} m={m} mine={mine} showReadLabel={showReadLabel} />
-                        );
-                      })
-                    )}
-                  </div>
-                  <form
-                    onSubmit={submit}
-                    className="px-3 pb-3 pt-1 flex gap-2 bg-[#F7F8F7] sticky bottom-0"
-                  >
-                    <input
-                      type="text"
-                      value={text}
-                      onChange={(e) => setText(e.target.value)}
-                      placeholder={
-                        section.key === "general"
-                          ? "Napište zprávu…"
-                          : `Zpráva · ${section.topic?.title || section.topic?.label || "téma"}…`
-                      }
-                      className="flex-1 px-3 py-2.5 border border-stone-200 rounded-2xl text-sm bg-white"
-                    />
-                    <button
-                      type="submit"
-                      className="px-4 py-2.5 bg-[#3D7A68] text-white rounded-2xl text-sm font-semibold shrink-0"
-                    >
-                      Odeslat
-                    </button>
-                  </form>
-                </div>
-              ) : null}
-            </section>
-          );
-        })}
+              ←
+            </button>
+            <Avatar
+              initials={participantInitials || "??"}
+              roleId="soused"
+              size="sm"
+              photo={participantPhoto}
+            />
+            {participantService ? (
+              <button
+                type="button"
+                onClick={() =>
+                  openCraftsmanPublicProfile({
+                    serviceId: participantService.id,
+                    userId: participantService.ownerUserId,
+                    name: participantService.name,
+                  })
+                }
+                className="font-semibold text-[#1B4D3E] truncate text-left hover:underline underline-offset-2 min-w-0 flex-1"
+                title="Zobrazit profil a recenze"
+              >
+                {displayName}
+              </button>
+            ) : (
+              <h2 className="font-semibold text-stone-900 truncate min-w-0 flex-1">{displayName}</h2>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="pp-chat-close-text"
+              aria-label="Zavřít chat"
+            >
+              Zavřít
+            </button>
+          </header>
+
+          <p className="shrink-0 px-3.5 py-2 text-[11px] text-stone-500 border-b border-stone-100 bg-stone-50">
+            Všechna témata zůstávají nahoře — klepnutím rozbalíte jiné vlákno.
+          </p>
+
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+            {sections.map((section) => {
+              const expanded = section.key === activeKey;
+              return (
+                <section
+                  key={section.key}
+                  ref={expanded ? openPanelRef : null}
+                  className="border-b border-stone-200"
+                >
+                  <ThreadHeader
+                    section={section}
+                    expanded={expanded}
+                    onToggle={() => selectThread(section)}
+                  />
+                  {expanded ? (
+                    <div className="bg-[#F7F8F7] border-t border-emerald-100">
+                      <div
+                        ref={listRef}
+                        className="max-h-[min(42vh,360px)] overflow-y-auto px-3 py-3 space-y-2.5"
+                      >
+                        {threadMessages.length === 0 ? (
+                          <p className="text-sm text-stone-400 text-center py-6 px-3 leading-relaxed">
+                            Nové vlákno. Napište první zprávu níže — ostatní témata zůstanou vidět.
+                          </p>
+                        ) : (
+                          threadMessages.map((m) => {
+                            const mine = m.sender === "me";
+                            const showReadLabel =
+                              mine && m.id === lastMineId && m.status === "read";
+                            return (
+                              <ChatBubble
+                                key={m.id}
+                                m={m}
+                                mine={mine}
+                                showReadLabel={showReadLabel}
+                              />
+                            );
+                          })
+                        )}
+                      </div>
+                      <form
+                        onSubmit={submit}
+                        className="px-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] pt-1 flex gap-2 bg-[#F7F8F7] sticky bottom-0"
+                      >
+                        <input
+                          type="text"
+                          value={text}
+                          onChange={(e) => setText(e.target.value)}
+                          placeholder={
+                            section.key === "general"
+                              ? "Napište zprávu…"
+                              : `Zpráva · ${section.topic?.title || section.topic?.label || "téma"}…`
+                          }
+                          className="flex-1 px-3 py-2.5 border border-stone-200 rounded-2xl text-sm bg-white"
+                          enterKeyHint="send"
+                          autoComplete="off"
+                        />
+                        <button
+                          type="submit"
+                          className="px-4 py-2.5 bg-[#3D7A68] text-white rounded-2xl text-sm font-semibold shrink-0"
+                        >
+                          Odeslat
+                        </button>
+                      </form>
+                    </div>
+                  ) : null}
+                </section>
+              );
+            })}
+          </div>
+        </div>
       </div>
-    </div>
+    </AppPanelPortal>
   );
 }
