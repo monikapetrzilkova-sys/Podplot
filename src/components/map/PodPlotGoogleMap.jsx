@@ -73,6 +73,8 @@ export default function PodPlotGoogleMap({
   const homeMarkerRef = useRef(null);
   const draftMarkerRef = useRef(null);
   const handlersRef = useRef({});
+  const centerRef = useRef(mapCenter ?? { lat: 49.966, lng: 14.512 });
+  const viewCenterRef = useRef(centerRef.current);
   const [mapReady, setMapReady] = useState(false);
 
   handlersRef.current = {
@@ -92,6 +94,13 @@ export default function PodPlotGoogleMap({
   const effectiveRadiusKm = radiusKm ?? defaultRadiusKm;
   const refRadius = referenceRadiusKm ?? defaultRadiusKm;
   const center = mapCenter ?? { lat: 49.966, lng: 14.512 };
+  centerRef.current = center;
+
+  const resolveDraftLatLng = (pin) => {
+    if (pin?.lat != null && pin?.lng != null) return { lat: Number(pin.lat), lng: Number(pin.lng) };
+    if (pin?.x != null) return mapPosToLatLng(pin, centerRef.current, refRadius);
+    return null;
+  };
 
   const markers = useMemo(
     () =>
@@ -144,10 +153,14 @@ export default function PodPlotGoogleMap({
 
     const el = containerRef.current;
     const isTouch = window.matchMedia("(pointer: coarse)").matches;
+    const draftFocus = focusDraftPin ? resolveDraftLatLng(draftPin) : null;
+    const initialCenter = draftFocus ?? center;
+    const initialZoom = draftFocus ? 16 : 14;
+    viewCenterRef.current = initialCenter;
 
     const map = new window.google.maps.Map(el, {
-      center,
-      zoom: 14,
+      center: initialCenter,
+      zoom: initialZoom,
       disableDefaultUI: true,
       zoomControl: false,
       mapTypeControl: false,
@@ -163,7 +176,7 @@ export default function PodPlotGoogleMap({
     const triggerResize = () => {
       if (!mapRef.current || !window.google?.maps?.event) return;
       window.google.maps.event.trigger(mapRef.current, "resize");
-      mapRef.current.setCenter(center);
+      mapRef.current.setCenter(viewCenterRef.current ?? centerRef.current);
     };
 
     // Mobil: flex layout často dostane výšku až po paintu — resize po layoutu
@@ -190,12 +203,16 @@ export default function PodPlotGoogleMap({
       mapRef.current = null;
       setMapReady(false);
     };
+    // Mount once — viewCenterRef drží špendlík při resize (formulář hlášení).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (!mapRef.current) return;
+    if (focusDraftPin && draftPin) return;
+    viewCenterRef.current = center;
     mapRef.current.setCenter(center);
-  }, [center.lat, center.lng]);
+  }, [center.lat, center.lng, focusDraftPin, draftPin]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -338,12 +355,7 @@ export default function PodPlotGoogleMap({
       draftMarkerRef.current = null;
     }
 
-    const draftLatLng =
-      draftPin?.lat != null && draftPin?.lng != null
-        ? { lat: draftPin.lat, lng: draftPin.lng }
-        : draftPin?.x != null
-          ? mapPosToLatLng(draftPin, center, refRadius)
-          : null;
+    const draftLatLng = resolveDraftLatLng(draftPin);
 
     if (!draftLatLng && !pickMode) return;
 
@@ -371,19 +383,28 @@ export default function PodPlotGoogleMap({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !focusDraftPin || !draftPin) return;
+    if (!map || !focusDraftPin || !draftPin || !mapReady) return;
 
-    const draftLatLng =
-      draftPin?.lat != null && draftPin?.lng != null
-        ? { lat: draftPin.lat, lng: draftPin.lng }
-        : draftPin?.x != null
-          ? mapPosToLatLng(draftPin, center, refRadius)
-          : null;
-
+    const draftLatLng = resolveDraftLatLng(draftPin);
     if (!draftLatLng) return;
+
+    viewCenterRef.current = draftLatLng;
     map.panTo(draftLatLng);
     const zoom = map.getZoom() ?? 14;
     if (zoom < 16) map.setZoom(16);
+    // Po layoutu modalu ještě jednou — resize jinak vracel střed na Domov
+    const t1 = window.setTimeout(() => {
+      if (!mapRef.current) return;
+      mapRef.current.panTo(viewCenterRef.current);
+    }, 120);
+    const t2 = window.setTimeout(() => {
+      if (!mapRef.current) return;
+      mapRef.current.panTo(viewCenterRef.current);
+    }, 450);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
   }, [draftPin, focusDraftPin, center, refRadius, mapReady]);
 
   useEffect(() => {
