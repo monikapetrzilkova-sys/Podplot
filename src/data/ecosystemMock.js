@@ -158,11 +158,14 @@ export const SERVICES_CATALOG = [
   },
   {
     id: "svc4",
-    name: "Kavárna U Ráje",
-    profession: "Gastro",
-    keywords: ["kavárna", "gastro", "catering", "občerstvení"],
+    name: "Domácí koláče — catering",
+    profession: "Catering",
+    keywords: ["catering", "koláče", "pečivo", "občerstvení", "oslava", "jídlo domů"],
     subcategory: "gastro",
-    subcategoryLabel: "Gastro",
+    subcategoryLabel: "Catering",
+    homeGroupId: "ostatni",
+    serviceDescription:
+      "Domácí koláče a občerstvení na oslavu, poradu nebo víkend — dovezeme k vám domů.",
     address: "Lhotka",
     defaultAddress: "Lhotka u Prahy",
     actionRadius: 5,
@@ -171,9 +174,18 @@ export const SERVICES_CATALOG = [
     kapacitaPlna: false,
     distanceKm: 0.35,
     rating: 4.8,
-    reviews: [{ author: "Alena V.", location: "350 m", verified: true, text: "Skvělé koláče!", stars: 5 }],
+    reviews: [
+      {
+        author: "Alena V.",
+        location: "350 m",
+        verified: true,
+        text: "Skvělé koláče na narozeniny — dovezli až k nám!",
+        stars: 5,
+      },
+    ],
     ico: true,
     accountType: "podnik",
+    businessSubtype: "mobilni",
   },
   {
     id: "svc5",

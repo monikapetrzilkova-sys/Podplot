@@ -32,7 +32,7 @@ const STEPS = [
       {
         icon: IconTabCatalog,
         label: "Služby",
-        text: "Řemeslníci, uklízečky a další, kteří k vám dojedou a nabídnou své služby.",
+        text: "Objednejte si službu k sobě domů — řemeslníky, úklid, catering a další, kteří k vám dojedou.",
       },
     ],
   },

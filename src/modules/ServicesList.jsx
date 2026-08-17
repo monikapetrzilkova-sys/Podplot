@@ -139,8 +139,8 @@ export default function ServicesList({
   const selectedId = moduleSelection?.module === moduleId ? moduleSelection.id : null;
 
   const emptyMessage = homeSubCategory
-    ? `V kategorii „${getHomeServiceSubFilter(homeSubCategory)?.label ?? ""}“ zatím nic není.`
-    : "Ve vašem okolí zatím nejsou žádné služby.";
+    ? `V kategorii „${getHomeServiceSubFilter(homeSubCategory)?.label ?? ""}“ zatím nikdo nenabízí služby k vám domů.`
+    : "Ve vašem okolí zatím nikdo nenabízí služby k vám domů.";
 
   const toggleService = (svc) => {
     if (selectedId === svc.id) clearModuleSelection();
@@ -155,7 +155,7 @@ export default function ServicesList({
           options={HOME_SERVICE_SUB_FILTERS}
           value={homeSubCategory}
           onChange={onHomeSubChange}
-          ariaLabel="Podkategorie služeb u vás doma"
+          ariaLabel="Podkategorie služeb k vám domů"
           className="shrink-0"
         />
       )}

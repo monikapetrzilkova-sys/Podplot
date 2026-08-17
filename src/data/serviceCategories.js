@@ -9,12 +9,12 @@ export const SERVICE_PARENT_CATEGORIES = [
   { id: "krasa", label: "Krása & Zdraví", emoji: "💅" },
 ];
 
-/** Podkategorie „Služby u vás doma“ v Průvodci / registraci */
+/** Podkategorie katalogu Služby — služby, které přijedou / doručí k vám domů */
 export const HOME_SERVICE_SUB_FILTERS = [
   { id: "domov-zahrada", label: "Domov a zahrada", shortLabel: "Domov" },
   { id: "pece-krasa", label: "Péče a krása", shortLabel: "Péče" },
   { id: "deti-rodina", label: "Děti a rodina", shortLabel: "Děti" },
-  { id: "ostatni", label: "Ostatní", shortLabel: "Ostatní" },
+  { id: "ostatni", label: "Catering a další", shortLabel: "Catering" },
 ];
 
 export const SUBCATEGORY_TO_HOME_GROUP = {
@@ -102,7 +102,7 @@ export const POPULAR_SERVICE_CATEGORIES = [
   { id: "beauty", label: "Beauty", emoji: "💅" },
   { id: "hlidani", label: "Hlídání", emoji: "👶" },
   { id: "doucovani", label: "Doučování", emoji: "📚" },
-  { id: "gastro", label: "Gastro", emoji: "🍽️" },
+  { id: "gastro", label: "Catering", emoji: "🍽️" },
 ];
 
 export const ALL_SERVICE_CATEGORIES = [
@@ -132,7 +132,7 @@ export const SERVICE_PLACEHOLDERS = {
   beauty: "Co hledáte? např. Manikúra, líčení na akci…",
   hlidani: "Kdy a koho? např. Hlídání dětí večer o víkendu…",
   doucovani: "Předmět a ročník — např. Matematika pro 6. třídu…",
-  gastro: "Co hledáte? např. Catering na oslavu 20 lidí…",
+  gastro: "Co potřebujete domů? např. Catering na oslavu, koláče na víkend…",
   default: "Popište, co potřebujete…",
 };
 
