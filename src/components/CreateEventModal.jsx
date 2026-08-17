@@ -160,23 +160,23 @@ export default function CreateEventModal() {
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div>
+          <div className="pp-datetime-fields">
+            <div className="pp-datetime-fields__item">
               <label htmlFor="event-date" className="block text-xs font-semibold text-stone-600 mb-1">
                 Datum *
               </label>
               <input
                 id="event-date"
                 type="date"
-                lang="cs"
+                lang="cs-CZ"
                 min={minEventDateValue()}
                 value={form.eventDate}
                 onChange={(e) => setForm({ ...form, eventDate: e.target.value })}
-                className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm"
+                className="pp-datetime-fields__control"
                 required
               />
             </div>
-            <div>
+            <div className="pp-datetime-fields__item">
               <label htmlFor="event-time" className="block text-xs font-semibold text-stone-600 mb-1">
                 Čas {!form.timeTbd && "*"}
               </label>
@@ -186,13 +186,13 @@ export default function CreateEventModal() {
                 onChange={(eventTime) => setForm({ ...form, eventTime, timeTbd: false })}
                 disabled={form.timeTbd}
                 required={!form.timeTbd}
-                className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm disabled:bg-stone-100 disabled:text-stone-400"
+                className="pp-datetime-fields__control disabled:bg-stone-100 disabled:text-stone-400"
               />
-              <p className="text-[10px] text-stone-400 mt-1">24 hodin · napište např. 1700 nebo 17:00</p>
+              <p className="text-[10px] text-stone-400 mt-1">24 hodin · např. 17:00</p>
             </div>
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-stone-700 -mt-1">
+          <label className="flex items-center gap-2 text-sm text-stone-700">
             <input
               type="checkbox"
               checked={form.timeTbd}

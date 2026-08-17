@@ -241,7 +241,6 @@ export default function SecurityReportFormModal({
                     value={reportValidUntil}
                     onChange={setReportValidUntil}
                   />
-                  <p className="text-[10px] text-stone-400 mt-1">Čas ve 24hodinovém formátu (např. 17:00)</p>
                   <p className="text-[11px] text-stone-400 mt-1.5 leading-relaxed">{REPORT_EXPIRY_DISCLAIMER}</p>
                   {validUntilError && <p className="text-xs text-red-600 mt-1">{validUntilError}</p>}
                 </div>

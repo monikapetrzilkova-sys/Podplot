@@ -2532,6 +2532,53 @@ body,
   background: #e8f3ef;
 }
 
+/* Datum + čas pod sebou — nativní date picker se nepřekrývá s polem času */
+.pp-datetime-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.pp-datetime-fields__item {
+  min-width: 0;
+  width: 100%;
+}
+
+.pp-datetime-fields__control {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #e7e5e4;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  background: #ffffff;
+  color: #1c1917;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.pp-datetime-fields__control:disabled {
+  background: #f5f5f4;
+  color: #a8a29e;
+}
+
+input[type="date"].pp-datetime-fields__control {
+  min-height: 2.75rem;
+}
+
+@media (pointer: coarse) {
+  .pp-datetime-fields__control {
+    min-height: 3rem;
+    font-size: 1rem;
+  }
+}
+
 @media (pointer: coarse) {
   .pp-overlay-back-btn {
     width: 3rem;

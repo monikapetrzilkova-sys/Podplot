@@ -5,7 +5,7 @@ import {
 } from "../data/czechDateTime.js";
 import CzechTimeInput from "./CzechTimeInput.jsx";
 
-/** Datum + čas (24 h) místo nativního datetime-local s AM/PM */
+/** Datum + čas (24 h) — pod sebou, ať se na úzkém displeji nepřekrývají. */
 export default function CzechDateTimeFields({
   id,
   value = "",
@@ -23,37 +23,40 @@ export default function CzechDateTimeFields({
       onChange?.("");
       return;
     }
-    // Bez času doplníme poledne — vždy 24h hodnota YYYY-MM-DDTHH:mm
     onChange?.(joinDateTimeLocal(nextDate, nextTime || "12:00"));
   };
 
   return (
-    <div className={`grid grid-cols-2 gap-2 ${className}`.trim()}>
-      <div>
-        <label htmlFor={`${id}-date`} className="sr-only">
+    <div className={`pp-datetime-fields ${className}`.trim()}>
+      <div className="pp-datetime-fields__item">
+        <label htmlFor={`${id}-date`} className="block text-xs font-semibold text-stone-600 mb-1">
           Datum
         </label>
         <input
           id={`${id}-date`}
           type="date"
-          lang="cs"
+          lang="cs-CZ"
           min={minDate}
           value={date}
           disabled={disabled}
           required={required}
           onChange={(e) => update(e.target.value, time)}
-          className="w-full min-w-0 px-3 py-2 border border-stone-200 rounded-xl text-sm"
+          className="pp-datetime-fields__control"
         />
       </div>
-      <div>
+      <div className="pp-datetime-fields__item">
+        <label htmlFor={`${id}-time`} className="block text-xs font-semibold text-stone-600 mb-1">
+          Čas
+        </label>
         <CzechTimeInput
           id={`${id}-time`}
           value={time}
           disabled={disabled}
           required={required && Boolean(date)}
           onChange={(nextTime) => update(date, nextTime)}
-          className="w-full min-w-0 px-3 py-2 border border-stone-200 rounded-xl text-sm disabled:bg-stone-100 disabled:text-stone-400"
+          className="pp-datetime-fields__control"
         />
+        <p className="text-[10px] text-stone-400 mt-1">24 hodin · např. 17:00</p>
       </div>
     </div>
   );
