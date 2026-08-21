@@ -174,8 +174,6 @@ export default function PlusActionMenu() {
     openInvoice,
     openProfile,
     openBusinessComposer,
-    setActiveTab,
-    setPendingNeighborsSection,
     appUserRole,
     viewAsNeighbor,
     isB2BWorkMode,
