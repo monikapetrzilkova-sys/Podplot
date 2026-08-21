@@ -1530,10 +1530,13 @@ export function AppProvider({ children }) {
   const openReportOnMapFromHome = useCallback(
     (reportId, { category = "all" } = {}) => {
       if (!reportId) return;
+      const resolvedId = String(reportId).startsWith("feed-")
+        ? String(reportId).slice("feed-".length)
+        : reportId;
       setActiveTab("map");
       setPendingMapReportsCategory(category);
       setMapFocus("reports");
-      showModuleItemOnMap(MODULE_IDS.REPORTS, reportId);
+      showModuleItemOnMap(MODULE_IDS.REPORTS, resolvedId);
     },
     [showModuleItemOnMap]
   );
@@ -2300,6 +2303,7 @@ export function AppProvider({ children }) {
       }
       if (tabId === "map") {
         clearMapFocus();
+        clearModuleSelection();
         setMapRootKey((k) => k + 1);
       }
       if (tabId === "catalog") {
@@ -2307,7 +2311,7 @@ export function AppProvider({ children }) {
       }
       setActiveTab(tabId);
     },
-    [goToHomeWall, clearMapFocus]
+    [goToHomeWall, clearMapFocus, clearModuleSelection]
   );
 
   const openCreateGroupModal = useCallback(() => {

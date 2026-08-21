@@ -11,7 +11,6 @@ import {
   normalizeLendingToThing,
 } from "../utils/thingsModule.js";
 import { isServiceOrSponsoredAdPost } from "../utils/categoryAccents.js";
-import { IconMapPin } from "../data/icons.jsx";
 import { REPORTS_TIP_CATEGORY_ID, resolveReportCategoryId } from "../data/reportCategories.js";
 import { getPostInteractionType, INTERACTION_TYPES } from "../data/postInteractions.js";
 import { getActiveListingSale } from "../data/listingSales.js";
@@ -345,10 +344,22 @@ export default function LiveNeighborFeed() {
               reportCategoryId === REPORTS_TIP_CATEGORY_ID ||
               (post.type ?? "").toLowerCase() === "tip" ||
               post.interactionType === "tip";
-            const reportId = post.fromSecurityReportId;
+            const reportId =
+              post.fromSecurityReportId ||
+              (String(post.id || "").startsWith("feed-") ? String(post.id).slice(5) : null);
             const placeLabel = post.placeLabel || null;
             const distance = extractDistanceFromMeta(post.meta);
             const canOpenMap = Boolean(reportId);
+            const mapCategory = isTip
+              ? REPORTS_TIP_CATEGORY_ID
+              : reportCategoryId && reportCategoryId !== "default"
+                ? reportCategoryId
+                : "all";
+
+            const openOnMap = () =>
+              openReportOnMapFromHome(reportId, {
+                category: mapCategory,
+              });
 
             return (
               <LiveFeedCard
@@ -367,39 +378,20 @@ export default function LiveNeighborFeed() {
                 editedItem={post}
                 onReport={(reason) => reportPost(post.id, reason)}
                 mine={Boolean(post.mine || item.mine)}
+                expandable={!canOpenMap}
+                onSummaryClick={canOpenMap ? openOnMap : undefined}
               >
-                <FeedCard post={post} detailsOnly />
-                {(placeLabel || distance || canOpenMap) && (
-                  <div className="pt-1">
-                    {canOpenMap ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          openReportOnMapFromHome(reportId, {
-                            category: isTip ? REPORTS_TIP_CATEGORY_ID : "all",
-                          })
-                        }
-                        className={`w-full flex items-center gap-2 text-left text-xs rounded-lg py-1 -mx-0.5 px-0.5 hover:bg-[#F7FAF9] transition-colors ${
-                          isTip ? "text-[#5A7A1E]" : "text-[#3D7A68]"
-                        }`}
-                        aria-label={`Zobrazit ${placeLabel || "místo"} na mapě`}
-                      >
-                        <span className="flex-1 min-w-0 truncate font-medium">
-                          {[placeLabel, distance].filter(Boolean).join(" · ") || "Lokalita"}
-                        </span>
-                        <IconMapPin
-                          className={`w-3.5 h-3.5 shrink-0 ${isTip ? "text-[#8FAE3E]" : "text-[#3D7A68]"}`}
-                          aria-hidden
-                        />
-                      </button>
-                    ) : (
-                      <p className="flex items-center gap-1.5 text-xs text-stone-500">
+                {canOpenMap ? null : (
+                  <>
+                    <FeedCard post={post} detailsOnly />
+                    {(placeLabel || distance) && (
+                      <p className="flex items-center gap-1.5 text-xs text-stone-500 pt-1">
                         <span className="flex-1 min-w-0 truncate">
                           {[placeLabel, distance].filter(Boolean).join(" · ")}
                         </span>
                       </p>
                     )}
-                  </div>
+                  </>
                 )}
               </LiveFeedCard>
             );

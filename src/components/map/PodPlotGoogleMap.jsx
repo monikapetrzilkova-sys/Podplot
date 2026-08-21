@@ -214,6 +214,49 @@ export default function PodPlotGoogleMap({
     mapRef.current.setCenter(center);
   }, [center.lat, center.lng, focusDraftPin, draftPin]);
 
+  const focusSelectionKey =
+    selectedReportId ||
+    selectedEventId ||
+    selectedInstitutionId ||
+    selectedThingId ||
+    selectedServiceId ||
+    null;
+  const prevFocusSelectionRef = useRef(null);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady || !focusSelectionKey) return;
+    if (focusDraftPin) return;
+    if (prevFocusSelectionRef.current === focusSelectionKey) return;
+
+    const marker = markers.find((m) => m.id === focusSelectionKey);
+    if (!marker || marker.lat == null || marker.lng == null) return;
+
+    prevFocusSelectionRef.current = focusSelectionKey;
+    const pos = { lat: Number(marker.lat), lng: Number(marker.lng) };
+    viewCenterRef.current = pos;
+    map.panTo(pos);
+    const zoom = map.getZoom() ?? 14;
+    if (zoom < 15) map.setZoom(15);
+
+    const t1 = window.setTimeout(() => {
+      if (!mapRef.current || !viewCenterRef.current) return;
+      mapRef.current.panTo(viewCenterRef.current);
+    }, 120);
+    const t2 = window.setTimeout(() => {
+      if (!mapRef.current || !viewCenterRef.current) return;
+      mapRef.current.panTo(viewCenterRef.current);
+    }, 450);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [focusSelectionKey, markers, mapReady, focusDraftPin]);
+
+  useEffect(() => {
+    if (!focusSelectionKey) prevFocusSelectionRef.current = null;
+  }, [focusSelectionKey]);
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;

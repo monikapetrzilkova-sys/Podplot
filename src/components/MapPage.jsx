@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import SecurityReports from "./SecurityReports.jsx";
 import MapModule from "../modules/MapModule.jsx";
@@ -20,14 +20,25 @@ export default function MapPage({ lockedSection = null, officeOverview = false }
   const [section, setSection] = useState(lockedSection ?? "reports");
   const [provozovnaType, setProvozovnaType] = useState(null);
   const [reportsCategoryFilter, setReportsCategoryFilter] = useState("all");
+  const prevMapRootKeyRef = useRef(null);
 
   useEffect(() => {
     if (lockedSection) return;
-    setSection("reports");
-    setProvozovnaType(null);
-    setReportsCategoryFilter("all");
-    setLocalGuideCategory("vse");
-    clearModuleSelection();
+    const isFirstMount = prevMapRootKeyRef.current === null;
+    const rootChanged =
+      prevMapRootKeyRef.current !== null && prevMapRootKeyRef.current !== mapRootKey;
+    prevMapRootKeyRef.current = mapRootKey;
+
+    // První mount nesmí smazat výběr z feedu / hledání (hlášení → mapa).
+    if (isFirstMount) return;
+
+    if (rootChanged) {
+      setSection("reports");
+      setProvozovnaType(null);
+      setReportsCategoryFilter("all");
+      setLocalGuideCategory("vse");
+      clearModuleSelection();
+    }
   }, [mapRootKey, lockedSection, setLocalGuideCategory, clearModuleSelection]);
 
   useEffect(() => {

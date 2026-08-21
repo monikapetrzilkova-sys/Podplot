@@ -121,20 +121,28 @@ export default function ReportsModule({
     [reports, reportsMapRadiusKm, activeLocation]
   );
 
-  const mapReports = useMemo(
-    () => reportsInRadius.filter((r) => hasReportMapPosition(r)),
-    [reportsInRadius]
-  );
+  const selectedId = moduleSelection?.module === moduleId ? moduleSelection.id : null;
+  const selectedOutsideRadius = useMemo(() => {
+    if (!selectedId) return null;
+    if (reportsInRadius.some((r) => r.id === selectedId)) return null;
+    return reports.find((r) => r.id === selectedId && hasReportMapPosition(r)) ?? null;
+  }, [selectedId, reportsInRadius, reports]);
+
+  const mapReports = useMemo(() => {
+    const base = reportsInRadius.filter((r) => hasReportMapPosition(r));
+    if (!selectedOutsideRadius) return base;
+    return [...base, selectedOutsideRadius];
+  }, [reportsInRadius, selectedOutsideRadius]);
 
   const sortedReports = useMemo(
     () => [...reportsInRadius].sort((a, b) => Number(b.urgent) - Number(a.urgent)),
     [reportsInRadius]
   );
 
-  const selectedId = moduleSelection?.module === moduleId ? moduleSelection.id : null;
   const selectedReport =
     mapReports.find((r) => r.id === selectedId) ??
     reportsInRadius.find((r) => r.id === selectedId) ??
+    selectedOutsideRadius ??
     null;
   const urgentCount = reportsInRadius.filter((r) => r.urgent).length;
 
