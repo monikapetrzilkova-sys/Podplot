@@ -470,16 +470,16 @@ export function DoodleGiveIcon({ className }) {
 }
 
 /** Prodám — cedulka s cenou */
-/** Prodám — cenovka (visačka) */
+/** Prodám — nákupní taška */
 export function DoodleSellIcon({ className }) {
   return (
     <DoodleIcon className={className}>
       <path
         {...s}
-        d="M8.2 4.5h7.2c.7 0 1.3.6 1.3 1.3v9.8c0 .4-.2.8-.5 1L12.8 20c-.4.3-1 .3-1.4 0l-3.4-3.4c-.3-.2-.5-.6-.5-1V5.8c0-.7.6-1.3 1.3-1.3z"
+        d="M6.2 9.5h11.6c.7 0 1.2.6 1.1 1.3l-1 8.2c-.1.8-.8 1.4-1.6 1.4H7.7c-.8 0-1.5-.6-1.6-1.4l-1-8.2c-.1-.7.4-1.3 1.1-1.3z"
       />
-      <circle {...s} cx="12" cy="8.2" r="1.5" />
-      <path {...s} d="M9.8 12h4.4M9.8 14.6h3" opacity="0.75" />
+      <path {...s} d="M9 9.5V7.8c0-1.6 1.3-2.9 2.9-2.9h.2c1.6 0 2.9 1.3 2.9 2.9v1.7" />
+      <circle {...s} cx="12" cy="14.2" r="1.6" />
     </DoodleIcon>
   );
 }
