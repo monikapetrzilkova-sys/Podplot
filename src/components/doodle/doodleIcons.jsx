@@ -508,17 +508,30 @@ export function DoodleLendIcon({ className }) {
   );
 }
 
-/** Tlapka — zvíře (klasický otisk: 3 prsty + velká poduška) */
+/** Tlapka — zvíře (sdílená geometrie pro feed, Okolí i mapové špendlíky) */
+export const DOODLE_PAW_PATHS = {
+  toes: [
+    { cx: 7.2, cy: 7.5, rx: 2.1, ry: 2.5 },
+    { cx: 12, cy: 5.8, rx: 2.2, ry: 2.6 },
+    { cx: 16.8, cy: 7.5, rx: 2.1, ry: 2.5 },
+  ],
+  pad: "M8.2 12.2c-1.2 0-2.8 1.1-2.8 3.2 0 2.6 2.2 4.6 6.6 4.6s6.6-2 6.6-4.6c0-2.1-1.6-3.2-2.8-3.2-1.1 0-2 .8-3.8.8s-2.7-.8-3.8-.8z",
+};
+
+export function doodlePawSvgInner() {
+  const toes = DOODLE_PAW_PATHS.toes
+    .map((t) => `<ellipse cx="${t.cx}" cy="${t.cy}" rx="${t.rx}" ry="${t.ry}"/>`)
+    .join("");
+  return `${toes}<path d="${DOODLE_PAW_PATHS.pad}"/>`;
+}
+
 export function DoodlePawIcon({ className }) {
   return (
     <DoodleIcon className={className}>
-      <ellipse {...s} cx="7.2" cy="7.5" rx="2.1" ry="2.5" />
-      <ellipse {...s} cx="12" cy="5.8" rx="2.2" ry="2.6" />
-      <ellipse {...s} cx="16.8" cy="7.5" rx="2.1" ry="2.5" />
-      <path
-        {...s}
-        d="M8.2 12.2c-1.2 0-2.8 1.1-2.8 3.2 0 2.6 2.2 4.6 6.6 4.6s6.6-2 6.6-4.6c0-2.1-1.6-3.2-2.8-3.2-1.1 0-2 .8-3.8.8s-2.7-.8-3.8-.8z"
-      />
+      {DOODLE_PAW_PATHS.toes.map((t) => (
+        <ellipse key={`${t.cx}-${t.cy}`} {...s} cx={t.cx} cy={t.cy} rx={t.rx} ry={t.ry} />
+      ))}
+      <path {...s} d={DOODLE_PAW_PATHS.pad} />
     </DoodleIcon>
   );
 }

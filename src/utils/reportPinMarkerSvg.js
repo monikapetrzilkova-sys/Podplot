@@ -1,4 +1,5 @@
 import { classifyReportType, reportPinVariant } from "./reportPinUtils.js";
+import { doodlePawSvgInner } from "../components/doodle/doodleIcons.jsx";
 
 const PIN_COLORS = {
   urgent: { bg: "#A85858", border: "#8F4545" },
@@ -14,13 +15,12 @@ const PIN_COLORS = {
   reportFire: { bg: "#5a9587", border: "#1B4332" },
 };
 
-/** SVG cesty ikon kategorií — stejné symboly jako v ReportPinIcon. */
+/** SVG cesty ikon kategorií — stejné symboly jako v ReportPinIcon / Doodle*. */
 const ICON_PATHS = {
   pin: '<path d="M12 21s6-5.2 6-10a6 6 0 1 0-12 0c0 4.8 6 10 6 10z"/><circle cx="12" cy="11" r="2"/>',
   search:
     '<circle cx="10.5" cy="10.5" r="5.5"/><path d="M15 15l4.5 4.5"/>',
-  paw:
-    '<ellipse cx="8" cy="8.5" rx="1.8" ry="2.2"/><ellipse cx="12" cy="6.5" rx="1.8" ry="2.2"/><ellipse cx="16" cy="8.5" rx="1.8" ry="2.2"/><ellipse cx="10" cy="12" rx="1.6" ry="2"/><ellipse cx="14" cy="12" rx="1.6" ry="2"/><path d="M9 14.5c1 2.5 5 2.5 6 0"/>',
+  paw: doodlePawSvgInner(),
   flame: '<path d="M12 22c4-3 6-6.5 6-10a6 6 0 0 0-10.5-4C8 6 6 7.5 5 10c-1.5 4 2 8.5 7 12z"/>',
   alert: '<path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17h.01"/>',
   bolt: '<path d="M13 2 4 14h7l-1 8 10-14h-7l0-6z"/>',

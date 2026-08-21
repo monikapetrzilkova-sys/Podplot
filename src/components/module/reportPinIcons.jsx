@@ -1,6 +1,7 @@
 /** Monochromatické ikony hlášení na mapě — line-art v paletě Podplot */
 
 import { classifyReportType } from "../../utils/reportPinUtils.js";
+import { DoodlePawIcon } from "../doodle/doodleIcons.jsx";
 
 const s = {
   fill: "none",
@@ -29,16 +30,7 @@ export function IconReportSearch({ className = "w-3.5 h-3.5" }) {
 }
 
 export function IconReportPaw({ className = "w-3.5 h-3.5" }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" {...s}>
-      <ellipse cx="8" cy="8.5" rx="1.8" ry="2.2" />
-      <ellipse cx="12" cy="6.5" rx="1.8" ry="2.2" />
-      <ellipse cx="16" cy="8.5" rx="1.8" ry="2.2" />
-      <ellipse cx="10" cy="12" rx="1.6" ry="2" />
-      <ellipse cx="14" cy="12" rx="1.6" ry="2" />
-      <path d="M9 14.5c1 2.5 5 2.5 6 0" />
-    </svg>
-  );
+  return <DoodlePawIcon className={className} />;
 }
 
 export function IconReportFlame({ className = "w-3.5 h-3.5" }) {

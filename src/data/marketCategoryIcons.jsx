@@ -1,6 +1,7 @@
 /** Tenké lineární SVG ikony — stroke 1px, smaragdové tóny */
 
 import { normalizeThingItemCategory } from "./thingItemCategories.js";
+import { DoodlePawIcon } from "../components/doodle/doodleIcons.jsx";
 
 const stroke = { fill: "none", stroke: "currentColor", strokeWidth: 1, strokeLinecap: "round", strokeLinejoin: "round" };
 
@@ -41,15 +42,7 @@ export function IconSport({ className = "w-5 h-5", style }) {
 }
 
 export function IconPets({ className = "w-5 h-5", style }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" style={style} {...stroke}>
-      <ellipse cx="8" cy="9" rx="2" ry="2.5" />
-      <ellipse cx="16" cy="9" rx="2" ry="2.5" />
-      <ellipse cx="5.5" cy="14" rx="1.8" ry="2.2" />
-      <ellipse cx="18.5" cy="14" rx="1.8" ry="2.2" />
-      <path d="M12 18c-2.5 0-4.5 2-4.5 4.5h9c0-2.5-2-4.5-4.5-4.5z" />
-    </svg>
-  );
+  return <DoodlePawIcon className={className} style={style} />;
 }
 
 export function IconHomeGoods({ className = "w-5 h-5", style }) {
