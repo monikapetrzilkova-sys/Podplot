@@ -2958,66 +2958,95 @@ form .subfilter-scroll {
   white-space: nowrap;
 }
 
-/** Feed pilulka — neutrální pozadí, barva jen na ikoně + textu */
-.pp-feed-pill {
+/**
+ * Feed razítko — výrazná doodle ikona jako odznak před nadpisem.
+ * Barva na ikoně + jemném kruhu; popisek (pokud je) bez rámečku.
+ */
+.pp-feed-stamp {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  max-width: 7.25rem;
-  padding: 2px 7px 2px 4px;
-  border-radius: 999px;
-  background: #eef1ef;
-  border: 1px solid rgba(61, 122, 104, 0.1);
-  box-sizing: border-box;
-  line-height: 1.15;
+  gap: 5px;
+  flex-shrink: 0;
+  max-width: 8.5rem;
   vertical-align: middle;
+  line-height: 1.1;
 }
 
-.pp-feed-pill__icon {
-  width: 11px;
-  height: 11px;
+.pp-feed-stamp__mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.pp-feed-stamp__icon,
+.pp-feed-stamp__icon.pp-doodle-icon {
+  width: 16px;
+  height: 16px;
   color: currentColor;
 }
 
-.pp-feed-pill__icon.pp-doodle-icon {
-  width: 11px;
-  height: 11px;
-}
-
-.pp-feed-pill__label {
-  font-size: 9px;
+.pp-feed-stamp__caption {
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   text-transform: none;
+  color: currentColor;
 }
 
-/* 4 tóny dle zadání */
-.pp-feed-pill--report {
-  color: #b56a45; /* tlumená cihlová */
+/* Hlubší tóny — elegantní k tmavě zelenému brandu */
+.pp-feed-stamp--events {
+  color: #7a2f45; /* vínová / burgundská */
+}
+.pp-feed-stamp--events .pp-feed-stamp__mark {
+  background: rgba(122, 47, 69, 0.16);
 }
 
-.pp-feed-pill--things {
-  color: #9a7a3a; /* zemitá medová */
+.pp-feed-stamp--things {
+  color: #a65d3b; /* zemitá terakota */
+}
+.pp-feed-stamp--things .pp-feed-stamp__mark {
+  background: rgba(166, 93, 59, 0.15);
 }
 
-.pp-feed-pill--events {
-  color: #7a6a9a; /* tlumená lila */
+.pp-feed-stamp--report {
+  color: #1f5c6b; /* hluboká petrolejová */
+}
+.pp-feed-stamp--report .pp-feed-stamp__mark {
+  background: rgba(31, 92, 107, 0.15);
 }
 
-.pp-feed-pill--help {
-  color: #3d7a68; /* šalvějová brand */
+.pp-feed-stamp--help {
+  color: #246b52; /* lahvově zelená */
+}
+.pp-feed-stamp--help .pp-feed-stamp__mark {
+  background: rgba(36, 107, 82, 0.15);
 }
 
-.pp-feed-pill--groups {
-  color: #6b6560;
+.pp-feed-stamp--groups {
+  color: #5c554f;
+}
+.pp-feed-stamp--groups .pp-feed-stamp__mark {
+  background: rgba(92, 85, 79, 0.12);
 }
 
-.pp-feed-pill--default {
-  color: #3d7a68;
+.pp-feed-stamp--default {
+  color: #1b4d3e;
+}
+.pp-feed-stamp--default .pp-feed-stamp__mark {
+  background: rgba(27, 77, 62, 0.12);
+}
+
+/* Legacy alias — starší CSS třídy z pilulek */
+.pp-feed-pill {
+  display: none;
 }
 
 /** Barevné varianty štítků — legacy (detail karty, partner…) */

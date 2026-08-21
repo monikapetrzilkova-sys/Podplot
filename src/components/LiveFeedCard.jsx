@@ -8,7 +8,7 @@ import { getListingBadge, getNeighborSectionBadge } from "./feed/feedBadgeMeta.j
 export { getListingBadge, getNeighborSectionBadge };
 
 /**
- * Sbalený řádek feedu Domů / Sousedé — pilulka kategorie + nadpis, náhled textu, rozbalení.
+ * Sbalený řádek feedu Domů / Sousedé — razítko kategorie + nadpis, náhled, rozbalení.
  * Volitelně řízené (`expanded` + `onToggle`), jinak ukládá stav do UI prefs.
  */
 export default function LiveFeedCard({
@@ -65,7 +65,7 @@ export default function LiveFeedCard({
       >
         <div className="flex items-start gap-2 min-w-0">
           <div className="flex-1 min-w-0">
-            <div className={`flex gap-1.5 min-w-0 ${isOpen ? "items-start flex-wrap" : "items-center"}`}>
+            <div className={`flex gap-2 min-w-0 ${isOpen ? "items-start flex-wrap" : "items-center"}`}>
               {badge ? (
                 <FeedBadgePill
                   badge={badge}

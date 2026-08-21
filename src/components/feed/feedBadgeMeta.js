@@ -18,13 +18,13 @@ import {
   DoodleCalendarIcon,
 } from "../doodle/doodleIcons.jsx";
 
-/** 4 hlavní skupiny barev dle zadání */
+/** 4 hlavní skupiny barev — hlubší tóny (razítka) */
 export const FEED_BADGE_TONES = {
-  report: "report", // tlumená cihlová / oranžová — hlášení na mapě
-  things: "things", // zemitá žlutá / medová — věci
-  events: "events", // fialová / lila — akce
-  help: "help", // šalvějová zelená — výpomoc
-  groups: "groups", // neutrální kámen — skupiny
+  report: "report", // petrolejová — hlášení
+  things: "things", // terakota — věci
+  events: "events", // vínová — akce
+  help: "help", // lahvově zelená — výpomoc
+  groups: "groups",
   default: "default",
 };
 
