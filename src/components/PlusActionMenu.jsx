@@ -168,6 +168,7 @@ export default function PlusActionMenu() {
     openMapReport,
     openPlaceSuggestion,
     openCreateEvent,
+    openCreateHelp,
     openOfficePromptCall,
     openOfficeAnnouncementComposer,
     openInvoice,
@@ -175,7 +176,6 @@ export default function PlusActionMenu() {
     openBusinessComposer,
     setActiveTab,
     setPendingNeighborsSection,
-    setPendingHelpFormOpen,
     appUserRole,
     viewAsNeighbor,
     isB2BWorkMode,
@@ -238,9 +238,7 @@ export default function PlusActionMenu() {
       return;
     }
     if (item.action === "help") {
-      setPendingHelpFormOpen(true);
-      setPendingNeighborsSection("vypomoc");
-      setActiveTab("neighbors");
+      openCreateHelp();
       return;
     }
     openCreate(item.category ?? null);

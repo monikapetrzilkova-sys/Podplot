@@ -16,6 +16,7 @@ import InstitutionOfficePage from "./components/InstitutionOfficePage.jsx";
 import CreateListingModal from "./components/CreateListingModal.jsx";
 import CreateInvoiceModal from "./components/CreateInvoiceModal.jsx";
 import CreateEventModal from "./components/CreateEventModal.jsx";
+import CreateHelpModal from "./components/CreateHelpModal.jsx";
 import CreateGroupModal from "./components/CreateGroupModal.jsx";
 import PlusActionMenu from "./components/PlusActionMenu.jsx";
 import RegisterScreen from "./components/RegisterScreen.jsx";
@@ -296,6 +297,7 @@ export default function AppShell() {
           <CreateListingModal />
           <CreateInvoiceModal />
           <CreateEventModal />
+          <CreateHelpModal />
           <PlaceSuggestionModal />
           <PlusActionMenu />
           <div id="app-modal-root" className="pp-app-modal-root" />

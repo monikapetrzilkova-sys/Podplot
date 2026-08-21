@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import DoodleEmptyState from "./doodle/DoodleEmptyState.jsx";
 import LiveFeedCard, { getNeighborSectionBadge } from "./LiveFeedCard.jsx";
@@ -24,26 +24,23 @@ export default function NeighborHelp({
 }) {
   const {
     neighborHelp,
-    addNeighborHelpPost,
     offerHelpOnPost,
     hasOfferedHelp,
     getHelpOffers,
-    pendingHelpFormOpen,
-    setPendingHelpFormOpen,
+    openCreateHelp,
   } = useApp();
   const [filterLocal, setFilterLocal] = useState("vse");
   const filter = filterProp ?? filterLocal;
   const setFilter = onFilterChange ?? setFilterLocal;
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
-  const [formOpen, setFormOpen] = useState(false);
-  const [formType, setFormType] = useState("hledam");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchExpanded, setSearchExpanded] = useState(false);
 
-  const createType = filter === "nabizim" ? "nabizim" : filter === "hledam" ? "hledam" : formType;
   const addLabel =
-    filter === "vse" ? "Hledám/nabízím pomoc" : createType === "hledam" ? "Hledám pomoc" : "Nabízím pomoc";
+    filter === "hledam"
+      ? "Hledám pomoc"
+      : filter === "nabizim"
+        ? "Nabízím pomoc"
+        : "Hledám / nabízím pomoc";
 
   const searchActive = searchExpanded || Boolean(searchQuery.trim());
 
@@ -54,24 +51,9 @@ export default function NeighborHelp({
       .sort((a, b) => b.offerCount - a.offerCount || Number(Boolean(b.mine)) - Number(Boolean(a.mine)));
   }, [neighborHelp, filter, searchQuery, getHelpOffers]);
 
-  useEffect(() => {
-    if (!pendingHelpFormOpen) return;
-    if (filter === "hledam" || filter === "nabizim") setFormType(filter);
-    setFormOpen(true);
-    setPendingHelpFormOpen(false);
-  }, [pendingHelpFormOpen, filter, setPendingHelpFormOpen]);
-
   const openForm = () => {
-    if (filter === "hledam" || filter === "nabizim") setFormType(filter);
-    setFormOpen((open) => !open);
-  };
-
-  const submitHelp = () => {
-    if (!title.trim() || !body.trim()) return;
-    addNeighborHelpPost({ type: createType, title, body });
-    setTitle("");
-    setBody("");
-    setFormOpen(false);
+    const preset = filter === "hledam" || filter === "nabizim" ? filter : null;
+    openCreateHelp(preset);
   };
 
   return (
@@ -119,35 +101,6 @@ export default function NeighborHelp({
                 placeholder="Hledat ve výpomoci…"
                 ariaLabel="Hledat ve výpomoci"
               />
-            </div>
-          )}
-          {formOpen && (
-            <div className="rounded-xl p-3 border border-stone-200 bg-white space-y-2">
-              {filter === "vse" && (
-                <PillFilterRow
-                  options={[
-                    { id: "hledam", label: "Hledám" },
-                    { id: "nabizim", label: "Nabízím" },
-                  ]}
-                  value={formType}
-                  onChange={setFormType}
-                />
-              )}
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Krátký název — např. Hlídání psa o víkendu"
-                className="w-full px-3 py-2 border border-stone-200 rounded-xl text-sm"
-              />
-              <textarea
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                placeholder="Popis…"
-                rows={2}
-                className="w-full px-3 py-2 border border-stone-200 rounded-xl text-sm resize-none"
-              />
-              <PrimaryAddButton label="Zveřejnit" onClick={submitHelp} withPlus={false} />
             </div>
           )}
         </>

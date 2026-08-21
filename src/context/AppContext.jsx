@@ -293,10 +293,11 @@ export function AppProvider({ children }) {
   const [mapFocus, setMapFocus] = useState(null);
   const [pendingMapReportsCategory, setPendingMapReportsCategory] = useState(null);
   const [pendingNeighborsSection, setPendingNeighborsSection] = useState(null);
-  const [pendingHelpFormOpen, setPendingHelpFormOpen] = useState(false);
   const [pendingThingsItemId, setPendingThingsItemId] = useState(null);
   const [homeEventGallery, setHomeEventGallery] = useState(null);
   const [createEventOpen, setCreateEventOpen] = useState(false);
+  const [createHelpOpen, setCreateHelpOpen] = useState(false);
+  const [createHelpPresetType, setCreateHelpPresetType] = useState(null);
   const [reportFormOpen, setReportFormOpen] = useState(false);
   const [placeSuggestionOpen, setPlaceSuggestionOpen] = useState(false);
   const [testRoleId, setTestRoleId] = useState(() => {
@@ -1511,6 +1512,14 @@ export function AppProvider({ children }) {
   const closePlaceSuggestion = useCallback(() => setPlaceSuggestionOpen(false), []);
   const openCreateEvent = useCallback(() => {
     setCreateEventOpen(true);
+  }, []);
+  const openCreateHelp = useCallback((presetType = null) => {
+    setCreateHelpPresetType(presetType === "nabizim" || presetType === "hledam" ? presetType : null);
+    setCreateHelpOpen(true);
+  }, []);
+  const closeCreateHelp = useCallback(() => {
+    setCreateHelpOpen(false);
+    setCreateHelpPresetType(null);
   }, []);
   const clearMapFocus = useCallback(() => setMapFocus(null), []);
 
@@ -6327,6 +6336,10 @@ export function AppProvider({ children }) {
         openCreateEvent,
         createEventOpen,
         setCreateEventOpen,
+        openCreateHelp,
+        closeCreateHelp,
+        createHelpOpen,
+        createHelpPresetType,
         reportFormOpen,
         setReportFormOpen,
         placeSuggestionOpen,
@@ -6334,8 +6347,6 @@ export function AppProvider({ children }) {
         closePlaceSuggestion,
         pendingNeighborsSection,
         setPendingNeighborsSection,
-        pendingHelpFormOpen,
-        setPendingHelpFormOpen,
         pendingThingsItemId,
         setPendingThingsItemId,
         homeEventGallery,
