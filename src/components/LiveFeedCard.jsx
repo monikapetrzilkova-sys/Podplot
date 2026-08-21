@@ -2,54 +2,22 @@ import { useUiPref } from "../hooks/useUiPref.js";
 import { accordionKey } from "../data/uiPreferences.js";
 import EditedBadge from "./EditedBadge.jsx";
 import ReportMenu from "./ReportMenu.jsx";
+import FeedBadgePill from "./feed/FeedBadgePill.jsx";
+import { getListingBadge, getNeighborSectionBadge } from "./feed/feedBadgeMeta.js";
 
-/** Štítek typu inzerátu / hlášení — label + barevná třída */
-export function getListingBadge(type) {
-  const t = (type ?? "").toLowerCase();
-  if (t.includes("prodám") || t === "prodam") {
-    return { label: "PRODÁM", className: "pp-badge--prodam" };
-  }
-  if (t.includes("půjčovna") || t === "pujcovna") {
-    return { label: "PŮJČOVNA", className: "pp-badge--pujcovna" };
-  }
-  if (t.includes("daruji") || t === "daruji") {
-    return { label: "DARUJI", className: "pp-badge--daruji" };
-  }
-  if (t.includes("sháním") || t === "shanim") {
-    return { label: "SHÁNÍM", className: "pp-badge--shanim" };
-  }
-  if (t === "tip" || t.includes("tip:")) {
-    return { label: "TIP", className: "pp-badge--tip" };
-  }
-  if (t.includes("pátrání") || t.includes("pátrani") || t.includes("zaběhl") || t.includes("ztrát")) {
-    return { label: "PÁTRÁNÍ", className: "pp-badge--patrani" };
-  }
-  if (t.includes("hlášení") || t.includes("hlaseni")) {
-    return { label: "HLÁŠENÍ", className: "pp-badge--hlaseni" };
-  }
-  return { label: (type ?? "BAZAR").toUpperCase(), className: "pp-badge--default" };
-}
-
-/** Štítky sekcí Sousedé (výpomoc / skupina / akce) */
-export function getNeighborSectionBadge(section, helpType = null) {
-  if (section === "vypomoc") {
-    if (helpType === "hledam") return { label: "Hledám", className: "pp-badge--hledam" };
-    if (helpType === "nabizim") return { label: "Nabízím", className: "pp-badge--nabizim" };
-    return { label: "Výpomoc", className: "pp-badge--vypomoc" };
-  }
-  if (section === "skupiny") return { label: "Skupina", className: "pp-badge--skupina" };
-  if (section === "akce") return { label: "Akce", className: "pp-badge--akce" };
-  return { label: "Sousedé", className: "pp-badge--default" };
-}
+export { getListingBadge, getNeighborSectionBadge };
 
 /**
- * Sbalený řádek feedu Domů / Sousedé — badge + nadpis, náhled textu, rozbalení.
+ * Sbalený řádek feedu Domů / Sousedé — pilulka kategorie + nadpis, náhled textu, rozbalení.
  * Volitelně řízené (`expanded` + `onToggle`), jinak ukládá stav do UI prefs.
  */
 export default function LiveFeedCard({
   itemId,
   badge,
   badgeClassName = "",
+  badgeTone = null,
+  BadgeIcon = null,
+  reportCategoryId = null,
   title,
   preview = null,
   authorLabel = null,
@@ -98,11 +66,16 @@ export default function LiveFeedCard({
         <div className="flex items-start gap-2 min-w-0">
           <div className="flex-1 min-w-0">
             <div className={`flex gap-1.5 min-w-0 ${isOpen ? "items-start flex-wrap" : "items-center"}`}>
-              {badge && (
-                <span className={`pp-badge pp-badge--inline shrink-0 ${badgeClassName}`.trim()}>
-                  {badge}
-                </span>
-              )}
+              {badge ? (
+                <FeedBadgePill
+                  badge={badge}
+                  badgeClassName={badgeClassName}
+                  reportCategoryId={reportCategoryId}
+                  tone={badgeTone}
+                  Icon={BadgeIcon}
+                  className="shrink-0"
+                />
+              ) : null}
               <h3
                 className={`font-semibold text-[12px] leading-snug text-stone-900 flex-1 min-w-0 ${
                   isOpen ? "whitespace-normal break-words" : "line-clamp-1"

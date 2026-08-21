@@ -12,7 +12,7 @@ import {
 } from "../utils/thingsModule.js";
 import { isServiceOrSponsoredAdPost } from "../utils/categoryAccents.js";
 import { IconMapPin } from "../data/icons.jsx";
-import { REPORTS_TIP_CATEGORY_ID } from "../data/reportCategories.js";
+import { REPORTS_TIP_CATEGORY_ID, resolveReportCategoryId } from "../data/reportCategories.js";
 import { getPostInteractionType, INTERACTION_TYPES } from "../data/postInteractions.js";
 import { getActiveListingSale } from "../data/listingSales.js";
 import { displayCreatorLabel } from "../data/accountTypes.js";
@@ -338,10 +338,11 @@ export default function LiveNeighborFeed() {
           }
 
           if (item.kind === "announcement") {
-            const badge = getListingBadge(item.post.type);
             const post = item.post;
+            const reportCategoryId = resolveReportCategoryId(post) || post.reportCategoryId || null;
+            const badge = getListingBadge(post.type, { reportCategoryId });
             const isTip =
-              post.reportCategoryId === REPORTS_TIP_CATEGORY_ID ||
+              reportCategoryId === REPORTS_TIP_CATEGORY_ID ||
               (post.type ?? "").toLowerCase() === "tip" ||
               post.interactionType === "tip";
             const reportId = post.fromSecurityReportId;
@@ -355,6 +356,9 @@ export default function LiveNeighborFeed() {
                 itemId={item.id}
                 badge={badge.label}
                 badgeClassName={badge.className || (isTip ? "pp-badge--tip" : "")}
+                reportCategoryId={reportCategoryId}
+                badgeTone={badge.tone}
+                BadgeIcon={badge.Icon}
                 title={item.title}
                 authorLabel={displayCreatorLabel(post.author, post.accountType, {
                   mine: post.mine,
@@ -409,6 +413,8 @@ export default function LiveNeighborFeed() {
                 itemId={item.id}
                 badge={badge.label}
                 badgeClassName={badge.className}
+                badgeTone={badge.tone}
+                BadgeIcon={badge.Icon}
                 title={item.title}
                 authorLabel={displayCreatorLabel(item.post?.author, item.post?.accountType, {
                   mine: item.post?.mine,
@@ -430,6 +436,8 @@ export default function LiveNeighborFeed() {
               itemId={item.id}
               badge={badge.label}
               badgeClassName={badge.className}
+              badgeTone={badge.tone}
+              BadgeIcon={badge.Icon}
               title={item.title}
               authorLabel={displayCreatorLabel(item.post?.author, item.post?.accountType, {
                 mine: item.post?.mine,

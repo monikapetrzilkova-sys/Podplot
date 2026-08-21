@@ -2946,7 +2946,7 @@ form .subfilter-scroll {
   box-sizing: border-box;
 }
 
-/** Kompaktní štítek v záhlaví živého feedu (vedle nadpisu) */
+/** Kompaktní štítek v záhlaví živého feedu (vedle nadpisu) — legacy */
 .pp-badge--inline {
   font-size: 9px;
   letter-spacing: 0.03em;
@@ -2958,7 +2958,69 @@ form .subfilter-scroll {
   white-space: nowrap;
 }
 
-/** Barevné varianty štítků — mírné odlišení kategorií */
+/** Feed pilulka — neutrální pozadí, barva jen na ikoně + textu */
+.pp-feed-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  max-width: 7.25rem;
+  padding: 2px 7px 2px 4px;
+  border-radius: 999px;
+  background: #eef1ef;
+  border: 1px solid rgba(61, 122, 104, 0.1);
+  box-sizing: border-box;
+  line-height: 1.15;
+  vertical-align: middle;
+}
+
+.pp-feed-pill__icon {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+.pp-feed-pill__icon.pp-doodle-icon {
+  width: 11px;
+  height: 11px;
+}
+
+.pp-feed-pill__label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: none;
+}
+
+/* 4 tóny dle zadání */
+.pp-feed-pill--report {
+  color: #b56a45; /* tlumená cihlová */
+}
+
+.pp-feed-pill--things {
+  color: #9a7a3a; /* zemitá medová */
+}
+
+.pp-feed-pill--events {
+  color: #7a6a9a; /* tlumená lila */
+}
+
+.pp-feed-pill--help {
+  color: #3d7a68; /* šalvějová brand */
+}
+
+.pp-feed-pill--groups {
+  color: #6b6560;
+}
+
+.pp-feed-pill--default {
+  color: #3d7a68;
+}
+
+/** Barevné varianty štítků — legacy (detail karty, partner…) */
 .pp-badge--default {
   background: #e8f3ef;
   color: #3d7a68;

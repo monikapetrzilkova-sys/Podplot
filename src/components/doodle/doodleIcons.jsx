@@ -507,6 +507,45 @@ export function DoodleLendIcon({ className }) {
   );
 }
 
+/** Tlapka — zvíře / ztráta zvířete */
+export function DoodlePawIcon({ className }) {
+  return (
+    <DoodleIcon className={className}>
+      <ellipse {...s} cx="8.2" cy="8.2" rx="1.6" ry="2" />
+      <ellipse {...s} cx="11.2" cy="6.8" rx="1.5" ry="1.9" />
+      <ellipse {...s} cx="14.5" cy="7" rx="1.5" ry="1.9" />
+      <ellipse {...s} cx="17" cy="8.5" rx="1.5" ry="1.9" />
+      <path
+        {...s}
+        d="M9.2 13.2c-.4 2.2 1 4.2 3.2 4.5 2.2.2 3.8-1.4 4-3.2.1-1.2-.4-2.4-1.6-3.2-1.8-1.2-4.4-.8-5.6 1.9z"
+      />
+    </DoodleIcon>
+  );
+}
+
+/** Vozík — půjčovna / výpůjčka */
+export function DoodleCartIcon({ className }) {
+  return (
+    <DoodleIcon className={className}>
+      <path {...s} d="M4.5 5.5h2.2l1.4 9.2h9.8" />
+      <path {...s} d="M7.5 8.2h11.2l-1.2 5.2H8.2" />
+      <circle {...s} cx="9.5" cy="18" r="1.4" />
+      <circle {...s} cx="16.2" cy="18" r="1.4" />
+    </DoodleIcon>
+  );
+}
+
+/** Otazník — jiné / nezařazené */
+export function DoodleQuestionIcon({ className }) {
+  return (
+    <DoodleIcon className={className}>
+      <circle {...s} cx="12" cy="12" r="8.2" />
+      <path {...s} d="M9.8 9.2c.4-1.5 1.5-2.4 3-2.4 1.6 0 2.8 1 2.8 2.5 0 1.4-1 2-1.9 2.5-.8.4-1.2.9-1.2 1.8" />
+      <circle cx="12.2" cy="16.8" r="0.9" fill="currentColor" stroke="none" />
+    </DoodleIcon>
+  );
+}
+
 export function DoodleSearchIcon({ className }) {
   return (
     <DoodleIcon className={className}>
