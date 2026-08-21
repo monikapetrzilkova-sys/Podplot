@@ -20,6 +20,11 @@ import {
 } from "./doodle/doodleIcons.jsx";
 import { displayCreatorLabel } from "../data/accountTypes.js";
 import { isSelfNeighborCandidate, isCurrentUserRef } from "../data/listingSales.js";
+import FeedCard from "./FeedCard.jsx";
+import HelpFeedActions from "./HelpFeedActions.jsx";
+import AppPanelPortal from "./AppPanelPortal.jsx";
+import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
+import LiveFeedCard, { getNeighborSectionBadge } from "./LiveFeedCard.jsx";
 
 function ResultSection({ title, children, count }) {
   if (!count) return null;
@@ -88,11 +93,18 @@ export default function GlobalSearchResults() {
     openEventDetail,
     openGroup,
     openLendingFromHome,
+    offerHelpOnPost,
+    hasOfferedHelp,
+    getHelpOffers,
+    setPendingNeighborsSection,
+    setPendingThingsItemId,
+    selectModuleItem,
   } = useApp();
 
   const [detailPlace, setDetailPlace] = useState(null);
   const [detailReport, setDetailReport] = useState(null);
   const [detailListing, setDetailListing] = useState(null);
+  const [detailHelp, setDetailHelp] = useState(null);
 
   const q = globalSearchQuery.trim();
 
@@ -338,10 +350,7 @@ export default function GlobalSearchResults() {
                 subtitle={item.body}
                 meta={item.distance}
                 icon={<DoodleHelpIcon className="w-4 h-4" />}
-                onClick={() => {
-                  selectMainTab?.("neighbors");
-                  clearSearch();
-                }}
+                onClick={() => setDetailHelp(item)}
               />
             ))}
           </ResultSection>
@@ -407,34 +416,112 @@ export default function GlobalSearchResults() {
       )}
 
       {detailListing && (
-        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-4">
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/30"
-            aria-label="Zavřít"
-            onClick={() => setDetailListing(null)}
-          />
-          <article className="relative z-10 w-full max-w-[390px] bg-white rounded-2xl p-4 shadow-xl space-y-2">
-            <p className="text-[10px] font-bold uppercase text-[#3D7A68]">
-              {detailListing.type || "Inzerát"}
-            </p>
-            <h3 className="text-base font-bold text-stone-900">{detailListing.title}</h3>
-            <p className="text-sm text-stone-600 leading-relaxed">{detailListing.body}</p>
-            <p className="text-[11px] text-stone-400">
-              {displayCreatorLabel(detailListing.author, detailListing.accountType, {
-                mine: detailListing.mine,
-              })}
-              {detailListing.meta ? ` · ${detailListing.meta}` : ""}
-            </p>
-            <button
-              type="button"
-              onClick={() => setDetailListing(null)}
-              className="w-full mt-2 py-2.5 rounded-xl text-xs font-semibold bg-[#3D7A68] text-white"
-            >
-              Zavřít
-            </button>
-          </article>
-        </div>
+        <AppPanelPortal>
+          <div className="pp-app-sheet-overlay">
+            <div className="absolute inset-0 pointer-events-auto">
+              <ModalDoodleBackdrop onClose={() => setDetailListing(null)} />
+            </div>
+            <div className="pp-app-sheet flex flex-col overflow-hidden" role="dialog" aria-label="Detail inzerátu">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-stone-200 shrink-0">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-[#3D7A68]">
+                    {detailListing.type || detailListing.feedSubtype || "Inzerát"}
+                  </p>
+                  <h2 className="text-base font-bold text-stone-900 truncate">{detailListing.title}</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDetailListing(null)}
+                  className="w-8 h-8 flex items-center justify-center rounded-full text-stone-500 hover:bg-stone-100 text-xl leading-none shrink-0"
+                  aria-label="Zavřít"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4">
+                <p className="text-[11px] text-stone-400 mb-2">
+                  {displayCreatorLabel(detailListing.author, detailListing.accountType, {
+                    mine: detailListing.mine,
+                  })}
+                  {detailListing.meta ? ` · ${detailListing.meta}` : ""}
+                </p>
+                <FeedCard post={detailListing} detailsOnly />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const post = detailListing;
+                    setDetailListing(null);
+                    clearSearch();
+                    selectMainTab?.("neighbors");
+                    setPendingNeighborsSection?.("veci");
+                    setPendingThingsItemId?.(post.id);
+                    selectModuleItem?.(MODULE_IDS.THINGS, post.id);
+                  }}
+                  className="mt-3 w-full py-2.5 text-sm font-semibold rounded-xl border border-[#C5DDD4] text-[#3D7A68]"
+                >
+                  Otevřít v sekci Věci
+                </button>
+              </div>
+            </div>
+          </div>
+        </AppPanelPortal>
+      )}
+
+      {detailHelp && (
+        <AppPanelPortal>
+          <div className="pp-app-sheet-overlay">
+            <div className="absolute inset-0 pointer-events-auto">
+              <ModalDoodleBackdrop onClose={() => setDetailHelp(null)} />
+            </div>
+            <div className="pp-app-sheet flex flex-col overflow-hidden" role="dialog" aria-label="Detail výpomoci">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-stone-200 shrink-0">
+                <h2 className="text-base font-bold text-stone-900">Detail výpomoci</h2>
+                <button
+                  type="button"
+                  onClick={() => setDetailHelp(null)}
+                  className="w-8 h-8 flex items-center justify-center rounded-full text-stone-500 hover:bg-stone-100 text-xl leading-none"
+                  aria-label="Zavřít"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4">
+                {(() => {
+                  const sectionBadge = getNeighborSectionBadge("vypomoc", detailHelp.type);
+                  const offerCount = getHelpOffers?.(detailHelp.id)?.length ?? 0;
+                  return (
+                    <LiveFeedCard
+                      itemId={`search-help-${detailHelp.id}`}
+                      badge={sectionBadge.label}
+                      badgeClassName={sectionBadge.className}
+                      title={detailHelp.title}
+                      authorLabel={displayCreatorLabel(detailHelp.author, detailHelp.accountType, {
+                        mine: detailHelp.mine,
+                      })}
+                      preview={detailHelp.body}
+                    >
+                      {detailHelp.mine ? (
+                        <p className="pp-text-body text-sm">{detailHelp.body}</p>
+                      ) : (
+                        <HelpFeedActions
+                          help={{
+                            ...detailHelp,
+                            helpId: detailHelp.id,
+                            helpType: detailHelp.type,
+                            offerCount,
+                          }}
+                          onOfferHelp={offerHelpOnPost}
+                          alreadyOffered={hasOfferedHelp?.(detailHelp.id)}
+                        />
+                      )}
+                      {detailHelp.time ? <p className="pp-text-meta mt-2">{detailHelp.time}</p> : null}
+                    </LiveFeedCard>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+        </AppPanelPortal>
       )}
     </div>
   );
