@@ -117,6 +117,15 @@ function mergePlaceLists(existing, incoming) {
   return dedupeNearbyPlaces([...byId.values()]);
 }
 
+function resolveNearbyRadiusM(activeLocation) {
+  const fromLocationKm = Number(activeLocation?.radiusKm);
+  const meters = Number.isFinite(fromLocationKm) && fromLocationKm > 0
+    ? Math.round(fromLocationKm * 1000)
+    : 7000;
+  // Min 5 km (Hrnčíře u Jesenice je ~4,3 km), max 15 km kvůli limitu Nearby API
+  return Math.min(15000, Math.max(5000, meters));
+}
+
 /**
  * Načítání Google Places pro libovolnou lokalitu v ČR:
  * 1) přehled (vše) kolem aktivní lokality
@@ -131,7 +140,7 @@ export function useGuideGooglePlaces(activeCategory, activeLocation, searchQuery
   const locationKeyRef = useRef("");
 
   const locationKey = activeLocation?.lat != null
-    ? `${activeLocation.id}:${Number(activeLocation.lat).toFixed(3)},${Number(activeLocation.lng).toFixed(3)}`
+    ? `${activeLocation.id}:${Number(activeLocation.lat).toFixed(3)},${Number(activeLocation.lng).toFixed(3)}:${resolveNearbyRadiusM(activeLocation)}`
     : "";
 
   // Nová lokalita → reset + základní přehled
@@ -152,11 +161,12 @@ export function useGuideGooglePlaces(activeCategory, activeLocation, searchQuery
 
     let cancelled = false;
     setLoading(true);
+    const radiusM = resolveNearbyRadiusM(activeLocation);
 
     fetchNearbyPlaces({
       lat: activeLocation.lat,
       lng: activeLocation.lng,
-      radiusM: 3500,
+      radiusM,
       category: "vse",
     })
       .then((data) => {
@@ -192,11 +202,12 @@ export function useGuideGooglePlaces(activeCategory, activeLocation, searchQuery
 
     let cancelled = false;
     setLoading(true);
+    const radiusM = resolveNearbyRadiusM(activeLocation);
 
     fetchNearbyPlaces({
       lat: activeLocation.lat,
       lng: activeLocation.lng,
-      radiusM: 3500,
+      radiusM,
       category: cat,
     })
       .then((data) => {
@@ -216,7 +227,7 @@ export function useGuideGooglePlaces(activeCategory, activeLocation, searchQuery
     return () => {
       cancelled = true;
     };
-  }, [activeCategory, locationKey, activeLocation?.lat, activeLocation?.lng, activeLocation?.id]);
+  }, [activeCategory, locationKey, activeLocation?.lat, activeLocation?.lng, activeLocation?.id, activeLocation?.radiusKm]);
 
   const googlePlaces = useMemo(() => {
     let items = allPlaces;

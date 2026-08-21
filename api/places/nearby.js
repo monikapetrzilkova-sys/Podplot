@@ -13,7 +13,7 @@ export default async function handler(req, res) {
 
   const lat = req.query?.lat;
   const lng = req.query?.lng;
-  const radius = Math.min(5000, Math.max(200, Number(req.query?.radius) || 1500));
+  const radius = Math.min(15000, Math.max(200, Number(req.query?.radius) || 5000));
   const type = String(req.query?.type ?? "");
   const category = String(req.query?.category ?? "vse");
 

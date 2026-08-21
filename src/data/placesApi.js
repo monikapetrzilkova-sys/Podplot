@@ -196,6 +196,15 @@ const NAME_CATEGORY_RULES = [
       /\bpepco\b/i,
       /\bcyclo\b/i,
       /\bcyklo\b/i,
+      /\bstavebnin/i,
+      /\bzahradnict/i,
+      /\bhobby\s*market\b/i,
+      /\bhobbymarket\b/i,
+      /\bdek\b/i,
+      /\bizomat\b/i,
+      /\bobi\b/i,
+      /\bbauhaus\b/i,
+      /\bbauhaus\b/i,
     ],
   },
   {
@@ -207,6 +216,10 @@ const NAME_CATEGORY_RULES = [
       /\bkavarna\b/i,
       /\bpivnice\b/i,
       /\bbistro\b/i,
+      /\bbuf[áa]č\b/i,
+      /\bbufac\b/i,
+      /\bbufet\b/i,
+      /\bstreet\s*food\b/i,
       /\bpizza\b/i,
       /\bpizzer/i,
       /\bkebab\b/i,
@@ -214,7 +227,7 @@ const NAME_CATEGORY_RULES = [
       /\bgyros\b/i,
       /\bburger\b/i,
       /\bsushi\b/i,
-      /\bpealo\b/i,
+      /\bpekar\b/i,
     ],
   },
   {
@@ -307,11 +320,17 @@ const TYPE_PRIORITY = [
   "bakery",
   "supermarket",
   "grocery_or_supermarket",
+  "hardware_store",
+  "home_improvement_store",
+  "florist",
   "bicycle_store",
   "clothing_store",
   "shoe_store",
   "home_goods_store",
+  "furniture_store",
   "drugstore",
+  "convenience_store",
+  "department_store",
   "hair_care",
   "beauty_salon",
   "car_repair",
@@ -474,7 +493,7 @@ export function formatGoogleHours(weekdayText = []) {
   return weekdayText.join(" · ");
 }
 
-export async function fetchNearbyPlaces({ lat, lng, radiusM = 1500, type = "", category = "vse" } = {}) {
+export async function fetchNearbyPlaces({ lat, lng, radiusM = 7000, type = "", category = "vse" } = {}) {
   const params = new URLSearchParams({
     lat: String(lat),
     lng: String(lng),

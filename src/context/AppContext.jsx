@@ -696,7 +696,7 @@ export function AppProvider({ children }) {
   const [zboziMarketCategory, setZboziMarketCategory] = useState("vse");
   const [servicesSearchQuery, setServicesSearchQuery] = useState("");
   const [servicesParentCategory, setServicesParentCategory] = useState("vse");
-  const [institutionMapCategory, setInstitutionMapCategory] = useState("gastro");
+  const [institutionMapCategory, setInstitutionMapCategory] = useState("vse");
   const [localGuideSearchQuery, setLocalGuideSearchQuery] = useState("");
 
   const activeSponsoredBanners = useMemo(() => {
