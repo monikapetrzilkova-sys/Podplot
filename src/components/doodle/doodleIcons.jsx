@@ -470,15 +470,16 @@ export function DoodleGiveIcon({ className }) {
 }
 
 /** Prodám — cedulka s cenou */
+/** Prodám — cenovka (visačka) */
 export function DoodleSellIcon({ className }) {
   return (
     <DoodleIcon className={className}>
       <path
         {...s}
-        d="M5.5 9.2l6.2-4.4c.4-.3.9-.3 1.3 0l5.5 4.4c.3.2.5.6.5 1v8.2c0 .8-.6 1.4-1.4 1.4H6.4c-.8 0-1.4-.6-1.4-1.4v-8.2c0-.4.2-.8.5-1z"
+        d="M8.2 4.5h7.2c.7 0 1.3.6 1.3 1.3v9.8c0 .4-.2.8-.5 1L12.8 20c-.4.3-1 .3-1.4 0l-3.4-3.4c-.3-.2-.5-.6-.5-1V5.8c0-.7.6-1.3 1.3-1.3z"
       />
-      <circle {...s} cx="12" cy="12.5" r="2.2" />
-      <path {...s} d="M12 10.8v-.8M12 15v.8" opacity="0.7" />
+      <circle {...s} cx="12" cy="8.2" r="1.5" />
+      <path {...s} d="M9.8 12h4.4M9.8 14.6h3" opacity="0.75" />
     </DoodleIcon>
   );
 }
@@ -507,17 +508,16 @@ export function DoodleLendIcon({ className }) {
   );
 }
 
-/** Tlapka — zvíře / ztráta zvířete */
+/** Tlapka — zvíře (klasický otisk: 3 prsty + velká poduška) */
 export function DoodlePawIcon({ className }) {
   return (
     <DoodleIcon className={className}>
-      <ellipse {...s} cx="8.2" cy="8.2" rx="1.6" ry="2" />
-      <ellipse {...s} cx="11.2" cy="6.8" rx="1.5" ry="1.9" />
-      <ellipse {...s} cx="14.5" cy="7" rx="1.5" ry="1.9" />
-      <ellipse {...s} cx="17" cy="8.5" rx="1.5" ry="1.9" />
+      <ellipse {...s} cx="7.2" cy="7.5" rx="2.1" ry="2.5" />
+      <ellipse {...s} cx="12" cy="5.8" rx="2.2" ry="2.6" />
+      <ellipse {...s} cx="16.8" cy="7.5" rx="2.1" ry="2.5" />
       <path
         {...s}
-        d="M9.2 13.2c-.4 2.2 1 4.2 3.2 4.5 2.2.2 3.8-1.4 4-3.2.1-1.2-.4-2.4-1.6-3.2-1.8-1.2-4.4-.8-5.6 1.9z"
+        d="M8.2 12.2c-1.2 0-2.8 1.1-2.8 3.2 0 2.6 2.2 4.6 6.6 4.6s6.6-2 6.6-4.6c0-2.1-1.6-3.2-2.8-3.2-1.1 0-2 .8-3.8.8s-2.7-.8-3.8-.8z"
       />
     </DoodleIcon>
   );
