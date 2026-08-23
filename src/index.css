@@ -1705,27 +1705,15 @@ body,
   border-color: rgba(61, 122, 104, 0.28);
 }
 
-/* Moje skupiny — hlavní filtr, výraznější než sekundární nástroje */
-.pp-my-groups-block {
-  margin: 0 -2px;
-  padding: 8px 6px 6px;
-  border-radius: 12px;
-  background: linear-gradient(180deg, #f3f8f6 0%, #eef5f2 100%);
-  border: 1px solid #d7e8e1;
-}
-
-.pp-my-groups-heading {
-  margin: 0 2px 6px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #1b4d3e;
-  letter-spacing: 0.01em;
-}
-
+/* Moje skupiny — horizontální lišta (posuv při přetečení) */
 .pp-my-groups-rail {
-  margin: 0;
-  padding-left: 2px;
-  padding-right: 2px;
+  margin: 0 -2px;
+  padding: 2px 2px 4px;
+  max-width: 100%;
+  min-width: 0;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
 }
 
 .pp-my-group-pill {

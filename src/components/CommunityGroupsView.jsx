@@ -157,17 +157,28 @@ function SubgroupRow({ group, postCount, onOpen, memberBadge = false }) {
   );
 }
 
-/** Seřadí moje skupiny: nejčastější / nejaktivnější pro mě první */
-function sortGroupsByFrequency(groups, userGroupPosts) {
+/** Seřadí moje skupiny podle mé aktivity (moje příspěvky → aktivita ve skupině → nejnovější). */
+function sortGroupsByFrequency(groups, userGroupPosts, user = null) {
+  const isMine = (p) =>
+    Boolean(
+      p.mine ||
+        p.authorId === "me" ||
+        p.authorId === user?.id ||
+        (user?.name && p.author && String(p.author).trim() === String(user.name).trim())
+    );
+
   return [...groups].sort((a, b) => {
     const postsA = getGroupPosts(a.id, userGroupPosts);
     const postsB = getGroupPosts(b.id, userGroupPosts);
-    const myA = postsA.filter((p) => p.mine || p.authorId === "me").length;
-    const myB = postsB.filter((p) => p.mine || p.authorId === "me").length;
-    const latestA = postsA.reduce((max, p, i) => Math.max(max, p.createdAt || postsA.length - i), 0);
-    const latestB = postsB.reduce((max, p, i) => Math.max(max, p.createdAt || postsB.length - i), 0);
-    const scoreA = myA * 100 + postsA.length * 10 + latestA / 1e11;
-    const scoreB = myB * 100 + postsB.length * 10 + latestB / 1e11;
+    const myPostsA = postsA.filter(isMine);
+    const myPostsB = postsB.filter(isMine);
+    const latestMineA = myPostsA.reduce((max, p) => Math.max(max, Number(p.createdAt) || 0), 0);
+    const latestMineB = myPostsB.reduce((max, p) => Math.max(max, Number(p.createdAt) || 0), 0);
+    const latestAnyA = postsA.reduce((max, p) => Math.max(max, Number(p.createdAt) || 0), 0);
+    const latestAnyB = postsB.reduce((max, p) => Math.max(max, Number(p.createdAt) || 0), 0);
+
+    const scoreA = myPostsA.length * 1000 + postsA.length * 10 + latestMineA / 1e10 + latestAnyA / 1e12;
+    const scoreB = myPostsB.length * 1000 + postsB.length * 10 + latestMineB / 1e10 + latestAnyB / 1e12;
     if (scoreB !== scoreA) return scoreB - scoreA;
     return (a.name || "").localeCompare(b.name || "", "cs");
   });
@@ -175,47 +186,44 @@ function sortGroupsByFrequency(groups, userGroupPosts) {
 
 function MyGroupsRail({ groups, activeId, onSelect }) {
   return (
-    <div className="pp-my-groups-block shrink-0">
-      <p className="pp-my-groups-heading">Filtr ve vašich skupinách</p>
-      <div
-        className="pp-my-groups-rail pp-category-pills flex flex-nowrap gap-1.5 overflow-x-auto subfilter-scroll pb-0.5"
-        role="tablist"
-        aria-label="Moje skupiny"
+    <div
+      className="pp-my-groups-rail pp-category-pills flex flex-nowrap gap-1.5 overflow-x-auto overflow-y-hidden subfilter-scroll shrink-0"
+      role="tablist"
+      aria-label="Moje skupiny"
+    >
+      <button
+        type="button"
+        role="tab"
+        aria-selected={activeId === "vse"}
+        onClick={() => onSelect("vse")}
+        className={`pp-category-pill pp-my-group-chip shrink-0 ${
+          activeId === "vse" ? "pp-category-pill--active pp-my-group-chip--active" : ""
+        }`}
       >
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeId === "vse"}
-          onClick={() => onSelect("vse")}
-          className={`pp-category-pill pp-my-group-chip shrink-0 ${
-            activeId === "vse" ? "pp-category-pill--active pp-my-group-chip--active" : ""
-          }`}
-        >
-          Vše
-        </button>
-        {groups.map((g) => {
-          const active = activeId === g.id;
-          return (
-            <button
-              key={g.id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              title={g.name}
-              onClick={() => onSelect(g.id)}
-              className={`pp-category-pill pp-my-group-pill pp-my-group-chip shrink-0 inline-flex items-center gap-1 ${
-                active ? "pp-category-pill--active pp-my-group-chip--active" : ""
-              }`}
-            >
-              <GroupNavIcon
-                id={g.id}
-                className={`w-3.5 h-3.5 shrink-0 ${active ? "text-white" : "text-[#1B4D3E]"}`}
-              />
-              <span className="truncate max-w-[7.5rem]">{g.name}</span>
-            </button>
-          );
-        })}
-      </div>
+        Vše
+      </button>
+      {groups.map((g) => {
+        const active = activeId === g.id;
+        return (
+          <button
+            key={g.id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            title={g.name}
+            onClick={() => onSelect(g.id)}
+            className={`pp-category-pill pp-my-group-pill pp-my-group-chip shrink-0 inline-flex items-center gap-1 ${
+              active ? "pp-category-pill--active pp-my-group-chip--active" : ""
+            }`}
+          >
+            <GroupNavIcon
+              id={g.id}
+              className={`w-3.5 h-3.5 shrink-0 ${active ? "text-white" : "text-[#1B4D3E]"}`}
+            />
+            <span className="truncate max-w-[7.5rem]">{g.name}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -381,6 +389,7 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
     dismissedGroupProposalIds,
     dismissGroupProposal,
     restoreGroupProposal,
+    user,
   } = useApp();
 
   const [search, setSearch] = useState("");
@@ -394,8 +403,8 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
     [communityGroups, activeLocationId]
   );
   const myGroupsRanked = useMemo(
-    () => sortGroupsByFrequency(myGroups, userGroupPosts),
-    [myGroups, userGroupPosts]
+    () => sortGroupsByFrequency(myGroups, userGroupPosts, user),
+    [myGroups, userGroupPosts, user]
   );
   const myGroupIds = useMemo(() => new Set(myGroups.map((g) => g.id)), [myGroups]);
   const activeGroup = communityGroups.find((g) => g.id === feedSubFilter);
