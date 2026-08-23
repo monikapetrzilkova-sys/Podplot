@@ -931,19 +931,19 @@ export default function MyProfile({ registerLegalBack } = {}) {
         })()}
       </section>
 
-      <section id="profile-my-help-offers" className="mb-6 scroll-mt-4">
-        <h3 className="text-sm font-bold text-stone-800 mb-1">Moje nabídky pomoci</h3>
-        <p className="text-[11px] text-stone-500 mb-3">
+      <section id="profile-my-help-offers" className="pp-card p-4 mb-4 scroll-mt-4">
+        <ProfileSectionTitle>Moje nabídky pomoci</ProfileSectionTitle>
+        <p className="text-[11px] text-stone-500 mb-3 -mt-1">
           Po kliknutí na „Nabízím pomoc“ se žadateli otevře konverzace ve zprávách. Nabídka tu zůstane 48 hodin.
         </p>
         {myHelpOffers.length === 0 ? (
-          <p className="text-sm text-stone-500 bg-stone-50 rounded-2xl p-4">
+          <p className="text-sm text-stone-500 leading-relaxed">
             Zatím žádná aktivní nabídka. Když u souseda kliknete „Nabízím pomoc“, objeví se tady.
           </p>
         ) : (
           <div className="space-y-2">
             {myHelpOffers.map((offer) => (
-              <div key={`${offer.postId}-${offer.createdAt}`} className="pp-card p-3">
+              <div key={`${offer.postId}-${offer.createdAt}`} className="rounded-xl border border-stone-200 bg-[#FAFCFB] p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-emerald-700 mb-0.5">Nabízím pomoc</p>
@@ -973,13 +973,13 @@ export default function MyProfile({ registerLegalBack } = {}) {
         )}
       </section>
 
-      <section id="profile-my-lending-offers" className="mb-6 scroll-mt-4">
-        <h3 className="text-sm font-bold text-stone-800 mb-3">Moje výpůjčky a nabídky</h3>
+      <section id="profile-my-lending-offers" className="pp-card p-4 mb-4 scroll-mt-4">
+        <ProfileSectionTitle>Moje výpůjčky a nabídky</ProfileSectionTitle>
         {myOffers.length === 0 &&
         reservations.length === 0 &&
         myListings.length === 0 &&
         listingSaleOrders.length === 0 ? (
-          <p className="text-sm text-stone-500 bg-stone-50 rounded-2xl p-4">
+          <p className="text-sm text-stone-500 leading-relaxed">
             Zatím nic — zkuste přidat inzerát nebo půjčit věc na tržišti.
           </p>
         ) : (
@@ -987,7 +987,7 @@ export default function MyProfile({ registerLegalBack } = {}) {
             {listingSaleOrders
               .filter((o) => isSameAppUser(o.buyerId, user?.id ?? "me"))
               .map((order) => (
-                <div key={order.id} className="pp-card p-3">
+                <div key={order.id} className="rounded-xl border border-stone-200 bg-[#FAFCFB] p-3">
                   <p className="text-xs font-semibold text-amber-800 mb-0.5">
                     {order.status === "held" ? "Nákup v rezervaci" : "Nákup uzavřen"}
                   </p>
@@ -1018,7 +1018,7 @@ export default function MyProfile({ registerLegalBack } = {}) {
                 key={item.id}
                 type="button"
                 onClick={() => setDetailLending(item)}
-                className="pp-card p-3 w-full text-left hover:bg-stone-50 transition-colors"
+                className="rounded-xl border border-stone-200 bg-[#FAFCFB] p-3 w-full text-left hover:bg-stone-50 transition-colors"
               >
                 <p className="text-xs font-semibold text-emerald-700 mb-0.5">Nabízím k půjčení · klepněte pro detail</p>
                 <p className="text-sm font-medium text-stone-800">{item.item}</p>
@@ -1047,7 +1047,7 @@ export default function MyProfile({ registerLegalBack } = {}) {
                   return `${fmt(item.startDate)} – ${fmt(item.endDate)}`;
                 })();
               return (
-              <div key={`res-${i}`} className="pp-card p-3">
+              <div key={`res-${i}`} className="rounded-xl border border-stone-200 bg-[#FAFCFB] p-3">
                 <p className="text-xs font-semibold text-emerald-800 mb-0.5">Rezervováno</p>
                 <p className="text-sm font-medium text-stone-800 leading-snug">{item.item}</p>
                 <p className="text-xs text-stone-500 mt-1">
@@ -1097,7 +1097,7 @@ export default function MyProfile({ registerLegalBack } = {}) {
                     key={post.id}
                     type="button"
                     onClick={() => setDetailListing(post)}
-                    className="pp-card p-3 w-full text-left hover:bg-stone-50 transition-colors"
+                    className="rounded-xl border border-stone-200 bg-[#FAFCFB] p-3 w-full text-left hover:bg-stone-50 transition-colors"
                   >
                     <p className="text-xs font-semibold text-stone-500 mb-0.5">
                       {sale ? "Inzerát · V rezervaci · klepněte pro detail" : "Inzerát · klepněte pro detail"}
@@ -1115,10 +1115,10 @@ export default function MyProfile({ registerLegalBack } = {}) {
         )}
       </section>
 
-      <section id="profile-my-reports" className="mb-6 scroll-mt-4">
-        <h3 className="text-sm font-bold text-stone-800 mb-3">Moje hlášení</h3>
+      <section id="profile-my-reports" className="pp-card p-4 mb-4 scroll-mt-4">
+        <ProfileSectionTitle>Moje hlášení</ProfileSectionTitle>
         {myReportItems.length === 0 ? (
-          <p className="text-sm text-stone-500 bg-stone-50 rounded-2xl p-4">
+          <p className="text-sm text-stone-500 leading-relaxed">
             Zatím jste neodeslala žádné hlášení na mapu.
           </p>
         ) : (
@@ -1128,7 +1128,7 @@ export default function MyProfile({ registerLegalBack } = {}) {
                 key={r.id}
                 type="button"
                 onClick={() => setDetailReport(r.report)}
-                className="pp-card p-3 w-full text-left hover:bg-stone-50 transition-colors"
+                className="rounded-xl border border-stone-200 bg-[#FAFCFB] p-3 w-full text-left hover:bg-stone-50 transition-colors"
               >
                 <p className="text-xs font-semibold text-[#3D7A68] mb-0.5">Hlášení · klepněte pro detail</p>
                 <p className="text-xs font-bold text-stone-800">{r.type}</p>
@@ -1140,10 +1140,10 @@ export default function MyProfile({ registerLegalBack } = {}) {
         )}
       </section>
 
-      <section id="profile-my-prompts" className="mb-6 scroll-mt-4">
-        <h3 className="text-sm font-bold text-stone-800 mb-3">Moje podněty úřadu</h3>
+      <section id="profile-my-prompts" className="pp-card p-4 mb-4 scroll-mt-4">
+        <ProfileSectionTitle>Moje podněty úřadu</ProfileSectionTitle>
         {myMunicipalityPrompts.length === 0 ? (
-          <p className="text-sm text-stone-500 bg-stone-50 rounded-2xl p-4">
+          <p className="text-sm text-stone-500 leading-relaxed">
             Zatím jste neodeslala žádný podnět. Najdete je v záložce{" "}
             <strong>Mapa → Podat podnět úřadu</strong>.
           </p>
@@ -1154,7 +1154,7 @@ export default function MyProfile({ registerLegalBack } = {}) {
                 key={p.id}
                 type="button"
                 onClick={() => setDetailPrompt(p)}
-                className="bg-white border border-stone-200 rounded-2xl p-3 w-full text-left hover:bg-stone-50 transition-colors"
+                className="rounded-xl border border-stone-200 bg-[#FAFCFB] p-3 w-full text-left hover:bg-stone-50 transition-colors"
               >
                 <div className="flex items-start justify-between gap-2 mb-1">
                   <p className="text-sm font-medium text-stone-800">{p.title}</p>
