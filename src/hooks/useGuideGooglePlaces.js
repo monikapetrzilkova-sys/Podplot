@@ -3,6 +3,7 @@ import {
   fetchNearbyPlaces,
   googlePlaceToInstitution,
   normalizeGuidePlaceCategory,
+  peekCachedNearbyPlaces,
 } from "../data/placesApi.js";
 import { institutionMatchesCategory } from "../data/institutionsMapData.js";
 import { latLngToMapPos } from "../utils/geoCoordinates.js";
@@ -127,10 +128,11 @@ function resolveNearbyRadiusM(activeLocation) {
 }
 
 /**
- * Načítání Google Places pro libovolnou lokalitu v ČR:
- * 1) přehled (vše) kolem aktivní lokality
- * 2) při výběru kategorie hlubší fetch (více stránek + české klíčové dotazy)
- * Výsledky se akumulují — žádné hardcoded názvy konkrétních ulic/měst.
+ * Načítání Google Places:
+ * 1) session/memory cache → okamžité piny
+ * 2) fast (10 typů) → rychlá první vlna
+ * 3) vse → doplnění
+ * 4) kategorie → hlubší fetch
  */
 export function useGuideGooglePlaces(activeCategory, activeLocation, searchQuery = "") {
   const [allPlaces, setAllPlaces] = useState([]);
@@ -143,7 +145,7 @@ export function useGuideGooglePlaces(activeCategory, activeLocation, searchQuery
     ? `${activeLocation.id}:${Number(activeLocation.lat).toFixed(3)},${Number(activeLocation.lng).toFixed(3)}:${resolveNearbyRadiusM(activeLocation)}`
     : "";
 
-  // Nová lokalita → reset + základní přehled
+  // Nová lokalita → cache hit + fast + vse
   useEffect(() => {
     if (!activeLocation?.lat || !activeLocation?.lng) {
       setAllPlaces([]);
@@ -156,28 +158,58 @@ export function useGuideGooglePlaces(activeCategory, activeLocation, searchQuery
     if (locationKeyRef.current !== locationKey) {
       locationKeyRef.current = locationKey;
       loadedCategoriesRef.current = new Set();
-      // Nemaž hned pinů — nech stará data, dokud nepřijdou nová (méně prázdné mapy)
     }
 
     let cancelled = false;
-    setLoading(true);
     const radiusM = resolveNearbyRadiusM(activeLocation);
 
+    // Okamžité piny ze session (předchozí návštěva / prefetch)
+    const peek =
+      peekCachedNearbyPlaces(activeLocation, "vse") ||
+      peekCachedNearbyPlaces(activeLocation, "fast");
+    if (peek?.places?.length) {
+      setAllPlaces(mapPlacesPayload(peek, activeLocation));
+      setSource(peek.source ?? "session-cache");
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+
+    const apply = (data, { merge = false } = {}) => {
+      if (cancelled || !data) return;
+      const items = mapPlacesPayload(data, activeLocation);
+      setAllPlaces((prev) => (merge ? mergePlaceLists(prev, items) : items));
+      setSource(data.source ?? null);
+    };
+
+    // 1) fast — první vlna (síť / sdílený prefetch)
     fetchNearbyPlaces({
       lat: activeLocation.lat,
       lng: activeLocation.lng,
       radiusM,
-      category: "vse",
+      category: "fast",
+      preferCache: true,
     })
       .then((data) => {
-        if (cancelled) return;
-        const items = mapPlacesPayload(data, activeLocation);
-        setAllPlaces(items);
-        setSource(data.source ?? null);
+        apply(data, { merge: Boolean(peek?.places?.length) });
+        loadedCategoriesRef.current.add("fast");
+        if (!cancelled) setLoading(false);
+        // 2) vse — doplnění typů
+        return fetchNearbyPlaces({
+          lat: activeLocation.lat,
+          lng: activeLocation.lng,
+          radiusM,
+          category: "vse",
+          preferCache: true,
+        });
+      })
+      .then((data) => {
+        if (!data) return;
+        apply(data, { merge: true });
         loadedCategoriesRef.current.add("vse");
       })
       .catch(() => {
-        if (!cancelled) {
+        if (!cancelled && !peek?.places?.length) {
           setAllPlaces([]);
           setSource("error");
         }
@@ -191,7 +223,7 @@ export function useGuideGooglePlaces(activeCategory, activeLocation, searchQuery
     };
   }, [locationKey, activeLocation?.lat, activeLocation?.lng, activeLocation?.id, activeLocation?.radiusKm]);
 
-  // Kategorie → hlubší načtení (dentist×3 stránky, „zubní ordinace“ atd.) platné kdekoli v ČR
+  // Kategorie → hlubší načtení
   useEffect(() => {
     if (!activeLocation?.lat || !activeLocation?.lng) return;
     const cat = activeCategory && activeCategory !== "vse" && activeCategory !== "ostatni"

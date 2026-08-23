@@ -6,6 +6,7 @@ import {
   SEED_GROUP_POST_COMMENTS,
   commentsForPost,
 } from "../data/groupPostComments.js";
+import { prefetchNearbyPlaces } from "../data/placesApi.js";
 import { calculateTopCost, getTopPlan, canTopCategory } from "../data/pricing.js";
 import { getAccountType, normalizeAccountType, resolveBusinessSubtype } from "../data/accountTypes.js";
 import { CLUB_VOTES_REQUIRED, getClubCategory } from "../data/clubCategories.js";
@@ -755,6 +756,12 @@ export function AppProvider({ children }) {
   }, [sponsoredBanners]);
 
   const activeLocation = locations.find((l) => l.id === activeLocationId) ?? locations[0];
+
+  // Přednačti místa na mapě hned po startu / změně lokality (fast → vse)
+  useEffect(() => {
+    if (!user || activeLocation?.lat == null || activeLocation?.lng == null) return;
+    prefetchNearbyPlaces(activeLocation);
+  }, [user, activeLocation?.id, activeLocation?.lat, activeLocation?.lng, activeLocation?.radiusKm]);
 
   // Síť důvěry: sousedi z lokality + výzva při novém sousedovi
   useEffect(() => {

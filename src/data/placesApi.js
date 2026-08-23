@@ -495,8 +495,49 @@ export function formatGoogleHours(weekdayText = []) {
 
 /** In-memory cache — stejná lokalita po přepnutí Hlášení↔Místa bez nového čekání. */
 const nearbyPlacesMemoryCache = new Map();
+const SESSION_TTL_MS = 45 * 60 * 1000;
+const SESSION_PREFIX = "pp-places-v11:";
 
-export async function fetchNearbyPlaces({ lat, lng, radiusM = 7000, type = "", category = "vse" } = {}) {
+function sessionKey({ lat, lng, radiusM, category }) {
+  return `${SESSION_PREFIX}${Number(lat).toFixed(3)},${Number(lng).toFixed(3)},${radiusM},${category || "vse"}`;
+}
+
+function readSessionPlaces(key) {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.at || Date.now() - parsed.at > SESSION_TTL_MS) return null;
+    if (!Array.isArray(parsed.places)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeSessionPlaces(key, data) {
+  try {
+    sessionStorage.setItem(
+      key,
+      JSON.stringify({
+        at: Date.now(),
+        places: data.places ?? [],
+        source: data.source ?? "google",
+      })
+    );
+  } catch {
+    /* quota / private mode */
+  }
+}
+
+export async function fetchNearbyPlaces({
+  lat,
+  lng,
+  radiusM = 7000,
+  type = "",
+  category = "vse",
+  preferCache = true,
+} = {}) {
   const params = new URLSearchParams({
     lat: String(lat),
     lng: String(lng),
@@ -508,9 +549,17 @@ export async function fetchNearbyPlaces({ lat, lng, radiusM = 7000, type = "", c
   const cacheKey = `${params.toString()}`;
   const cached = nearbyPlacesMemoryCache.get(cacheKey);
   if (cached) {
-    if (cached.data) return cached.data;
+    if (preferCache && cached.data) return cached.data;
     if (cached.promise) return cached.promise;
+    if (cached.data && !preferCache) {
+      /* pokračuj na síť — níže přepíšeme cache */
+    } else if (cached.data) {
+      return cached.data;
+    }
   }
+
+  const sKey = sessionKey({ lat, lng, radiusM, category: category || "vse" });
+  const fromSession = preferCache && !type ? readSessionPlaces(sKey) : null;
 
   const promise = fetch(`/api/places/nearby?${params}`)
     .then(async (res) => {
@@ -519,6 +568,7 @@ export async function fetchNearbyPlaces({ lat, lng, radiusM = 7000, type = "", c
     })
     .then((data) => {
       nearbyPlacesMemoryCache.set(cacheKey, { data, at: Date.now() });
+      if (!type && data?.places?.length) writeSessionPlaces(sKey, data);
       return data;
     })
     .catch(() => {
@@ -527,24 +577,54 @@ export async function fetchNearbyPlaces({ lat, lng, radiusM = 7000, type = "", c
     });
 
   nearbyPlacesMemoryCache.set(cacheKey, { promise, at: Date.now() });
+
+  if (fromSession) {
+    return {
+      places: fromSession.places,
+      source: fromSession.source || "session-cache",
+      category: category || "vse",
+      count: fromSession.places.length,
+    };
+  }
+
   return promise;
 }
 
-/** Přednačte přehled míst (Mapa → Hlášení), ať po kliknutí na Místa už jsou v cache. */
-export function prefetchNearbyPlaces(activeLocation) {
-  if (activeLocation?.lat == null || activeLocation?.lng == null) return;
-  const fromLocationKm = Number(activeLocation.radiusKm);
+function resolvePrefetchRadiusM(activeLocation) {
+  const fromLocationKm = Number(activeLocation?.radiusKm);
   const meters =
     Number.isFinite(fromLocationKm) && fromLocationKm > 0
       ? Math.round(fromLocationKm * 1000)
       : 7000;
-  const radiusM = Math.min(15000, Math.max(5000, meters));
-  void fetchNearbyPlaces({
+  return Math.min(15000, Math.max(5000, meters));
+}
+
+/** Přednačte místa: nejdřív fast (okamžité piny), pak doplnění vse. */
+export function prefetchNearbyPlaces(activeLocation) {
+  if (activeLocation?.lat == null || activeLocation?.lng == null) return;
+  const radiusM = resolvePrefetchRadiusM(activeLocation);
+  const base = {
     lat: activeLocation.lat,
     lng: activeLocation.lng,
     radiusM,
-    category: "vse",
-  });
+  };
+  void fetchNearbyPlaces({ ...base, category: "fast" }).then(() =>
+    fetchNearbyPlaces({ ...base, category: "vse" })
+  );
+}
+
+/** Synchronní čtení session cache (pro okamžité piny při mountu). */
+export function peekCachedNearbyPlaces(activeLocation, category = "fast") {
+  if (activeLocation?.lat == null || activeLocation?.lng == null) return null;
+  const radiusM = resolvePrefetchRadiusM(activeLocation);
+  return readSessionPlaces(
+    sessionKey({
+      lat: activeLocation.lat,
+      lng: activeLocation.lng,
+      radiusM,
+      category,
+    })
+  );
 }
 
 export async function fetchPlaceDetails(placeId) {
