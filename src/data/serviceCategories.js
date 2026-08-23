@@ -36,7 +36,6 @@ export const SUBCATEGORY_TO_HOME_GROUP = {
   hlidani: "deti-rodina",
   doucovani: "deti-rodina",
   preklad: "deti-rodina",
-  gastro: "ostatni",
   pravo: "ostatni",
   ucetni: "ostatni",
   event: "ostatni",
@@ -82,7 +81,6 @@ export const SUBCATEGORY_TO_PARENT = {
   zahrada: "zahrada",
   veterinar: "zahrada",
   uklid: "uklid",
-  gastro: "uklid",
   doucovani: "doucovani",
   hlidani: "doucovani",
   preklad: "doucovani",
@@ -102,7 +100,6 @@ export const POPULAR_SERVICE_CATEGORIES = [
   { id: "beauty", label: "Beauty", emoji: "💅" },
   { id: "hlidani", label: "Hlídání", emoji: "👶" },
   { id: "doucovani", label: "Doučování", emoji: "📚" },
-  { id: "gastro", label: "Catering", emoji: "🍽️" },
 ];
 
 export const ALL_SERVICE_CATEGORIES = [
@@ -132,28 +129,38 @@ export const SERVICE_PLACEHOLDERS = {
   beauty: "Co hledáte? např. Manikúra, líčení na akci…",
   hlidani: "Kdy a koho? např. Hlídání dětí večer o víkendu…",
   doucovani: "Předmět a ročník — např. Matematika pro 6. třídu…",
-  gastro: "Co potřebujete domů? např. Catering na oslavu, koláče na víkend…",
+  event: "Co potřebujete? např. Catering na oslavu, občerstvení na akci…",
   default: "Popište, co potřebujete…",
 };
 
+/** Legacy alias — dřívější „Catering“ sloučeno do Event & catering */
+export function normalizeServiceSubcategoryId(id) {
+  if (!id) return id;
+  if (id === "gastro") return "event";
+  return id;
+}
+
 export function getServiceCategory(id) {
-  return ALL_SERVICE_CATEGORIES.find((c) => c.id === id);
+  const normalized = normalizeServiceSubcategoryId(id);
+  return ALL_SERVICE_CATEGORIES.find((c) => c.id === normalized);
 }
 
 /** Seznam zaměření služby (více oborů) — zpětně kompatibilní s jedním subcategory */
 export function getServiceSubcategoryIds(svc) {
   if (!svc) return [];
-  if (Array.isArray(svc.subcategories) && svc.subcategories.length > 0) {
-    return [...new Set(svc.subcategories.filter(Boolean))];
-  }
-  if (svc.subcategory) return [svc.subcategory];
-  return [];
+  const raw =
+    Array.isArray(svc.subcategories) && svc.subcategories.length > 0
+      ? svc.subcategories
+      : svc.subcategory
+        ? [svc.subcategory]
+        : [];
+  return [...new Set(raw.map(normalizeServiceSubcategoryId).filter(Boolean))];
 }
 
 /** Hlavní zaměření — určuje ikonu v katalogu */
 export function getPrimaryServiceSubcategoryId(svc) {
   if (!svc) return null;
-  if (svc.primarySubcategory) return svc.primarySubcategory;
+  if (svc.primarySubcategory) return normalizeServiceSubcategoryId(svc.primarySubcategory);
   return getServiceSubcategoryIds(svc)[0] || null;
 }
 
@@ -165,9 +172,13 @@ export function getSecondaryServiceSubcategoryIds(svc) {
 
 /** Sestaví seznam [hlavní, …vedlejší] pro uložení */
 export function buildServiceSubcategoryList(primaryId, secondaryIds = []) {
-  const primary = primaryId || null;
+  const primary = normalizeServiceSubcategoryId(primaryId) || null;
   const rest = [
-    ...new Set((Array.isArray(secondaryIds) ? secondaryIds : []).filter((id) => id && id !== primary)),
+    ...new Set(
+      (Array.isArray(secondaryIds) ? secondaryIds : [])
+        .map(normalizeServiceSubcategoryId)
+        .filter((id) => id && id !== primary)
+    ),
   ];
   return primary ? [primary, ...rest] : rest;
 }

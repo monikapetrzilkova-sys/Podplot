@@ -159,10 +159,12 @@ export const SERVICES_CATALOG = [
   {
     id: "svc4",
     name: "Domácí koláče — catering",
-    profession: "Catering",
-    keywords: ["catering", "koláče", "pečivo", "občerstvení", "oslava", "jídlo domů"],
-    subcategory: "gastro",
-    subcategoryLabel: "Catering",
+    profession: "Event & catering",
+    keywords: ["catering", "koláče", "pečivo", "občerstvení", "oslava", "jídlo domů", "event"],
+    subcategory: "event",
+    primarySubcategory: "event",
+    subcategories: ["event"],
+    subcategoryLabel: "Event & catering",
     homeGroupId: "ostatni",
     serviceDescription:
       "Domácí koláče a občerstvení na oslavu, poradu nebo víkend — dovezeme k vám domů.",
@@ -310,7 +312,7 @@ export const SERVICE_SUBCATEGORIES = [
   { id: "instalater", label: "Instalatér", placeholder: "Co potřebujete? např. Oprava kohoutku…" },
   { id: "elektrikar", label: "Elektrikář", placeholder: "Co potřebujete? např. Montáž lustru…" },
   { id: "zahrada", label: "Zahrada", placeholder: "Co přesně potřebujete udělat? např. Realizace terasy…" },
-  { id: "gastro", label: "Gastro", placeholder: "Co hledáte? např. Catering na oslavu…" },
+  { id: "event", label: "Event & catering", placeholder: "Co hledáte? např. Catering na oslavu…" },
 ];
 
 export const NEIGHBOR_HELP = [
