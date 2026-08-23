@@ -40,6 +40,7 @@ import { loadSavedActiveTab, saveNavSession } from "../data/navSession.js";
 import { MODULE_IDS, DEFAULT_MODULE_VIEW, DEFAULT_EVENTS_MODULE_VIEW } from "../data/moduleConfig.js";
 import { INSTITUTIONS_MAP_PLACES } from "../data/institutionsMapData.js";
 import { filterServicesByReach } from "../utils/serviceReach.js";
+import { sortServicesForCatalog } from "../utils/catalogServiceSort.js";
 import {
   getServiceCategory,
   formatServiceSubcategoryLabels,
@@ -411,7 +412,10 @@ export function AppProvider({ children }) {
   const [officePromptBodyDraft, setOfficePromptBodyDraft] = useState("");
   const [craftsmanWallet, setCraftsmanWallet] = useState(1240);
   const [businessWallet, setBusinessWallet] = useState(3680);
-  const [craftsmanAcceptsOrders, setCraftsmanAcceptsOrders] = useState(true);
+  const [craftsmanAcceptsOrders, setCraftsmanAcceptsOrdersState] = useState(true);
+  const [catalogShuffleSeed, setCatalogShuffleSeed] = useState(() =>
+    Math.random().toString(36).slice(2)
+  );
   const [serviceOrders, setServiceOrders] = useState(INITIAL_SERVICE_ORDERS);
   const [municipalityPrompts, setMunicipalityPrompts] = useState(INITIAL_MUNICIPALITY_PROMPTS);
   const [promptCalls, setPromptCalls] = useState(INITIAL_PROMPT_CALLS);
@@ -3128,6 +3132,30 @@ export function AppProvider({ children }) {
     [user?.id, testRoleId]
   );
 
+  const setCraftsmanAcceptsOrders = useCallback(
+    (value) => {
+      setCraftsmanAcceptsOrdersState((prev) => {
+        const next = typeof value === "function" ? Boolean(value(prev)) : Boolean(value);
+        setServicesCatalog((catalog) =>
+          catalog.map((s) => {
+            const mine =
+              (user?.id && s.ownerUserId === user.id) ||
+              s.id === "svc-mine" ||
+              (testRoleId === "remeslnik" && s.id === "svc1");
+            if (!mine) return s;
+            return { ...s, kapacitaPlna: !next };
+          })
+        );
+        return next;
+      });
+    },
+    [user?.id, testRoleId]
+  );
+
+  useEffect(() => {
+    setCatalogShuffleSeed(Math.random().toString(36).slice(2));
+  }, [activeLocationId]);
+
   useEffect(() => {
     const timer = setInterval(() => setInquiryClock(Date.now()), 30_000);
     return () => clearInterval(timer);
@@ -3449,7 +3477,10 @@ export function AppProvider({ children }) {
               actionRadius: isNationwideRadius(radiusKm) ? 999 : radiusKm,
               isVerified: Boolean(user.isVerified),
               isPremium: false,
-              kapacitaPlna: false,
+              kapacitaPlna:
+                typeof payload.craftsmanAcceptsOrders === "boolean"
+                  ? !payload.craftsmanAcceptsOrders
+                  : false,
               distanceKm: 0.1,
               rating: null,
               serviceDescription,
@@ -6256,18 +6287,19 @@ export function AppProvider({ children }) {
   }, [locationEvents]);
 
   const filteredServicesCatalog = useMemo(() => {
-    return filterByActiveLocation(
+    const filtered = filterByActiveLocation(
       servicesCatalog.filter((s) => !blockedUserIds.includes(s.id)),
       activeLocationId,
       activeLocation
-    ).sort((a, b) => {
-      if (a.isPremium && !b.isPremium) return -1;
-      if (!a.isPremium && b.isPremium) return 1;
-      const boostDiff = (b.catalogBoostRank ?? 0) - (a.catalogBoostRank ?? 0);
-      if (boostDiff !== 0) return boostDiff;
-      return a.distanceKm - b.distanceKm;
-    });
-  }, [servicesCatalog, blockedUserIds, activeLocation, activeLocationId]);
+    );
+    return sortServicesForCatalog(filtered, catalogShuffleSeed);
+  }, [
+    servicesCatalog,
+    blockedUserIds,
+    activeLocation,
+    activeLocationId,
+    catalogShuffleSeed,
+  ]);
 
   const servicesCatalogWithRatings = useMemo(
     () =>
