@@ -203,14 +203,11 @@ export default function ThingsModule({ hideCategoryFilters = false }) {
         </div>
       )}
 
-      {thingsCategory === "vse" ? (
-        <p className="shrink-0 px-0.5 text-[11px] text-stone-500 leading-snug">
-          Nahoře vyberte Daruji, Prodám, Sháním nebo Půjčovnu — pak můžete filtrovat i podle kategorie.
-        </p>
-      ) : (
+      {thingsCategory === "vse" ? null : (
         <LendingSubFilterRow
           value={thingsLendingSubCategory}
           onChange={setThingsLendingSubCategory}
+          resetKey={thingsCategory}
           className="shrink-0 px-0.5 pb-0.5"
         />
       )}
