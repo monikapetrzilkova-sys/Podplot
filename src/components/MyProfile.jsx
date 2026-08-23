@@ -62,6 +62,23 @@ function ProfileSectionTitle({ icon: Icon, children, className = "mb-3" }) {
   );
 }
 
+function locationChipLabel(loc) {
+  if (!loc) return "Místo";
+  if (loc.id === "domov") return "Domov";
+  if (loc.id === "prace") return "Práce";
+  if (loc.id === "chata") return "Chata";
+  const label = String(loc.label || "").trim();
+  return label || "Místo";
+}
+
+function locationIconFor(loc) {
+  if (loc?.id && LOCATION_DOODLE_ICONS[loc.id]) return LOCATION_DOODLE_ICONS[loc.id];
+  const blob = `${loc?.label || ""} ${loc?.id || ""}`.toLowerCase();
+  if (/chat|chalup|zahrad|chata/.test(blob)) return LOCATION_DOODLE_ICONS.chata;
+  if (/prác|prac|office|kancelář|kancelar/.test(blob)) return LOCATION_DOODLE_ICONS.prace;
+  return LOCATION_DOODLE_ICONS.domov;
+}
+
 /** Sekce profilu — ve výchozím stavu sbalená, rozbalí se po klepnutí. */
 function ProfileCollapsible({
   id,
@@ -634,24 +651,91 @@ export default function MyProfile({ registerLegalBack } = {}) {
             </div>
           ) : null}
 
-          <div id="profile-home-address" className="scroll-mt-4 space-y-1.5 mt-3">
-            {locations.map((loc) => {
-              const LocIcon = LOCATION_DOODLE_ICONS[loc.id] ?? LOCATION_DOODLE_ICONS.domov;
-              const isActive = activeLocationId === loc.id;
-              const isEditing = editingLocationId === loc.id;
-              const isHome = loc.id === "domov";
-              return (
-                <div
-                  key={loc.id}
-                  className={`rounded-lg border px-2.5 py-1.5 text-left ${
-                    isActive ? "border-emerald-600 bg-emerald-50/80" : "border-stone-200 bg-stone-50"
-                  }`}
+          <div id="profile-home-address" className="scroll-mt-4 mt-3">
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-stone-400">
+                Místa
+              </p>
+              {!addingLocation && !editingLocationId ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const targetId = activeLocationId || locations[0]?.id;
+                    if (!targetId) return;
+                    setAddingLocation(false);
+                    setEditingLocationId(targetId);
+                    if (targetId === "domov") setEditingHomeAddress(true);
+                  }}
+                  className="text-[10px] font-semibold text-[#3D7A68]"
                 >
-                  {isEditing ? (
-                    <div className="space-y-2 py-1">
-                      <p className="text-[11px] font-semibold text-stone-700">
-                        {isHome ? addressLabel : `Upravit · ${loc.label}`}
-                      </p>
+                  Upravit
+                </button>
+              ) : null}
+            </div>
+
+            {!addingLocation && !editingLocationId ? (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {locations.map((loc) => {
+                  const LocIcon = locationIconFor(loc);
+                  const isActive = activeLocationId === loc.id;
+                  const label = locationChipLabel(loc);
+                  return (
+                    <button
+                      key={loc.id}
+                      type="button"
+                      onClick={() => setActiveLocation(loc.id)}
+                      title={loc.shortLabel || loc.address || label}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-semibold transition-colors ${
+                        isActive
+                          ? "border-[#3D7A68] bg-[#E8F3EF] text-[#1B4D3E]"
+                          : "border-stone-200 bg-white text-stone-600 hover:border-[#C5DDD4]"
+                      }`}
+                    >
+                      <LocIcon className="w-3.5 h-3.5 shrink-0" aria-hidden />
+                      {label}
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingLocationId(null);
+                    setEditingHomeAddress(false);
+                    setAddingLocation(true);
+                  }}
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-xl border border-dashed border-[#3D7A68]/45 text-[#1B4D3E] bg-[#F7FAF9] text-sm font-bold"
+                  aria-label="Přidat místo"
+                  title="Přidat místo"
+                >
+                  +
+                </button>
+              </div>
+            ) : null}
+
+            {editingLocationId
+              ? (() => {
+                  const loc = locations.find((l) => l.id === editingLocationId);
+                  if (!loc) return null;
+                  const isHome = loc.id === "domov";
+                  const LocIcon = locationIconFor(loc);
+                  return (
+                    <div className="rounded-xl border border-[#C5DDD4] bg-[#F7FAF9] p-2.5 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <LocIcon className="w-4 h-4 text-[#3D7A68] shrink-0" aria-hidden />
+                        <p className="text-[11px] font-semibold text-stone-800 flex-1 min-w-0">
+                          {isHome ? addressLabel : `Upravit · ${loc.label}`}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingLocationId(null);
+                            setEditingHomeAddress(false);
+                          }}
+                          className="text-[10px] font-semibold text-stone-500"
+                        >
+                          Zavřít
+                        </button>
+                      </div>
                       <HomeAddressForm
                         key={`edit-${loc.id}`}
                         compact
@@ -688,44 +772,22 @@ export default function MyProfile({ registerLegalBack } = {}) {
                         </button>
                       ) : null}
                     </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setActiveLocation(loc.id)}
-                        className="flex-1 min-w-0 text-left flex items-center gap-2"
-                      >
-                        <LocIcon className="w-3.5 h-3.5 shrink-0 text-[#3D7A68]" aria-hidden />
-                        <span className="min-w-0 truncate">
-                          <span className="text-[10px] font-semibold text-stone-400">
-                            {isHome ? "Domov" : loc.label}
-                            {isActive ? " ·" : ""}
-                          </span>{" "}
-                          <span className="text-[11px] font-medium text-stone-800">
-                            {loc.address || user.address}
-                          </span>
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAddingLocation(false);
-                          setEditingLocationId(loc.id);
-                          if (isHome) setEditingHomeAddress(true);
-                        }}
-                        className="text-[10px] font-semibold text-emerald-700 shrink-0"
-                      >
-                        Upravit
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                  );
+                })()
+              : null}
 
             {addingLocation ? (
-              <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-2.5 space-y-2">
-                <p className="text-[11px] font-semibold text-stone-800">Nové místo (chata, práce…)</p>
+              <div className="rounded-xl border border-[#C5DDD4] bg-[#F7FAF9] p-2.5 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[11px] font-semibold text-stone-800">Nové místo</p>
+                  <button
+                    type="button"
+                    onClick={() => setAddingLocation(false)}
+                    className="text-[10px] font-semibold text-stone-500"
+                  >
+                    Zavřít
+                  </button>
+                </div>
                 <HomeAddressForm
                   key="add-location"
                   compact
@@ -741,19 +803,7 @@ export default function MyProfile({ registerLegalBack } = {}) {
                   onCancel={() => setAddingLocation(false)}
                 />
               </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingLocationId(null);
-                  setEditingHomeAddress(false);
-                  setAddingLocation(true);
-                }}
-                className="w-full py-1.5 rounded-lg text-[11px] font-semibold border border-dashed border-[#3D7A68]/45 text-[#1B4D3E] bg-[#F7FAF9]"
-              >
-                + Přidat další adresu
-              </button>
-            )}
+            ) : null}
           </div>
 
           {!ENABLE_DEV_ROLE_SWITCH && !isOfficeProfile ? (
