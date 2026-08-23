@@ -15,6 +15,7 @@ import DoodleEmptyState from "./doodle/DoodleEmptyState.jsx";
 import { ClubCategoryIcon, GroupNavIcon } from "./communityNavIcons.jsx";
 import { displayCreatorLabel } from "../data/accountTypes.js";
 import SectionBackButton from "./SectionBackButton.jsx";
+import CompactSearchToggle from "./CompactSearchToggle.jsx";
 
 function normalize(text) {
   return (text ?? "")
@@ -174,42 +175,47 @@ function sortGroupsByFrequency(groups, userGroupPosts) {
 
 function MyGroupsRail({ groups, activeId, onSelect }) {
   return (
-    <div
-      className="pp-my-groups-rail pp-category-pills flex flex-nowrap gap-1.5 overflow-x-auto subfilter-scroll pb-0.5"
-      role="tablist"
-      aria-label="Moje skupiny"
-    >
-      <button
-        type="button"
-        role="tab"
-        aria-selected={activeId === "vse"}
-        onClick={() => onSelect("vse")}
-        className={`pp-category-pill shrink-0 ${activeId === "vse" ? "pp-category-pill--active" : ""}`}
+    <div className="pp-my-groups-block shrink-0">
+      <p className="pp-my-groups-heading">Filtr ve vašich skupinách</p>
+      <div
+        className="pp-my-groups-rail pp-category-pills flex flex-nowrap gap-1.5 overflow-x-auto subfilter-scroll pb-0.5"
+        role="tablist"
+        aria-label="Moje skupiny"
       >
-        Vše
-      </button>
-      {groups.map((g) => {
-        const active = activeId === g.id;
-        return (
-          <button
-            key={g.id}
-            type="button"
-            role="tab"
-            aria-selected={active}
-            title={g.name}
-            onClick={() => onSelect(g.id)}
-            className={`pp-category-pill pp-my-group-pill shrink-0 inline-flex items-center gap-1 ${
-              active ? "pp-category-pill--active" : ""
-            }`}
-          >
-            <GroupNavIcon
-              id={g.id}
-              className={`w-3.5 h-3.5 shrink-0 ${active ? "text-white" : "text-[#1B4D3E]"}`}
-            />
-            <span className="truncate max-w-[7.5rem]">{g.name}</span>
-          </button>
-        );
-      })}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeId === "vse"}
+          onClick={() => onSelect("vse")}
+          className={`pp-category-pill pp-my-group-chip shrink-0 ${
+            activeId === "vse" ? "pp-category-pill--active pp-my-group-chip--active" : ""
+          }`}
+        >
+          Vše
+        </button>
+        {groups.map((g) => {
+          const active = activeId === g.id;
+          return (
+            <button
+              key={g.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              title={g.name}
+              onClick={() => onSelect(g.id)}
+              className={`pp-category-pill pp-my-group-pill pp-my-group-chip shrink-0 inline-flex items-center gap-1 ${
+                active ? "pp-category-pill--active pp-my-group-chip--active" : ""
+              }`}
+            >
+              <GroupNavIcon
+                id={g.id}
+                className={`w-3.5 h-3.5 shrink-0 ${active ? "text-white" : "text-[#1B4D3E]"}`}
+              />
+              <span className="truncate max-w-[7.5rem]">{g.name}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -312,31 +318,28 @@ function CategoryTrunk({
   );
 }
 
-function GroupsSearchField({ value, onChange, trailing = null }) {
+function GroupsToolsRow({ value, onChange, showNew = false, onNew }) {
+  const searching = Boolean(String(value).trim());
   return (
-    <div className="pp-groups-search flex items-center gap-2 px-3 pb-2 shrink-0">
-      <label className="relative flex-1 min-w-0">
-        <span className="sr-only">Hledat ve skupinách</span>
-        <svg
-          className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9CA3AF] pointer-events-none"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          aria-hidden
+    <div className="pp-groups-tools flex items-center gap-1.5 px-3 pb-1.5 shrink-0 min-w-0">
+      <CompactSearchToggle
+        value={value}
+        onChange={onChange}
+        placeholder="Hledat ve skupinách…"
+        ariaLabel="Hledat ve skupinách"
+        className={searching ? "flex-1" : ""}
+      />
+      {showNew && (
+        <button
+          type="button"
+          onClick={onNew}
+          aria-label="Navrhnout novou skupinu"
+          title="Navrhnout novou skupinu"
+          className="pp-groups-new-btn shrink-0 inline-flex items-center gap-0.5 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold text-[#1B4D3E] bg-[#E8F3EF] border border-[#C5E0D6] transition-colors duration-150 hover:bg-[#3D7A68] hover:border-[#3D7A68] hover:text-white active:bg-[#2F6354] active:border-[#2F6354] active:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#64A08D] focus-visible:ring-offset-1"
         >
-          <circle cx="11" cy="11" r="7" />
-          <path d="M20 20l-3.5-3.5" strokeLinecap="round" />
-        </svg>
-        <input
-          type="search"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Hledat ve skupinách…"
-          className="pp-groups-search-input w-full pl-8 pr-3 py-2 text-[12px] rounded-xl border border-[#D8E3DE] bg-white text-[#1a1a1a] placeholder:text-[#9CA3AF] focus:outline-none focus:border-[#64A08D] focus:ring-1 focus:ring-[#C5E0D6]"
-        />
-      </label>
-      {trailing}
+          + Nová
+        </button>
+      )}
     </div>
   );
 }
@@ -482,20 +485,7 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
       effectiveFocus !== "vse" ? myGroups.find((g) => g.id === effectiveFocus) : null;
 
     body = (
-      <div className={`px-3 ${atTop ? "pt-1" : "py-1"} flex flex-col flex-1 min-h-0 gap-1.5 pb-14`}>
-        {(visibleProposals.length > 0 || dismissedProposals.length > 0) && (
-          <div className="shrink-0 pt-0.5">
-            <GroupProposalsSection
-              proposals={visibleProposals}
-              dismissedProposals={dismissedProposals}
-              onVote={voteGroupProposal}
-              onDismiss={dismissGroupProposal}
-              onRestore={restoreGroupProposal}
-              compactTitle
-              hint="Podpořte vznik nové skupiny. Nezajímavé návrhy skryjte křížkem."
-            />
-          </div>
-        )}
+      <div className={`px-3 ${atTop ? "pt-1" : "py-1"} flex flex-col flex-1 min-h-0 gap-2 pb-14`}>
         {myGroups.length === 0 ? (
           <DoodleEmptyState illustration="group" message="Zatím nejste členem žádné skupiny." />
         ) : (
@@ -528,9 +518,7 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
             </div>
 
             <div className="flex-1 min-h-0 overflow-y-auto space-y-2">
-              <h3 className="text-[10px] font-medium text-[#6b7280] uppercase tracking-wide">
-                Nejnovější příspěvky
-              </h3>
+              <h3 className="text-[11px] font-semibold text-[#1B4D3E]">Nejnovější příspěvky</h3>
               {feedPosts.length === 0 ? (
                 <DoodleEmptyState
                   illustration="chat"
@@ -546,17 +534,9 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
             </div>
           </>
         )}
-      </div>
-    );
-  } else {
-    const catsToShow = query
-      ? hierarchy
-      : buildGroupHierarchy(sourceGroups, { includeEmpty: true });
 
-    body = (
-      <div className={`px-3 ${atTop ? "pt-1" : "py-1"} overflow-y-auto flex-1 min-h-0 space-y-2 pb-14`}>
         {(visibleProposals.length > 0 || dismissedProposals.length > 0) && (
-          <div className="pt-1 pb-1">
+          <div className="shrink-0 mt-auto pt-1 border-t border-[#EEF2F0]">
             <GroupProposalsSection
               proposals={visibleProposals}
               dismissedProposals={dismissedProposals}
@@ -568,6 +548,15 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
             />
           </div>
         )}
+      </div>
+    );
+  } else {
+    const catsToShow = query
+      ? hierarchy
+      : buildGroupHierarchy(sourceGroups, { includeEmpty: true });
+
+    body = (
+      <div className={`px-3 ${atTop ? "pt-1" : "py-1"} overflow-y-auto flex-1 min-h-0 space-y-2 pb-14`}>
         {catsToShow.map((cat) => {
           const catProposals = visibleProposals.filter(
             (p) =>
@@ -593,6 +582,20 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
         {query && catsToShow.length === 0 && (
           <DoodleEmptyState illustration="group" message="Žádná skupina neodpovídá hledání." />
         )}
+
+        {(visibleProposals.length > 0 || dismissedProposals.length > 0) && (
+          <div className="pt-2 mt-1 border-t border-[#EEF2F0]">
+            <GroupProposalsSection
+              proposals={visibleProposals}
+              dismissedProposals={dismissedProposals}
+              onVote={voteGroupProposal}
+              onDismiss={dismissGroupProposal}
+              onRestore={restoreGroupProposal}
+              compactTitle
+              hint="Podpořte vznik nové skupiny. Nezajímavé návrhy skryjte křížkem."
+            />
+          </div>
+        )}
       </div>
     );
   }
@@ -603,22 +606,11 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
     <div className="flex flex-col flex-1 min-h-0">
       {!hideFilterBar && <GroupFilterBar />}
       {showSearch && (
-        <GroupsSearchField
+        <GroupsToolsRow
           value={search}
           onChange={setSearch}
-          trailing={
-            hideFilterBar ? (
-              <button
-                type="button"
-                onClick={() => openCreateGroupModal?.()}
-                aria-label="Navrhnout novou skupinu"
-                title="Navrhnout novou skupinu"
-                className="pp-groups-new-btn shrink-0 inline-flex items-center gap-0.5 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold text-[#1B4D3E] bg-[#E8F3EF] border border-[#C5E0D6] transition-colors duration-150 hover:bg-[#3D7A68] hover:border-[#3D7A68] hover:text-white active:bg-[#2F6354] active:border-[#2F6354] active:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#64A08D] focus-visible:ring-offset-1"
-              >
-                + Nová
-              </button>
-            ) : null
-          }
+          showNew={hideFilterBar}
+          onNew={() => openCreateGroupModal?.()}
         />
       )}
       {body}

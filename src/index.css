@@ -1686,15 +1686,52 @@ body,
   border-color: rgba(61, 122, 104, 0.28);
 }
 
-/* Moje skupiny — kompaktní horizontální lišta (jako Věci) */
-.pp-my-groups-rail {
+/* Moje skupiny — hlavní filtr, výraznější než sekundární nástroje */
+.pp-my-groups-block {
   margin: 0 -2px;
+  padding: 8px 6px 6px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f3f8f6 0%, #eef5f2 100%);
+  border: 1px solid #d7e8e1;
+}
+
+.pp-my-groups-heading {
+  margin: 0 2px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1b4d3e;
+  letter-spacing: 0.01em;
+}
+
+.pp-my-groups-rail {
+  margin: 0;
   padding-left: 2px;
   padding-right: 2px;
 }
 
 .pp-my-group-pill {
   max-width: 11rem;
+}
+
+.pp-my-group-chip {
+  font-weight: 600;
+  border-color: rgba(61, 122, 104, 0.22);
+  background: #fff;
+}
+
+.pp-my-group-chip--active {
+  background: #1b4d3e;
+  border-color: #1b4d3e;
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(27, 77, 62, 0.18);
+}
+
+.pp-groups-tools {
+  min-height: 2.25rem;
+}
+
+.pp-group-proposals-quiet {
+  min-height: 1.75rem;
 }
 
 /* Mapa — sjednocený toolbar nad mapou (Hlášení / Průvodce) */
