@@ -4,6 +4,7 @@ import EditedBadge from "./EditedBadge.jsx";
 import ReportMenu from "./ReportMenu.jsx";
 import FeedBadgePill from "./feed/FeedBadgePill.jsx";
 import { getListingBadge, getNeighborSectionBadge } from "./feed/feedBadgeMeta.js";
+import { IconMapPin } from "../data/icons.jsx";
 
 export { getListingBadge, getNeighborSectionBadge };
 
@@ -54,7 +55,7 @@ export default function LiveFeedCard({
   return (
     <article
       id={domId}
-      className={`pp-feed-card overflow-hidden relative ${mine ? "pp-feed-card--mine" : ""}`.trim()}
+      className={`pp-feed-card relative ${mine ? "pp-feed-card--mine" : ""}`.trim()}
     >
       <button
         type="button"
@@ -122,6 +123,21 @@ export default function LiveFeedCard({
         </div>
       </button>
 
+      {/* Ikonka mapy vždy viditelná ve sbaleném stavu — mimo velké tlačítko karty */}
+      {onMapClick && !isOpen && (
+        <div className="px-3 pb-2 -mt-0.5">
+          <button
+            type="button"
+            onClick={onMapClick}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#C5DDD4] bg-[#F7FAF9] px-2 py-1 text-[11px] font-semibold text-[#3D7A68] hover:bg-[#E8F3EF] transition-colors"
+            aria-label="Zobrazit na mapě"
+          >
+            <IconMapPin className="w-3.5 h-3.5 shrink-0" aria-hidden />
+            Na mapě
+          </button>
+        </div>
+      )}
+
       {onMapClick && (
         <button
           type="button"
@@ -129,21 +145,13 @@ export default function LiveFeedCard({
             e.stopPropagation();
             onMapClick();
           }}
-          className={`absolute top-1.5 z-10 w-7 h-7 flex items-center justify-center rounded-lg text-[#3D7A68] hover:bg-[#E8F3EF] transition-colors ${
+          className={`absolute top-1.5 z-10 w-8 h-8 flex items-center justify-center rounded-xl border border-[#C5DDD4] bg-white text-[#3D7A68] shadow-sm hover:bg-[#E8F3EF] transition-colors ${
             onReport ? "right-8" : "right-1.5"
           }`}
           aria-label="Zobrazit na mapě"
           title="Zobrazit na mapě"
         >
-          <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5" aria-hidden>
-            <path
-              d="M12 21s6-5.2 6-10a6 6 0 1 0-12 0c0 4.8 6 10 6 10z"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinejoin="round"
-            />
-            <circle cx="12" cy="11" r="2" stroke="currentColor" strokeWidth="1.5" />
-          </svg>
+          <IconMapPin className="w-4 h-4" aria-hidden />
         </button>
       )}
 
