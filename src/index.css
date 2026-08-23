@@ -717,24 +717,29 @@ body,
   font-size: 0.95rem;
 }
 
-/* Katalog služeb — aktivní kategorie + malé ikony pro přepnutí */
+/* Katalog služeb — Zpět + aktivní kategorie + ikony (celá šířka lišty) */
 .pp-catalog-cat-switch {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   min-width: 0;
   padding: 4px 0 6px;
 }
 
+.pp-catalog-cat-switch__back {
+  flex-shrink: 0;
+}
+
 .pp-catalog-cat-switch__active {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 6px;
+  flex: 1 1 auto;
   min-width: 0;
-  max-width: 58%;
   min-height: 42px;
-  padding: 0 14px 0 12px;
+  padding: 0 12px;
   border-radius: 999px;
   background: #1b4d3e;
   color: #ffffff;
@@ -767,9 +772,8 @@ body,
   display: flex;
   align-items: center;
   gap: 6px;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   min-width: 0;
-  justify-content: flex-end;
 }
 
 .pp-catalog-cat-switch__icon-btn {
@@ -803,6 +807,26 @@ body,
 
 .pp-catalog-cat-switch__icon-btn:active {
   transform: scale(0.95);
+}
+
+@media (max-width: 380px) {
+  .pp-catalog-cat-switch {
+    gap: 6px;
+  }
+
+  .pp-catalog-cat-switch__back .pp-section-back-btn-label {
+    display: none;
+  }
+
+  .pp-catalog-cat-switch__back {
+    min-height: 40px;
+    padding: 0 10px;
+  }
+
+  .pp-catalog-cat-switch__icon-btn {
+    width: 36px;
+    height: 36px;
+  }
 }
 
 .pp-tile-grid-item {

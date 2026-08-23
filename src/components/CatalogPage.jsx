@@ -3,10 +3,11 @@ import { useApp } from "../context/AppContext.jsx";
 import CatalogGrid, { CATALOG_TILES } from "./CatalogGrid.jsx";
 import ServicesList from "../modules/ServicesList.jsx";
 import CompactSearchToggle from "./CompactSearchToggle.jsx";
+import SectionBackButton from "./SectionBackButton.jsx";
 import { CATALOG_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
 
-/** Aktivní kategorie + malé ikony ostatních (jeden typ příspěvků — bez Zpět) */
-function CatalogCategorySwitch({ activeId, onSelect }) {
+/** Zpět + aktivní kategorie + malé ikony ostatních — celá šířka lišty */
+function CatalogCategorySwitch({ activeId, onSelect, onBack }) {
   const active = CATALOG_TILES.find((t) => t.id === activeId);
   const ActiveIcon = activeId ? CATALOG_DOODLE_ICONS[activeId] : null;
   const others = CATALOG_TILES.filter((t) => t.id !== activeId);
@@ -17,6 +18,11 @@ function CatalogCategorySwitch({ activeId, onSelect }) {
       role="tablist"
       aria-label="Kategorie služeb"
     >
+      <SectionBackButton
+        onClick={onBack}
+        ariaLabel="Zpět na kategorie"
+        className="pp-catalog-cat-switch__back"
+      />
       <div className="pp-catalog-cat-switch__active" role="tab" aria-selected="true">
         {ActiveIcon ? (
           <span className="pp-catalog-cat-switch__active-icon" aria-hidden>
@@ -64,11 +70,21 @@ export default function CatalogPage() {
 
   const searchActive = searchExpanded || Boolean(catalogSearch.trim());
 
+  const goBackToHub = () => {
+    setHomeSub(null);
+    setCatalogSearch("");
+    setSearchExpanded(false);
+  };
+
   if (homeSub) {
     return (
       <div className="pp-page pp-page--doodle flex flex-col min-h-full bg-abstract-organic has-deco">
         <div className="tab-header-container px-3 pt-2 pb-0 shrink-0 w-full">
-          <CatalogCategorySwitch activeId={homeSub} onSelect={setHomeSub} />
+          <CatalogCategorySwitch
+            activeId={homeSub}
+            onSelect={setHomeSub}
+            onBack={goBackToHub}
+          />
         </div>
         <div className="flex-1 min-h-0 flex flex-col px-3 pb-8 pt-2 gap-2">
           <CompactSearchToggle
