@@ -23,6 +23,7 @@ export default function LiveFeedCard({
   authorLabel = null,
   onReport,
   onSummaryClick,
+  onMapClick = null,
   expandable = true,
   children,
   statusLabel = null,
@@ -58,9 +59,9 @@ export default function LiveFeedCard({
       <button
         type="button"
         onClick={handleSummaryClick}
-        className={`w-full text-left px-3 py-2 transition-colors pr-9 box-border ${
-          mine ? "hover:bg-[#EEF5F1]/90" : "hover:bg-[#FAFAFA]/80"
-        }`}
+        className={`w-full text-left px-3 py-2 transition-colors box-border ${
+          onMapClick || onReport ? "pr-16" : "pr-9"
+        } ${mine ? "hover:bg-[#EEF5F1]/90" : "hover:bg-[#FAFAFA]/80"}`}
         aria-expanded={isOpen}
       >
         <div className="flex items-start gap-2 min-w-0">
@@ -120,6 +121,31 @@ export default function LiveFeedCard({
           </div>
         </div>
       </button>
+
+      {onMapClick && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onMapClick();
+          }}
+          className={`absolute top-1.5 z-10 w-7 h-7 flex items-center justify-center rounded-lg text-[#3D7A68] hover:bg-[#E8F3EF] transition-colors ${
+            onReport ? "right-8" : "right-1.5"
+          }`}
+          aria-label="Zobrazit na mapě"
+          title="Zobrazit na mapě"
+        >
+          <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5" aria-hidden>
+            <path
+              d="M12 21s6-5.2 6-10a6 6 0 1 0-12 0c0 4.8 6 10 6 10z"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+            />
+            <circle cx="12" cy="11" r="2" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+        </button>
+      )}
 
       {onReport && (
         <div className="absolute top-1.5 right-1.5 z-10">

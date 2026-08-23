@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import MapComponent from "../components/module/MapComponent.jsx";
 import ViewToggleFab from "../components/module/ViewToggleFab.jsx";
@@ -21,6 +21,7 @@ import { isTipReport, REPORT_TIP_ACCENT } from "../data/reportCategories.js";
 import { reportPinAccentColor } from "../utils/reportPinUtils.js";
 import EditedBadge from "../components/EditedBadge.jsx";
 import { displayCreatorLabel } from "../data/accountTypes.js";
+import { SECURITY_REPORTS } from "../data/mockData.js";
 
 function OfficeStatusBadge({ report }) {
   if (!report?.officeStatus || report.officeStatus === "new") return null;
@@ -101,6 +102,11 @@ export default function ReportsModule({
     selectModuleItem,
     clearModuleSelection,
     reportSecurityReport,
+    pendingMapReportId,
+    clearPendingMapReportId,
+    showModuleItemOnMap,
+    extraReports,
+    userReports,
   } = useApp();
 
   const [detailReport, setDetailReport] = useState(null);
@@ -116,21 +122,41 @@ export default function ReportsModule({
   const listFillsViewport = compact && !pickMode && viewMode === "list";
   const fillsViewport = mapFillsViewport || listFillsViewport;
 
+  // Po otevření z feedu znovu vynutit výběr (MapPage mount / filtr by ho jinak ztratil)
+  useEffect(() => {
+    if (!pendingMapReportId || pickMode) return;
+    showModuleItemOnMap?.(moduleId, pendingMapReportId);
+    const t = window.setTimeout(() => clearPendingMapReportId?.(), 0);
+    return () => window.clearTimeout(t);
+  }, [pendingMapReportId, pickMode, moduleId, showModuleItemOnMap, clearPendingMapReportId]);
+
   const reportsInRadius = useMemo(
     () => filterReportsForMapView(reports, reportsMapRadiusKm, undefined, activeLocation),
     [reports, reportsMapRadiusKm, activeLocation]
   );
 
   const selectedId = moduleSelection?.module === moduleId ? moduleSelection.id : null;
-  const selectedOutsideRadius = useMemo(() => {
+
+  const catalogReport = useMemo(() => {
     if (!selectedId) return null;
+    const pools = [reports, extraReports ?? [], userReports ?? [], SECURITY_REPORTS];
+    for (const pool of pools) {
+      const hit = pool.find((r) => r.id === selectedId);
+      if (hit && hasReportMapPosition(hit)) return hit;
+    }
+    return null;
+  }, [selectedId, reports, extraReports, userReports]);
+
+  const selectedOutsideRadius = useMemo(() => {
+    if (!selectedId || !catalogReport) return null;
     if (reportsInRadius.some((r) => r.id === selectedId)) return null;
-    return reports.find((r) => r.id === selectedId && hasReportMapPosition(r)) ?? null;
-  }, [selectedId, reportsInRadius, reports]);
+    return catalogReport;
+  }, [selectedId, catalogReport, reportsInRadius]);
 
   const mapReports = useMemo(() => {
     const base = reportsInRadius.filter((r) => hasReportMapPosition(r));
     if (!selectedOutsideRadius) return base;
+    if (base.some((r) => r.id === selectedOutsideRadius.id)) return base;
     return [...base, selectedOutsideRadius];
   }, [reportsInRadius, selectedOutsideRadius]);
 
@@ -142,7 +168,7 @@ export default function ReportsModule({
   const selectedReport =
     mapReports.find((r) => r.id === selectedId) ??
     reportsInRadius.find((r) => r.id === selectedId) ??
-    selectedOutsideRadius ??
+    catalogReport ??
     null;
   const urgentCount = reportsInRadius.filter((r) => r.urgent).length;
 

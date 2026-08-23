@@ -210,9 +210,23 @@ export default function PodPlotGoogleMap({
   useEffect(() => {
     if (!mapRef.current) return;
     if (focusDraftPin && draftPin) return;
+    // Při výběru špendlíku z feedu neresetovat střed na Domov
+    if (selectedReportId || selectedEventId || selectedInstitutionId || selectedThingId || selectedServiceId) {
+      return;
+    }
     viewCenterRef.current = center;
     mapRef.current.setCenter(center);
-  }, [center.lat, center.lng, focusDraftPin, draftPin]);
+  }, [
+    center.lat,
+    center.lng,
+    focusDraftPin,
+    draftPin,
+    selectedReportId,
+    selectedEventId,
+    selectedInstitutionId,
+    selectedThingId,
+    selectedServiceId,
+  ]);
 
   const focusSelectionKey =
     selectedReportId ||
@@ -227,17 +241,19 @@ export default function PodPlotGoogleMap({
     const map = mapRef.current;
     if (!map || !mapReady || !focusSelectionKey) return;
     if (focusDraftPin) return;
-    if (prevFocusSelectionRef.current === focusSelectionKey) return;
 
     const marker = markers.find((m) => m.id === focusSelectionKey);
     if (!marker || marker.lat == null || marker.lng == null) return;
 
+    const alreadyFocused = prevFocusSelectionRef.current === focusSelectionKey;
     prevFocusSelectionRef.current = focusSelectionKey;
     const pos = { lat: Number(marker.lat), lng: Number(marker.lng) };
     viewCenterRef.current = pos;
     map.panTo(pos);
-    const zoom = map.getZoom() ?? 14;
-    if (zoom < 15) map.setZoom(15);
+    if (!alreadyFocused) {
+      const zoom = map.getZoom() ?? 14;
+      if (zoom < 15) map.setZoom(15);
+    }
 
     const t1 = window.setTimeout(() => {
       if (!mapRef.current || !viewCenterRef.current) return;

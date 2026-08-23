@@ -292,6 +292,7 @@ export function AppProvider({ children }) {
   const [globalSearchQuery, setGlobalSearchQuery] = useState("");
   const [mapFocus, setMapFocus] = useState(null);
   const [pendingMapReportsCategory, setPendingMapReportsCategory] = useState(null);
+  const [pendingMapReportId, setPendingMapReportId] = useState(null);
   const [pendingNeighborsSection, setPendingNeighborsSection] = useState(null);
   const [pendingThingsItemId, setPendingThingsItemId] = useState(null);
   const [homeEventGallery, setHomeEventGallery] = useState(null);
@@ -1527,16 +1528,22 @@ export function AppProvider({ children }) {
     setPendingMapReportsCategory(null);
   }, []);
 
+  const clearPendingMapReportId = useCallback(() => {
+    setPendingMapReportId(null);
+  }, []);
+
   const openReportOnMapFromHome = useCallback(
     (reportId, { category = "all" } = {}) => {
       if (!reportId) return;
       const resolvedId = String(reportId).startsWith("feed-")
         ? String(reportId).slice("feed-".length)
         : reportId;
-      setActiveTab("map");
-      setPendingMapReportsCategory(category);
+      // Vždy „Vše“, ať filtr kategorie neschová cílový špendlík
+      setPendingMapReportsCategory(category === "tip" ? "tip" : "all");
+      setPendingMapReportId(resolvedId);
       setMapFocus("reports");
       showModuleItemOnMap(MODULE_IDS.REPORTS, resolvedId);
+      setActiveTab("map");
     },
     [showModuleItemOnMap]
   );
@@ -6335,6 +6342,8 @@ export function AppProvider({ children }) {
         mapFocus,
         pendingMapReportsCategory,
         clearPendingMapReportsCategory,
+        pendingMapReportId,
+        clearPendingMapReportId,
         openReportOnMapFromHome,
         openMapReport,
         openCreateEvent,

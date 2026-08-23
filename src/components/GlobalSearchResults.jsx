@@ -87,7 +87,7 @@ export default function GlobalSearchResults() {
     setActiveTab,
     setMapFocus,
     selectMainTab,
-    showModuleItemOnMap,
+    openReportOnMapFromHome,
     openCraftsmanPublicProfile,
     setLocalGuideSearchQuery,
     openEventDetail,
@@ -176,13 +176,15 @@ export default function GlobalSearchResults() {
   const openPlace = (place) => setDetailPlace(place);
 
   const openReport = (report) => {
-    if (report.mapPos) {
-      setDetailReport(report);
+    if (report?.id) {
+      openReportOnMapFromHome?.(report.id, {
+        category: report.reportCategoryId === "tip" ? "tip" : "all",
+      });
+      clearSearch();
       return;
     }
     setActiveTab("map");
     setMapFocus("reports");
-    showModuleItemOnMap?.(MODULE_IDS.REPORTS, report.id);
     clearSearch();
   };
 
