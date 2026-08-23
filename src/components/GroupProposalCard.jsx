@@ -1,11 +1,30 @@
+import { useEffect } from "react";
 import { useUiPref } from "../hooks/useUiPref.js";
 import { proposalDetailsKey } from "../data/uiPreferences.js";
+import { Avatar } from "./RoleBadge.jsx";
+import PersonLabel from "./PersonLabel.jsx";
+import { MessageButton } from "./MessagesPage.jsx";
 
-export default function GroupProposalCard({ proposal, onVote, onDismiss, onEdit, mine = false }) {
+export default function GroupProposalCard({
+  proposal,
+  onVote,
+  onDismiss,
+  onEdit,
+  mine = false,
+  supporters = [],
+  onExpandSupporters = null,
+}) {
   const detailsKey = proposalDetailsKey(proposal.id);
   const [expanded, setExpanded] = useUiPref(detailsKey, false);
   const pct = Math.min(100, (proposal.votes / proposal.required) * 100);
   const full = proposal.votes >= proposal.required;
+  const supportList = Array.isArray(supporters) ? supporters : [];
+
+  useEffect(() => {
+    if (expanded && mine && supportList.length > 0) {
+      onExpandSupporters?.(proposal.id);
+    }
+  }, [expanded, mine, supportList.length, proposal.id, onExpandSupporters]);
 
   return (
     <article className={`pp-card p-3 max-w-md relative ${mine ? "ring-1 ring-[#C5E0D6]" : ""}`}>
@@ -86,7 +105,7 @@ export default function GroupProposalCard({ proposal, onVote, onDismiss, onEdit,
           className="shrink-0 px-2.5 py-2 rounded-xl text-xs font-semibold text-stone-600 bg-stone-100 hover:bg-stone-200 transition-colors"
           aria-expanded={expanded}
         >
-          {expanded ? "Skrýt" : "Další informace"}
+          {expanded ? "Skrýt" : mine ? "Podpory a detail" : "Další informace"}
         </button>
       </div>
 
@@ -106,6 +125,49 @@ export default function GroupProposalCard({ proposal, onVote, onDismiss, onEdit,
           {proposal.proposer && !mine && (
             <p className="text-[11px] text-stone-400">Navrhuje: {proposal.proposer}</p>
           )}
+
+          {mine ? (
+            <div className="pt-1">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-stone-400 mb-1.5">
+                Kdo podpořil ({supportList.length})
+              </p>
+              {supportList.length === 0 ? (
+                <p className="text-[11px] text-stone-500 leading-snug">
+                  Zatím nikdo — až soused podpoří návrh, uvidíte ho tady.
+                </p>
+              ) : (
+                <ul className="space-y-1">
+                  {supportList.map((s) => (
+                    <li
+                      key={s.id}
+                      className="flex items-center gap-2 py-1.5 px-1.5 rounded-lg bg-[#F7FAF9]"
+                    >
+                      <Avatar initials={s.voterInitials || "??"} roleId="soused" size="sm" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] font-semibold text-stone-800 truncate">
+                          <PersonLabel personId={s.voterId} name={s.voterName} />
+                        </p>
+                      </div>
+                      {s.voterId ? (
+                        <MessageButton
+                          participantId={s.voterId}
+                          participantName={s.voterName}
+                          compact
+                          className="shrink-0"
+                          topic={{
+                            kind: "group_support",
+                            refId: s.proposalId || proposal.id || s.id,
+                            title: s.proposalName || proposal.name || "Návrh skupiny",
+                            label: "Podpora návrhu",
+                          }}
+                        />
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ) : null}
         </div>
       )}
     </article>

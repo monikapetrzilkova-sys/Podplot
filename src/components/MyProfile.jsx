@@ -382,7 +382,7 @@ export default function MyProfile({ registerLegalBack } = {}) {
         : profileScrollTarget === "trust-received"
           ? "profile-trust-received"
           : profileScrollTarget === "group-supports"
-            ? "profile-group-supports"
+            ? "profile-my-group-proposals"
             : "profile-my-lending-offers";
     const frame = requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -903,7 +903,7 @@ export default function MyProfile({ registerLegalBack } = {}) {
             <div className="space-y-3">
               <p className="text-xs text-stone-500 leading-relaxed">
                 Sousedé návrh vidí na Domů a ve Skupinách. Po {mine[0]?.required ?? 5} podporách se skupina
-                aktivuje.
+                aktivuje. Podpory uvidíte po rozbalení u konkrétního návrhu.
               </p>
               {mine.map((p) => (
                 <GroupProposalCard
@@ -911,6 +911,8 @@ export default function MyProfile({ registerLegalBack } = {}) {
                   proposal={p}
                   mine
                   onEdit={openEditGroupProposal}
+                  supporters={groupProposalSupporters.filter((s) => s.proposalId === p.id)}
+                  onExpandSupporters={() => markGroupProposalSupportersSeen?.()}
                 />
               ))}
               <button
@@ -927,56 +929,6 @@ export default function MyProfile({ registerLegalBack } = {}) {
             </div>
           );
         })()}
-      </section>
-
-      <section id="profile-group-supports" className="pp-card p-3 mb-4 scroll-mt-4">
-        <div className="flex items-center justify-between gap-2 mb-2">
-          <h3 className="text-xs font-bold text-stone-800 flex items-center gap-1.5">
-            <PROFILE_DOODLE_ICONS.groups className="w-3.5 h-3.5 text-[#3D7A68]" />
-            Podpory návrhů
-          </h3>
-          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded-md tabular-nums">
-            {groupProposalSupporters.length}
-          </span>
-        </div>
-        {groupProposalSupporters.length === 0 ? (
-          <p className="text-[11px] text-stone-500 leading-snug">
-            Až soused podpoří váš návrh skupiny, uvidíte ho tady.
-          </p>
-        ) : (
-          <ul className="space-y-1">
-            {groupProposalSupporters.map((s) => (
-              <li
-                key={s.id}
-                className="flex items-center gap-2 py-1.5 px-1.5 rounded-lg hover:bg-stone-50"
-              >
-                <Avatar initials={s.voterInitials || "??"} roleId="soused" size="sm" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-semibold text-stone-800 truncate">
-                    <PersonLabel personId={s.voterId} name={s.voterName} />
-                  </p>
-                  <p className="text-[10px] text-stone-500 truncate">
-                    {s.proposalName || "Skupina"}
-                  </p>
-                </div>
-                {s.voterId ? (
-                  <MessageButton
-                    participantId={s.voterId}
-                    participantName={s.voterName}
-                    compact
-                    className="shrink-0"
-                    topic={{
-                      kind: "group_support",
-                      refId: s.proposalId || s.id,
-                      title: s.proposalName || "Návrh skupiny",
-                      label: "Podpora návrhu",
-                    }}
-                  />
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        )}
       </section>
 
       <section id="profile-my-help-offers" className="mb-6 scroll-mt-4">
