@@ -47,6 +47,7 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
     pendingOfficeAction,
     clearPendingOfficeAction,
     activeTab,
+    showToast,
   } = useApp();
 
   const reportsViewMode = moduleViewModes[MODULE_IDS.REPORTS];
@@ -224,26 +225,34 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
     e.preventDefault();
     if (!reportCategoryId) {
       setCategoryError("Vyberte kategorii hlášení.");
+      showToast("Vyberte kategorii hlášení.", "error");
       return;
     }
     if (reportCategoryId === "loss" && !lossKind) {
       setCategoryError("U ztráty / nálezu vyberte, jestli jde o ztrátu, nebo nález.");
+      showToast("Vyberte ztrátu, nebo nález.", "error");
       return;
     }
-    if (!reportBody.trim()) return;
+    if (!reportBody.trim()) {
+      showToast("Doplňte popis hlášení.", "error");
+      return;
+    }
     const municipalityWide = isUrgent && urgentScope === URGENT_SCOPE.MUNICIPALITY;
     if (!municipalityWide && !draftPin) {
       setPinError("Nejdřív klepněte na mapu nebo zvolte svou polohu.");
+      showToast("Nejdřív označte místo na mapě nebo použijte aktuální polohu.", "error");
       return;
     }
     if (reportValidityMode === REPORT_VALIDITY_MODE.CUSTOM) {
       if (!reportValidUntil.trim()) {
         setValidUntilError("Zvolte termín platnosti.");
+        showToast("Zvolte termín platnosti.", "error");
         return;
       }
       const until = new Date(reportValidUntil).getTime();
       if (Number.isNaN(until) || until <= Date.now()) {
         setValidUntilError("Termín platnosti musí být v budoucnosti.");
+        showToast("Termín platnosti musí být v budoucnosti.", "error");
         return;
       }
     }
@@ -257,21 +266,26 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
       ? `${baseType} — ${reportTypeDetail.trim()}`
       : baseType;
     const untilResolved = reportValidityMode === REPORT_VALIDITY_MODE.UNTIL_RESOLVED;
-    addSecurityReport({
-      type: typeLabel,
-      reportCategoryId,
-      lossKind: reportCategoryId === "loss" ? lossKind : null,
-      body: reportBody.trim(),
-      mapPos: municipalityWide ? draftPin ?? { x: 50, y: 50 } : draftPin,
-      urgent: isUrgent && (isAdminMode || isInstitution) && reportCategoryId !== "tip",
-      urgentScope: isUrgent ? urgentScope : null,
-      alsoAsPrompt: alsoAsPrompt && !isInstitution && reportCategoryId !== "tip",
-      photos: reportPhotos,
-      untilResolved,
-      validUntil:
-        reportValidityMode === REPORT_VALIDITY_MODE.CUSTOM ? reportValidUntil.trim() : null,
-    });
-    resetForms();
+    try {
+      addSecurityReport({
+        type: typeLabel,
+        reportCategoryId,
+        lossKind: reportCategoryId === "loss" ? lossKind : null,
+        body: reportBody.trim(),
+        mapPos: municipalityWide ? draftPin ?? { x: 50, y: 50 } : draftPin,
+        urgent: isUrgent && (isAdminMode || isInstitution) && reportCategoryId !== "tip",
+        urgentScope: isUrgent ? urgentScope : null,
+        alsoAsPrompt: alsoAsPrompt && !isInstitution && reportCategoryId !== "tip",
+        photos: Array.isArray(reportPhotos) ? reportPhotos : [],
+        untilResolved,
+        validUntil:
+          reportValidityMode === REPORT_VALIDITY_MODE.CUSTOM ? reportValidUntil.trim() : null,
+      });
+      resetForms();
+    } catch (err) {
+      console.error(err);
+      showToast("Hlášení se nepodařilo odeslat. Zkuste to znovu.", "error");
+    }
   };
 
   const submitPrompt = (e) => {

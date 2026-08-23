@@ -126,6 +126,7 @@ export default function SecurityReportFormModal({
           id={isReport ? "map-report-form" : "municipality-prompt-form"}
           onSubmit={isReport ? onSubmitReport : onSubmitPrompt}
           className="pp-security-form-modal-form"
+          noValidate
         >
           <div className="pp-security-form-modal-body">
             <div className="flex flex-wrap gap-2 shrink-0">
@@ -231,9 +232,14 @@ export default function SecurityReportFormModal({
                   }
                   minRows={3}
                   className="pp-form-textarea-grow w-full min-w-0 px-3 py-2.5 border border-stone-200 rounded-xl text-base resize-none leading-relaxed"
-                  required
                 />
-                <PhotoUpload photos={reportPhotos} onChange={setReportPhotos} />
+                <PhotoUpload
+                  photos={Array.isArray(reportPhotos) ? reportPhotos : []}
+                  onChange={(next) => {
+                    if (typeof next === "function") setReportPhotos(next);
+                    else setReportPhotos(Array.isArray(next) ? next : []);
+                  }}
+                />
                 <div>
                   <p className="block text-sm font-semibold text-stone-800 mb-1.5">Platnost</p>
                   <div className="space-y-1.5">
