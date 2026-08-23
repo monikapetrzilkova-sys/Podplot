@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import NeighborsGrid, { NEIGHBORS_TILES } from "./NeighborsGrid.jsx";
 import SmartSectionBar from "./SmartSectionBar.jsx";
@@ -11,6 +11,7 @@ import { getSkupinySubfilters } from "../data/worldNavigation.js";
 import { getMyMemberGroups } from "../data/locations.js";
 import { NEIGHBOR_DOODLE_ICONS, VECI_TYPE_DOODLE_ICONS, VYPOMOC_FILTER_DOODLE_ICONS, SKUPINY_FILTER_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
 import SectionBackButton from "./SectionBackButton.jsx";
+import { loadNavSession, saveNavSession } from "../data/navSession.js";
 
 const NEIGHBORS_MAIN = NEIGHBORS_TILES.map((tile) => ({
   ...tile,
@@ -96,9 +97,12 @@ export default function NeighborsPage() {
     activeLocationId,
   } = useApp();
 
-  const [activeSection, setActiveSection] = useState(null);
+  const [activeSection, setActiveSection] = useState(
+    () => loadNavSession()?.neighborsSection ?? null
+  );
   const [helpFilter, setHelpFilter] = useState("vse");
   const [skupinyListFilter, setSkupinyListFilter] = useState("vse");
+  const skipNeighborsRootReset = useRef(true);
 
   const hasMyGroups = getMyMemberGroups(communityGroups, activeLocationId).length > 0;
 
@@ -110,6 +114,14 @@ export default function NeighborsPage() {
   };
 
   useEffect(() => {
+    saveNavSession({ neighborsSection: activeSection });
+  }, [activeSection]);
+
+  useEffect(() => {
+    if (skipNeighborsRootReset.current) {
+      skipNeighborsRootReset.current = false;
+      return;
+    }
     setActiveSection(null);
     setHelpFilter("vse");
     setCalendarFilter("all");

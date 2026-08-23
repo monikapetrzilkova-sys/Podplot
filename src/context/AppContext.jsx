@@ -36,6 +36,7 @@ import {
   clampEventsMapRadius,
   clampThingsMapRadius,
 } from "../data/mapRadiusSettings.js";
+import { loadSavedActiveTab, saveNavSession } from "../data/navSession.js";
 import { MODULE_IDS, DEFAULT_MODULE_VIEW, DEFAULT_EVENTS_MODULE_VIEW } from "../data/moduleConfig.js";
 import { INSTITUTIONS_MAP_PLACES } from "../data/institutionsMapData.js";
 import { filterServicesByReach } from "../utils/serviceReach.js";
@@ -283,7 +284,7 @@ export function AppProvider({ children }) {
   });
   const creditsRef = useRef(credits);
   creditsRef.current = credits;
-  const [activeTab, setActiveTab] = useState("home");
+  const [activeTab, setActiveTab] = useState(() => loadSavedActiveTab("home"));
   const [toast, setToast] = useState(null);
   const [reservations, setReservations] = useState([]);
   /** Prodeje bazaru: platba v úschově (held) → po „Převzato a zaplaceno“ released */
@@ -2290,6 +2291,10 @@ export function AppProvider({ children }) {
     (key, defaultValue) => readPref(uiPreferences, key, defaultValue),
     [uiPreferences]
   );
+
+  useEffect(() => {
+    saveNavSession({ activeTab });
+  }, [activeTab]);
 
   const setUiPref = useCallback((key, value) => {
     setUiPreferences((prev) => {
