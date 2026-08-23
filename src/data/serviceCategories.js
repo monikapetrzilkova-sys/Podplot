@@ -215,7 +215,8 @@ export function serviceHasSubcategory(svc, categoryId) {
 }
 
 export function getServicePlaceholder(id) {
-  return SERVICE_PLACEHOLDERS[id] ?? SERVICE_PLACEHOLDERS.default;
+  const normalized = normalizeServiceSubcategoryId(id);
+  return SERVICE_PLACEHOLDERS[normalized] ?? SERVICE_PLACEHOLDERS.default;
 }
 
 export function serviceMatchesParentCategory(svc, parentId) {
