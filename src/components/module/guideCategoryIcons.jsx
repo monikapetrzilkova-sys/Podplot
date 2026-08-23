@@ -114,6 +114,30 @@ export function GuideCategoryIcon({ id, className }) {
 
 const subS = { fill: "none", stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" };
 
+/** Kadeřnické nůžky — Péče a krása */
+export function IconProvozovnaBeauty({ className = "w-3.5 h-3.5" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" {...subS}>
+      <circle cx="6" cy="7" r="2.5" />
+      <circle cx="6" cy="17" r="2.5" />
+      <path d="M8.2 8.5 20 19M8.2 15.5 20 5" />
+    </svg>
+  );
+}
+
+/** Auto */
+export function IconProvozovnaCar({ className = "w-3.5 h-3.5" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" {...subS}>
+      <path d="M4 14h16l-1.2-4.2A2 2 0 0 0 16.9 8H7.1a2 2 0 0 0-1.9 1.8L4 14z" />
+      <path d="M4 14v3.5h2.2M20 14v3.5h-2.2" />
+      <circle cx="7.5" cy="17.5" r="1.6" />
+      <circle cx="16.5" cy="17.5" r="1.6" />
+      <path d="M9 8.2l1.2-2.2h3.6L15 8.2" />
+    </svg>
+  );
+}
+
 export function IconProvozovnaCarWash({ className = "w-3.5 h-3.5" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" {...subS}>
@@ -126,28 +150,49 @@ export function IconProvozovnaCarWash({ className = "w-3.5 h-3.5" }) {
 }
 
 export function IconProvozovnaGarage({ className = "w-3.5 h-3.5" }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" {...subS}>
-      <path d="M14 3l7 7-3 3-7-7 3-3z" />
-      <path d="M5 21l6-6" />
-    </svg>
-  );
+  return <IconProvozovnaCar className={className} />;
 }
 
+/** Klíč */
 export function IconProvozovnaKeys({ className = "w-3.5 h-3.5" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" {...subS}>
       <circle cx="8" cy="8" r="3" />
-      <path d="M11 11l9 9M16 16l3 3" />
+      <path d="M11 11l9 9M16 16l3 3M17.5 14.5l2 2" />
     </svg>
   );
 }
 
+/** Bankomat */
 export function IconProvozovnaAtm({ className = "w-3.5 h-3.5" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" {...subS}>
-      <rect x="4" y="4" width="16" height="16" rx="2" />
-      <path d="M8 10h8M12 10v6" />
+      <rect x="4" y="3.5" width="16" height="17" rx="2" />
+      <rect x="7" y="6.5" width="10" height="5.5" rx="1" />
+      <path d="M8 15.5h8M8 18h5" />
+    </svg>
+  );
+}
+
+/** Čistírna / praní — věšák + kapka */
+export function IconProvozovnaLaundry({ className = "w-3.5 h-3.5" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" {...subS}>
+      <path d="M8 5h8" />
+      <path d="M12 5v2.5" />
+      <path d="M7 8.5h10l-1.2 11.2a1.5 1.5 0 0 1-1.5 1.3H9.7a1.5 1.5 0 0 1-1.5-1.3L7 8.5z" />
+      <path d="M10.5 13.5c0-1.2 1.5-2.8 1.5-2.8s1.5 1.6 1.5 2.8a1.5 1.5 0 0 1-3 0z" />
+    </svg>
+  );
+}
+
+/** Sport — míč */
+export function IconProvozovnaSport({ className = "w-3.5 h-3.5" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" {...subS}>
+      <circle cx="12" cy="12" r="7.5" />
+      <path d="M12 4.5c2.2 2.8 2.2 12.2 0 15M12 4.5c-2.2 2.8-2.2 12.2 0 15" />
+      <path d="M4.8 12h14.4" />
     </svg>
   );
 }
@@ -163,11 +208,7 @@ export function IconHomeServiceGarden({ className = "w-3.5 h-3.5" }) {
 }
 
 export function IconHomeServiceBeauty({ className = "w-3.5 h-3.5" }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" {...subS}>
-      <path d="M12 21s-6-4.5-6-10a6 6 0 0 1 12 0c0 5.5-6 10-6 10z" />
-    </svg>
-  );
+  return <IconProvozovnaBeauty className={className} />;
 }
 
 export function IconHomeServiceFamily({ className = "w-3.5 h-3.5" }) {
@@ -183,20 +224,22 @@ export function IconHomeServiceFamily({ className = "w-3.5 h-3.5" }) {
 export function IconGuideSubOther({ className = "w-3.5 h-3.5" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" {...subS}>
-      <rect x="4" y="7" width="16" height="13" rx="2" />
-      <path d="M9 7V5a3 3 0 0 1 6 0v2" />
+      <circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none" />
     </svg>
   );
 }
 
 const PROVOZOVNA_SUB_ICON = {
-  krasa: IconHomeServiceBeauty,
-  auto: IconProvozovnaGarage,
+  krasa: IconProvozovnaBeauty,
+  auto: IconProvozovnaCar,
   klicove: IconProvozovnaKeys,
   bankomat: IconProvozovnaAtm,
-  cistirna: IconGuideSubOther,
+  cistirna: IconProvozovnaLaundry,
+  sport: IconProvozovnaSport,
   automycka: IconProvozovnaCarWash,
-  autoservis: IconProvozovnaGarage,
+  autoservis: IconProvozovnaCar,
   ostatni: IconGuideSubOther,
 };
 

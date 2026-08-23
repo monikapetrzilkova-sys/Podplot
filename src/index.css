@@ -3634,6 +3634,20 @@ form .subfilter-scroll {
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
+.pp-guide-sub-chip--icon {
+  justify-content: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  padding: 0;
+  flex: 1 1 0;
+  max-width: 2.5rem;
+}
+
+.pp-guide-sub-row--icons {
+  width: 100%;
+  gap: 0.35rem;
+}
+
 .pp-guide-sub-chip--inactive {
   background-color: #ffffff;
   color: #3d7a68;

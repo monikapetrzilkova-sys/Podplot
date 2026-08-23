@@ -301,6 +301,8 @@ export default function GuideModule() {
 
             ariaLabel="Typ provozovny"
 
+            iconOnly
+
             className="shrink-0 pb-0.5"
 
           />

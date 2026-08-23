@@ -53,6 +53,7 @@ export default function MapGuideToolbar({ provozovnaType, onProvozovnaTypeChange
             value={provozovnaType}
             onChange={onProvozovnaTypeChange}
             ariaLabel="Typ provozovny"
+            iconOnly
           />
         ) : null}
       </div>

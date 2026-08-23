@@ -112,6 +112,8 @@ const GOOGLE_TYPE_TO_PROVOZOVNA = {
   hair_care: "krasa",
   spa: "krasa",
   laundry: "cistirna",
+  gym: "sport",
+  bowling_alley: "sport",
 };
 
 const IGNORED_GOOGLE_TYPES = new Set([
@@ -197,6 +199,24 @@ const NAME_CATEGORY_RULES = [
     patterns: [/\bčistírn/i, /\bcistirn/i, /\bprádeln/i, /\bpradeln/i, /\blaundry\b/i],
   },
   {
+    category: "sluzby",
+    provozovnaType: "sport",
+    patterns: [
+      /\bgym\b/i,
+      /\bfitness\b/i,
+      /\bfitcentrum\b/i,
+      /\bposilovna\b/i,
+      /\bsportovn/i,
+      /\bfitko\b/i,
+      /\bcrossfit\b/i,
+      /\bbowling\b/i,
+      /\btenis\b/i,
+      /\bsquash\b/i,
+      /\bjóga\b/i,
+      /\bjoga\b/i,
+    ],
+  },
+  {
     category: "obchody",
     patterns: [
       /\baction\b/i,
@@ -260,10 +280,6 @@ const NAME_CATEGORY_RULES = [
   {
     category: "sluzby",
     patterns: [
-      /\bgym\b/i,
-      /\bfitness\b/i,
-      /\bfitcentrum\b/i,
-      /\bposilovna\b/i,
       /\badams\s*family\b/i,
     ],
   },
