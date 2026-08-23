@@ -310,6 +310,7 @@ export default function MyProfile({ registerLegalBack } = {}) {
   const [editingHomeAddress, setEditingHomeAddress] = useState(false);
   const [editingLocationId, setEditingLocationId] = useState(null);
   const [addingLocation, setAddingLocation] = useState(false);
+  const [trustInfoOpen, setTrustInfoOpen] = useState(false);
   const [allowPublicAreaLabel, setAllowPublicAreaLabel] = useState(Boolean(user?.allowPublicAreaLabel));
   const [publicAreaLabel, setPublicAreaLabel] = useState(user?.publicAreaLabel ?? "");
   const [detailReport, setDetailReport] = useState(null);
@@ -368,11 +369,17 @@ export default function MyProfile({ registerLegalBack } = {}) {
             : "profile-my-lending-offers";
     const frame = requestAnimationFrame(() => {
       requestAnimationFrame(() => {
+        if (profileScrollTarget === "trust-received") {
+          setTrustInfoOpen(true);
+          markTrustVerifiersSeen?.();
+          document
+            .getElementById("profile-identity")
+            ?.scrollIntoView({ behavior: "smooth", block: "start" });
+          clearProfileScrollTarget();
+          return;
+        }
         const section = document.getElementById(targetId);
         section?.scrollIntoView({ behavior: "smooth", block: "start" });
-        if (profileScrollTarget === "trust-received") {
-          markTrustVerifiersSeen?.();
-        }
         if (profileScrollTarget === "group-supports") {
           markGroupProposalSupportersSeen?.();
         }
@@ -493,79 +500,141 @@ export default function MyProfile({ registerLegalBack } = {}) {
         </p>
       ) : null}
 
-      {/* Identita nahoře: avatar, jméno, e-mail, adresy */}
+      {/* Identita nahoře: kompaktní řádek + adresy + peněženka + profily */}
       {showNeighborProfile && (
-        <div className="pp-card p-5 mb-3">
-          <div className="flex flex-col items-center text-center mb-4">
-            <button
-              type="button"
-              className="pp-avatar-ring relative mb-3"
-              onClick={() => {
-                if (unreadGroupProposalSupportersCount > 0 && unreadTrustVerifiersCount === 0) {
-                  document
-                    .getElementById("profile-group-supports")
-                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                  markGroupProposalSupportersSeen?.();
-                  return;
-                }
-                if (unreadTrustVerifiersCount > 0 || trustVerifiers.length > 0) {
-                  document
-                    .getElementById("profile-trust-received")
-                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                  markTrustVerifiersSeen?.();
-                  return;
-                }
-                if (groupProposalSupporters.length > 0) {
-                  document
-                    .getElementById("profile-group-supports")
-                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                  markGroupProposalSupportersSeen?.();
-                }
-              }}
-              aria-label={
-                unreadProfileBadgeCount > 0
-                  ? `${unreadProfileBadgeCount} nové aktivity v profilu`
-                  : "Profilová fotka"
-              }
-            >
-              <Avatar initials={displayInitials} roleId={acc.role} size="lg" photo={user.profilePhoto} />
-              {unreadProfileBadgeCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[1.15rem] h-[1.15rem] px-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center shadow-sm border-2 border-white">
-                  {unreadProfileBadgeCount > 9 ? "9+" : unreadProfileBadgeCount}
-                </span>
-              )}
-            </button>
-            <div className="flex items-center justify-center gap-2 flex-wrap">
-              <h2 className="text-lg font-bold text-stone-900">{displayName}</h2>
-              {user.isVerified && <VerifiedBadge accountType={user.accountType} />}
-              {isCommunityVerified && (
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
-                  Ověřený soused
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-stone-500 mt-1">{user.email}</p>
-            <div className="flex flex-wrap justify-center gap-2 mt-3">
+        <div id="profile-identity" className="pp-card p-3 mb-3 scroll-mt-4">
+          <div className="flex items-start gap-3">
+            <div className="relative shrink-0">
               <button
                 type="button"
+                className="pp-avatar-ring relative block"
                 onClick={() => setPhotoEditorOpen(true)}
-                className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg hover:bg-emerald-100"
+                aria-label={user.profilePhoto ? "Změnit profilovou fotku" : "Přidat profilovou fotku"}
               >
-                {user.profilePhoto ? "Změnit fotku" : "Přidat fotku"}
+                <Avatar
+                  initials={displayInitials}
+                  roleId={acc.role}
+                  size="md"
+                  photo={user.profilePhoto}
+                />
+                {unreadProfileBadgeCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-emerald-600 text-white text-[9px] font-bold flex items-center justify-center shadow-sm border-2 border-white">
+                    {unreadProfileBadgeCount > 9 ? "9+" : unreadProfileBadgeCount}
+                  </span>
+                )}
               </button>
-              {user.profilePhoto && (
+              <button
+                type="button"
+                onClick={() => {
+                  setTrustInfoOpen((v) => !v);
+                  markTrustVerifiersSeen?.();
+                }}
+                title={
+                  trustVerifiers.length === 0
+                    ? "Zatím bez ověření od sousedů"
+                    : `${trustVerifiers.length} ověření od sousedů — klepněte pro detail`
+                }
+                aria-expanded={trustInfoOpen}
+                aria-label={`${trustVerifiers.length} ověření od sousedů`}
+                className={`absolute -bottom-1 -right-1 min-w-[1.35rem] h-[1.35rem] px-1 rounded-full text-[10px] font-bold tabular-nums flex items-center justify-center border-2 border-white shadow-sm ${
+                  isCommunityVerified
+                    ? "bg-[#1B4D3E] text-white"
+                    : trustVerifiers.length > 0
+                      ? "bg-[#3D7A68] text-white"
+                      : "bg-stone-200 text-stone-600"
+                }`}
+              >
+                {trustVerifiers.length}
+              </button>
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                <h2 className="text-sm font-bold text-stone-900 truncate">{displayName}</h2>
+                {user.isVerified && <VerifiedBadge accountType={user.accountType} compact />}
+                {isCommunityVerified ? (
+                  <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200">
+                    Ověřený
+                  </span>
+                ) : null}
+              </div>
+              <p className="text-[11px] text-stone-500 truncate mt-0.5">{user.email}</p>
+              <div className="flex flex-wrap items-center gap-2 mt-1.5">
                 <button
                   type="button"
-                  onClick={removeProfilePhoto}
-                  className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-100"
+                  onClick={() => setPhotoEditorOpen(true)}
+                  className="text-[10px] font-semibold text-[#3D7A68]"
                 >
-                  Smazat fotku
+                  {user.profilePhoto ? "Fotka" : "+ Fotka"}
                 </button>
-              )}
+                {user.profilePhoto ? (
+                  <button
+                    type="button"
+                    onClick={removeProfilePhoto}
+                    className="text-[10px] font-semibold text-stone-400"
+                  >
+                    Smazat
+                  </button>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="shrink-0 rounded-xl bg-gradient-to-br from-[#40916C] to-[#1B4332] text-white px-2.5 py-2 min-w-[5.5rem] text-right">
+              <p className="text-[9px] font-semibold uppercase tracking-wide text-emerald-100/90 flex items-center justify-end gap-1">
+                <PROFILE_DOODLE_ICONS.wallet className="w-3 h-3" />
+                Peněženka
+              </p>
+              <p className="text-base font-bold tabular-nums leading-tight mt-0.5">{credits} Kč</p>
+              <button
+                type="button"
+                onClick={() => setTopUpOpen(true)}
+                className="mt-1 text-[10px] font-semibold text-white/95 underline-offset-2 hover:underline"
+              >
+                Dobít
+              </button>
             </div>
           </div>
 
-          <div id="profile-home-address" className="scroll-mt-4 space-y-2">
+          {trustInfoOpen ? (
+            <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50/70 p-2.5 text-left">
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <p className="text-[11px] font-bold text-stone-800">Kdo mě ověřil</p>
+                <button
+                  type="button"
+                  onClick={() => setTrustInfoOpen(false)}
+                  className="text-[10px] font-semibold text-[#3D7A68]"
+                >
+                  Zavřít
+                </button>
+              </div>
+              {trustVerifiers.length === 0 ? (
+                <p className="text-[11px] text-stone-500 leading-snug">
+                  Zatím 0 potvrzení. Do ověření komunitou zbývá 3.
+                </p>
+              ) : (
+                <ul className="space-y-1">
+                  <p className="text-[10px] text-stone-500 mb-1">
+                    {isCommunityVerified
+                      ? "Komunitou ověřený soused (alespoň 3)."
+                      : `Do ověření zbývá ${Math.max(0, 3 - trustVerifiers.length)}.`}
+                  </p>
+                  {trustVerifiers.map((v) => (
+                    <li
+                      key={v.confirmerId}
+                      className="flex items-center gap-2 py-1 px-1.5 rounded-lg bg-white/80"
+                    >
+                      <Avatar initials={v.initials || "??"} roleId="soused" size="sm" />
+                      <span className="text-[11px] font-semibold text-stone-800 truncate flex-1 min-w-0">
+                        <PersonLabel personId={v.confirmerId} name={v.name} />
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ) : null}
+
+          <div id="profile-home-address" className="scroll-mt-4 space-y-1.5 mt-3">
             {locations.map((loc) => {
               const LocIcon = LOCATION_DOODLE_ICONS[loc.id] ?? LOCATION_DOODLE_ICONS.domov;
               const isActive = activeLocationId === loc.id;
@@ -574,13 +643,13 @@ export default function MyProfile({ registerLegalBack } = {}) {
               return (
                 <div
                   key={loc.id}
-                  className={`rounded-xl border p-3 text-left ${
+                  className={`rounded-lg border px-2.5 py-1.5 text-left ${
                     isActive ? "border-emerald-600 bg-emerald-50/80" : "border-stone-200 bg-stone-50"
                   }`}
                 >
                   {isEditing ? (
-                    <div className="space-y-2">
-                      <p className="text-xs font-semibold text-stone-700">
+                    <div className="space-y-2 py-1">
+                      <p className="text-[11px] font-semibold text-stone-700">
                         {isHome ? addressLabel : `Upravit · ${loc.label}`}
                       </p>
                       <HomeAddressForm
@@ -620,19 +689,19 @@ export default function MyProfile({ registerLegalBack } = {}) {
                       ) : null}
                     </div>
                   ) : (
-                    <div className="flex items-start gap-2">
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => setActiveLocation(loc.id)}
-                        className="flex-1 min-w-0 text-left flex items-start gap-2"
+                        className="flex-1 min-w-0 text-left flex items-center gap-2"
                       >
-                        <LocIcon className="w-4 h-4 shrink-0 mt-0.5 text-[#3D7A68]" aria-hidden />
-                        <span className="min-w-0">
-                          <span className="text-[10px] font-bold uppercase text-stone-400 block">
-                            {isHome ? addressLabel : loc.label}
-                            {isActive ? " · aktivní" : ""}
-                          </span>
-                          <span className="text-sm font-medium text-stone-800 block">
+                        <LocIcon className="w-3.5 h-3.5 shrink-0 text-[#3D7A68]" aria-hidden />
+                        <span className="min-w-0 truncate">
+                          <span className="text-[10px] font-semibold text-stone-400">
+                            {isHome ? "Domov" : loc.label}
+                            {isActive ? " ·" : ""}
+                          </span>{" "}
+                          <span className="text-[11px] font-medium text-stone-800">
                             {loc.address || user.address}
                           </span>
                         </span>
@@ -644,7 +713,7 @@ export default function MyProfile({ registerLegalBack } = {}) {
                           setEditingLocationId(loc.id);
                           if (isHome) setEditingHomeAddress(true);
                         }}
-                        className="text-[11px] font-semibold text-emerald-700 shrink-0"
+                        className="text-[10px] font-semibold text-emerald-700 shrink-0"
                       >
                         Upravit
                       </button>
@@ -655,8 +724,8 @@ export default function MyProfile({ registerLegalBack } = {}) {
             })}
 
             {addingLocation ? (
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 space-y-2">
-                <p className="text-xs font-semibold text-stone-800">Nové místo (chata, práce…)</p>
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-2.5 space-y-2">
+                <p className="text-[11px] font-semibold text-stone-800">Nové místo (chata, práce…)</p>
                 <HomeAddressForm
                   key="add-location"
                   compact
@@ -680,21 +749,31 @@ export default function MyProfile({ registerLegalBack } = {}) {
                   setEditingHomeAddress(false);
                   setAddingLocation(true);
                 }}
-                className="w-full py-2 rounded-xl text-xs font-semibold border border-dashed border-[#3D7A68]/45 text-[#1B4D3E] bg-[#F7FAF9]"
+                className="w-full py-1.5 rounded-lg text-[11px] font-semibold border border-dashed border-[#3D7A68]/45 text-[#1B4D3E] bg-[#F7FAF9]"
               >
-                + Přidat další adresu (chata, práce…)
+                + Přidat další adresu
               </button>
             )}
-            <p className="text-[10px] text-stone-400 leading-relaxed px-0.5">{ADDRESS_PRIVACY_NOTE}</p>
           </div>
+
+          {!ENABLE_DEV_ROLE_SWITCH && !isOfficeProfile ? (
+            <MyProfilesPanel embedded />
+          ) : null}
         </div>
       )}
 
-      {ENABLE_DEV_ROLE_SWITCH ? (
-        <ProfileTypeTestSwitcher />
-      ) : (
-        !isOfficeProfile && <MyProfilesPanel />
-      )}
+      {ENABLE_DEV_ROLE_SWITCH ? <ProfileTypeTestSwitcher /> : null}
+
+      <PaymentModal
+        open={topUpOpen}
+        onClose={() => setTopUpOpen(false)}
+        title="Dobití peněženky"
+        amount={topUpAmount}
+        amountEditable
+        walletBalance={credits}
+        allowWallet={false}
+        onConfirm={(_method, paid) => addCredits(paid ?? topUpAmount)}
+      />
 
       {isOfficeProfile && showWorkRoleViews ? (
         <>
@@ -738,48 +817,6 @@ export default function MyProfile({ registerLegalBack } = {}) {
             />
           );
         })()}
-      </section>
-
-      <section id="profile-trust-received" className="pp-card p-4 mb-4 scroll-mt-4">
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <ProfileSectionTitle icon={PROFILE_DOODLE_ICONS.trust} className="mb-0">
-            Kdo mě ověřil
-          </ProfileSectionTitle>
-          <span className="shrink-0 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-lg tabular-nums">
-            {trustVerifiers.length}
-          </span>
-        </div>
-        {trustVerifiers.length === 0 ? (
-          <p className="text-xs text-stone-500 leading-relaxed">
-            Zatím 0 potvrzení. Až soused potvrdí vaše sousedství, uvidíte ho tady — a na avataru se
-            objeví číslo nových potvrzení.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            <p className="text-xs text-stone-500 mb-1">
-              {isCommunityVerified
-                ? "Jste komunitou ověřený soused (alespoň 3 potvrzení)."
-                : `Do ověření komunitou zbývá ${Math.max(0, 3 - trustVerifiers.length)}.`}
-            </p>
-            {trustVerifiers.map((v) => (
-              <div
-                key={v.confirmerId}
-                className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50/80 border border-emerald-100"
-              >
-                <Avatar initials={v.initials || "??"} roleId="soused" size="sm" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-stone-800 truncate">
-                    <PersonLabel personId={v.confirmerId} name={v.name} />
-                  </p>
-                  <p className="text-[11px] text-stone-500">Potvrdil/a vaše sousedství</p>
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-md shrink-0">
-                  Ověřeno
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
       </section>
 
       <section id="profile-my-group-proposals" className="pp-card p-4 mb-4 scroll-mt-4">
@@ -842,42 +879,53 @@ export default function MyProfile({ registerLegalBack } = {}) {
         })()}
       </section>
 
-      <section id="profile-group-supports" className="pp-card p-4 mb-4 scroll-mt-4">
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <ProfileSectionTitle icon={PROFILE_DOODLE_ICONS.groups} className="mb-0">
-            Kdo podpořil mé návrhy
-          </ProfileSectionTitle>
-          <span className="shrink-0 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-lg tabular-nums">
+      <section id="profile-group-supports" className="pp-card p-3 mb-4 scroll-mt-4">
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <h3 className="text-xs font-bold text-stone-800 flex items-center gap-1.5">
+            <PROFILE_DOODLE_ICONS.groups className="w-3.5 h-3.5 text-[#3D7A68]" />
+            Podpory návrhů
+          </h3>
+          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded-md tabular-nums">
             {groupProposalSupporters.length}
           </span>
         </div>
         {groupProposalSupporters.length === 0 ? (
-          <p className="text-xs text-stone-500 leading-relaxed">
-            Až soused podpoří váš návrh skupiny, uvidíte ho tady — a na avataru se objeví číslo nových
-            podpor.
+          <p className="text-[11px] text-stone-500 leading-snug">
+            Až soused podpoří váš návrh skupiny, uvidíte ho tady.
           </p>
         ) : (
-          <div className="space-y-2">
+          <ul className="space-y-1">
             {groupProposalSupporters.map((s) => (
-              <div
+              <li
                 key={s.id}
-                className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50/80 border border-emerald-100"
+                className="flex items-center gap-2 py-1.5 px-1.5 rounded-lg hover:bg-stone-50"
               >
                 <Avatar initials={s.voterInitials || "??"} roleId="soused" size="sm" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-stone-800 truncate">
+                  <p className="text-[11px] font-semibold text-stone-800 truncate">
                     <PersonLabel personId={s.voterId} name={s.voterName} />
                   </p>
-                  <p className="text-[11px] text-stone-500 truncate">
-                    Podpořil/a návrh „{s.proposalName || "Skupina"}“
+                  <p className="text-[10px] text-stone-500 truncate">
+                    {s.proposalName || "Skupina"}
                   </p>
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-md shrink-0">
-                  Podpora
-                </span>
-              </div>
+                {s.voterId ? (
+                  <MessageButton
+                    participantId={s.voterId}
+                    participantName={s.voterName}
+                    compact
+                    className="shrink-0"
+                    topic={{
+                      kind: "group_support",
+                      refId: s.proposalId || s.id,
+                      title: s.proposalName || "Návrh skupiny",
+                      label: "Podpora návrhu",
+                    }}
+                  />
+                ) : null}
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </section>
 
@@ -1125,43 +1173,6 @@ export default function MyProfile({ registerLegalBack } = {}) {
         )}
       </section>
 
-      <div className="pp-card p-5 mb-4 text-white" style={{ background: "linear-gradient(135deg, #40916C 0%, #1B4332 100%)", boxShadow: "var(--pp-shadow)" }}>
-        <p className="text-xs text-emerald-200 font-semibold uppercase tracking-wide mb-1 flex items-center gap-1.5">
-          <PROFILE_DOODLE_ICONS.wallet className="w-3.5 h-3.5 text-emerald-100" />
-          Peněženka kreditů
-        </p>
-        <p className="text-3xl font-bold mb-1">{credits} Kč</p>
-        <p className="text-xs text-emerald-100 mb-3">1 kredit = 1 Kč · dobrovolné dobíjení</p>
-        <div className="flex gap-2 flex-wrap">
-          <button
-            type="button"
-            onClick={() => setTopUpOpen(true)}
-            className="text-xs font-semibold bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-xl inline-flex items-center gap-1.5"
-          >
-            <PROFILE_DOODLE_ICONS.card className="w-3.5 h-3.5" />
-            Dobít kartou
-          </button>
-          <button
-            type="button"
-            onClick={() => addCredits(50)}
-            className="text-xs font-semibold bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-xl"
-          >
-            + 50 Kč (test)
-          </button>
-        </div>
-      </div>
-
-      <PaymentModal
-        open={topUpOpen}
-        onClose={() => setTopUpOpen(false)}
-        title="Dobití peněženky"
-        amount={topUpAmount}
-        amountEditable
-        walletBalance={credits}
-        allowWallet={false}
-        onConfirm={(_method, paid) => addCredits(paid ?? topUpAmount)}
-      />
-
       <PromoteSection />
 
       <ProfileCollapsible
@@ -1363,57 +1374,6 @@ export default function MyProfile({ registerLegalBack } = {}) {
         )}
       </ProfileCollapsible>
 
-      <ProfileCollapsible
-        title="Režim admin / obec"
-        icon={PROFILE_DOODLE_ICONS.alerts}
-        summary={isAdminMode ? "Zapnuto · SOS a moderace" : "Vypnuto"}
-      >
-        <label className="flex items-center justify-between cursor-pointer p-3 rounded-xl border border-stone-200">
-          <div>
-            <p className="text-sm font-bold text-stone-800">Admin / obec</p>
-            <p className="text-xs text-stone-500">SOS varování a moderace</p>
-          </div>
-          <input
-            type="checkbox"
-            checked={isAdminMode}
-            onChange={(e) => setIsAdminMode(e.target.checked)}
-            className="w-5 h-5 accent-emerald-600"
-          />
-        </label>
-        {isAdminMode && (
-          <div className="space-y-2">
-            <button
-              type="button"
-              onClick={() =>
-                triggerSos({
-                  title: "Havárie vody — uzavřená ulice",
-                  body: "Prosíme nejezděte ulicí Na Louce. Oprava do 18:00.",
-                })
-              }
-              className="w-full py-2.5 pp-btn pp-btn-warning text-xs font-bold"
-            >
-              🚨 Odeslat test SOS
-            </button>
-            <h4 className="text-xs font-bold text-stone-700">Nahlášené případy</h4>
-            {adminReports.map((r) => (
-              <div key={r.id} className="bg-white rounded-xl p-3 border border-stone-200">
-                <p className="text-sm font-semibold">{r.targetName}</p>
-                <p className="text-xs text-stone-500">{r.reason} · {r.reporter}</p>
-                {r.targetId && (
-                  <button
-                    type="button"
-                    onClick={() => blockUser(r.targetId)}
-                    className="mt-2 text-[10px] font-bold text-red-600"
-                  >
-                    🚫 Zablokovat účet
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </ProfileCollapsible>
-
       <div className="mt-2 mb-4">
         <LegalLinksSection onOpen={setLegalPage} />
       </div>
@@ -1442,11 +1402,11 @@ export default function MyProfile({ registerLegalBack } = {}) {
         </>
       )}
 
-      {showWorkRoleViews && testRoleId !== "soused" && testRoleId !== "urad" && (
+      {ENABLE_DEV_ROLE_SWITCH && showWorkRoleViews && testRoleId !== "soused" && testRoleId !== "urad" && (
         <section className="bg-stone-50 border border-stone-200 rounded-2xl p-4 mb-4 mt-4">
           <label className="flex items-center justify-between cursor-pointer">
             <div>
-              <p className="text-sm font-bold text-stone-800">Režim admin</p>
+              <p className="text-sm font-bold text-stone-800">Režim admin (vývoj)</p>
               <p className="text-xs text-stone-500">Moderace nahlášení</p>
             </div>
             <input

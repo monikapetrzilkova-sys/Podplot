@@ -91,7 +91,7 @@ export function ProfileTypeTestSwitcher() {
   );
 }
 
-export default function MyProfilesPanel() {
+export default function MyProfilesPanel({ embedded = false }) {
   const {
     testRoleId,
     switchTestRole,
@@ -193,9 +193,17 @@ export default function MyProfilesPanel() {
   };
 
   return (
-    <section className="rounded-xl border border-[#C5DDD4] bg-white p-3 mb-3">
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <h3 className="text-xs font-bold text-stone-900">Moje profily</h3>
+    <section
+      className={
+        embedded
+          ? "pt-3 mt-3 border-t border-stone-100"
+          : "rounded-xl border border-[#C5DDD4] bg-white p-3 mb-3"
+      }
+    >
+      <div className="flex items-center justify-between gap-2 mb-1.5">
+        <h3 className="text-[11px] font-bold text-stone-800 uppercase tracking-wide">
+          Moje profily
+        </h3>
         {addableProfiles.length > 0 && !adding && !setupRole && (
           <button
             type="button"
@@ -207,10 +215,12 @@ export default function MyProfilesPanel() {
         )}
       </div>
 
-      <p className="text-[10px] text-stone-500 mb-2 leading-snug">
-        Přepínejte mezi sousedem, mobilní službou a provozovnou. Úřední účet se zakládá
-        jen samostatnou registrací s oficiálním e-mailem obce.
-      </p>
+      {!embedded ? (
+        <p className="text-[10px] text-stone-500 mb-2 leading-snug">
+          Přepínejte mezi sousedem, mobilní službou a provozovnou. Úřední účet se zakládá
+          jen samostatnou registrací s oficiálním e-mailem obce.
+        </p>
+      ) : null}
 
       <div className="flex flex-wrap gap-1.5">
         {activeProfiles.map((r) => (
