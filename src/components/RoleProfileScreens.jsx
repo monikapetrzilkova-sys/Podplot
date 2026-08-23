@@ -952,21 +952,53 @@ export function BusinessRoleView() {
     businessHoursNote,
     setActiveTab,
     closeProfile,
+    ownedInstitution,
+    user,
   } = useApp();
   const [topUpOpen, setTopUpOpen] = useState(false);
-  const persona = TEST_PERSONAS.podnik;
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [bankAccount, setBankAccount] = useState("");
+  const [withdrawAmount, setWithdrawAmount] = useState(500);
+
+  const venueName =
+    ownedInstitution?.name || user?.businessName || user?.name || "Provozovna";
+  const venueAddress = ownedInstitution?.address || user?.address || "";
+  const hoursLabel = ownedInstitution?.hours || businessHours || "";
+  const statusLabel = [
+    businessIsOpen ? "Otevřeno" : "Zavřeno",
+    hoursLabel,
+    businessHoursNote || ownedInstitution?.extraInfo,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div className="space-y-4">
-      <section className="rounded-2xl border border-[#C5DDD4] bg-[#F7FAF9] p-4">
-        <h3 className="text-sm font-bold text-stone-900">
-          {persona.businessName ?? "Provozovna"}
-        </h3>
-        <p className="text-xs text-stone-500 mt-1">
-          {businessIsOpen ? "Otevřeno" : "Zavřeno"} · {businessHours}
-          {businessHoursNote ? ` · ${businessHoursNote}` : ""}
-        </p>
-        <p className="text-[11px] text-stone-400 mt-2">
+      <section className="rounded-2xl border border-[#C5DDD4] bg-white p-4">
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <h3 className="text-sm font-bold text-stone-900">Provozovna</h3>
+        </div>
+
+        <div className="flex items-start justify-between gap-3 py-2.5 border-b border-stone-100">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-stone-400">Název</p>
+            <p className="text-sm text-stone-800 mt-0.5 break-words">{venueName}</p>
+          </div>
+        </div>
+        <div className="flex items-start justify-between gap-3 py-2.5 border-b border-stone-100">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-stone-400">Adresa</p>
+            <p className="text-sm text-stone-800 mt-0.5 break-words">{venueAddress || "—"}</p>
+          </div>
+        </div>
+        <div className="flex items-start justify-between gap-3 py-2.5">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-stone-400">Provoz</p>
+            <p className="text-sm text-stone-800 mt-0.5 break-words">{statusLabel || "—"}</p>
+          </div>
+        </div>
+
+        <p className="text-[11px] text-stone-400 mt-2 leading-snug">
           Denní provoz spravujete na záložce Provoz. Banner a viditelnost na záložce Propagace.
         </p>
         <div className="mt-3 grid grid-cols-2 gap-2">
@@ -976,7 +1008,7 @@ export function BusinessRoleView() {
               closeProfile();
               setActiveTab("home");
             }}
-            className="py-2 rounded-xl text-xs font-semibold border border-[#C5DDD4] text-[#1B4D3E] bg-white"
+            className="py-2 rounded-xl text-xs font-semibold border border-[#C5DDD4] text-[#1B4D3E] bg-[#F1F6F5]"
           >
             Provoz
           </button>
@@ -986,7 +1018,7 @@ export function BusinessRoleView() {
               closeProfile();
               setActiveTab("ads");
             }}
-            className="py-2 rounded-xl text-xs font-semibold border border-[#C5DDD4] text-[#1B4D3E] bg-[#E8F0ED]"
+            className="py-2 rounded-xl text-xs font-semibold border border-[#C5DDD4] text-[#1B4D3E] bg-[#F1F6F5]"
           >
             Propagace
           </button>
@@ -995,29 +1027,12 @@ export function BusinessRoleView() {
 
       <BusinessEntityManagement />
 
-      <section className="pp-card p-4">
-        <h3 className="text-sm font-bold text-stone-800 mb-1">Podplot kredity</h3>
-        <p className="text-2xl font-bold text-[#1B4D3E] tabular-nums">{credits} Kč</p>
-        <p className="text-[11px] text-stone-500 mt-1 mb-3">
-          Peněženka provozu: {businessWallet} Kč · kredity na propagaci
-        </p>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setTopUpOpen(true)}
-            className="flex-1 py-2.5 bg-[#3D7A68] text-white rounded-xl text-xs font-semibold"
-          >
-            Dobít kredity
-          </button>
-          <button
-            type="button"
-            onClick={() => withdrawToBank(businessWallet, "123456789/0100")}
-            className="flex-1 py-2.5 border border-[#C5DDD4] rounded-xl text-xs font-semibold text-[#1B4D3E]"
-          >
-            Vyplatit
-          </button>
-        </div>
-      </section>
+      <FinancialCenter
+        balance={businessWallet}
+        credits={credits}
+        onTopUp={() => setTopUpOpen(true)}
+        onWithdraw={() => setWithdrawOpen(true)}
+      />
 
       <PaymentModal
         open={topUpOpen}
@@ -1032,6 +1047,37 @@ export function BusinessRoleView() {
           setTopUpOpen(false);
         }}
       />
+
+      {withdrawOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <ModalDoodleBackdrop onClose={() => setWithdrawOpen(false)} />
+          <div className="relative bg-white rounded-2xl p-5 w-full max-w-sm">
+            <h3 className="font-bold mb-3">Vyplatit na bankovní účet</h3>
+            <input
+              value={bankAccount}
+              onChange={(e) => setBankAccount(e.target.value)}
+              placeholder="Číslo účtu"
+              className="w-full border rounded-xl px-3 py-2 text-sm mb-2"
+            />
+            <input
+              type="number"
+              value={withdrawAmount}
+              onChange={(e) => setWithdrawAmount(Number(e.target.value))}
+              className="w-full border rounded-xl px-3 py-2 text-sm mb-3"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                withdrawToBank(withdrawAmount, bankAccount);
+                setWithdrawOpen(false);
+              }}
+              className="w-full py-2.5 bg-[#3D7A68] text-white rounded-xl text-sm font-semibold"
+            >
+              Odeslat převod
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

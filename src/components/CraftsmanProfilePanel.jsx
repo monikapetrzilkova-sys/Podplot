@@ -24,7 +24,7 @@ import { IconMapPin } from "../data/icons.jsx";
 import CraftCategoryPicker from "./CraftCategoryPicker.jsx";
 import StructuredAddressFields from "./StructuredAddressFields.jsx";
 
-function OverviewRow({ label, value, onEdit }) {
+export function OverviewRow({ label, value, onEdit }) {
   return (
     <div className="flex items-start justify-between gap-3 py-2.5 border-b border-stone-100 last:border-0">
       <div className="min-w-0">
