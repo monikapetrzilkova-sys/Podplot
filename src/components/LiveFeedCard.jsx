@@ -36,6 +36,7 @@ export default function LiveFeedCard({
   onToggle,
   domId,
   mine = false,
+  metaLine = null,
 }) {
   const [prefOpen, , togglePref] = useUiPref(accordionKey("liveFeed", itemId), false);
   const canExpand = expandable && Boolean(children);
@@ -62,8 +63,10 @@ export default function LiveFeedCard({
         onClick={handleSummaryClick}
         className={`w-full text-left px-3 py-2 transition-colors box-border ${
           onReport ? "pr-10" : "pr-3"
-        } ${onMapClick ? "pb-10" : ""} ${mine ? "hover:bg-[#EEF5F1]/90" : "hover:bg-[#FAFAFA]/80"}`}
-        aria-expanded={isOpen}
+        } ${onMapClick && !isOpen ? "pb-10" : ""} ${mine ? "hover:bg-[#EEF5F1]/90" : "hover:bg-[#FAFAFA]/80"} ${
+          canExpand ? "" : "cursor-default"
+        }`}
+        aria-expanded={canExpand ? isOpen : undefined}
       >
         <div className="flex items-start gap-2 min-w-0">
           <div className="flex-1 min-w-0">
@@ -90,11 +93,18 @@ export default function LiveFeedCard({
             {authorLabel ? (
               <p className="pp-text-meta text-[10px] mt-0.5 truncate text-stone-500">{authorLabel}</p>
             ) : null}
-            {preview && !isOpen && (
-              <p className="pp-text-body text-[11px] leading-snug line-clamp-2 mt-0.5 text-stone-600">
+            {preview ? (
+              <p
+                className={`pp-text-body text-[11px] leading-snug mt-0.5 text-stone-600 ${
+                  isOpen ? "whitespace-pre-wrap" : "line-clamp-2"
+                }`}
+              >
                 {preview}
               </p>
-            )}
+            ) : null}
+            {metaLine ? (
+              <p className="text-[10px] text-stone-500 mt-0.5 truncate">{metaLine}</p>
+            ) : null}
           </div>
           <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
             {statusIcon ? (
@@ -142,7 +152,11 @@ export default function LiveFeedCard({
       )}
 
       {isOpen && (
-        <div className={`px-3 pt-2 border-t border-stone-100 animate-[fadeIn_0.15s_ease-out] space-y-2 ${onMapClick ? "pb-11" : "pb-3"}`}>
+        <div
+          className={`px-3 pt-2 border-t border-stone-100 animate-[fadeIn_0.15s_ease-out] space-y-2 ${
+            onMapClick ? "pb-11" : "pb-3"
+          }`}
+        >
           {children}
         </div>
       )}

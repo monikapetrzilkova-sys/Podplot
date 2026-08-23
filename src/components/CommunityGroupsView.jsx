@@ -44,7 +44,7 @@ function GroupPostRow({ post, groupName, expanded, onToggle }) {
       expanded={expanded}
       onToggle={onToggle}
     >
-      <FeedCard post={{ ...post, groupName: resolvedGroupName }} detailsOnly />
+      <FeedCard post={{ ...post, groupName: resolvedGroupName }} detailsOnly bodyInParent />
     </LiveFeedCard>
   );
 }

@@ -190,13 +190,14 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
                   item.post.mine ? undefined : (reason) => reportPost(item.post.id, reason)
                 }
               >
-                <FeedCard post={item.post} detailsOnly />
+                <FeedCard post={item.post} detailsOnly bodyInParent />
                 <OpenCategoryLink section="veci" onSelectSection={onSelectSection} />
               </LiveFeedCard>
             );
           }
 
           if (item.section === "vypomoc" && item.help) {
+            const helpNeedsExpand = !item.mine;
             return (
               <LiveFeedCard
                 key={item.id}
@@ -206,16 +207,15 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
                 title={item.title}
                 authorLabel={item.authorLabel}
                 preview={item.preview}
+                expandable={helpNeedsExpand}
               >
-                {item.mine ? (
-                  <p className="pp-text-body text-sm">{item.help.body}</p>
-                ) : (
+                {helpNeedsExpand ? (
                   <HelpFeedActions
                     help={item.help}
                     onOfferHelp={offerHelpOnPost}
                     alreadyOffered={hasOfferedHelp(item.help.helpId)}
                   />
-                )}
+                ) : null}
               </LiveFeedCard>
             );
           }
@@ -233,7 +233,7 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
                 editedItem={item.post}
                 priceLabel={item.price}
               >
-                <FeedCard post={item.post} detailsOnly />
+                <FeedCard post={item.post} detailsOnly bodyInParent />
                 <OpenCategoryLink section="skupiny" onSelectSection={onSelectSection} />
               </LiveFeedCard>
             );

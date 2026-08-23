@@ -17,6 +17,7 @@ import { getActiveListingSale } from "../data/listingSales.js";
 import { displayCreatorLabel } from "../data/accountTypes.js";
 import { lendingDisplayTitle } from "../data/lendingItemTypes.js";
 import { reportSnapshotFromFeedPost } from "../utils/reportPinUtils.js";
+import { feedItemNeedsExpand } from "./feed/feedExpand.js";
 
 function lendingToLivePost(item) {
   const thing = normalizeLendingToThing(item);
@@ -307,13 +308,13 @@ export default function LiveNeighborFeed() {
                 preview={item.body}
                 editedItem={item.newsItem}
                 onReport={reportGeneric}
-              >
-                <p className="pp-text-body text-sm whitespace-pre-wrap">{item.body}</p>
-              </LiveFeedCard>
+                expandable={false}
+              />
             );
           }
 
           if (item.kind === "help") {
+            const helpNeedsExpand = !item.mine;
             return (
               <LiveFeedCard
                 key={item.id}
@@ -327,12 +328,15 @@ export default function LiveNeighborFeed() {
                 preview={item.body}
                 onReport={reportGeneric}
                 mine={Boolean(item.mine)}
+                expandable={helpNeedsExpand}
               >
-                <HelpFeedActions
-                  help={item}
-                  onOfferHelp={offerHelpOnPost}
-                  alreadyOffered={hasOfferedHelp(item.helpId)}
-                />
+                {helpNeedsExpand ? (
+                  <HelpFeedActions
+                    help={item}
+                    onOfferHelp={offerHelpOnPost}
+                    alreadyOffered={hasOfferedHelp(item.helpId)}
+                  />
+                ) : null}
               </LiveFeedCard>
             );
           }
@@ -351,6 +355,12 @@ export default function LiveNeighborFeed() {
             const placeLabel = post.placeLabel || null;
             const distance = extractDistanceFromMeta(post.meta);
             const mapCategory = isTip ? REPORTS_TIP_CATEGORY_ID : "all";
+            const metaLine = [placeLabel, distance].filter(Boolean).join(" · ") || null;
+            const needsExpand = feedItemNeedsExpand(post, {
+              preview: post.body,
+              // Cizí hlášení: rozbalit kvůli zprávě / „Užitečné“
+              hasExtraDetail: !post.mine && !item.mine,
+            });
 
             const openOnMap = () => {
               if (!reportId) return;
@@ -374,19 +384,14 @@ export default function LiveNeighborFeed() {
                   mine: post.mine,
                 })}
                 preview={post.body}
+                metaLine={metaLine}
                 editedItem={post}
                 onReport={(reason) => reportPost(post.id, reason)}
                 mine={Boolean(post.mine || item.mine)}
                 onMapClick={reportId ? openOnMap : undefined}
+                expandable={needsExpand}
               >
-                <FeedCard post={post} detailsOnly />
-                {(placeLabel || distance) && (
-                  <p className="flex items-center gap-1.5 text-xs text-stone-500 pt-1">
-                    <span className="flex-1 min-w-0 truncate">
-                      {[placeLabel, distance].filter(Boolean).join(" · ")}
-                    </span>
-                  </p>
-                )}
+                {needsExpand ? <FeedCard post={post} detailsOnly bodyInParent /> : null}
               </LiveFeedCard>
             );
           }
@@ -435,7 +440,7 @@ export default function LiveNeighborFeed() {
               onReport={(reason) => reportPost(item.post.id, reason)}
               mine={Boolean(item.mine || item.post?.mine)}
             >
-              <FeedCard post={item.post} detailsOnly />
+              <FeedCard post={item.post} detailsOnly bodyInParent />
             </LiveFeedCard>
           );
         })}

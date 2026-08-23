@@ -129,7 +129,7 @@ function ListingSaleActions({ post }) {
   );
 }
 
-export default function FeedCard({ post, compact = false, detailsOnly = false }) {
+export default function FeedCard({ post, compact = false, detailsOnly = false, bodyInParent = false }) {
   const {
     topPost,
     reportedPosts,
@@ -206,8 +206,8 @@ export default function FeedCard({ post, compact = false, detailsOnly = false })
   if (detailsOnly) {
     return (
       <div className="space-y-2">
-        <EditedBadge item={post} />
-        <p className="pp-text-body">{post.body}</p>
+        {!bodyInParent && <EditedBadge item={post} />}
+        {!bodyInParent && <p className="pp-text-body">{post.body}</p>}
         <PostPhotos photos={post.photos} compact />
         {!isReported && (
           <div
