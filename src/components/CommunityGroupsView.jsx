@@ -324,29 +324,46 @@ function GroupsToolsRow({
   showNew = false,
   onNew,
   proposalsChip = null,
+  searchExpanded = false,
+  onSearchExpandedChange,
 }) {
-  const searching = Boolean(String(value).trim());
+  const searchActive = searchExpanded || Boolean(String(value).trim());
+
+  if (searchActive) {
+    return (
+      <div className="pp-groups-tools flex items-center gap-1.5 px-3 pb-1.5 shrink-0 min-w-0">
+        <CompactSearchToggle
+          value={value}
+          onChange={onChange}
+          expanded
+          onExpandedChange={onSearchExpandedChange}
+          placeholder="Hledat ve skupinách…"
+          ariaLabel="Hledat ve skupinách"
+          className="flex-1"
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="pp-groups-tools flex items-center justify-end gap-1.5 px-3 pb-1.5 shrink-0 min-w-0">
+    <div className="pp-groups-tools flex items-center gap-1.5 px-3 pb-1.5 shrink-0 min-w-0">
+      {showNew ? (
+        <div className="flex-1 min-w-0">
+          <PrimaryAddButton label="Nová" onClick={onNew} />
+        </div>
+      ) : (
+        <div className="flex-1 min-w-0" />
+      )}
+      {proposalsChip}
       <CompactSearchToggle
         value={value}
         onChange={onChange}
+        expanded={false}
+        onExpandedChange={onSearchExpandedChange}
         placeholder="Hledat ve skupinách…"
         ariaLabel="Hledat ve skupinách"
-        className={searching ? "flex-1" : "shrink-0"}
+        className="shrink-0"
       />
-      {!searching && proposalsChip}
-      {showNew && !searching && (
-        <button
-          type="button"
-          onClick={onNew}
-          aria-label="Navrhnout novou skupinu"
-          title="Navrhnout novou skupinu"
-          className="pp-groups-new-btn shrink-0 inline-flex items-center gap-0.5 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold text-[#1B4D3E] bg-[#E8F3EF] border border-[#C5E0D6] transition-colors duration-150 hover:bg-[#3D7A68] hover:border-[#3D7A68] hover:text-white active:bg-[#2F6354] active:border-[#2F6354] active:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#64A08D] focus-visible:ring-offset-1"
-        >
-          + Nová
-        </button>
-      )}
     </div>
   );
 }
@@ -367,6 +384,7 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
   } = useApp();
 
   const [search, setSearch] = useState("");
+  const [searchExpanded, setSearchExpanded] = useState(false);
   const [returnFilter, setReturnFilter] = useState("skupiny");
   const [myGroupFocus, setMyGroupFocus] = useState("vse");
   const query = normalize(search.trim());
@@ -597,6 +615,8 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
         <GroupsToolsRow
           value={search}
           onChange={setSearch}
+          searchExpanded={searchExpanded}
+          onSearchExpandedChange={setSearchExpanded}
           showNew={hideFilterBar}
           onNew={() => openCreateGroupModal?.()}
           proposalsChip={
