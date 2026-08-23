@@ -711,7 +711,20 @@ export function AppProvider({ children }) {
   }, []);
 
   const setModuleViewMode = useCallback((moduleId, mode) => {
-    setModuleViewModes((prev) => ({ ...prev, [moduleId]: mode }));
+    setModuleViewModes((prev) => {
+      // Okolí: Hlášení ↔ Místa sdílí mapa/seznam
+      if (
+        (moduleId === MODULE_IDS.REPORTS || moduleId === MODULE_IDS.LOCAL_GUIDE) &&
+        (mode === "map" || mode === "list")
+      ) {
+        return {
+          ...prev,
+          [MODULE_IDS.REPORTS]: mode,
+          [MODULE_IDS.LOCAL_GUIDE]: mode,
+        };
+      }
+      return { ...prev, [moduleId]: mode };
+    });
   }, []);
 
   const selectModuleItem = useCallback((moduleId, id) => {
@@ -722,23 +735,22 @@ export function AppProvider({ children }) {
     setModuleSelection(null);
   }, []);
 
-  const openModuleItemDetail = useCallback(
+  const openModuleItemDetail = useCallback((moduleId, id) => {
+    setModuleSelection({ module: moduleId, id });
+    setModuleViewMode(moduleId, "list");
+    requestAnimationFrame(() => {
+      const scrollId = moduleId === "reports" ? `report-${id}` : `module-item-${id}`;
+      document.getElementById(scrollId)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }, [setModuleViewMode]);
+
+  const showModuleItemOnMap = useCallback(
     (moduleId, id) => {
       setModuleSelection({ module: moduleId, id });
-      setModuleViewModes((prev) => ({ ...prev, [moduleId]: "list" }));
-      requestAnimationFrame(() => {
-        const scrollId =
-          moduleId === "reports" ? `report-${id}` : `module-item-${id}`;
-        document.getElementById(scrollId)?.scrollIntoView({ behavior: "smooth", block: "center" });
-      });
+      setModuleViewMode(moduleId, "map");
     },
-    []
+    [setModuleViewMode]
   );
-
-  const showModuleItemOnMap = useCallback((moduleId, id) => {
-    setModuleSelection({ module: moduleId, id });
-    setModuleViewModes((prev) => ({ ...prev, [moduleId]: "map" }));
-  }, []);
   const [pendingPayment, setPendingPayment] = useState(null);
   const [profileHint, setProfileHint] = useState(null);
   const [profileScrollTarget, setProfileScrollTarget] = useState(null);
