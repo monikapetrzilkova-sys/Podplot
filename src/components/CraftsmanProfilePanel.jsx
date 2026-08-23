@@ -304,9 +304,6 @@ export default function CraftsmanProfilePanel() {
             Upravit profil
           </button>
         </div>
-        <p className="text-[11px] text-stone-500 mb-2">
-          Přihlášení zůstává stejné jako u sousedského účtu.
-        </p>
 
         <OverviewRow
           label="Katalogové jméno"
