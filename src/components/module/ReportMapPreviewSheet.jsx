@@ -10,7 +10,7 @@ import { ReportPinIcon } from "./reportPinIcons.jsx";
 import { getPromptStatusStyle } from "../../data/municipalityPrompts.js";
 import { isTipReport, REPORT_TIP_ACCENT } from "../../data/reportCategories.js";
 
-export default function ReportMapPreviewSheet({ report, onDetail, onClose }) {
+export default function ReportMapPreviewSheet({ report, onDetail, onClose, expiredFromMap = false }) {
   if (!report) return null;
 
   const urgentLabel = report.urgent ? getUrgentReachLabel(report) : null;
@@ -56,6 +56,11 @@ export default function ReportMapPreviewSheet({ report, onDetail, onClose }) {
               <p className="text-[11px] text-stone-500 mt-1 flex items-center gap-1">
                 <span aria-hidden>📍</span>
                 {[report.placeLabel, report.distance].filter(Boolean).join(" · ")}
+              </p>
+            )}
+            {expiredFromMap && (
+              <p className="text-[10px] text-amber-800 mt-1 leading-snug">
+                Platnost hlášení na mapě už uplynula — místo zobrazujeme z feedu.
               </p>
             )}
             {publicNote && (

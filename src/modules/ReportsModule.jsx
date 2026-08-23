@@ -22,6 +22,7 @@ import { reportPinAccentColor } from "../utils/reportPinUtils.js";
 import EditedBadge from "../components/EditedBadge.jsx";
 import { displayCreatorLabel } from "../data/accountTypes.js";
 import { SECURITY_REPORTS } from "../data/mockData.js";
+import { isReportActive } from "../data/reportExpiry.js";
 
 function OfficeStatusBadge({ report }) {
   if (!report?.officeStatus || report.officeStatus === "new") return null;
@@ -104,6 +105,8 @@ export default function ReportsModule({
     reportSecurityReport,
     pendingMapReportId,
     clearPendingMapReportId,
+    pendingMapReportSnapshot,
+    clearPendingMapReportSnapshot,
     showModuleItemOnMap,
     extraReports,
     userReports,
@@ -139,13 +142,20 @@ export default function ReportsModule({
 
   const catalogReport = useMemo(() => {
     if (!selectedId) return null;
+    // Nejdřív snapshot z feedu (funguje i po expiraci z aktivních hlášení)
+    if (
+      pendingMapReportSnapshot?.id === selectedId &&
+      hasReportMapPosition(pendingMapReportSnapshot)
+    ) {
+      return pendingMapReportSnapshot;
+    }
     const pools = [reports, extraReports ?? [], userReports ?? [], SECURITY_REPORTS];
     for (const pool of pools) {
       const hit = pool.find((r) => r.id === selectedId);
       if (hit && hasReportMapPosition(hit)) return hit;
     }
     return null;
-  }, [selectedId, reports, extraReports, userReports]);
+  }, [selectedId, reports, extraReports, userReports, pendingMapReportSnapshot]);
 
   const selectedOutsideRadius = useMemo(() => {
     if (!selectedId || !catalogReport) return null;
@@ -171,6 +181,12 @@ export default function ReportsModule({
     catalogReport ??
     null;
   const urgentCount = reportsInRadius.filter((r) => r.urgent).length;
+  const selectedIsExpired = Boolean(
+    selectedReport &&
+      (selectedReport.fromFeedFocus
+        ? !reports.some((r) => r.id === selectedId)
+        : !isReportActive(selectedReport))
+  );
 
   const openReportDetail = (report) => {
     if (!report) return;
@@ -185,6 +201,7 @@ export default function ReportsModule({
   const closeReportPreview = () => {
     setDetailReport(null);
     clearModuleSelection();
+    clearPendingMapReportSnapshot?.();
   };
 
   const handleReportPinClick = (r) => {
@@ -238,6 +255,7 @@ export default function ReportsModule({
           {selectedReport && !detailReport && !pickMode && (
             <ReportMapPreviewSheet
               report={selectedReport}
+              expiredFromMap={selectedIsExpired}
               onDetail={() => openReportDetail(selectedReport)}
               onClose={closeReportPreview}
             />

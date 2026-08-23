@@ -293,6 +293,7 @@ export function AppProvider({ children }) {
   const [mapFocus, setMapFocus] = useState(null);
   const [pendingMapReportsCategory, setPendingMapReportsCategory] = useState(null);
   const [pendingMapReportId, setPendingMapReportId] = useState(null);
+  const [pendingMapReportSnapshot, setPendingMapReportSnapshot] = useState(null);
   const [pendingNeighborsSection, setPendingNeighborsSection] = useState(null);
   const [pendingThingsItemId, setPendingThingsItemId] = useState(null);
   const [homeEventGallery, setHomeEventGallery] = useState(null);
@@ -1532,15 +1533,23 @@ export function AppProvider({ children }) {
     setPendingMapReportId(null);
   }, []);
 
+  const clearPendingMapReportSnapshot = useCallback(() => {
+    setPendingMapReportSnapshot(null);
+  }, []);
+
   const openReportOnMapFromHome = useCallback(
-    (reportId, { category = "all" } = {}) => {
-      if (!reportId) return;
-      const resolvedId = String(reportId).startsWith("feed-")
-        ? String(reportId).slice("feed-".length)
-        : reportId;
+    (reportId, { category = "all", snapshot = null } = {}) => {
+      if (!reportId && !snapshot?.id) return;
+      const resolvedId = String(reportId || snapshot.id).startsWith("feed-")
+        ? String(reportId || snapshot.id).slice("feed-".length)
+        : reportId || snapshot.id;
       // Vždy „Vše“, ať filtr kategorie neschová cílový špendlík
       setPendingMapReportsCategory(category === "tip" ? "tip" : "all");
       setPendingMapReportId(resolvedId);
+      // Snapshot z feedu — pin i po expiraci z aktivních hlášení na mapě
+      setPendingMapReportSnapshot(
+        snapshot ? { ...snapshot, id: resolvedId } : null
+      );
       setMapFocus("reports");
       showModuleItemOnMap(MODULE_IDS.REPORTS, resolvedId);
       setActiveTab("map");
@@ -6344,6 +6353,8 @@ export function AppProvider({ children }) {
         clearPendingMapReportsCategory,
         pendingMapReportId,
         clearPendingMapReportId,
+        pendingMapReportSnapshot,
+        clearPendingMapReportSnapshot,
         openReportOnMapFromHome,
         openMapReport,
         openCreateEvent,

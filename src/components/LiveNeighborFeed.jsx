@@ -17,6 +17,7 @@ import { getPostInteractionType, INTERACTION_TYPES } from "../data/postInteracti
 import { getActiveListingSale } from "../data/listingSales.js";
 import { displayCreatorLabel } from "../data/accountTypes.js";
 import { lendingDisplayTitle } from "../data/lendingItemTypes.js";
+import { reportSnapshotFromFeedPost } from "../utils/reportPinUtils.js";
 
 function lendingToLivePost(item) {
   const thing = normalizeLendingToThing(item);
@@ -354,7 +355,10 @@ export default function LiveNeighborFeed() {
 
             const openOnMap = () => {
               if (!reportId) return;
-              openReportOnMapFromHome(reportId, { category: mapCategory });
+              openReportOnMapFromHome(reportId, {
+                category: mapCategory,
+                snapshot: reportSnapshotFromFeedPost(post),
+              });
             };
 
             return (

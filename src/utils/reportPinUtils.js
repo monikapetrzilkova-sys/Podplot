@@ -26,6 +26,45 @@ export function hasReportMapPosition(report) {
   return false;
 }
 
+/**
+ * Snapshot hlášení z feedového příspěvku — aby šlo pin zobrazit na mapě
+ * i po expiraci z aktivního seznamu hlášení.
+ */
+export function reportSnapshotFromFeedPost(post) {
+  if (!post) return null;
+  const id =
+    post.fromSecurityReportId ||
+    (String(post.id || "").startsWith("feed-") ? String(post.id).slice(5) : post.id);
+  if (!id) return null;
+
+  const mapPos = post.mapPos ?? null;
+  const lat = post.lat ?? mapPos?.lat ?? null;
+  const lng = post.lng ?? mapPos?.lng ?? null;
+  const snapshot = {
+    id,
+    type: post.title || post.type || "Hlášení",
+    body: post.body ?? "",
+    author: post.author,
+    authorInitials: post.initials ?? post.authorInitials,
+    accountType: post.accountType,
+    reportCategoryId: post.reportCategoryId ?? null,
+    placeLabel: post.placeLabel ?? null,
+    distance: post.distance ?? null,
+    time: post.time ?? null,
+    photos: post.photos ?? [],
+    mine: Boolean(post.mine),
+    mapPos:
+      mapPos ||
+      (lat != null && lng != null ? { lat, lng } : null),
+    lat,
+    lng,
+    fromFeedFocus: true,
+  };
+
+  if (!hasReportMapPosition(snapshot)) return null;
+  return snapshot;
+}
+
 /** Posune překrývající se špendlíky — zejména vlastní hlášení u špendlíku Domov. */
 export function buildReportDisplayPositions(reports, homeCenter = MAP_CENTER) {
   const positions = new Map();

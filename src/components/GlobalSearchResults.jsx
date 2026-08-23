@@ -179,6 +179,7 @@ export default function GlobalSearchResults() {
     if (report?.id) {
       openReportOnMapFromHome?.(report.id, {
         category: report.reportCategoryId === "tip" ? "tip" : "all",
+        snapshot: report,
       });
       clearSearch();
       return;
