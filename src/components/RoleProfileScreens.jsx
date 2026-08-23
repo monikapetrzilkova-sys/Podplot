@@ -23,7 +23,6 @@ import {
   ADDRESS_PRIVACY_NOTE_INLINE,
 } from "../data/addressValidation.js";
 import { SKIP_REGISTRATION, ENABLE_DEV_ROLE_SWITCH } from "../data/devConfig.js";
-import PaymentModal from "./PaymentModal.jsx";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
 import AppPanelPortal from "./AppPanelPortal.jsx";
 import BusinessEntityManagement from "./entity/BusinessEntityManagement.jsx";
@@ -852,17 +851,7 @@ function CraftsmanAccountSettings() {
 }
 
 export function CraftsmanRoleView() {
-  const {
-    craftsmanWallet,
-    credits,
-    addCredits,
-    withdrawToBank,
-    craftsmanInvoices,
-  } = useApp();
-  const [topUpOpen, setTopUpOpen] = useState(false);
-  const [withdrawOpen, setWithdrawOpen] = useState(false);
-  const [bankAccount, setBankAccount] = useState("");
-  const [withdrawAmount, setWithdrawAmount] = useState(500);
+  const { craftsmanInvoices } = useApp();
 
   return (
     <div className="space-y-4">
@@ -886,67 +875,12 @@ export function CraftsmanRoleView() {
           </ul>
         </section>
       )}
-      <FinancialCenter
-        balance={craftsmanWallet}
-        credits={credits}
-        onTopUp={() => setTopUpOpen(true)}
-        onWithdraw={() => setWithdrawOpen(true)}
-      />
-
-      <PaymentModal
-        open={topUpOpen}
-        onClose={() => setTopUpOpen(false)}
-        title="Dobít kredit"
-        amount={100}
-        amountEditable
-        walletBalance={credits}
-        allowWallet={false}
-        onConfirm={(_method, paid) => {
-          addCredits(paid ?? 100);
-          setTopUpOpen(false);
-        }}
-      />
-
-      {withdrawOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <ModalDoodleBackdrop onClose={() => setWithdrawOpen(false)} />
-          <div className="relative bg-white rounded-2xl p-5 w-full max-w-sm">
-            <h3 className="font-bold mb-3">Vyplatit na bankovní účet</h3>
-            <input
-              value={bankAccount}
-              onChange={(e) => setBankAccount(e.target.value)}
-              placeholder="Číslo účtu"
-              className="w-full border rounded-xl px-3 py-2 text-sm mb-2"
-            />
-            <input
-              type="number"
-              value={withdrawAmount}
-              onChange={(e) => setWithdrawAmount(Number(e.target.value))}
-              className="w-full border rounded-xl px-3 py-2 text-sm mb-3"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                withdrawToBank(withdrawAmount, bankAccount);
-                setWithdrawOpen(false);
-              }}
-              className="w-full py-2.5 bg-[#3D7A68] text-white rounded-xl text-sm font-semibold"
-            >
-              Odeslat převod
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
 export function BusinessRoleView() {
   const {
-    businessWallet,
-    credits,
-    addCredits,
-    withdrawToBank,
     businessIsOpen,
     businessHours,
     businessHoursNote,
@@ -955,10 +889,6 @@ export function BusinessRoleView() {
     ownedInstitution,
     user,
   } = useApp();
-  const [topUpOpen, setTopUpOpen] = useState(false);
-  const [withdrawOpen, setWithdrawOpen] = useState(false);
-  const [bankAccount, setBankAccount] = useState("");
-  const [withdrawAmount, setWithdrawAmount] = useState(500);
 
   const venueName =
     ownedInstitution?.name || user?.businessName || user?.name || "Podnik";
@@ -1026,58 +956,6 @@ export function BusinessRoleView() {
       </section>
 
       <BusinessEntityManagement />
-
-      <FinancialCenter
-        balance={businessWallet}
-        credits={credits}
-        onTopUp={() => setTopUpOpen(true)}
-        onWithdraw={() => setWithdrawOpen(true)}
-      />
-
-      <PaymentModal
-        open={topUpOpen}
-        onClose={() => setTopUpOpen(false)}
-        title="Dobít Podplot kredity"
-        amount={200}
-        amountEditable
-        walletBalance={credits}
-        allowWallet={false}
-        onConfirm={(_method, paid) => {
-          addCredits(paid ?? 200);
-          setTopUpOpen(false);
-        }}
-      />
-
-      {withdrawOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <ModalDoodleBackdrop onClose={() => setWithdrawOpen(false)} />
-          <div className="relative bg-white rounded-2xl p-5 w-full max-w-sm">
-            <h3 className="font-bold mb-3">Vyplatit na bankovní účet</h3>
-            <input
-              value={bankAccount}
-              onChange={(e) => setBankAccount(e.target.value)}
-              placeholder="Číslo účtu"
-              className="w-full border rounded-xl px-3 py-2 text-sm mb-2"
-            />
-            <input
-              type="number"
-              value={withdrawAmount}
-              onChange={(e) => setWithdrawAmount(Number(e.target.value))}
-              className="w-full border rounded-xl px-3 py-2 text-sm mb-3"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                withdrawToBank(withdrawAmount, bankAccount);
-                setWithdrawOpen(false);
-              }}
-              className="w-full py-2.5 bg-[#3D7A68] text-white rounded-xl text-sm font-semibold"
-            >
-              Odeslat převod
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -1137,31 +1015,5 @@ export function MunicipalityRoleView() {
         Otevřít Agendu
       </button>
     </div>
-  );
-}
-
-function FinancialCenter({ balance, credits, onTopUp, onWithdraw }) {
-  return (
-    <section className="pp-card p-4">
-      <h3 className="text-sm font-bold text-stone-800 mb-1">Podplot kredity</h3>
-      <p className="text-2xl font-bold text-[#1B4D3E] tabular-nums">{credits} Kč</p>
-      <p className="text-xs text-stone-500 mb-3">Peněženka: {balance} Kč</p>
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={onTopUp}
-          className="flex-1 py-2 bg-[#3D7A68] text-white rounded-xl text-xs font-semibold"
-        >
-          Dobít kredity
-        </button>
-        <button
-          type="button"
-          onClick={onWithdraw}
-          className="flex-1 py-2 border border-[#C5DDD4] rounded-xl text-xs font-semibold text-[#1B4D3E]"
-        >
-          Vyplatit na účet
-        </button>
-      </div>
-    </section>
   );
 }
