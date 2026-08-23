@@ -25,6 +25,7 @@ import {
 import { SKIP_REGISTRATION, ENABLE_DEV_ROLE_SWITCH } from "../data/devConfig.js";
 import PaymentModal from "./PaymentModal.jsx";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
+import AppPanelPortal from "./AppPanelPortal.jsx";
 import BusinessEntityManagement from "./entity/BusinessEntityManagement.jsx";
 import ServiceProfileEditor from "./entity/ServiceProfileEditor.jsx";
 import CraftsmanProfilePanel from "./CraftsmanProfilePanel.jsx";
@@ -287,162 +288,164 @@ export default function MyProfilesPanel({ embedded = false }) {
       )}
 
       {setupRole && (
-        <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <button
-            type="button"
-            className="absolute inset-0 bg-stone-900/40"
-            aria-label="Zavřít"
-            onClick={cancelSetup}
-          />
-          <div className="relative w-full max-w-md max-h-[92vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl border border-[#C5DDD4] bg-white p-4 space-y-3 shadow-xl">
-          <div>
-            <p className="text-sm font-semibold text-stone-900">
-              Nový profil: {setupRole.label}
-            </p>
-            <p className="text-[11px] text-stone-500 mt-1 leading-relaxed">
-              Stejné přihlášení jako{" "}
-              <span className="font-semibold text-stone-700">{user?.name}</span>
-              — vyplňte jen katalog a působnost.
-            </p>
-          </div>
-
-          {isMobilniSetup && (
-            <label className="block">
-              <span className="text-xs font-semibold text-stone-600">
-                Katalogové jméno
-              </span>
-              <input
-                type="text"
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
-                placeholder={`např. ${user?.name?.split(" ")[0] || "Jan"} — instalatér`}
-                className="w-full mt-1 px-3 py-2 border border-stone-200 rounded-xl text-sm bg-white"
-              />
-            </label>
-          )}
-
-          {!isMobilniSetup && (
-            <label className="block">
-              <span className="text-xs font-semibold text-stone-600">Název provozovny</span>
-              <input
-                type="text"
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
-                placeholder="např. Kavárna U Ráje"
-                className="w-full mt-1 px-3 py-2 border border-stone-200 rounded-xl text-sm bg-white"
-              />
-            </label>
-          )}
-
-          <StructuredAddressFields
-            street={street}
-            houseNumber={houseNumber}
-            psc={psc}
-            city={city}
-            onStreetChange={setStreet}
-            onHouseNumberChange={setHouseNumber}
-            onPscChange={setPsc}
-            onCityChange={setCity}
-            fieldErrors={addressErrors}
-            onClearError={(key) => setAddressErrors((prev) => ({ ...prev, [key]: "" }))}
-            legend={isMobilniSetup ? "Výchozí adresa / působnost" : "Adresa provozovny"}
-            privacyNote={ADDRESS_PRIVACY_NOTE_INLINE}
-          />
-
-          {isMobilniSetup && (
-            <>
-              <label className="block">
-                <span className="text-xs font-semibold text-stone-600">Popis služeb</span>
-                <textarea
-                  value={serviceDescription}
-                  onChange={(e) => setServiceDescription(e.target.value)}
-                  rows={3}
-                  placeholder="Čím se zabýváte, co nabízíte sousedům…"
-                  className="w-full mt-1 px-3 py-2 border border-stone-200 rounded-xl text-sm bg-white resize-none"
-                />
-              </label>
-
-              <div>
-                <p className="text-xs font-semibold text-stone-600 mb-1">Kapacita a dojezd</p>
-                <label className="flex items-center justify-between p-2.5 bg-stone-50 rounded-xl">
-                  <span className="text-sm font-medium">
-                    {acceptsOrders ? "Přijímám zakázky" : "Kapacita plná"}
-                  </span>
+        <AppPanelPortal>
+          <div className="pp-app-sheet-overlay" role="dialog" aria-label={`Nový profil: ${setupRole.label}`}>
+            <div className="absolute inset-0 pointer-events-auto">
+              <ModalDoodleBackdrop onClose={cancelSetup} />
+            </div>
+            <div className="pp-app-sheet pp-app-sheet--full flex flex-col overflow-hidden">
+              <div className="px-4 pt-4 pb-3 border-b border-stone-200 shrink-0">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-stone-900">
+                      Nový profil: {setupRole.label}
+                    </p>
+                    <p className="text-[11px] text-stone-500 mt-1 leading-relaxed">
+                      Stejné přihlášení jako{" "}
+                      <span className="font-semibold text-stone-700">{user?.name}</span>
+                      — vyplňte jen katalog a působnost.
+                    </p>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => setAcceptsOrders((v) => !v)}
-                    className="text-xs font-semibold text-[#3D7A68]"
+                    onClick={cancelSetup}
+                    className="text-stone-400 hover:text-stone-600 text-xl px-1 shrink-0"
+                    aria-label="Zavřít"
                   >
-                    Přepnout
+                    ✕
                   </button>
-                </label>
-                <label className="block mt-2">
-                  <span className="text-xs text-stone-500">
-                    Dojezd: {formatCraftsmanRadiusLabel(craftsmanRadius)}
-                  </span>
-                  <input
-                    type="range"
-                    min={CRAFTSMAN_RADIUS_MIN_KM}
-                    max={CRAFTSMAN_RADIUS_MAX_KM}
-                    value={Math.min(
-                      CRAFTSMAN_RADIUS_MAX_KM,
-                      Math.max(CRAFTSMAN_RADIUS_MIN_KM, craftsmanRadius)
-                    )}
-                    onChange={(e) => setCraftsmanRadiusLocal(Number(e.target.value))}
-                    className="w-full mt-1 accent-[#3D7A68]"
-                  />
-                </label>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <CraftCategoryPicker
-                  homeGroup={serviceHomeGroup}
-                  onHomeGroupChange={setServiceHomeGroup}
-                  primaryId={primarySubcategory}
-                  onPrimaryChange={setPrimarySubcategory}
-                  secondaryIds={secondarySubcategories}
-                  onSecondaryChange={setSecondarySubcategories}
-                />
+              <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-3">
                 <label className="block">
                   <span className="text-xs font-semibold text-stone-600">
-                    Klíčová slova (volitelně)
+                    {isMobilniSetup ? "Katalogové jméno" : "Název provozovny"}
                   </span>
                   <input
                     type="text"
-                    value={customKeywords}
-                    onChange={(e) => setCustomKeywords(e.target.value)}
-                    placeholder="např. bojler, sifon"
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    placeholder={
+                      isMobilniSetup
+                        ? `např. ${user?.name?.split(" ")[0] || "Jan"} — instalatér`
+                        : "např. Kavárna U Ráje"
+                    }
                     className="w-full mt-1 px-3 py-2 border border-stone-200 rounded-xl text-sm bg-white"
                   />
                 </label>
+
+                <StructuredAddressFields
+                  street={street}
+                  houseNumber={houseNumber}
+                  psc={psc}
+                  city={city}
+                  onStreetChange={setStreet}
+                  onHouseNumberChange={setHouseNumber}
+                  onPscChange={setPsc}
+                  onCityChange={setCity}
+                  fieldErrors={addressErrors}
+                  onClearError={(key) => setAddressErrors((prev) => ({ ...prev, [key]: "" }))}
+                  legend={isMobilniSetup ? "Výchozí adresa / působnost" : "Adresa provozovny"}
+                  privacyNote={ADDRESS_PRIVACY_NOTE_INLINE}
+                />
+
+                {isMobilniSetup ? (
+                  <>
+                    <label className="block">
+                      <span className="text-xs font-semibold text-stone-600">Popis služeb</span>
+                      <textarea
+                        value={serviceDescription}
+                        onChange={(e) => setServiceDescription(e.target.value)}
+                        rows={3}
+                        placeholder="Čím se zabýváte, co nabízíte sousedům…"
+                        className="w-full mt-1 px-3 py-2 border border-stone-200 rounded-xl text-sm bg-white resize-none"
+                      />
+                    </label>
+
+                    <div>
+                      <p className="text-xs font-semibold text-stone-600 mb-1">Kapacita a dojezd</p>
+                      <label className="flex items-center justify-between p-2.5 bg-stone-50 rounded-xl">
+                        <span className="text-sm font-medium">
+                          {acceptsOrders ? "Přijímám zakázky" : "Kapacita plná"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setAcceptsOrders((v) => !v)}
+                          className="text-xs font-semibold text-[#3D7A68]"
+                        >
+                          Přepnout
+                        </button>
+                      </label>
+                      <label className="block mt-2">
+                        <span className="text-xs text-stone-500">
+                          Dojezd: {formatCraftsmanRadiusLabel(craftsmanRadius)}
+                        </span>
+                        <input
+                          type="range"
+                          min={CRAFTSMAN_RADIUS_MIN_KM}
+                          max={CRAFTSMAN_RADIUS_MAX_KM}
+                          value={Math.min(
+                            CRAFTSMAN_RADIUS_MAX_KM,
+                            Math.max(CRAFTSMAN_RADIUS_MIN_KM, craftsmanRadius)
+                          )}
+                          onChange={(e) => setCraftsmanRadiusLocal(Number(e.target.value))}
+                          className="w-full mt-1 accent-[#3D7A68]"
+                        />
+                      </label>
+                    </div>
+
+                    <div className="space-y-2">
+                      <CraftCategoryPicker
+                        homeGroup={serviceHomeGroup}
+                        onHomeGroupChange={setServiceHomeGroup}
+                        primaryId={primarySubcategory}
+                        onPrimaryChange={setPrimarySubcategory}
+                        secondaryIds={secondarySubcategories}
+                        onSecondaryChange={setSecondarySubcategories}
+                      />
+                      <label className="block">
+                        <span className="text-xs font-semibold text-stone-600">
+                          Klíčová slova (volitelně)
+                        </span>
+                        <input
+                          type="text"
+                          value={customKeywords}
+                          onChange={(e) => setCustomKeywords(e.target.value)}
+                          placeholder="např. bojler, sifon"
+                          className="w-full mt-1 px-3 py-2 border border-stone-200 rounded-xl text-sm bg-white"
+                        />
+                      </label>
+                    </div>
+                  </>
+                ) : null}
+
+                {formError ? (
+                  <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+                    {formError}
+                  </p>
+                ) : null}
               </div>
-            </>
-          )}
 
-          {formError && (
-            <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
-              {formError}
-            </p>
-          )}
-
-          <div className="flex gap-2 pt-1">
-            <button
-              type="button"
-              onClick={cancelSetup}
-              className="flex-1 py-2.5 rounded-xl text-xs font-semibold border border-stone-200 text-stone-600 bg-white"
-            >
-              Zrušit
-            </button>
-            <button
-              type="button"
-              onClick={submitSetup}
-              className="flex-1 py-2.5 rounded-xl text-xs font-semibold text-white bg-[#3D7A68]"
-            >
-              Vytvořit profil
-            </button>
+              <div className="shrink-0 px-4 py-3 border-t border-stone-200 flex gap-2 bg-white">
+                <button
+                  type="button"
+                  onClick={cancelSetup}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-semibold border border-stone-200 text-stone-600 bg-white"
+                >
+                  Zrušit
+                </button>
+                <button
+                  type="button"
+                  onClick={submitSetup}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-semibold text-white bg-[#3D7A68]"
+                >
+                  Vytvořit profil
+                </button>
+              </div>
+            </div>
           </div>
-          </div>
-        </div>
+        </AppPanelPortal>
       )}
     </section>
   );
