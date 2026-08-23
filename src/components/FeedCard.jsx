@@ -242,7 +242,13 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
             )}
           </div>
         )}
-        {isGroupDiscussion && !isReported ? <GroupPostComments postId={post.id} /> : null}
+        {isGroupDiscussion && !isReported ? (
+          <GroupPostComments
+            postId={post.id}
+            postTitle={post.title}
+            groupName={post.groupName}
+          />
+        ) : null}
         {showTopButton && !isReported && (
           <div className="space-y-2 pt-1">
             <p className="text-[11px] text-stone-500">Posunout nahoru ve feedu:</p>
@@ -420,7 +426,11 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
 
       {isGroupDiscussion && !compact && !isReported ? (
         <div className="px-4 pb-3">
-          <GroupPostComments postId={post.id} />
+          <GroupPostComments
+            postId={post.id}
+            postTitle={post.title}
+            groupName={post.groupName}
+          />
         </div>
       ) : null}
 
