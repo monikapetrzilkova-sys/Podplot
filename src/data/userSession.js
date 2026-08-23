@@ -18,6 +18,8 @@ export function loadUserSession() {
       userProfileIds: Array.isArray(data.userProfileIds) ? data.userProfileIds : ["soused"],
       testRoleId: data.testRoleId ?? "soused",
       ownedService: data.ownedService ?? null,
+      /** Záloha registrované identity (jméno/e-mail) — nesmí ji přepsat demo role */
+      citizenProfile: data.citizenProfile ?? null,
       savedAt: data.savedAt ?? null,
     };
   } catch {
@@ -41,6 +43,7 @@ export function persistUserSession(session) {
         userProfileIds: session.userProfileIds ?? ["soused"],
         testRoleId: session.testRoleId ?? "soused",
         ownedService: session.ownedService ?? null,
+        citizenProfile: session.citizenProfile ?? null,
         savedAt: Date.now(),
       })
     );

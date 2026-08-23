@@ -3,6 +3,7 @@ import PersonLabel from "./PersonLabel.jsx";
 import { useApp } from "../context/AppContext.jsx";
 import { isSameAppUser, isCurrentUserRef, isSelfNeighborCandidate } from "../data/listingSales.js";
 import { getAccountType, ADDRESS_PRIVACY_NOTE, getPodnikatelSubtypeLabel, isBusinessAccount, getRegistrationFields, resolveBusinessSubtype } from "../data/accountTypes.js";
+import { isInjectedDemoPersona } from "../data/businessProfiles.js";
 import { getVerifiedLabel } from "../data/domainVerification.js";
 import { Avatar } from "./RoleBadge.jsx";
 import VerifiedBadge from "./VerifiedBadge.jsx";
@@ -262,6 +263,7 @@ export default function MyProfile({ registerLegalBack } = {}) {
     setCreateGroupModalOpen,
     openEditGroupProposal,
     openCreateGroupModal,
+    citizenProfile,
   } = useApp();
 
   const isOfficeProfile = testRoleId === "urad";
@@ -359,6 +361,14 @@ export default function MyProfile({ registerLegalBack } = {}) {
   }
 
   const acc = getAccountType(user.accountType);
+  const displayName =
+    (citizenProfile?.name && (testRoleId === "soused" || isInjectedDemoPersona(user))
+      ? citizenProfile.name
+      : null) || user.name;
+  const displayInitials =
+    (citizenProfile?.initials && (testRoleId === "soused" || isInjectedDemoPersona(user))
+      ? citizenProfile.initials
+      : null) || user.initials;
   const podnikatelSubtype = getPodnikatelSubtypeLabel(user);
   const registrationFields = getRegistrationFields(user.accountType, resolveBusinessSubtype(user));
   const myOffers = userLendingItems.filter((i) => i.mine);
@@ -502,7 +512,7 @@ export default function MyProfile({ registerLegalBack } = {}) {
                 : "Profilová fotka"
             }
           >
-            <Avatar initials={user.initials} roleId={acc.role} size="lg" photo={user.profilePhoto} />
+            <Avatar initials={displayInitials} roleId={acc.role} size="lg" photo={user.profilePhoto} />
             {unreadProfileBadgeCount > 0 && (
               <span className="absolute -top-1 -right-1 min-w-[1.15rem] h-[1.15rem] px-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center shadow-sm border-2 border-white">
                 {unreadProfileBadgeCount > 9 ? "9+" : unreadProfileBadgeCount}
@@ -511,7 +521,7 @@ export default function MyProfile({ registerLegalBack } = {}) {
           </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-lg font-bold text-stone-900">{user.name}</h2>
+              <h2 className="text-lg font-bold text-stone-900">{displayName}</h2>
               {user.isVerified && <VerifiedBadge accountType={user.accountType} />}
               {isBusinessAccount(user) && podnikatelSubtype && (
                 <span className="text-[10px] font-semibold text-[#3D7A68] bg-[#F1F6F5] px-2 py-0.5 rounded-lg">

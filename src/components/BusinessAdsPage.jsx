@@ -70,9 +70,14 @@ export default function BusinessAdsPage() {
   } = useApp();
 
   const isCraftsman = isMobilniWorkMode;
-  const persona = isCraftsman ? TEST_PERSONAS.remeslnik : TEST_PERSONAS.podnik;
+  const persona = isCraftsman ? null : TEST_PERSONAS.podnik;
   const businessName =
-    user?.name ?? ownedService?.name ?? persona?.businessName ?? persona?.name ?? "Profil";
+    ownedService?.name ??
+    user?.businessName ??
+    user?.name ??
+    persona?.businessName ??
+    persona?.name ??
+    "Profil";
 
   const [headline, setHeadline] = useState(businessName);
   const [tagline, setTagline] = useState(

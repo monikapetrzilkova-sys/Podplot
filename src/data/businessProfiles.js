@@ -43,6 +43,52 @@ export const TEST_PERSONAS = {
   },
 };
 
+/** Demo identity z přepínače rolí — nikdy nemá nahradit registrovaný účet. */
+export function isInjectedDemoPersona(user) {
+  if (!user?.id && !user?.name) return false;
+  const demoIds = new Set([TEST_PERSONAS.remeslnik.id, TEST_PERSONAS.podnik.id]);
+  if (demoIds.has(user.id)) return true;
+  if (user.name === TEST_PERSONAS.remeslnik.name) return true;
+  if (user.name === TEST_PERSONAS.podnik.name) return true;
+  return false;
+}
+
+/** Snapshot registrované identity (soused) pro obnovení po přepnutí rolí. */
+export function identitySnapshotFromUser(user) {
+  if (!user || isInjectedDemoPersona(user)) return null;
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    initials: user.initials,
+    address: user.address,
+    profilePhoto: user.profilePhoto ?? null,
+    isVerified: user.isVerified,
+    verifiedDomain: user.verifiedDomain ?? null,
+    geo: user.geo ?? null,
+    location: user.location ?? null,
+  };
+}
+
+export function mergeCitizenIdentity(user, citizenProfile) {
+  if (!user) return user;
+  if (!citizenProfile?.id || !citizenProfile?.name) return user;
+  if (!isInjectedDemoPersona(user) && user.id === citizenProfile.id) return user;
+  return {
+    ...user,
+    id: citizenProfile.id,
+    name: citizenProfile.name,
+    email: citizenProfile.email ?? user.email,
+    initials: citizenProfile.initials ?? user.initials,
+    address: citizenProfile.address ?? user.address,
+    profilePhoto: citizenProfile.profilePhoto ?? user.profilePhoto,
+    isVerified: citizenProfile.isVerified ?? user.isVerified,
+    verifiedDomain: citizenProfile.verifiedDomain ?? user.verifiedDomain,
+    geo: citizenProfile.geo ?? user.geo,
+    location: citizenProfile.location ?? user.location,
+  };
+}
+
 export const CRAFTSMAN_NEARBY_REQUESTS = [
   {
     id: "req1",

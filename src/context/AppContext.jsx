@@ -184,7 +184,13 @@ import {
   LUNCH_MENU_PUSH_PRICE,
   SERVICE_REQUEST_FREE_DELAY_MS,
 } from "../data/notificationPlans.js";
-import { TEST_PERSONAS, CRAFTSMAN_NEARBY_REQUESTS } from "../data/businessProfiles.js";
+import {
+  TEST_PERSONAS,
+  CRAFTSMAN_NEARBY_REQUESTS,
+  isInjectedDemoPersona,
+  identitySnapshotFromUser,
+  mergeCitizenIdentity,
+} from "../data/businessProfiles.js";
 import {
   SUGGESTION_STATUS,
   CLAIM_STATUS,
@@ -252,9 +258,23 @@ const INITIAL_SERVICE_ORDERS = [
 ];
 
 export function AppProvider({ children }) {
+  const [citizenProfile, setCitizenProfile] = useState(() => {
+    if (SKIP_REGISTRATION) return null;
+    const saved = loadUserSession();
+    if (saved?.citizenProfile?.id && saved?.citizenProfile?.name) return saved.citizenProfile;
+    if (saved?.user && !isInjectedDemoPersona(saved.user)) {
+      return identitySnapshotFromUser(saved.user);
+    }
+    return null;
+  });
   const [user, setUser] = useState(() => {
     if (SKIP_REGISTRATION) return getDevTestUser();
-    return loadUserSession()?.user ?? null;
+    const saved = loadUserSession();
+    let u = saved?.user ?? null;
+    if (u && isInjectedDemoPersona(u) && saved?.citizenProfile?.id) {
+      u = mergeCitizenIdentity(u, saved.citizenProfile);
+    }
+    return u;
   });
   const [credits, setCredits] = useState(() => {
     if (SKIP_REGISTRATION) return CURRENT_USER.credits;
@@ -536,8 +556,9 @@ export function AppProvider({ children }) {
       userProfileIds,
       testRoleId,
       ownedService,
+      citizenProfile,
     });
-  }, [user, locations, activeLocationId, credits, userProfileIds, testRoleId, servicesCatalog]);
+  }, [user, locations, activeLocationId, credits, userProfileIds, testRoleId, servicesCatalog, citizenProfile]);
 
   // Odstraní stock demo Práce/Chata u reálných účtů (starší session)
   useEffect(() => {
@@ -1731,6 +1752,9 @@ export function AppProvider({ children }) {
       };
       setUser(nextUser);
       void upsertRemoteProfile(nextUser);
+      if (!isInjectedDemoPersona(nextUser)) {
+        setCitizenProfile(identitySnapshotFromUser(nextUser));
+      }
       if (normalizedType === "urad") {
         setTestRoleId("urad");
         setUserProfileIds(["urad"]);
@@ -1845,6 +1869,12 @@ export function AppProvider({ children }) {
       });
 
       setUser(nextUser);
+      if (!isInjectedDemoPersona(nextUser)) {
+        setCitizenProfile((prev) => identitySnapshotFromUser(nextUser) || prev);
+      }
+      if (saved?.citizenProfile && !isInjectedDemoPersona(saved.citizenProfile)) {
+        setCitizenProfile((prev) => prev ?? saved.citizenProfile);
+      }
       if (saved?.user?.id === nextUser.id && Array.isArray(saved.locations) && saved.locations.length) {
         const cleaned = sanitizeUserLocations(
           saved.locations,
@@ -3061,12 +3091,25 @@ export function AppProvider({ children }) {
     if (!viewAsNeighbor) {
       if (user) workUserBackupRef.current = { ...user };
       setViewAsNeighbor(true);
-      setUser({
-        ...getDevTestUser(),
-        notificationPrefs: {
-          ...(user?.notificationPrefs ?? DEFAULT_NOTIFICATION_PREFS),
-        },
-      });
+      const neighborBase =
+        citizenProfile && !isInjectedDemoPersona(citizenProfile)
+          ? {
+              ...user,
+              ...citizenProfile,
+              accountType: "soused",
+              businessSubtype: null,
+              role: "soused",
+              notificationPrefs: {
+                ...(user?.notificationPrefs ?? DEFAULT_NOTIFICATION_PREFS),
+              },
+            }
+          : {
+              ...getDevTestUser(),
+              notificationPrefs: {
+                ...(user?.notificationPrefs ?? DEFAULT_NOTIFICATION_PREFS),
+              },
+            };
+      setUser(neighborBase);
       setActiveTab("home");
       showToast("Přepnuto na sousedský profil.", "info");
       return;
@@ -3082,7 +3125,7 @@ export function AppProvider({ children }) {
         : "Přepnuto na pracovní profil.",
       "info"
     );
-  }, [viewAsNeighbor, user, showToast, appUserRole]);
+  }, [viewAsNeighbor, user, citizenProfile, showToast, appUserRole]);
 
   const markPostUseful = useCallback(
     (postId) => {
@@ -3259,11 +3302,18 @@ export function AppProvider({ children }) {
       if (role.businessSubtype === "mobilni" && subIds.length === 0) {
         return { ok: false, error: "Vyberte alespoň jedno zaměření služby." };
       }
+      if (role.businessSubtype === "mobilni" && !businessName) {
+        return { ok: false, error: "Vyplňte katalogové jméno." };
+      }
       if (role.businessSubtype === "fyzicka" && !businessName) {
         return { ok: false, error: "Vyplňte název provozovny." };
       }
       if (!address) {
         return { ok: false, error: "Vyplňte výchozí adresu." };
+      }
+
+      if (!isInjectedDemoPersona(user)) {
+        setCitizenProfile((prev) => identitySnapshotFromUser(user) || prev);
       }
 
       setUserProfileIds((prev) => (prev.includes(roleId) ? prev : [...prev, roleId]));
@@ -3272,16 +3322,29 @@ export function AppProvider({ children }) {
       workUserBackupRef.current = null;
       setWorkDashboardTab("poptavky");
 
-      setUser((u) => ({
-        ...u,
-        accountType: role.accountType,
-        businessSubtype: role.businessSubtype ?? null,
-        role: role.role,
-        address,
-        ...(businessName ? { businessName } : {}),
-        institutionId: null,
-        institutionRole: null,
-      }));
+      const radiusKm =
+        payload.craftsmanRadius != null ? Number(payload.craftsmanRadius) : 15;
+      if (Number.isFinite(radiusKm) && radiusKm > 0) {
+        setCraftsmanRadiusState(radiusKm);
+      }
+      if (typeof payload.craftsmanAcceptsOrders === "boolean") {
+        setCraftsmanAcceptsOrders(payload.craftsmanAcceptsOrders);
+      }
+
+      setUser((u) => {
+        const restored = mergeCitizenIdentity(u, citizenProfile || identitySnapshotFromUser(u));
+        return {
+          ...restored,
+          accountType: role.accountType,
+          businessSubtype: role.businessSubtype ?? null,
+          role: role.role,
+          address,
+          businessName: businessName || restored.businessName || null,
+          institutionId: null,
+          institutionRole: null,
+          ico: null,
+        };
+      });
 
       if (role.businessSubtype === "mobilni") {
         const labelsJoined = formatServiceSubcategoryLabels(subIds);
@@ -3314,7 +3377,7 @@ export function AppProvider({ children }) {
               address: cityLabel,
               locationId: "domov",
               defaultAddress: address,
-              actionRadius: 15,
+              actionRadius: isNationwideRadius(radiusKm) ? 999 : radiusKm,
               isVerified: Boolean(user.isVerified),
               isPremium: false,
               kapacitaPlna: false,
@@ -3341,7 +3404,7 @@ export function AppProvider({ children }) {
       showToast(`Profil „${role.label}“ je připravený — stejné přihlášení, nová role.`, "success");
       return { ok: true };
     },
-    [user, showToast]
+    [user, citizenProfile, showToast]
   );
 
   const openOfficePromptCall = useCallback(() => {
@@ -3375,67 +3438,63 @@ export function AppProvider({ children }) {
         setUserProfileIds((prev) => (prev.includes(roleId) ? prev : [...prev, roleId]));
       }
 
-      if (ENABLE_DEV_ROLE_SWITCH) {
-        if (roleId === "soused") {
-          setUser(getDevTestUser());
-        } else {
-          const personaKey = role.personaKey ?? roleId;
-          const persona = TEST_PERSONAS[personaKey];
-          setUser((u) => ({
-            ...u,
-            id: persona?.id ?? u.id,
-            name: persona?.name ?? u.name,
-            initials: persona?.initials ?? u.initials,
-            accountType: role.accountType,
-            businessSubtype: role.businessSubtype ?? null,
-            role: role.role,
-            ico: persona?.ico ?? null,
-            isVerified: persona?.isVerified ?? u.isVerified,
-            verifiedDomain: persona?.verifiedDomain ?? persona?.allowedEmailDomain ?? null,
-            businessName: persona?.businessName ?? null,
-            institutionId: roleId === "urad" ? persona?.institutionId ?? persona?.id ?? null : null,
-            institutionRole: roleId === "urad" ? "admin" : null,
-          }));
-        }
-        if (roleId === "podnik" || role.businessSubtype === "fyzicka") {
-          const hours = TEST_PERSONAS.podnik?.hours;
-          if (hours) setBusinessHours(hours);
-          setBusinessIsOpen(true);
-        }
-        if (isMobilniTestRole(roleId)) {
-          setB2bInquiries(
-            CRAFTSMAN_NEARBY_REQUESTS.map((r) => ({
-              id: `bi-seed-${r.id}`,
-              type: "service_request",
-              title: r.title,
-              text: r.text,
-              author: r.author,
-              authorId: r.authorId,
-              time: r.time,
-              distanceKm: r.distanceKm,
-              categoryLabel: r.categoryLabel,
-              profession: r.profession,
-              read: false,
-              priority: "immediate",
-              visibleAt: Date.now(),
-            }))
-          );
-        } else if (roleId === "podnik" || roleId === "urad") {
-          setB2bInquiries([]);
-        }
-      } else {
-        setUser((u) => ({
-          ...u,
+      // Registrovanou identitu nikdy nepřepisujeme demo personou (Libor / U Javoru).
+      if (!isInjectedDemoPersona(user)) {
+        setCitizenProfile((prev) => identitySnapshotFromUser(user) || prev);
+      }
+
+      setUser((u) => {
+        const restored = mergeCitizenIdentity(u, citizenProfile || identitySnapshotFromUser(u));
+        return {
+          ...restored,
           accountType: role.accountType,
           businessSubtype: role.businessSubtype ?? null,
           role: role.role,
-          ...(roleId === "urad"
-            ? {}
+          // Demo IČO / instituce jen u úřadu v developer módu
+          ...(roleId === "urad" && ENABLE_DEV_ROLE_SWITCH
+            ? {
+                institutionId:
+                  TEST_PERSONAS.urad?.institutionId ?? TEST_PERSONAS.urad?.id ?? restored.institutionId,
+                institutionRole: "admin",
+                name: restored.name,
+              }
             : { institutionId: null, institutionRole: null }),
-        }));
-        if (roleId === "podnik" || role.businessSubtype === "fyzicka") {
-          setBusinessIsOpen(true);
+          // Vyčistit demo IČO z řemeslníka Libora
+          ...(restored.ico === TEST_PERSONAS.remeslnik.ico || restored.ico === TEST_PERSONAS.podnik.ico
+            ? { ico: null }
+            : {}),
+        };
+      });
+
+      if (roleId === "podnik" || role.businessSubtype === "fyzicka") {
+        if (ENABLE_DEV_ROLE_SWITCH) {
+          const hours = TEST_PERSONAS.podnik?.hours;
+          if (hours) setBusinessHours(hours);
         }
+        setBusinessIsOpen(true);
+      }
+
+      // Demo poptávky jen ve vývojovém přepínači — ne v ostré verzi
+      if (ENABLE_DEV_ROLE_SWITCH && isMobilniTestRole(roleId)) {
+        setB2bInquiries(
+          CRAFTSMAN_NEARBY_REQUESTS.map((r) => ({
+            id: `bi-seed-${r.id}`,
+            type: "service_request",
+            title: r.title,
+            text: r.text,
+            author: r.author,
+            authorId: r.authorId,
+            time: r.time,
+            distanceKm: r.distanceKm,
+            categoryLabel: r.categoryLabel,
+            profession: r.profession,
+            read: false,
+            priority: "immediate",
+            visibleAt: Date.now(),
+          }))
+        );
+      } else if (ENABLE_DEV_ROLE_SWITCH && (roleId === "podnik" || roleId === "urad")) {
+        setB2bInquiries([]);
       }
 
       if (roleId === "urad" || role.accountType === "urad" || role.accountType === "instituce") {
@@ -3447,7 +3506,7 @@ export function AppProvider({ children }) {
       }
       showToast(`Přepnuto: ${role.label}`, "info");
     },
-    [user, showToast]
+    [user, citizenProfile, showToast]
   );
 
   const acknowledgeNews = useCallback((id) => {
@@ -5521,20 +5580,48 @@ export function AppProvider({ children }) {
   );
 
   const updateAccountProfile = useCallback(
-    ({ name, email, address }) => {
-      setUser((u) =>
-        u
-          ? {
-              ...u,
-              ...(name != null ? { name: name.trim() } : {}),
-              ...(email != null ? { email: email.trim() } : {}),
-              ...(address != null ? { address: address.trim() } : {}),
-            }
-          : u
-      );
+    ({ name, email, address, businessName }) => {
+      setUser((u) => {
+        if (!u) return u;
+        const next = {
+          ...u,
+          ...(name != null ? { name: name.trim() } : {}),
+          ...(email != null ? { email: email.trim() } : {}),
+          ...(address != null ? { address: address.trim() } : {}),
+          ...(businessName != null ? { businessName: businessName.trim() } : {}),
+        };
+        if (!isInjectedDemoPersona(next) && (u.accountType === "soused" || !u.businessSubtype)) {
+          setCitizenProfile(identitySnapshotFromUser(next));
+        } else if (!isInjectedDemoPersona(next) && name != null) {
+          setCitizenProfile((prev) =>
+            prev
+              ? { ...prev, name: next.name, initials: next.initials ?? prev.initials }
+              : identitySnapshotFromUser(next)
+          );
+        }
+        return next;
+      });
+      if (businessName != null) {
+        setServicesCatalog((prev) =>
+          prev.map((s) =>
+            s.id === "svc-mine" || (user?.id && s.ownerUserId === user.id)
+              ? { ...s, name: businessName.trim() || s.name }
+              : s
+          )
+        );
+      }
+      if (address != null) {
+        setServicesCatalog((prev) =>
+          prev.map((s) =>
+            s.id === "svc-mine" || (user?.id && s.ownerUserId === user.id)
+              ? { ...s, defaultAddress: address.trim() || s.defaultAddress }
+              : s
+          )
+        );
+      }
       showToast("Údaje profilu uloženy.", "success");
     },
-    [showToast]
+    [showToast, user?.id]
   );
 
   const resolveLocationCoords = useCallback(
@@ -6778,6 +6865,7 @@ export function AppProvider({ children }) {
         testRoleId,
         switchTestRole,
         userProfileIds,
+        citizenProfile,
         addUserProfile,
         setupAdditionalProfile,
         openOfficePromptCall,

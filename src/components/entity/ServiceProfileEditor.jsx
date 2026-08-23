@@ -3,7 +3,7 @@ import { useApp } from "../../context/AppContext.jsx";
 import { canWriteServiceReview } from "../../data/serviceReviews.js";
 import ServiceReviewList from "./ServiceReviewList.jsx";
 
-export default function ServiceProfileEditor({ service }) {
+export default function ServiceProfileEditor({ service, showReviews = true }) {
   const { updateServiceDescription, user } = useApp();
   const [description, setDescription] = useState(service.serviceDescription ?? "");
 
@@ -37,15 +37,17 @@ export default function ServiceProfileEditor({ service }) {
         </button>
       </section>
 
-      <section className="bg-white border border-stone-200 rounded-2xl p-4">
-        <h3 className="text-sm font-bold text-stone-800 mb-2">
-          {canWriteServiceReview(user, service) ? "Reference / Recenze" : "Obdržené recenze"}
-        </h3>
-        {!canWriteServiceReview(user, service) && (
-          <p className="text-xs text-stone-500 mb-2">Recenze od ověřených sousedů — nelze psát sám sobě.</p>
-        )}
-        <ServiceReviewList serviceId={service.id} showComposer={canWriteServiceReview(user, service)} />
-      </section>
+      {showReviews && (
+        <section className="bg-white border border-stone-200 rounded-2xl p-4">
+          <h3 className="text-sm font-bold text-stone-800 mb-2">
+            {canWriteServiceReview(user, service) ? "Reference / Recenze" : "Obdržené recenze"}
+          </h3>
+          {!canWriteServiceReview(user, service) && (
+            <p className="text-xs text-stone-500 mb-2">Recenze od ověřených sousedů — nelze psát sám sobě.</p>
+          )}
+          <ServiceReviewList serviceId={service.id} showComposer={canWriteServiceReview(user, service)} />
+        </section>
+      )}
     </div>
   );
 }

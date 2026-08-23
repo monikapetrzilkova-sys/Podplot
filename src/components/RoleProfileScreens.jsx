@@ -23,6 +23,7 @@ import PaymentModal from "./PaymentModal.jsx";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
 import BusinessEntityManagement from "./entity/BusinessEntityManagement.jsx";
 import ServiceProfileEditor from "./entity/ServiceProfileEditor.jsx";
+import CraftsmanProfilePanel from "./CraftsmanProfilePanel.jsx";
 import { IconMapPin } from "../data/icons.jsx";
 import AccountTypeIcon from "./AccountTypeIcon.jsx";
 import {
@@ -125,6 +126,8 @@ export default function MyProfilesPanel() {
   const [serviceHomeGroup, setServiceHomeGroup] = useState("domov-zahrada");
   const [serviceSubcategories, setServiceSubcategories] = useState([]);
   const [customKeywords, setCustomKeywords] = useState("");
+  const [craftsmanRadius, setCraftsmanRadiusLocal] = useState(15);
+  const [acceptsOrders, setAcceptsOrders] = useState(true);
   const [formError, setFormError] = useState("");
 
   // Při zkoušce ukazuj všechny osobní typy hned (nemusíš nejdřív „přidávat“)
@@ -152,6 +155,8 @@ export default function MyProfilesPanel() {
     setServiceHomeGroup("domov-zahrada");
     setServiceSubcategories([]);
     setCustomKeywords("");
+    setCraftsmanRadiusLocal(15);
+    setAcceptsOrders(true);
     setFormError("");
   };
 
@@ -163,6 +168,8 @@ export default function MyProfilesPanel() {
     setServiceHomeGroup("domov-zahrada");
     setServiceSubcategories([]);
     setCustomKeywords("");
+    setCraftsmanRadiusLocal(15);
+    setAcceptsOrders(true);
     setFormError("");
     setAdding(false);
   };
@@ -195,6 +202,8 @@ export default function MyProfilesPanel() {
       serviceHomeGroup,
       serviceSubcategories,
       serviceKeywords: keywords,
+      craftsmanRadius,
+      craftsmanAcceptsOrders: acceptsOrders,
     });
     if (!result?.ok) {
       setFormError(result?.error || "Nepodařilo se vytvořit profil.");
@@ -225,22 +234,29 @@ export default function MyProfilesPanel() {
       </div>
 
       {setupRole && (
-        <div className="mt-3 rounded-xl border border-[#C5DDD4] bg-[#F7FAF9] p-3 space-y-3">
+        <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-stone-900/40"
+            aria-label="Zavřít"
+            onClick={cancelSetup}
+          />
+          <div className="relative w-full max-w-md max-h-[92vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl border border-[#C5DDD4] bg-white p-4 space-y-3 shadow-xl">
           <div>
             <p className="text-sm font-semibold text-stone-900">
               Nový profil: {setupRole.label}
             </p>
             <p className="text-[11px] text-stone-500 mt-1 leading-relaxed">
-              Nemusíte zadávat znovu jméno ani heslo — zůstanete přihlášeni jako{" "}
+              Stejné přihlášení jako{" "}
               <span className="font-semibold text-stone-700">{user?.name}</span>
-              {user?.email ? ` (${user.email})` : ""}. Nastavte jen to, co je pro tuto roli nové.
+              — vyplňte jen katalog a působnost.
             </p>
           </div>
 
           {isMobilniSetup && (
             <label className="block">
               <span className="text-xs font-semibold text-stone-600">
-                Veřejný název služby (volitelně)
+                Katalogové jméno
               </span>
               <input
                 type="text"
@@ -250,7 +266,7 @@ export default function MyProfilesPanel() {
                 className="w-full mt-1 px-3 py-2 border border-stone-200 rounded-xl text-sm bg-white"
               />
               <span className="block text-[10px] text-stone-400 mt-1">
-                Pokud nevyplníte, použije se vaše jméno z účtu.
+                Takto vás uvidí sousedé v katalogu služeb.
               </span>
             </label>
           )}
@@ -296,6 +312,38 @@ export default function MyProfilesPanel() {
                   className="w-full mt-1 px-3 py-2 border border-stone-200 rounded-xl text-sm bg-white resize-none"
                 />
               </label>
+
+              <div>
+                <p className="text-xs font-semibold text-stone-600 mb-1">Kapacita a dojezd</p>
+                <label className="flex items-center justify-between p-2.5 bg-stone-50 rounded-xl">
+                  <span className="text-sm font-medium">
+                    {acceptsOrders ? "Přijímám zakázky" : "Kapacita plná"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setAcceptsOrders((v) => !v)}
+                    className="text-xs font-semibold text-[#3D7A68]"
+                  >
+                    Přepnout
+                  </button>
+                </label>
+                <label className="block mt-2">
+                  <span className="text-xs text-stone-500">
+                    Dojezd: {formatCraftsmanRadiusLabel(craftsmanRadius)}
+                  </span>
+                  <input
+                    type="range"
+                    min={CRAFTSMAN_RADIUS_MIN_KM}
+                    max={CRAFTSMAN_RADIUS_MAX_KM}
+                    value={Math.min(
+                      CRAFTSMAN_RADIUS_MAX_KM,
+                      Math.max(CRAFTSMAN_RADIUS_MIN_KM, craftsmanRadius)
+                    )}
+                    onChange={(e) => setCraftsmanRadiusLocal(Number(e.target.value))}
+                    className="w-full mt-1 accent-[#3D7A68]"
+                  />
+                </label>
+              </div>
 
               <div className="space-y-2">
                 <div>
@@ -383,7 +431,7 @@ export default function MyProfilesPanel() {
             </p>
           )}
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 pt-1">
             <button
               type="button"
               onClick={cancelSetup}
@@ -398,6 +446,7 @@ export default function MyProfilesPanel() {
             >
               Vytvořit profil
             </button>
+          </div>
           </div>
         </div>
       )}
@@ -868,10 +917,7 @@ export function CraftsmanRoleView() {
     credits,
     addCredits,
     withdrawToBank,
-    ownedService,
     craftsmanInvoices,
-    setActiveTab,
-    closeProfile,
   } = useApp();
   const [topUpOpen, setTopUpOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
@@ -880,33 +926,7 @@ export function CraftsmanRoleView() {
 
   return (
     <div className="space-y-4">
-      <section className="rounded-2xl border border-[#C5DDD4] bg-[#F7FAF9] p-4">
-        <h3 className="text-sm font-bold text-stone-900">Řemeslnický účet</h3>
-        <p className="text-[11px] text-stone-500 mt-1">
-          Banner, topování katalogu a push poptávek najdete na záložce Propagace.
-        </p>
-        <button
-          type="button"
-          onClick={() => {
-            closeProfile();
-            setActiveTab("ads");
-          }}
-          className="mt-3 w-full py-2 rounded-xl text-xs font-semibold border border-[#C5DDD4] text-[#1B4D3E] bg-[#E8F0ED]"
-        >
-          Otevřít Propagaci
-        </button>
-      </section>
-      <CraftsmanAccountSettings />
-      {ownedService && (
-        <section className="bg-white border border-stone-200 rounded-2xl p-4">
-          <h3 className="text-sm font-bold mb-2">Katalogový profil</h3>
-          <p className="text-xs text-stone-500 mb-3">
-            Služby a ceník patří sem — ne do sousedského feedu.
-          </p>
-          <ServiceProfileEditor service={ownedService} />
-        </section>
-      )}
-      <CraftsmanCapacitySettings />
+      <CraftsmanProfilePanel />
       <CraftsmanOrdersSection />
       {craftsmanInvoices?.length > 0 && (
         <section className="bg-white border border-stone-200 rounded-2xl p-4">

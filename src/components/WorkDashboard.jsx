@@ -2,7 +2,6 @@ import { useApp } from "../context/AppContext.jsx";
 import { isMobilniTestRole } from "../data/userRoles.js";
 import { resolveBusinessSubtype } from "../data/accountTypes.js";
 import { MessageButton } from "./MessagesPage.jsx";
-import { TEST_PERSONAS } from "../data/businessProfiles.js";
 import {
   formatCraftsmanRadiusLabel,
   isNationwideRadius,
@@ -69,7 +68,6 @@ function InquiryRow({ item, onMarkRead, onExpressInterest }) {
 /** Pracovní záložka řemeslníka — jen feed poptávek (správa a přepínač role jsou v Profilu) */
 export default function WorkDashboard() {
   const {
-    appUserRole,
     testRoleId,
     user,
     b2bInquiries,
@@ -83,20 +81,16 @@ export default function WorkDashboard() {
   const isMobilni =
     isMobilniTestRole(testRoleId) || resolveBusinessSubtype(user) === "mobilni";
 
-  const persona = isMobilni
-    ? TEST_PERSONAS.remeslnik
-    : appUserRole === "OFFICE"
-      ? TEST_PERSONAS.urad
-      : TEST_PERSONAS.podnik;
-
   const unreadInquiries = b2bInquiries.filter((i) => !i.read).length;
   const pushActive = businessNotificationPrefs?.serviceRequestPushEnabled;
+  const catalogLabel = ownedService?.name || user?.businessName || null;
 
   return (
     <div className="flex flex-col min-h-full pp-page">
       <div className="px-4 pt-4 pb-1">
         <p className="text-xs text-stone-500">
-          {persona.businessName}
+          Poptávky
+          {catalogLabel ? ` · ${catalogLabel}` : ""}
           {unreadInquiries > 0 ? ` · ${unreadInquiries} nepřečtených` : ""}
         </p>
       </div>
