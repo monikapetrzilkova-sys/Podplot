@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import CatalogGrid, { CATALOG_TILES } from "./CatalogGrid.jsx";
 import ServicesList from "../modules/ServicesList.jsx";
 import CompactSearchToggle from "./CompactSearchToggle.jsx";
 import SectionBackButton from "./SectionBackButton.jsx";
 import { CATALOG_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
+import { useKeepSearchAboveKeyboard } from "../hooks/useKeepSearchAboveKeyboard.js";
 
 /** Zpět + aktivní kategorie + malé ikony ostatních — celá šířka lišty */
 function CatalogCategorySwitch({ activeId, onSelect, onBack }) {
@@ -61,6 +62,7 @@ export default function CatalogPage() {
   const [homeSub, setHomeSub] = useState(null);
   const [catalogSearch, setCatalogSearch] = useState("");
   const [searchExpanded, setSearchExpanded] = useState(false);
+  const searchAnchorRef = useRef(null);
 
   useEffect(() => {
     setHomeSub(null);
@@ -69,6 +71,7 @@ export default function CatalogPage() {
   }, [catalogRootKey]);
 
   const searchActive = searchExpanded || Boolean(catalogSearch.trim());
+  useKeepSearchAboveKeyboard(searchAnchorRef, searchActive);
 
   const goBackToHub = () => {
     setHomeSub(null);
@@ -76,54 +79,75 @@ export default function CatalogPage() {
     setSearchExpanded(false);
   };
 
+  const searchField = (
+    <div ref={searchAnchorRef} className="pp-catalog-search-anchor shrink-0">
+      <CompactSearchToggle
+        value={catalogSearch}
+        onChange={setCatalogSearch}
+        expanded={searchExpanded || Boolean(catalogSearch.trim())}
+        onExpandedChange={setSearchExpanded}
+        placeholder={
+          homeSub
+            ? "Hledat v kategorii… např. catering"
+            : "Hledat ve službách… např. catering"
+        }
+        ariaLabel="Hledat ve službách"
+        className="w-full"
+      />
+    </div>
+  );
+
   if (homeSub) {
     return (
-      <div className="pp-page pp-page--doodle flex flex-col min-h-full bg-abstract-organic has-deco">
-        <div className="tab-header-container px-3 pt-2 pb-0 shrink-0 w-full">
-          <CatalogCategorySwitch
-            activeId={homeSub}
-            onSelect={setHomeSub}
-            onBack={goBackToHub}
-          />
-        </div>
+      <div className="pp-page pp-page--doodle pp-catalog-page flex flex-col min-h-full bg-abstract-organic has-deco">
+        {!searchActive ? (
+          <div className="tab-header-container px-3 pt-2 pb-0 shrink-0 w-full">
+            <CatalogCategorySwitch
+              activeId={homeSub}
+              onSelect={setHomeSub}
+              onBack={goBackToHub}
+            />
+          </div>
+        ) : (
+          <div className="px-3 pt-2 pb-0 shrink-0 w-full flex items-center gap-2">
+            <SectionBackButton
+              onClick={() => {
+                setCatalogSearch("");
+                setSearchExpanded(false);
+              }}
+              ariaLabel="Zavřít hledání"
+            />
+            <p className="text-[11px] font-semibold text-[#1B4D3E] truncate">
+              Hledání v kategorii
+            </p>
+          </div>
+        )}
         <div className="flex-1 min-h-0 flex flex-col px-3 pb-8 pt-2 gap-2">
-          <CompactSearchToggle
-            value={catalogSearch}
-            onChange={setCatalogSearch}
-            expanded={searchExpanded || Boolean(catalogSearch.trim())}
-            onExpandedChange={setSearchExpanded}
-            placeholder="Hledat ve službách…"
-            ariaLabel="Hledat ve službách"
-            className="w-full"
-          />
-          <ServicesList searchQuery={catalogSearch} homeSubCategory={homeSub} />
+          {searchField}
+          <div data-catalog-search-results className="pp-catalog-search-results min-w-0">
+            <ServicesList searchQuery={catalogSearch} homeSubCategory={homeSub} />
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="pp-page pp-page--doodle flex flex-col min-h-full bg-abstract-organic has-deco">
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-6">
-        <CatalogGrid activeId={null} onSelect={setHomeSub} large />
-
-        <div className="mt-3 flex items-center gap-2">
-          <CompactSearchToggle
-            value={catalogSearch}
-            onChange={setCatalogSearch}
-            expanded={searchExpanded || Boolean(catalogSearch.trim())}
-            onExpandedChange={setSearchExpanded}
-            placeholder="Hledat ve službách…"
-            ariaLabel="Hledat ve službách"
-            className="w-full"
-          />
-        </div>
-
+    <div className="pp-page pp-page--doodle pp-catalog-page flex flex-col min-h-full bg-abstract-organic has-deco">
+      <div className="flex-1 min-h-0 px-4 pt-4 pb-6">
         {searchActive ? (
-          <div className="mt-3">
-            <ServicesList searchQuery={catalogSearch} homeSubCategory={null} />
+          <div className="flex flex-col gap-3">
+            {searchField}
+            <div data-catalog-search-results className="pp-catalog-search-results">
+              <ServicesList searchQuery={catalogSearch} homeSubCategory={null} />
+            </div>
           </div>
-        ) : null}
+        ) : (
+          <>
+            <CatalogGrid activeId={null} onSelect={setHomeSub} large />
+            <div className="mt-3 flex items-center gap-2">{searchField}</div>
+          </>
+        )}
       </div>
     </div>
   );

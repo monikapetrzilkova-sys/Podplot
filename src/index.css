@@ -932,6 +932,18 @@ body,
   margin: 8px 0;
 }
 
+.pp-catalog-search-anchor {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding-bottom: 2px;
+  background: linear-gradient(180deg, #f7faf8 70%, rgba(247, 250, 248, 0));
+}
+
+.pp-catalog-search-results {
+  min-height: 0;
+}
+
 .pp-page--doodle {
   --abstract-deco-opacity: 0.06;
 }
