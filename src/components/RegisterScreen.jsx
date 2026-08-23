@@ -50,7 +50,7 @@ export default function RegisterScreen() {
   const [accountType, setAccountType] = useState("soused");
   const [businessSubtype, setBusinessSubtype] = useState("fyzicka");
   const [serviceHomeGroup, setServiceHomeGroup] = useState("domov-zahrada");
-  const [serviceSubcategories, setServiceSubcategories] = useState(["instalater"]);
+  const [serviceSubcategories, setServiceSubcategories] = useState([]);
   const [customKeywords, setCustomKeywords] = useState("");
   const [emailError, setEmailError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});

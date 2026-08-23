@@ -101,7 +101,7 @@ import {
 } from "../data/ecosystemMock.js";
 import { inferLendingMeta } from "../data/lendingCategories.js";
 import { lendingCategoryToMarket } from "../data/marketCategories.js";
-import { SKIP_REGISTRATION, getDevTestUser } from "../data/devConfig.js";
+import { SKIP_REGISTRATION, ENABLE_DEV_ROLE_SWITCH, getDevTestUser } from "../data/devConfig.js";
 import {
   loadUserSession,
   persistUserSession,
@@ -3234,6 +3234,116 @@ export function AppProvider({ children }) {
     setUserProfileIds((prev) => (prev.includes(roleId) ? prev : [...prev, roleId]));
   }, []);
 
+  /** Přidání dalšího profilu ke stávajícímu účtu — bez nového jména/hesla. */
+  const setupAdditionalProfile = useCallback(
+    (roleId, payload = {}) => {
+      const role = getTestRole(roleId);
+      if (!role || !user || roleId === "urad") return { ok: false, error: "Neplatný profil." };
+
+      const address =
+        typeof payload.address === "string" && payload.address.trim()
+          ? payload.address.trim()
+          : user.address ?? "";
+      const businessName =
+        typeof payload.businessName === "string" && payload.businessName.trim()
+          ? payload.businessName.trim()
+          : null;
+      const serviceDescription =
+        typeof payload.serviceDescription === "string" ? payload.serviceDescription.trim() : "";
+      const subIds = [
+        ...new Set((Array.isArray(payload.serviceSubcategories) ? payload.serviceSubcategories : []).filter(Boolean)),
+      ];
+      const homeGroup = payload.serviceHomeGroup || "domov-zahrada";
+      const customKw = Array.isArray(payload.serviceKeywords) ? payload.serviceKeywords : [];
+
+      if (role.businessSubtype === "mobilni" && subIds.length === 0) {
+        return { ok: false, error: "Vyberte alespoň jedno zaměření služby." };
+      }
+      if (role.businessSubtype === "fyzicka" && !businessName) {
+        return { ok: false, error: "Vyplňte název provozovny." };
+      }
+      if (!address) {
+        return { ok: false, error: "Vyplňte výchozí adresu." };
+      }
+
+      setUserProfileIds((prev) => (prev.includes(roleId) ? prev : [...prev, roleId]));
+      setTestRoleId(roleId);
+      setViewAsNeighbor(false);
+      workUserBackupRef.current = null;
+      setWorkDashboardTab("poptavky");
+
+      setUser((u) => ({
+        ...u,
+        accountType: role.accountType,
+        businessSubtype: role.businessSubtype ?? null,
+        role: role.role,
+        address,
+        ...(businessName ? { businessName } : {}),
+        institutionId: null,
+        institutionRole: null,
+      }));
+
+      if (role.businessSubtype === "mobilni") {
+        const labelsJoined = formatServiceSubcategoryLabels(subIds);
+        const catLabels = subIds.map((id) => getServiceCategory(id)?.label).filter(Boolean);
+        const keywords = [...catLabels, ...customKw]
+          .map((k) => String(k).trim())
+          .filter(Boolean);
+        const uniqueKw = [...new Set(keywords.map((k) => k.toLowerCase()))].map(
+          (k) => keywords.find((x) => x.toLowerCase() === k) ?? k
+        );
+        const displayName = businessName || user.name;
+        const cityLabel =
+          user.geo?.city ||
+          user.location ||
+          address.split(",").map((p) => p.trim()).filter(Boolean).slice(-1)[0] ||
+          address;
+        const userId = user.id;
+        setServicesCatalog((prev) => {
+          const withoutMine = prev.filter((s) => s.ownerUserId !== userId && s.id !== "svc-mine");
+          return [
+            {
+              id: "svc-mine",
+              name: displayName,
+              profession: labelsJoined || "Služba",
+              keywords: uniqueKw,
+              subcategory: subIds[0] || "ostatni",
+              subcategories: subIds.length ? subIds : ["ostatni"],
+              subcategoryLabel: labelsJoined || "Ostatní služby",
+              homeGroupId: homeGroup,
+              address: cityLabel,
+              locationId: "domov",
+              defaultAddress: address,
+              actionRadius: 15,
+              isVerified: Boolean(user.isVerified),
+              isPremium: false,
+              kapacitaPlna: false,
+              distanceKm: 0.1,
+              rating: null,
+              serviceDescription,
+              ownerUserId: userId,
+              reviews: [],
+              ico: true,
+              accountType: "podnik",
+              businessSubtype: "mobilni",
+              pushPoptavkyEnabled: false,
+            },
+            ...withoutMine,
+          ];
+        });
+      } else if (role.businessSubtype === "fyzicka") {
+        const hours = TEST_PERSONAS.podnik?.hours;
+        if (hours) setBusinessHours(hours);
+        setBusinessIsOpen(true);
+      }
+
+      setActiveTab("home");
+      showToast(`Profil „${role.label}“ je připravený — stejné přihlášení, nová role.`, "success");
+      return { ok: true };
+    },
+    [user, showToast]
+  );
+
   const openOfficePromptCall = useCallback(() => {
     setPendingOfficeAction("call");
     setActiveTab("reports");
@@ -3264,62 +3374,76 @@ export function AppProvider({ children }) {
       if (roleId !== "urad" && role.accountType !== "urad" && role.accountType !== "instituce") {
         setUserProfileIds((prev) => (prev.includes(roleId) ? prev : [...prev, roleId]));
       }
-      if (roleId === "soused") {
-        // Soused nemá B2B personu — vždy obnovit výchozí testovací profil (jméno, adresa, …)
-        setUser(getDevTestUser());
+
+      if (ENABLE_DEV_ROLE_SWITCH) {
+        if (roleId === "soused") {
+          setUser(getDevTestUser());
+        } else {
+          const personaKey = role.personaKey ?? roleId;
+          const persona = TEST_PERSONAS[personaKey];
+          setUser((u) => ({
+            ...u,
+            id: persona?.id ?? u.id,
+            name: persona?.name ?? u.name,
+            initials: persona?.initials ?? u.initials,
+            accountType: role.accountType,
+            businessSubtype: role.businessSubtype ?? null,
+            role: role.role,
+            ico: persona?.ico ?? null,
+            isVerified: persona?.isVerified ?? u.isVerified,
+            verifiedDomain: persona?.verifiedDomain ?? persona?.allowedEmailDomain ?? null,
+            businessName: persona?.businessName ?? null,
+            institutionId: roleId === "urad" ? persona?.institutionId ?? persona?.id ?? null : null,
+            institutionRole: roleId === "urad" ? "admin" : null,
+          }));
+        }
+        if (roleId === "podnik" || role.businessSubtype === "fyzicka") {
+          const hours = TEST_PERSONAS.podnik?.hours;
+          if (hours) setBusinessHours(hours);
+          setBusinessIsOpen(true);
+        }
+        if (isMobilniTestRole(roleId)) {
+          setB2bInquiries(
+            CRAFTSMAN_NEARBY_REQUESTS.map((r) => ({
+              id: `bi-seed-${r.id}`,
+              type: "service_request",
+              title: r.title,
+              text: r.text,
+              author: r.author,
+              authorId: r.authorId,
+              time: r.time,
+              distanceKm: r.distanceKm,
+              categoryLabel: r.categoryLabel,
+              profession: r.profession,
+              read: false,
+              priority: "immediate",
+              visibleAt: Date.now(),
+            }))
+          );
+        } else if (roleId === "podnik" || roleId === "urad") {
+          setB2bInquiries([]);
+        }
       } else {
-        const personaKey = role.personaKey ?? roleId;
-        const persona = TEST_PERSONAS[personaKey];
         setUser((u) => ({
           ...u,
-          id: persona?.id ?? u.id,
-          name: persona?.name ?? u.name,
-          initials: persona?.initials ?? u.initials,
           accountType: role.accountType,
           businessSubtype: role.businessSubtype ?? null,
           role: role.role,
-          ico: persona?.ico ?? null,
-          isVerified: persona?.isVerified ?? u.isVerified,
-          verifiedDomain: persona?.verifiedDomain ?? persona?.allowedEmailDomain ?? null,
-          businessName: persona?.businessName ?? null,
-          institutionId: roleId === "urad" ? persona?.institutionId ?? persona?.id ?? null : null,
-          institutionRole: roleId === "urad" ? "admin" : null,
+          ...(roleId === "urad"
+            ? {}
+            : { institutionId: null, institutionRole: null }),
         }));
+        if (roleId === "podnik" || role.businessSubtype === "fyzicka") {
+          setBusinessIsOpen(true);
+        }
       }
+
       if (roleId === "urad" || role.accountType === "urad" || role.accountType === "instituce") {
         setActiveTab("reports");
         setProfileOpen(false);
         setMessagesOpen(false);
-      } else if (roleId === "soused") {
-        setActiveTab("home");
       } else {
         setActiveTab("home");
-      }
-      if (roleId === "podnik" || role.businessSubtype === "fyzicka") {
-        const hours = TEST_PERSONAS.podnik?.hours;
-        if (hours) setBusinessHours(hours);
-        setBusinessIsOpen(true);
-      }
-      if (isMobilniTestRole(roleId)) {
-        setB2bInquiries(
-          CRAFTSMAN_NEARBY_REQUESTS.map((r) => ({
-            id: `bi-seed-${r.id}`,
-            type: "service_request",
-            title: r.title,
-            text: r.text,
-            author: r.author,
-            authorId: r.authorId,
-            time: r.time,
-            distanceKm: r.distanceKm,
-            categoryLabel: r.categoryLabel,
-            profession: r.profession,
-            read: false,
-            priority: "immediate",
-            visibleAt: Date.now(),
-          }))
-        );
-      } else if (roleId === "podnik" || roleId === "urad") {
-        setB2bInquiries([]);
       }
       showToast(`Přepnuto: ${role.label}`, "info");
     },
@@ -6026,12 +6150,16 @@ export function AppProvider({ children }) {
   const ownedService = useMemo(() => {
     if (!user) return null;
     const uid = user.id ?? "me";
-    return (
+    const mine =
       servicesCatalog.find((s) => s.ownerUserId === uid) ??
       servicesCatalog.find((s) => s.id === "svc-mine") ??
-      (testRoleId === "remeslnik" ? servicesCatalog.find((s) => s.id === "svc1") : null) ??
-      null
-    );
+      null;
+    if (mine) return mine;
+    // Demo katalog (Tomáš/Libor) jen ve vývojovém přepínači rolí
+    if (ENABLE_DEV_ROLE_SWITCH && testRoleId === "remeslnik") {
+      return servicesCatalog.find((s) => s.id === "svc1") ?? null;
+    }
+    return null;
   }, [user, servicesCatalog, testRoleId]);
 
   const saveBusinessHours = useCallback(
@@ -6651,6 +6779,7 @@ export function AppProvider({ children }) {
         switchTestRole,
         userProfileIds,
         addUserProfile,
+        setupAdditionalProfile,
         openOfficePromptCall,
         openOfficeAnnouncementComposer,
         openOfficeCrisisComposer,

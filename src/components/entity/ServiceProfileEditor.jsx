@@ -18,7 +18,7 @@ export default function ServiceProfileEditor({ service }) {
       <section className="bg-white border border-stone-200 rounded-2xl p-4">
         <h3 className="text-sm font-bold text-stone-800 mb-1">Popis služeb</h3>
         <p className="text-xs text-stone-500 mb-2">
-          {service.name} · spravujte portfolio a zaměření
+          Krátce popište, co nabízíte — text uvidí sousedé v katalogu.
         </p>
         <textarea
           value={description}

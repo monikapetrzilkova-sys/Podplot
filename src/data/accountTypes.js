@@ -17,7 +17,7 @@ export const BUSINESS_SUBTYPES = {
     shortLabel: "Mobilní služba",
     hint: "Bez stálé provozovny — jezdíte za zákazníky, definujete oblast působnosti.",
     nameLabel: "Jméno nebo název služby",
-    namePlaceholder: "Tomáš Kovář — instalatér",
+    namePlaceholder: "např. Jan Novák — instalatér",
     addressLabel: "Výchozí adresa / působnost",
     addressPlaceholder: "např. Vaše ulice, obec",
   },
