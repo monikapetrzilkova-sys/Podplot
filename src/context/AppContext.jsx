@@ -1649,6 +1649,7 @@ export function AppProvider({ children }) {
       serviceHomeGroup = null,
       serviceSubcategory = null,
       serviceSubcategories = null,
+      primarySubcategory = null,
       serviceKeywords = [],
       institutionId = null,
       institutionRole = null,
@@ -1734,7 +1735,13 @@ export function AppProvider({ children }) {
               ),
             ]
           : [];
-      const primarySub = subIds[0] ?? null;
+      const primarySub =
+        (resolvedSubtype === "mobilni" && (primarySubcategory || serviceSubcategory)) ||
+        subIds[0] ||
+        null;
+      if (primarySub && subIds[0] !== primarySub) {
+        subIds.splice(0, subIds.length, primarySub, ...subIds.filter((id) => id !== primarySub));
+      }
       const labelsJoined = formatServiceSubcategoryLabels(subIds);
 
       let nextLat = geo?.lat ?? null;
@@ -1788,6 +1795,7 @@ export function AppProvider({ children }) {
         notificationPrefs: { ...DEFAULT_NOTIFICATION_PREFS },
         serviceHomeGroup: resolvedSubtype === "mobilni" ? serviceHomeGroup : null,
         serviceSubcategory: primarySub,
+        primarySubcategory: resolvedSubtype === "mobilni" ? primarySub : null,
         serviceSubcategories: resolvedSubtype === "mobilni" ? subIds : [],
         serviceKeywords: resolvedSubtype === "mobilni" ? serviceKeywords : [],
         institutionId: normalizedType === "urad" ? institutionId : null,
@@ -1850,6 +1858,7 @@ export function AppProvider({ children }) {
               profession: labelsJoined || "Služba",
               keywords: uniqueKw,
               subcategory: primarySub || "ostatni",
+              primarySubcategory: primarySub || "ostatni",
               subcategories: subIds.length ? subIds : ["ostatni"],
               subcategoryLabel: labelsJoined || "Ostatní služby",
               homeGroupId: homeGroup,
@@ -3393,11 +3402,15 @@ export function AppProvider({ children }) {
       const subIds = [
         ...new Set((Array.isArray(payload.serviceSubcategories) ? payload.serviceSubcategories : []).filter(Boolean)),
       ];
+      const primarySub = payload.primarySubcategory || subIds[0] || null;
+      if (primarySub && subIds[0] !== primarySub) {
+        subIds.splice(0, subIds.length, primarySub, ...subIds.filter((id) => id !== primarySub));
+      }
       const homeGroup = payload.serviceHomeGroup || "domov-zahrada";
       const customKw = Array.isArray(payload.serviceKeywords) ? payload.serviceKeywords : [];
 
-      if (role.businessSubtype === "mobilni" && subIds.length === 0) {
-        return { ok: false, error: "Vyberte alespoň jedno zaměření služby." };
+      if (role.businessSubtype === "mobilni" && !primarySub) {
+        return { ok: false, error: "Vyberte hlavní zaměření služby." };
       }
       if (role.businessSubtype === "mobilni" && !businessName) {
         return { ok: false, error: "Vyplňte katalogové jméno." };
@@ -3440,6 +3453,15 @@ export function AppProvider({ children }) {
           institutionId: null,
           institutionRole: null,
           ico: null,
+          ...(role.businessSubtype === "mobilni"
+            ? {
+                serviceHomeGroup: homeGroup,
+                serviceSubcategory: primarySub,
+                primarySubcategory: primarySub,
+                serviceSubcategories: subIds,
+                serviceKeywords: customKw,
+              }
+            : {}),
         };
       });
 
@@ -3467,7 +3489,8 @@ export function AppProvider({ children }) {
               name: displayName,
               profession: labelsJoined || "Služba",
               keywords: uniqueKw,
-              subcategory: subIds[0] || "ostatni",
+              subcategory: primarySub || "ostatni",
+              primarySubcategory: primarySub || "ostatni",
               subcategories: subIds.length ? subIds : ["ostatni"],
               subcategoryLabel: labelsJoined || "Ostatní služby",
               homeGroupId: homeGroup,
@@ -4875,18 +4898,30 @@ export function AppProvider({ children }) {
   }, [showToast]);
 
   const updateServiceFocus = useCallback(
-    ({ serviceId, homeGroupId, subcategory, subcategories = null, keywords = [] }) => {
+    ({
+      serviceId,
+      homeGroupId,
+      subcategory,
+      primarySubcategory = null,
+      subcategories = null,
+      keywords = [],
+    }) => {
+      const requestedPrimary = primarySubcategory || subcategory || null;
+      const rawSubs =
+        Array.isArray(subcategories) && subcategories.length
+          ? subcategories
+          : requestedPrimary
+            ? [requestedPrimary]
+            : [];
       const subIds = [
         ...new Set(
-          (Array.isArray(subcategories) && subcategories.length
-            ? subcategories
-            : subcategory
-              ? [subcategory]
-              : []
+          (requestedPrimary
+            ? [requestedPrimary, ...rawSubs.filter((id) => id !== requestedPrimary)]
+            : rawSubs
           ).filter(Boolean)
         ),
       ];
-      const primary = subIds[0];
+      const primary = requestedPrimary || subIds[0] || null;
       const labelsJoined = formatServiceSubcategoryLabels(subIds);
       const catLabels = subIds.map((id) => getServiceCategory(id)?.label).filter(Boolean);
       const kw = [...catLabels, ...(Array.isArray(keywords) ? keywords : [])]
@@ -4902,6 +4937,7 @@ export function AppProvider({ children }) {
                 ...s,
                 homeGroupId: homeGroupId || s.homeGroupId,
                 subcategory: primary || s.subcategory,
+                primarySubcategory: primary || s.primarySubcategory || s.subcategory,
                 subcategories: subIds.length ? subIds : s.subcategories ?? [s.subcategory].filter(Boolean),
                 subcategoryLabel: labelsJoined || s.subcategoryLabel,
                 profession: labelsJoined || s.profession,
@@ -4916,6 +4952,7 @@ export function AppProvider({ children }) {
               ...u,
               serviceHomeGroup: homeGroupId ?? u.serviceHomeGroup,
               serviceSubcategory: primary ?? u.serviceSubcategory,
+              primarySubcategory: primary ?? u.primarySubcategory,
               serviceSubcategories: subIds.length ? subIds : u.serviceSubcategories,
               serviceKeywords: unique,
             }

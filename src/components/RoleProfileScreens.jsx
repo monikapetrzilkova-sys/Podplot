@@ -12,10 +12,9 @@ import {
   isNationwideRadius,
 } from "../data/craftsmanSettings.js";
 import {
-  HOME_SERVICE_SUB_FILTERS,
-  getSubcategoriesForHomeGroup,
-  getServiceSubcategoryIds,
-  formatServiceSubcategoryLabels,
+  getPrimaryServiceSubcategoryId,
+  getSecondaryServiceSubcategoryIds,
+  buildServiceSubcategoryList,
   getServiceCategory,
 } from "../data/serviceCategories.js";
 import { SKIP_REGISTRATION, ENABLE_DEV_ROLE_SWITCH } from "../data/devConfig.js";
@@ -24,13 +23,9 @@ import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
 import BusinessEntityManagement from "./entity/BusinessEntityManagement.jsx";
 import ServiceProfileEditor from "./entity/ServiceProfileEditor.jsx";
 import CraftsmanProfilePanel from "./CraftsmanProfilePanel.jsx";
+import CraftCategoryPicker from "./CraftCategoryPicker.jsx";
 import { IconMapPin } from "../data/icons.jsx";
 import AccountTypeIcon from "./AccountTypeIcon.jsx";
-import {
-  CATALOG_DOODLE_ICONS,
-  DoodleCheckIcon,
-  SERVICE_CATEGORY_DOODLE_ICONS,
-} from "./doodle/doodleIcons.jsx";
 
 /** Osobní profily uživatele — bez institucionálních účtů (úřad). */
 const PERSONAL_ROLE_IDS = ["soused", "podnik", "remeslnik"];
@@ -105,7 +100,8 @@ export default function MyProfilesPanel({ embedded = false }) {
   const [businessName, setBusinessName] = useState("");
   const [serviceDescription, setServiceDescription] = useState("");
   const [serviceHomeGroup, setServiceHomeGroup] = useState("domov-zahrada");
-  const [serviceSubcategories, setServiceSubcategories] = useState([]);
+  const [primarySubcategory, setPrimarySubcategory] = useState(null);
+  const [secondarySubcategories, setSecondarySubcategories] = useState([]);
   const [customKeywords, setCustomKeywords] = useState("");
   const [craftsmanRadius, setCraftsmanRadiusLocal] = useState(15);
   const [acceptsOrders, setAcceptsOrders] = useState(true);
@@ -125,7 +121,10 @@ export default function MyProfilesPanel({ embedded = false }) {
 
   const setupRole = setupRoleId ? TEST_ROLES.find((r) => r.id === setupRoleId) : null;
   const isMobilniSetup = setupRole?.businessSubtype === "mobilni";
-  const craftSubs = getSubcategoriesForHomeGroup(serviceHomeGroup);
+  const serviceSubcategories = buildServiceSubcategoryList(
+    primarySubcategory,
+    secondarySubcategories
+  );
 
   const resetSetupForm = () => {
     setSetupRoleId(null);
@@ -133,7 +132,8 @@ export default function MyProfilesPanel({ embedded = false }) {
     setBusinessName("");
     setServiceDescription("");
     setServiceHomeGroup("domov-zahrada");
-    setServiceSubcategories([]);
+    setPrimarySubcategory(null);
+    setSecondarySubcategories([]);
     setCustomKeywords("");
     setCraftsmanRadiusLocal(15);
     setAcceptsOrders(true);
@@ -146,7 +146,8 @@ export default function MyProfilesPanel({ embedded = false }) {
     setBusinessName("");
     setServiceDescription("");
     setServiceHomeGroup("domov-zahrada");
-    setServiceSubcategories([]);
+    setPrimarySubcategory(null);
+    setSecondarySubcategories([]);
     setCustomKeywords("");
     setCraftsmanRadiusLocal(15);
     setAcceptsOrders(true);
@@ -159,18 +160,12 @@ export default function MyProfilesPanel({ embedded = false }) {
     setAdding(false);
   };
 
-  const toggleSubcategory = (id) => {
-    setServiceSubcategories((prev) => {
-      if (prev.includes(id)) {
-        if (prev.length <= 1) return prev;
-        return prev.filter((x) => x !== id);
-      }
-      return [...prev, id];
-    });
-  };
-
   const submitSetup = () => {
     setFormError("");
+    if (isMobilniSetup && !primarySubcategory) {
+      setFormError("Vyberte hlavní zaměření služby.");
+      return;
+    }
     const keywords = customKeywords
       .split(",")
       .map((k) => k.trim())
@@ -181,6 +176,7 @@ export default function MyProfilesPanel({ embedded = false }) {
       serviceDescription,
       serviceHomeGroup,
       serviceSubcategories,
+      primarySubcategory,
       serviceKeywords: keywords,
       craftsmanRadius,
       craftsmanAcceptsOrders: acceptsOrders,
@@ -366,64 +362,14 @@ export default function MyProfilesPanel({ embedded = false }) {
               </div>
 
               <div className="space-y-2">
-                <div>
-                  <p className="text-xs font-semibold text-stone-600 mb-1">Hlavní kategorie</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {HOME_SERVICE_SUB_FILTERS.map((g) => {
-                      const GroupIcon = CATALOG_DOODLE_ICONS[g.id] ?? CATALOG_DOODLE_ICONS.ostatni;
-                      return (
-                        <button
-                          key={g.id}
-                          type="button"
-                          onClick={() => {
-                            setServiceHomeGroup(g.id);
-                            setServiceSubcategories([]);
-                          }}
-                          className={`px-2.5 py-2 rounded-xl border text-xs font-semibold inline-flex items-center justify-center gap-1.5 ${
-                            serviceHomeGroup === g.id
-                              ? "border-[#3D7A68] bg-white text-[#1B4D3E]"
-                              : "border-stone-200 bg-white text-stone-600"
-                          }`}
-                        >
-                          <GroupIcon className="w-4 h-4 shrink-0" />
-                          {g.shortLabel ?? g.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-stone-600 mb-1">
-                    Zařazení do oboru
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {craftSubs.map((c) => {
-                      const selected = serviceSubcategories.includes(c.id);
-                      const CatIcon =
-                        SERVICE_CATEGORY_DOODLE_ICONS[c.id] ?? SERVICE_CATEGORY_DOODLE_ICONS.ostatni;
-                      return (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onClick={() => toggleSubcategory(c.id)}
-                          aria-pressed={selected}
-                          className={`px-2.5 py-1.5 rounded-full border text-[11px] font-semibold inline-flex items-center gap-1 ${
-                            selected
-                              ? "border-[#3D7A68] bg-[#E8F3EF] text-[#1B4D3E]"
-                              : "border-stone-200 bg-white text-stone-600"
-                          }`}
-                        >
-                          {selected ? (
-                            <DoodleCheckIcon className="w-3.5 h-3.5 shrink-0" />
-                          ) : (
-                            <CatIcon className="w-3.5 h-3.5 shrink-0" />
-                          )}
-                          {c.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                <CraftCategoryPicker
+                  homeGroup={serviceHomeGroup}
+                  onHomeGroupChange={setServiceHomeGroup}
+                  primaryId={primarySubcategory}
+                  onPrimaryChange={setPrimarySubcategory}
+                  secondaryIds={secondarySubcategories}
+                  onSecondaryChange={setSecondarySubcategories}
+                />
                 <label className="block">
                   <span className="text-xs font-semibold text-stone-600">
                     Klíčová slova (volitelně)
@@ -543,8 +489,11 @@ export function CraftsmanCapacitySettings() {
   const [homeGroup, setHomeGroup] = useState(
     ownedService?.homeGroupId ?? "domov-zahrada"
   );
-  const [subcategories, setSubcategories] = useState(() =>
-    getServiceSubcategoryIds(ownedService)
+  const [primarySubcategory, setPrimarySubcategory] = useState(() =>
+    getPrimaryServiceSubcategoryId(ownedService)
+  );
+  const [secondarySubcategories, setSecondarySubcategories] = useState(() =>
+    getSecondaryServiceSubcategoryIds(ownedService)
   );
   const [keywordsText, setKeywordsText] = useState(
     (ownedService?.keywords ?? []).join(", ")
@@ -553,15 +502,25 @@ export function CraftsmanCapacitySettings() {
   useEffect(() => {
     if (!ownedService) return;
     setHomeGroup(ownedService.homeGroupId ?? "domov-zahrada");
-    const ids = getServiceSubcategoryIds(ownedService);
-    setSubcategories(ids);
+    const primary = getPrimaryServiceSubcategoryId(ownedService);
+    const secondary = getSecondaryServiceSubcategoryIds(ownedService);
+    setPrimarySubcategory(primary);
+    setSecondarySubcategories(secondary);
+    const ids = buildServiceSubcategoryList(primary, secondary);
     const autoLabels = new Set(
       ids.map((id) => getServiceCategory(id)?.label).filter(Boolean)
     );
     setKeywordsText(
       (ownedService.keywords ?? []).filter((k) => !autoLabels.has(k)).join(", ")
     );
-  }, [ownedService?.id, ownedService?.homeGroupId, ownedService?.subcategory, ownedService?.subcategories, ownedService?.keywords]);
+  }, [
+    ownedService?.id,
+    ownedService?.homeGroupId,
+    ownedService?.subcategory,
+    ownedService?.subcategories,
+    ownedService?.primarySubcategory,
+    ownedService?.keywords,
+  ]);
 
   const nationwide = isNationwideRadius(craftsmanRadius);
   const sliderValue = nationwide
@@ -570,17 +529,7 @@ export function CraftsmanCapacitySettings() {
         CRAFTSMAN_RADIUS_MAX_KM,
         Math.max(CRAFTSMAN_RADIUS_MIN_KM, Number(craftsmanRadius) || CRAFTSMAN_RADIUS_MIN_KM)
       );
-  const craftSubs = getSubcategoriesForHomeGroup(homeGroup);
-
-  const toggleSubcategory = (id) => {
-    setSubcategories((prev) => {
-      if (prev.includes(id)) {
-        if (prev.length <= 1) return prev;
-        return prev.filter((x) => x !== id);
-      }
-      return [...prev, id];
-    });
-  };
+  const subcategories = buildServiceSubcategoryList(primarySubcategory, secondarySubcategories);
 
   return (
     <section className="bg-white border border-stone-200 rounded-2xl p-4 space-y-4">
@@ -645,61 +594,16 @@ export function CraftsmanCapacitySettings() {
         <div className="pt-3 border-t border-stone-100 space-y-3">
           <h3 className="text-sm font-bold">Obor a klíčová slova</h3>
           <p className="text-xs text-stone-500">
-            Můžete zvolit více zaměření (např. elektrikář i truhlář). Kategorie Domov / Péče / Děti /
-            Ostatní slouží k výběru a párování poptávek.
+            Hlavní zaměření určuje ikonu v katalogu. Vedlejší obory pomáhají při párování poptávek.
           </p>
-          <div className="grid grid-cols-2 gap-2">
-            {HOME_SERVICE_SUB_FILTERS.map((g) => {
-              const GroupIcon = CATALOG_DOODLE_ICONS[g.id] ?? CATALOG_DOODLE_ICONS.ostatni;
-              return (
-                <button
-                  key={g.id}
-                  type="button"
-                  onClick={() => setHomeGroup(g.id)}
-                  className={`px-2.5 py-2 rounded-xl border text-xs font-semibold inline-flex items-center justify-center gap-1.5 ${
-                    homeGroup === g.id
-                      ? "border-[#3D7A68] bg-[#F1F6F5] text-[#1B4D3E]"
-                      : "border-stone-200 text-stone-600"
-                  }`}
-                >
-                  <GroupIcon className="w-4 h-4 shrink-0" />
-                  {g.shortLabel ?? g.label}
-                </button>
-              );
-            })}
-          </div>
-          <div>
-            <p className="text-[11px] font-semibold text-stone-500 mb-1.5">
-              Zaměření (více možností)
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {craftSubs.map((c) => {
-                const selected = subcategories.includes(c.id);
-                const CatIcon = SERVICE_CATEGORY_DOODLE_ICONS[c.id] ?? SERVICE_CATEGORY_DOODLE_ICONS.ostatni;
-                return (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => toggleSubcategory(c.id)}
-                    aria-pressed={selected}
-                    className={`px-2.5 py-1.5 rounded-full border text-[11px] font-semibold inline-flex items-center gap-1 ${
-                      selected
-                        ? "border-[#3D7A68] bg-[#E8F3EF] text-[#1B4D3E]"
-                        : "border-stone-200 text-stone-600"
-                    }`}
-                  >
-                    {selected ? <DoodleCheckIcon className="w-3.5 h-3.5 shrink-0" /> : <CatIcon className="w-3.5 h-3.5 shrink-0" />}
-                    {c.label}
-                  </button>
-                );
-              })}
-            </div>
-            {subcategories.length > 0 && (
-              <p className="text-[10px] text-[#3D7A68] mt-1.5">
-                Vybráno: {formatServiceSubcategoryLabels(subcategories)}
-              </p>
-            )}
-          </div>
+          <CraftCategoryPicker
+            homeGroup={homeGroup}
+            onHomeGroupChange={setHomeGroup}
+            primaryId={primarySubcategory}
+            onPrimaryChange={setPrimarySubcategory}
+            secondaryIds={secondarySubcategories}
+            onSecondaryChange={setSecondarySubcategories}
+          />
           <input
             type="text"
             value={keywordsText}
@@ -709,7 +613,7 @@ export function CraftsmanCapacitySettings() {
           />
           <button
             type="button"
-            disabled={subcategories.length === 0}
+            disabled={!primarySubcategory}
             onClick={() => {
               const selectedLabels = new Set(
                 subcategories.map((id) => getServiceCategory(id)?.label).filter(Boolean)
@@ -722,8 +626,9 @@ export function CraftsmanCapacitySettings() {
               updateServiceFocus({
                 serviceId: ownedService.id,
                 homeGroupId: homeGroup,
+                primarySubcategory,
                 subcategories,
-                subcategory: subcategories[0],
+                subcategory: primarySubcategory,
                 keywords: custom,
               });
             }}

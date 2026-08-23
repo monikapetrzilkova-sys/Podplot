@@ -3,38 +3,32 @@
 import { useApp } from "../context/AppContext.jsx";
 
 import {
-
   SERVICE_PARENT_CATEGORIES,
-
   getServicePlaceholder,
-
   serviceMatchesParentCategory,
-
   serviceMatchesSearch,
-
+  formatServiceBadgeLabel,
+  getPrimaryServiceSubcategoryId,
 } from "../data/serviceCategories.js";
-
 import { getServiceReachLabel } from "../utils/serviceReach.js";
-
 import { calcEscrowFee } from "../data/monetization.js";
-
 import { canWriteServiceReview } from "../data/serviceReviews.js";
-
 import SearchField from "../components/SearchField.jsx";
-
 import CategoryPills from "../components/CategoryPills.jsx";
-
 import LiveFeedCard from "../components/LiveFeedCard.jsx";
 import { MessageButton } from "../components/MessagesPage.jsx";
 import ReportUserButton from "../components/ReportUserButton.jsx";
 import ServiceReviewList from "../components/entity/ServiceReviewList.jsx";
-import { DoodleCapacityFullIcon } from "../components/doodle/doodleIcons.jsx";
+import { DoodleCapacityFullIcon, SERVICE_CATEGORY_DOODLE_ICONS } from "../components/doodle/doodleIcons.jsx";
 
 const CAPACITY_FULL_TITLE = "Nepřijímá zakázky · plná kapacita";
 
-function serviceBadge(svc) {
-  const raw = svc.profession ?? svc.subcategoryLabel ?? "Služba";
-  return String(raw).toUpperCase().slice(0, 12);
+function serviceStamp(svc) {
+  const subId = getPrimaryServiceSubcategoryId(svc);
+  return {
+    badge: formatServiceBadgeLabel(svc),
+    BadgeIcon: (subId && SERVICE_CATEGORY_DOODLE_ICONS[subId]) || SERVICE_CATEGORY_DOODLE_ICONS.ostatni,
+  };
 }
 
 function ServiceRow({ svc }) {
@@ -42,6 +36,7 @@ function ServiceRow({ svc }) {
   const shortName = svc.name.split("—")[0].trim();
   const profession = svc.profession ?? svc.subcategoryLabel;
   const reach = getServiceReachLabel(svc);
+  const stamp = serviceStamp(svc);
   const previewParts = [
     profession && profession !== shortName ? profession : null,
     svc.kapacitaPlna ? "Nepřijímá zakázky" : "Volná kapacita",
@@ -54,8 +49,10 @@ function ServiceRow({ svc }) {
   return (
     <LiveFeedCard
       itemId={`catalog-mod-${svc.id}`}
-      badge={serviceBadge(svc)}
+      badge={stamp.badge}
       badgeClassName={svc.isPremium ? "pp-badge--tip" : ""}
+      badgeTone="default"
+      BadgeIcon={stamp.BadgeIcon}
       title={shortName}
       preview={previewParts.join(" · ")}
       priceLabel={svc.rating ? `★ ${svc.rating}` : null}

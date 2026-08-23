@@ -150,11 +150,52 @@ export function getServiceSubcategoryIds(svc) {
   return [];
 }
 
+/** Hlavní zaměření — určuje ikonu v katalogu */
+export function getPrimaryServiceSubcategoryId(svc) {
+  if (!svc) return null;
+  if (svc.primarySubcategory) return svc.primarySubcategory;
+  return getServiceSubcategoryIds(svc)[0] || null;
+}
+
+/** Vedlejší zaměření (bez hlavního) */
+export function getSecondaryServiceSubcategoryIds(svc) {
+  const primary = getPrimaryServiceSubcategoryId(svc);
+  return getServiceSubcategoryIds(svc).filter((id) => id !== primary);
+}
+
+/** Sestaví seznam [hlavní, …vedlejší] pro uložení */
+export function buildServiceSubcategoryList(primaryId, secondaryIds = []) {
+  const primary = primaryId || null;
+  const rest = [
+    ...new Set((Array.isArray(secondaryIds) ? secondaryIds : []).filter((id) => id && id !== primary)),
+  ];
+  return primary ? [primary, ...rest] : rest;
+}
+
 export function formatServiceSubcategoryLabels(ids = []) {
   return ids
     .map((id) => getServiceCategory(id)?.label)
     .filter(Boolean)
     .join(" · ");
+}
+
+/** Štítek kategorie u příspěvku služby — podle hlavního zaměření. */
+export function formatServiceBadgeLabel(svc) {
+  if (!svc) return "Služba";
+  const primaryId = getPrimaryServiceSubcategoryId(svc);
+  const primaryLabel = primaryId ? getServiceCategory(primaryId)?.label : null;
+  if (primaryLabel) {
+    return primaryLabel.length > 18 ? `${primaryLabel.slice(0, 17)}…` : primaryLabel;
+  }
+  const fromSubs = formatServiceSubcategoryLabels(getServiceSubcategoryIds(svc));
+  if (fromSubs) {
+    const first = fromSubs.split(" · ")[0];
+    return first.length > 18 ? `${first.slice(0, 17)}…` : first;
+  }
+  const raw = svc.profession ?? svc.subcategoryLabel ?? svc.categoryLabel ?? "Služba";
+  const label = String(raw).trim();
+  if (!label) return "Služba";
+  return label.length > 18 ? `${label.slice(0, 17)}…` : label;
 }
 
 export function serviceHasSubcategory(svc, categoryId) {

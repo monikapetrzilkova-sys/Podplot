@@ -14,13 +14,12 @@ import {
 } from "../data/addressValidation.js";
 import { PUBLIC_AREA_LABEL_HINT } from "../data/personDisplay.js";
 import {
-  HOME_SERVICE_SUB_FILTERS,
-  getSubcategoriesForHomeGroup,
-  formatServiceSubcategoryLabels,
+  buildServiceSubcategoryList,
 } from "../data/serviceCategories.js";
 import { useApp } from "../context/AppContext.jsx";
 import AccountTypeIcon from "./AccountTypeIcon.jsx";
-import { BUSINESS_SUBTYPE_DOODLE_ICONS, CATALOG_DOODLE_ICONS, DoodleCheckIcon, DoodleSousedIcon, SERVICE_CATEGORY_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
+import { BUSINESS_SUBTYPE_DOODLE_ICONS, DoodleSousedIcon } from "./doodle/doodleIcons.jsx";
+import CraftCategoryPicker from "./CraftCategoryPicker.jsx";
 import InstitutionAutocomplete from "./InstitutionAutocomplete.jsx";
 import {
   verifyWorkEmailForInstitution,
@@ -53,7 +52,8 @@ export default function RegisterScreen() {
   const [accountType, setAccountType] = useState("soused");
   const [businessSubtype, setBusinessSubtype] = useState("fyzicka");
   const [serviceHomeGroup, setServiceHomeGroup] = useState("domov-zahrada");
-  const [serviceSubcategories, setServiceSubcategories] = useState([]);
+  const [primarySubcategory, setPrimarySubcategory] = useState(null);
+  const [secondarySubcategories, setSecondarySubcategories] = useState([]);
   const [customKeywords, setCustomKeywords] = useState("");
   const [emailError, setEmailError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
@@ -69,9 +69,9 @@ export default function RegisterScreen() {
   const registrationFields = getRegistrationFields(accountType, businessSubtype);
   const isMobilniCraft = accountType === "podnik" && businessSubtype === "mobilni";
   const isUrad = accountType === "urad" || accountType === "instituce";
-  const craftSubcategories = useMemo(
-    () => getSubcategoriesForHomeGroup(serviceHomeGroup),
-    [serviceHomeGroup]
+  const serviceSubcategories = buildServiceSubcategoryList(
+    primarySubcategory,
+    secondarySubcategories
   );
   const verification = useMemo(
     () => verifyEmailDomain(email, accountType),
@@ -196,8 +196,8 @@ export default function RegisterScreen() {
       return;
     }
 
-    if (accountType === "podnik" && businessSubtype === "mobilni" && serviceSubcategories.length === 0) {
-      setSubmitError("Vyberte alespoň jedno zaměření služby.");
+    if (accountType === "podnik" && businessSubtype === "mobilni" && !primarySubcategory) {
+      setSubmitError("Vyberte hlavní zaměření služby.");
       return;
     }
 
@@ -243,8 +243,9 @@ export default function RegisterScreen() {
         allowPublicAreaLabel,
         publicAreaLabel: allowPublicAreaLabel ? publicAreaLabel.trim() : "",
         serviceHomeGroup: isMobilniCraft ? serviceHomeGroup : null,
-        serviceSubcategory: isMobilniCraft ? serviceSubcategories[0] : null,
+        serviceSubcategory: isMobilniCraft ? primarySubcategory : null,
         serviceSubcategories: isMobilniCraft ? serviceSubcategories : null,
+        primarySubcategory: isMobilniCraft ? primarySubcategory : null,
         serviceKeywords: isMobilniCraft ? keywordList : [],
         institutionId: isUrad ? selectedInstitution?.id ?? null : null,
         institutionRole: isUrad ? "admin" : null,
@@ -834,76 +835,14 @@ export default function RegisterScreen() {
 
             {isMobilniCraft && (
               <div className="space-y-3 rounded-2xl border border-[#C5DDD4] bg-[#F7FAF9] p-3">
-                <div>
-                  <label className="block text-xs font-semibold text-stone-600 mb-1.5">
-                    Hlavní kategorie služeb
-                  </label>
-                  <p className="text-[11px] text-stone-500 mb-2 leading-relaxed">
-                    Můžete zvolit více zaměření (např. elektrikář a truhlář). Podle nich a klíčových
-                    slov vám budeme párovat poptávky v dojezdu.
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {HOME_SERVICE_SUB_FILTERS.map((g) => {
-                      const GroupIcon = CATALOG_DOODLE_ICONS[g.id] ?? CATALOG_DOODLE_ICONS.ostatni;
-                      return (
-                        <button
-                          key={g.id}
-                          type="button"
-                          onClick={() => setServiceHomeGroup(g.id)}
-                          className={`px-2.5 py-2 rounded-xl border text-xs font-semibold inline-flex items-center justify-center gap-1.5 ${
-                            serviceHomeGroup === g.id
-                              ? "border-[#3D7A68] bg-white text-[#1B4D3E]"
-                              : "border-stone-200 bg-white text-stone-600"
-                          }`}
-                        >
-                          <GroupIcon className="w-4 h-4 shrink-0" />
-                          {g.shortLabel ?? g.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-stone-600 mb-1.5">
-                    Zaměření (více možností)
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {craftSubcategories.map((c) => {
-                      const selected = serviceSubcategories.includes(c.id);
-                      const CatIcon = SERVICE_CATEGORY_DOODLE_ICONS[c.id] ?? SERVICE_CATEGORY_DOODLE_ICONS.ostatni;
-                      return (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onClick={() =>
-                            setServiceSubcategories((prev) => {
-                              if (prev.includes(c.id)) {
-                                if (prev.length <= 1) return prev;
-                                return prev.filter((x) => x !== c.id);
-                              }
-                              return [...prev, c.id];
-                            })
-                          }
-                          aria-pressed={selected}
-                          className={`px-2.5 py-1.5 rounded-full border text-[11px] font-semibold inline-flex items-center gap-1 ${
-                            selected
-                              ? "border-[#3D7A68] bg-[#E8F3EF] text-[#1B4D3E]"
-                              : "border-stone-200 bg-white text-stone-600"
-                          }`}
-                        >
-                          {selected ? <DoodleCheckIcon className="w-3.5 h-3.5 shrink-0" /> : <CatIcon className="w-3.5 h-3.5 shrink-0" />}
-                          {c.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {serviceSubcategories.length > 0 && (
-                    <p className="text-[10px] text-[#3D7A68] mt-1.5">
-                      Vybráno: {formatServiceSubcategoryLabels(serviceSubcategories)}
-                    </p>
-                  )}
-                </div>
+                <CraftCategoryPicker
+                  homeGroup={serviceHomeGroup}
+                  onHomeGroupChange={setServiceHomeGroup}
+                  primaryId={primarySubcategory}
+                  onPrimaryChange={setPrimarySubcategory}
+                  secondaryIds={secondarySubcategories}
+                  onSecondaryChange={setSecondarySubcategories}
+                />
 
                 <div>
                   <label className="block text-xs font-semibold text-stone-600 mb-1.5">

@@ -436,6 +436,67 @@ export function DoodleCraftIcon({ className }) {
   );
 }
 
+export function DoodlePaintBrushIcon({ className }) {
+  return (
+    <DoodleIcon className={className}>
+      <path {...s} d="M7.2 16.8c1.2 1.4 3.2 1.6 4.4.4l7.2-7.2c.8-.8.8-2 0-2.8l-1.2-1.2c-.8-.8-2-.8-2.8 0l-7.2 7.2c-1.2 1.2-1 3.2.4 4.4z" />
+      <path {...s} d="M14.2 7.2l2.6 2.6" />
+      <path {...s} d="M5.5 18.5c.8.2 1.6-.2 2-.9" opacity="0.7" />
+    </DoodleIcon>
+  );
+}
+
+export function DoodleSawIcon({ className }) {
+  return (
+    <DoodleIcon className={className}>
+      <path {...s} d="M4.5 16.5L16 5l3.5 3.5-11.5 11.5H4.5v-3.5z" />
+      <path {...s} d="M8 16l1.2-1.2M10.2 13.8l1.2-1.2M12.4 11.6l1.2-1.2M14.6 9.4l1.2-1.2" opacity="0.65" />
+    </DoodleIcon>
+  );
+}
+
+export function DoodleBroomIcon({ className }) {
+  return (
+    <DoodleIcon className={className}>
+      <path {...s} d="M12.5 3.8v9.2" />
+      <path {...s} d="M7 13.2h10.5c.2 2.4-1.6 5-5.2 6.5-3.6-1.5-5.5-4.1-5.3-6.5z" />
+      <path {...s} d="M9.2 15.2v3.2M12.2 15.5v3.6M15.2 15.2v3.2" opacity="0.55" />
+    </DoodleIcon>
+  );
+}
+
+export function DoodleScalesIcon({ className }) {
+  return (
+    <DoodleIcon className={className}>
+      <path {...s} d="M12 4.5v15" />
+      <path {...s} d="M8.5 19.5h7" />
+      <path {...s} d="M5.5 8.5h13" />
+      <path {...s} d="M7.5 8.5l-2.5 5.5h5L7.5 8.5z" />
+      <path {...s} d="M16.5 8.5l-2.5 5.5h5L16.5 8.5z" />
+    </DoodleIcon>
+  );
+}
+
+export function DoodleScissorsIcon({ className }) {
+  return (
+    <DoodleIcon className={className}>
+      <circle {...s} cx="7.2" cy="7.2" r="2.4" />
+      <circle {...s} cx="7.2" cy="16.8" r="2.4" />
+      <path {...s} d="M9.2 8.6L19 16.2M9.2 15.4L19 7.8" />
+    </DoodleIcon>
+  );
+}
+
+export function DoodleSpaIcon({ className }) {
+  return (
+    <DoodleIcon className={className}>
+      <path {...s} d="M12 5.2c1.8 2.2 3.8 3.6 5.8 4.2-2 .6-4 2-5.8 4.2-1.8-2.2-3.8-3.6-5.8-4.2 2-.6 4-2 5.8-4.2z" />
+      <path {...s} d="M7.5 15.5c1.4.8 2.9 1.3 4.5 1.3s3.1-.5 4.5-1.3" opacity="0.7" />
+      <path {...s} d="M9 18.5h6" opacity="0.55" />
+    </DoodleIcon>
+  );
+}
+
 export function DoodleCheckIcon({ className }) {
   return (
     <DoodleIcon className={className}>
@@ -744,27 +805,27 @@ export const LOCATION_DOODLE_ICONS = {
 export const SERVICE_CATEGORY_DOODLE_ICONS = {
   instalater: DoodleCraftIcon,
   elektrikar: DoodleBoltIcon,
-  malir: DoodleOtherIcon,
-  truhlar: DoodleCraftIcon,
+  malir: DoodlePaintBrushIcon,
+  truhlar: DoodleSawIcon,
   klempir: DoodleHomeGardenIcon,
   it: DoodleCardIcon,
   auto: DoodleCarIcon,
   fotograf: DoodleCameraIcon,
-  pravo: DoodleListIcon,
-  ucetni: DoodleCardIcon,
+  pravo: DoodleScalesIcon,
+  ucetni: DoodleListIcon,
   zahrada: DoodleHomeGardenIcon,
-  veterinar: DoodleHomeGardenIcon,
-  uklid: DoodleHomeGardenIcon,
+  veterinar: DoodlePawIcon,
+  uklid: DoodleBroomIcon,
   gastro: DoodleGastroIcon,
   doucovani: DoodleFamilyIcon,
   hlidani: DoodleFamilyIcon,
-  preklad: DoodleFamilyIcon,
+  preklad: DoodleChatIcon,
   event: DoodleCalendarIcon,
   beauty: DoodleBeautyIcon,
-  kadernictvi: DoodleBeautyIcon,
-  masaz: DoodleBeautyIcon,
+  kadernictvi: DoodleScissorsIcon,
+  masaz: DoodleSpaIcon,
   fitness: DoodleSportIcon,
-  ostatni: DoodleOtherIcon,
+  ostatni: DoodleListIcon,
 };
 
 export const SERVICE_PARENT_DOODLE_ICONS = {
