@@ -55,7 +55,7 @@ export function isReportResolved(report) {
  */
 export function isReportActive(report, now = Date.now()) {
   if (!report) return false;
-  const r = report.untilResolved != null || report.status != null ? report : normalizeReportValidity(report);
+  const r = normalizeReportValidity(report);
   if (isReportResolved(r)) return false;
   if (r.untilResolved) return true;
   const expiresAt =
@@ -64,7 +64,9 @@ export function isReportActive(report, now = Date.now()) {
       untilResolved: false,
     });
   if (!expiresAt) return true;
-  return now < new Date(expiresAt).getTime();
+  const ts = new Date(expiresAt).getTime();
+  if (Number.isNaN(ts)) return true;
+  return now < ts;
 }
 
 export function filterActiveReports(reports, now = Date.now()) {

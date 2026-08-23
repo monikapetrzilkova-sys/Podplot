@@ -94,6 +94,7 @@ export default function LiveNeighborFeed() {
     }
 
     const isAnnouncementStillVisible = (post) => {
+      if (post?.mine) return true;
       const rid =
         post.fromSecurityReportId ||
         (String(post.id || "").startsWith("feed-") ? String(post.id).slice(5) : null);

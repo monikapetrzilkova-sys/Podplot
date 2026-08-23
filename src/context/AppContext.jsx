@@ -33,7 +33,7 @@ import { clampMapPos, posToDistanceLabel } from "../data/mapData.js";
 import { pscDigits } from "../data/addressValidation.js";
 import { geocodeCzechAddress } from "../data/addressAutocomplete.js";
 import { isValidMapPos } from "../utils/reportPinUtils.js";
-import { latLngToMapPos } from "../utils/geoCoordinates.js";
+import { latLngToMapPos, mapPosToLatLng, latLngOffsetMeters } from "../utils/geoCoordinates.js";
 import {
   loadMapRadiusSettings,
   persistMapRadiusSettings,
@@ -3075,8 +3075,28 @@ export function AppProvider({ children }) {
       } else {
         normalizedMapPos = clampMapPos(52, 47);
       }
-      const gpsLat = rawMapPos?.lat ?? rawMapPos?.mapPos?.lat ?? null;
-      const gpsLng = rawMapPos?.lng ?? rawMapPos?.mapPos?.lng ?? null;
+      let gpsLat = rawMapPos?.lat ?? rawMapPos?.mapPos?.lat ?? null;
+      let gpsLng = rawMapPos?.lng ?? rawMapPos?.mapPos?.lng ?? null;
+      // GPS mimo okruh mapy → souřadnice podle špendlíku na mapě (ne reálná poloha mimo viewport)
+      if (
+        gpsLat != null &&
+        gpsLng != null &&
+        activeLocation?.lat != null &&
+        activeLocation?.lng != null
+      ) {
+        const { dxMeters, dyMeters } = latLngOffsetMeters(activeLocation, {
+          lat: gpsLat,
+          lng: gpsLng,
+        });
+        const distKm = Math.sqrt(dxMeters * dxMeters + dyMeters * dyMeters) / 1000;
+        if (distKm > reportsMapRadiusKm) {
+          const clamped = mapPosToLatLng(normalizedMapPos, activeLocation, reportsMapRadiusKm);
+          if (clamped) {
+            gpsLat = clamped.lat;
+            gpsLng = clamped.lng;
+          }
+        }
+      }
       const pointDistance = mapPos
         ? posToDistanceLabel(normalizedMapPos.x, normalizedMapPos.y, undefined, undefined, reportsMapRadiusKm)
         : "0 m · vaše hlášení";

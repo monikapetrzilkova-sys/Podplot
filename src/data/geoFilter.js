@@ -106,6 +106,9 @@ export function filterSecurityReportsByLocation(
   const activeMun = activeLocation.municipality ?? activeLocation.shortLabel ?? null;
 
   return reports.filter((report) => {
+    // Vlastní hlášení vždy vidět — nesmí zmizet kvůli GPS mimo demo střed obce
+    if (report?.mine) return true;
+
     const reportMun = report.municipality;
 
     if (report.urgentScope === "municipality" && report.urgent) {
@@ -131,6 +134,8 @@ export function filterReportsForMapView(
   center = null
 ) {
   return reports.filter((report) => {
+    if (report?.mine) return true;
+
     const hasGps = report?.lat != null && report?.lng != null;
     const hasPct =
       report?.mapPos &&
@@ -142,6 +147,12 @@ export function filterReportsForMapView(
       return hasPos;
     }
 
+    // % pozice na schématu má přednost — GPS z „aktuální polohy“ může být daleko
+    // od demo středu, zatímco x/y už je na mapě (příp. na okraji).
+    if (hasPct) {
+      return mapPosToDistanceKm(report.mapPos, referenceRadiusKm) <= radiusKm;
+    }
+
     if (hasGps && center?.lat != null && center?.lng != null) {
       return distanceBetweenKm(center, report) <= radiusKm;
     }
@@ -150,8 +161,7 @@ export function filterReportsForMapView(
       return distanceBetweenKm(center, { lat: report.mapPos.lat, lng: report.mapPos.lng }) <= radiusKm;
     }
 
-    if (!hasPct) return false;
-    return mapPosToDistanceKm(report.mapPos, referenceRadiusKm) <= radiusKm;
+    return false;
   });
 }
 

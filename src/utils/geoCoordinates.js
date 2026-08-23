@@ -62,7 +62,23 @@ export function latLngToMapPos(
 
 /** Výsledek výběru na mapě — GPS + mapPos pro uložení. */
 export function buildMapPickResult(lat, lng, center, referenceRadiusKm) {
-  const mapPos = latLngToMapPos(lat, lng, center, referenceRadiusKm);
+  const radiusKm = referenceRadiusKm ?? DEFAULT_REPORTS_MAP_RADIUS_KM;
+  const mapPos = latLngToMapPos(lat, lng, center, radiusKm);
+  if (center?.lat == null || center?.lng == null) {
+    return { ...mapPos, lat, lng };
+  }
+  const { dxMeters, dyMeters } = latLngOffsetMeters(center, { lat, lng });
+  const distKm = Math.sqrt(dxMeters * dxMeters + dyMeters * dyMeters) / 1000;
+  // Mimo okruh mapy: x/y už je na okraji — ulož GPS odpovídající špendlíku, ne reálnou polohu
+  // (jinak filtr i Google mapa hlášení „ztratí“ mimo viewport obce).
+  if (distKm > radiusKm) {
+    const clampedGps = mapPosToLatLng(mapPos, center, radiusKm);
+    return {
+      ...mapPos,
+      lat: clampedGps?.lat ?? lat,
+      lng: clampedGps?.lng ?? lng,
+    };
+  }
   return { ...mapPos, lat, lng };
 }
 
