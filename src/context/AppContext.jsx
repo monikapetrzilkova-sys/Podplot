@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { CURRENT_USER } from "../data/mockData.js";
 import { getCategory } from "../data/listingCategories.js";
-import { getGroup, isGroupWallPost } from "../data/groups.js";
+import { getGroup, isGroupWallPost, isGroupBoardDiscussionPost } from "../data/groups.js";
 import {
   SEED_GROUP_POST_COMMENTS,
   commentsForPost,
@@ -4478,9 +4478,11 @@ export function AppProvider({ children }) {
       body,
       price,
       groupId,
+      groupIds = null,
       photos = [],
       topPlanId = null,
       topPaymentMethod = "wallet",
+      boardPost = false,
     }) => {
       if (!user) return;
       if (isB2BWorkMode) {
@@ -4491,11 +4493,23 @@ export function AppProvider({ children }) {
         return;
       }
       const acc = getAccountType(user.accountType);
-      const cat = getCategory(categoryId, groupId);
+      const resolvedGroupIds = Array.isArray(groupIds)
+        ? groupIds.filter(Boolean)
+        : groupId
+          ? [groupId]
+          : [];
+      const primaryGroupId = resolvedGroupIds[0] ?? groupId ?? null;
+      const cat = getCategory(categoryId, boardPost ? primaryGroupId : null);
       const id = `user-${Date.now()}`;
-      const group = groupId ? getGroup(groupId) : null;
+      const groupNames = resolvedGroupIds
+        .map((gid) => getGroup(gid)?.name || communityGroups.find((g) => g.id === gid)?.name)
+        .filter(Boolean);
+      const primaryGroup = primaryGroupId
+        ? getGroup(primaryGroupId) || communityGroups.find((g) => g.id === primaryGroupId)
+        : null;
       const metaParts = ["Právě teď", "0 m"];
-      if (group) metaParts.push(group.name);
+      if (groupNames.length === 1) metaParts.push(groupNames[0]);
+      else if (groupNames.length > 1) metaParts.push(`${groupNames.length} skupiny`);
 
       const listingPrice = cat?.priceField ? Number(price) || 0 : 0;
       if (cat?.priceField && price) {
@@ -4522,6 +4536,8 @@ export function AppProvider({ children }) {
           ? lendingMeta.itemTypeLabel
           : title.trim();
 
+      const isBoard = Boolean(boardPost);
+
       let post = {
         id,
         role: acc.role,
@@ -4541,8 +4557,10 @@ export function AppProvider({ children }) {
         feedType,
         feedSubtype,
         listingPrice,
-        groupId: groupId ?? null,
-        groupName: group?.name,
+        groupId: primaryGroupId,
+        groupIds: resolvedGroupIds,
+        groupName: primaryGroup?.name ?? groupNames[0],
+        boardPost: isBoard,
         mine: true,
         createdAt: Date.now(),
         photos: (photos ?? []).map((p) => (typeof p === "string" ? p : p?.url)).filter(Boolean),
@@ -4559,7 +4577,7 @@ export function AppProvider({ children }) {
       // Věci (prodej/dar/půjčovna) patří do Sousedé → Věci, ne na nástěnku skupiny
       setUserPosts((prev) => [post, ...prev]);
       void publishRemotePost(post, user);
-      if (groupId && isGroupWallPost(post)) {
+      if (isBoard && isGroupBoardDiscussionPost(post)) {
         setUserGroupPosts((prev) => [post, ...prev]);
       }
 
@@ -4576,9 +4594,11 @@ export function AppProvider({ children }) {
             description: body.trim(),
             credits: Number(price) || 0,
             period: "den",
-            distance: group ? `${group.name} · vaše nabídka` : "Právě teď · 0 m",
+            distance: primaryGroup ? `${primaryGroup.name} · vaše nabídka` : "Právě teď · 0 m",
             mine: true,
-            groupId,
+            groupId: primaryGroupId,
+            groupIds: resolvedGroupIds,
+            boardPost: false,
             photos: post.photos,
             lendingCategory: resolvedLending,
             itemType: lendingMeta.itemType,
@@ -4599,12 +4619,17 @@ export function AppProvider({ children }) {
       closeCreate();
       const plan = topPlanId ? getTopPlan(topPlanId) : null;
       const topMsg = plan ? ` Boost ${plan.days} dní (${topCost} Kč).` : "";
-      if (groupId && isGroupWallPost(post)) {
-        showToast(`Příspěvek je na nástěnce ${group.name}.${topMsg}`);
+      if (isBoard) {
+        showToast(
+          `Příspěvek je na nástěnce ${primaryGroup?.name ?? "skupiny"}.${topMsg}`
+        );
         setPendingNeighborsSection("skupiny");
         setActiveTab("neighbors");
-      } else if (groupId) {
-        showToast((cat?.isLending ? "Nabídka je ve Věcech." : "Inzerát je ve Věcech.") + topMsg);
+      } else if (resolvedGroupIds.length > 0) {
+        showToast(
+          (cat?.isLending ? "Nabídka je ve Věcech" : "Inzerát je ve Věcech") +
+            ` · viditelné ve ${resolvedGroupIds.length === 1 ? "skupině" : "skupinách"}.${topMsg}`
+        );
         setPendingNeighborsSection("veci");
         setActiveTab("neighbors");
       } else {
@@ -4625,6 +4650,7 @@ export function AppProvider({ children }) {
       showProfileHint,
       isB2BWorkMode,
       setPendingNeighborsSection,
+      communityGroups,
     ]
   );
 
@@ -4785,7 +4811,9 @@ export function AppProvider({ children }) {
       const post = {
         id,
         groupId,
+        groupIds: [groupId],
         groupName,
+        boardPost: true,
         categoryId: "diskuse",
         role: getAccountType(user.accountType)?.role ?? "soused",
         accountType: user.accountType,

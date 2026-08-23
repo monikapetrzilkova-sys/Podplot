@@ -22,6 +22,7 @@ import {
 import { ACTION_BTN } from "./PostInteractions.jsx";
 import { topicFromPost, topicFromGroupPost } from "../data/chatTopics.js";
 import GroupPostComments from "./GroupPostComments.jsx";
+import { isGroupBoardDiscussionPost } from "../data/groups.js";
 
 function extractDistance(meta) {
   if (!meta) return null;
@@ -155,8 +156,8 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
   const acc = post.accountType ? getAccountType(post.accountType) : null;
   const accRole = acc ? getRole(acc.role) : null;
   const authorLabel = formatAuthorName(post.author, post.accountType);
-  const messageTopic = post.groupId ? topicFromGroupPost(post) : topicFromPost(post);
-  const isGroupDiscussion = Boolean(post.groupId);
+  const isGroupDiscussion = isGroupBoardDiscussionPost(post);
+  const messageTopic = isGroupDiscussion ? topicFromGroupPost(post) : topicFromPost(post);
   const distance = extractDistance(post.meta);
   const searchHighlight = isSearchHighlighted(post.id);
   const isListingEdit =

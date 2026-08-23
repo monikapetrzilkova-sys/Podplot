@@ -147,6 +147,25 @@ export function isGroupWallPost(post) {
   return true;
 }
 
+/**
+ * Diskuse (komentáře) jen u příspěvků na nástěnce skupiny.
+ * groupIds u inzerátu s boardPost:false = jen omezení viditelnosti, ne diskuse.
+ */
+export function isGroupBoardDiscussionPost(post) {
+  if (!post) return false;
+  if (post.boardPost === false) return false;
+  if (post.boardPost === true) return true;
+  // Legacy / seed nástěnka — není inzerát Věcí a patří ke skupině
+  if (!isGroupWallPost(post)) return false;
+  return Boolean(post.groupId) || (Array.isArray(post.groupIds) && post.groupIds.length > 0);
+}
+
+export function postVisibleInGroup(post, groupId) {
+  if (!post || !groupId) return false;
+  if (post.groupId === groupId) return true;
+  return Array.isArray(post.groupIds) && post.groupIds.includes(groupId);
+}
+
 export function resolveGroupName(post, communityGroups = []) {
   if (post?.groupName) return post.groupName;
   const fromStatic = getGroup(post?.groupId);
@@ -165,14 +184,16 @@ export function getMyGroups(locationId = "domov") {
 }
 
 export function getGroupPosts(groupId, userGroupPosts = []) {
-  const mock = GROUP_POSTS.filter((p) => p.groupId === groupId && isGroupWallPost(p));
-  const user = userGroupPosts.filter((p) => p.groupId === groupId && isGroupWallPost(p));
+  const isBoardInGroup = (p) =>
+    isGroupBoardDiscussionPost(p) && postVisibleInGroup(p, groupId);
+  const mock = GROUP_POSTS.filter(isBoardInGroup);
+  const user = userGroupPosts.filter(isBoardInGroup);
   return [...user, ...mock];
 }
 
 export function getRecentGroupPosts(userGroupPosts = [], limit = 5) {
   const all = [...userGroupPosts, ...GROUP_POSTS].filter(
-    (p) => MY_GROUP_IDS.includes(p.groupId) && isGroupWallPost(p)
+    (p) => isGroupBoardDiscussionPost(p) && MY_GROUP_IDS.some((id) => postVisibleInGroup(p, id))
   );
   return all.slice(0, limit);
 }

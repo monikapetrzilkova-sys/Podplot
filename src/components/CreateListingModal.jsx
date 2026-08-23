@@ -50,7 +50,7 @@ export default function CreateListingModal() {
   } = useApp();
   const [categoryId, setCategoryId] = useState("");
   const [itemCategoryId, setItemCategoryId] = useState("");
-  const [groupId, setGroupId] = useState("");
+  const [groupIds, setGroupIds] = useState([]);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [price, setPrice] = useState("");
@@ -58,22 +58,22 @@ export default function CreateListingModal() {
   const [topPlanId, setTopPlanId] = useState("");
   const [topPayOpen, setTopPayOpen] = useState(false);
   const isEditing = Boolean(editingPost);
+  /** Příspěvek z nástěnky skupiny (createGroupId) = diskuse; jinak jen viditelnost. */
+  const isBoardCompose = Boolean(createGroupId);
 
-  const applyGroup = useCallback((nextGroupId) => {
-    setGroupId(nextGroupId);
-    setCategoryId((prev) => {
-      const cats = getCategoriesForGroup(nextGroupId || null);
-      if (prev && cats.some((c) => c.id === prev)) return prev;
-      return nextGroupId ? "diskuse" : "";
-    });
-    setTopPlanId("");
+  const toggleVisibilityGroup = useCallback((id) => {
+    setGroupIds((prev) => (prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]));
   }, []);
 
   useEffect(() => {
     if (!createOpen) return;
     if (editingPost) {
-      const initialGroup = editingPost.groupId ?? "";
-      setGroupId(initialGroup);
+      const fromIds = Array.isArray(editingPost.groupIds)
+        ? editingPost.groupIds.filter(Boolean)
+        : editingPost.groupId
+          ? [editingPost.groupId]
+          : [];
+      setGroupIds(fromIds);
       setCategoryId(editingPost.categoryId ?? "");
       setItemCategoryId(
         editingPost.marketCategory || editingPost.lendingCategory || ""
@@ -101,7 +101,7 @@ export default function CreateListingModal() {
         : initialGroup
           ? "diskuse"
           : "";
-    setGroupId(initialGroup);
+    setGroupIds(initialGroup ? [initialGroup] : []);
     setCategoryId(validCategory);
     const presetFromMatrix = thingsLendingSubCategory
       ? normalizeThingItemCategory(thingsLendingSubCategory)
@@ -132,10 +132,13 @@ export default function CreateListingModal() {
 
   if (!createOpen) return null;
 
-  const categories = getCategoriesForGroup(groupId || null);
-  const cat = categoryId ? getCategory(categoryId, groupId || null) : null;
-  const selectedGroup = groupId ? getGroup(groupId) : null;
+  const boardGroupId = isBoardCompose ? createGroupId : null;
+  const categories = getCategoriesForGroup(boardGroupId || null);
+  const cat = categoryId ? getCategory(categoryId, boardGroupId || null) : null;
   const myGroups = getMyMemberGroups(communityGroups, activeLocationId);
+  const selectedGroupLabels = groupIds
+    .map((id) => myGroups.find((g) => g.id === id)?.name || getGroup(id)?.name)
+    .filter(Boolean);
   const topEligible = !isEditing && categoryId && canTopCategory(categoryId);
   const listingPrice = cat?.priceField ? Number(price) || 0 : 0;
   const selectedTopCost = topPlanId ? calculateTopCost(topPlanId, listingPrice) : 0;
@@ -163,7 +166,9 @@ export default function CreateListingModal() {
       title: resolvedTitle,
       body,
       price,
-      groupId: groupId || null,
+      groupId: groupIds[0] || null,
+      groupIds,
+      boardPost: isBoardCompose,
       photos,
       topPlanId: topPlanId || null,
       topPaymentMethod,
@@ -212,56 +217,63 @@ export default function CreateListingModal() {
               ✕
             </button>
           </div>
-          <p className="text-sm text-stone-500 flex items-center gap-1.5">
-            {selectedGroup ? (
+          <p className="text-sm text-stone-500 flex items-center gap-1.5 flex-wrap">
+            {isBoardCompose && selectedGroupLabels[0] ? (
               <>
                 Pro skupinu
-                <GroupNavIcon id={selectedGroup.id} className={`w-3.5 h-3.5 ${GROUP_ICON_CLASS}`} />
-                {selectedGroup.name}
+                <GroupNavIcon id={createGroupId} className={`w-3.5 h-3.5 ${GROUP_ICON_CLASS}`} />
+                {selectedGroupLabels[0]}
               </>
             ) : cat ? (
               `Kategorie: ${cat.label}`
             ) : (
-              "Obecná nástěnka, nebo vyberte skupinu"
+              "Nový inzerát nebo příspěvek"
             )}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto overflow-x-hidden px-5 py-4 space-y-5 min-w-0">
-          {!createGroupId && (
+          {!isBoardCompose && (
             <fieldset>
               <legend className="text-xs font-bold uppercase tracking-wide text-stone-400 mb-2">
-                Skupina (volitelné)
+                Zobrazit ve skupinách (volitelné)
               </legend>
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={() => applyGroup("")}
+                  onClick={() => setGroupIds([])}
                   className={`px-3 py-2 rounded-xl text-xs font-semibold border ${
-                    !groupId ? "border-[#1B4332] bg-[#D8F3DC] text-[#1B4332]" : "border-stone-200"
+                    groupIds.length === 0
+                      ? "border-[#1B4332] bg-[#D8F3DC] text-[#1B4332]"
+                      : "border-stone-200"
                   }`}
                 >
                   Celá obec
                 </button>
-                {myGroups.map((g) => (
-                  <button
-                    key={g.id}
-                    type="button"
-                    onClick={() => applyGroup(g.id)}
-                    className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border ${
-                      groupId === g.id ? "border-[#1B4332] bg-[#D8F3DC] text-[#1B4332]" : "border-stone-200"
-                    }`}
-                  >
-                    <GroupNavIcon id={g.id} className={`w-3.5 h-3.5 ${GROUP_ICON_CLASS}`} />
-                    {g.name}
-                  </button>
-                ))}
+                {myGroups.map((g) => {
+                  const active = groupIds.includes(g.id);
+                  return (
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() => toggleVisibilityGroup(g.id)}
+                      aria-pressed={active}
+                      className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border ${
+                        active
+                          ? "border-[#1B4332] bg-[#D8F3DC] text-[#1B4332]"
+                          : "border-stone-200"
+                      }`}
+                    >
+                      <GroupNavIcon id={g.id} className={`w-3.5 h-3.5 ${GROUP_ICON_CLASS}`} />
+                      {g.name}
+                    </button>
+                  );
+                })}
               </div>
-              {groupId && (
-                <p className="text-[11px] text-stone-500 mt-2">
-                  Ve skupině jde o tipy a seznámení — prodej a darování patří do Věcí.
-                </p>
-              )}
+              <p className="text-[11px] text-stone-500 mt-2 leading-snug">
+                Můžete zvolit více skupin — omezí to, kdo inzerát uvidí. Nejde o diskusní nástěnku;
+                komentáře jsou jen u příspěvků přímo ve skupině.
+              </p>
             </fieldset>
           )}
 
