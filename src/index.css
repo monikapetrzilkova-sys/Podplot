@@ -2925,6 +2925,30 @@ body,
   z-index: 2;
 }
 
+.pp-profile-settings-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  margin-left: auto;
+  border-radius: 999px;
+  color: #3d7a68;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.pp-profile-settings-btn:hover {
+  background: #e8f3ef;
+  color: #1b4d3e;
+}
+
+.pp-profile-settings-btn:active {
+  background: #d5ebe3;
+}
+
 .pp-profile-overlay-body {
   flex: 1;
   min-height: 0;

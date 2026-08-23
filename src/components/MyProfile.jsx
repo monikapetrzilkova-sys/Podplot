@@ -242,7 +242,7 @@ function PasswordChangeFields() {
   );
 }
 
-export default function MyProfile({ registerLegalBack } = {}) {
+export default function MyProfile({ registerLegalBack, settingsOpen = false } = {}) {
   const {
     user,
     credits,
@@ -415,6 +415,174 @@ export default function MyProfile({ registerLegalBack } = {}) {
 
   if (legalPage) {
     return <LegalPages page={legalPage} />;
+  }
+
+  if (settingsOpen) {
+    return (
+      <div className="px-4 py-4 pb-8">
+        <ProfileCollapsible
+          title="Moje zájmy"
+          icon={PROFILE_DOODLE_ICONS.interests}
+          summary={`${Object.values(userInterests || {}).filter(Boolean).length} vybraných · pro lepší tipy v okolí`}
+          defaultOpen
+        >
+          <div className="grid grid-cols-2 gap-2">
+            {INTEREST_OPTIONS.map((i) => {
+              const InterestIcon = INTEREST_DOODLE_ICONS[i.id];
+              const active = !!userInterests[i.id];
+              return (
+                <label
+                  key={i.id}
+                  className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs cursor-pointer ${
+                    active ? "border-emerald-600 bg-emerald-50" : "border-stone-200"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={active}
+                    onChange={() => toggleInterest(i.id)}
+                    className="rounded"
+                  />
+                  {InterestIcon ? (
+                    <span className={`shrink-0 ${active ? "text-[#1B4332]" : "text-[#3D7A68]"}`} aria-hidden>
+                      <InterestIcon className="w-4 h-4" />
+                    </span>
+                  ) : null}
+                  <span>{i.label}</span>
+                </label>
+              );
+            })}
+          </div>
+        </ProfileCollapsible>
+
+        <ProfileCollapsible
+          title="Upozornění"
+          icon={PROFILE_DOODLE_ICONS.alerts}
+          summary={[
+            notificationPrefs?.messageAlerts !== false ? "Zprávy zapnuté" : "Zprávy vypnuté",
+            notificationPrefs?.lunchMenuAlerts || user.notificationPrefs?.lunchMenuAlerts
+              ? "Menu zapnuté"
+              : "Menu vypnuté",
+          ].join(" · ")}
+          defaultOpen
+        >
+          <label className="flex items-start gap-3 p-3 rounded-xl border border-stone-200 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={Boolean(notificationPrefs?.messageAlerts !== false)}
+              onChange={(e) => toggleMessageAlerts(e.target.checked)}
+              className="mt-0.5 rounded accent-emerald-600"
+            />
+            <span className="text-xs text-stone-600 leading-relaxed">
+              <strong className="text-stone-800">Nové zprávy</strong>
+              <span className="block mt-0.5 text-stone-500">
+                Systémové upozornění v telefonu, když vám někdo napíše.
+              </span>
+            </span>
+          </label>
+          <label className="flex items-start gap-3 p-3 rounded-xl border border-stone-200 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={Boolean(notificationPrefs?.lunchMenuAlerts ?? user.notificationPrefs?.lunchMenuAlerts)}
+              onChange={(e) => toggleLunchMenuAlerts(e.target.checked)}
+              className="mt-0.5 rounded accent-emerald-600"
+            />
+            <span className="text-xs text-stone-600 leading-relaxed">
+              <strong className="text-stone-800">Polední menu v okolí</strong>
+              <span className="block mt-0.5 text-stone-500">
+                Push, když místní gastro zveřejní denní menu.
+              </span>
+            </span>
+          </label>
+          <label className="flex items-start gap-3 p-3 rounded-xl border border-stone-200 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={!trustHomePromptHidden}
+              onChange={(e) =>
+                e.target.checked ? showTrustHomePrompt?.() : hideTrustHomePrompt?.()
+              }
+              className="mt-0.5 rounded accent-emerald-600"
+            />
+            <span className="text-xs text-stone-600 leading-relaxed">
+              <strong className="text-stone-800">Noví sousedé na Domů</strong>
+              <span className="block mt-0.5 text-stone-500">
+                Karty k potvrzení nahoře na Domů. Jinak jen v Síti důvěry.
+              </span>
+            </span>
+          </label>
+        </ProfileCollapsible>
+
+        <ProfileCollapsible
+          title="Rozlišení u stejného jména"
+          icon={PROFILE_DOODLE_ICONS.nameTag}
+          summary={
+            allowPublicAreaLabel && publicAreaLabel.trim()
+              ? `Popisek: ${publicAreaLabel.trim()}`
+              : "Volitelné · nikdy neukazuje plnou adresu"
+          }
+        >
+          <p className="text-xs text-stone-500 leading-relaxed">
+            Pokud v obci žije někdo stejnojmenný, ostatní uvidí u vašeho jména jen obecný popisek (se souhlasem)
+            nebo hrubou vzdálenost — nikdy plnou adresu bydliště.
+          </p>
+          <label className="flex items-start gap-3 cursor-pointer p-3 rounded-xl border border-stone-200 bg-stone-50/50">
+            <input
+              type="checkbox"
+              checked={allowPublicAreaLabel}
+              onChange={(e) => {
+                const next = e.target.checked;
+                setAllowPublicAreaLabel(next);
+                if (!next) {
+                  setPublicAreaLabel("");
+                  updatePublicDisambiguation({ allowPublicAreaLabel: false, publicAreaLabel: "" });
+                }
+              }}
+              className="mt-0.5 rounded accent-emerald-600"
+            />
+            <span className="text-xs text-stone-600 leading-relaxed">
+              Zobrazovat u mého jména obecný popisek oblasti (ulice bez čísla, čtvrť…)
+            </span>
+          </label>
+          {allowPublicAreaLabel && (
+            <div className="space-y-2">
+              <input
+                type="text"
+                value={publicAreaLabel}
+                onChange={(e) => setPublicAreaLabel(e.target.value)}
+                placeholder="např. ulice, čtvrť"
+                maxLength={48}
+                className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+              />
+              <p className="text-[11px] text-stone-400 leading-relaxed">{PUBLIC_AREA_LABEL_HINT}</p>
+              <button
+                type="button"
+                onClick={() =>
+                  updatePublicDisambiguation({ allowPublicAreaLabel: true, publicAreaLabel })
+                }
+                className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-2 rounded-lg hover:bg-emerald-100"
+              >
+                Uložit popisek
+              </button>
+            </div>
+          )}
+        </ProfileCollapsible>
+
+        <div className="mt-2 mb-4">
+          <LegalLinksSection onOpen={setLegalPage} />
+        </div>
+
+        <ProfileCollapsible title="Heslo a odhlášení" summary="Změna hesla · odhlásit se" defaultOpen>
+          <PasswordChangeFields />
+          <button
+            type="button"
+            onClick={logout}
+            className="w-full py-3 text-sm font-semibold text-stone-600 border border-stone-200 rounded-2xl hover:bg-stone-50"
+          >
+            Odhlásit se
+          </button>
+        </ProfileCollapsible>
+      </div>
+    );
   }
 
   const acc = getAccountType(user.accountType);
@@ -1177,96 +1345,6 @@ export default function MyProfile({ registerLegalBack } = {}) {
 
       <PromoteSection />
 
-      <ProfileCollapsible
-        title="Moje zájmy"
-        icon={PROFILE_DOODLE_ICONS.interests}
-        summary={`${Object.values(userInterests || {}).filter(Boolean).length} vybraných · pro lepší tipy v okolí`}
-      >
-        <div className="grid grid-cols-2 gap-2">
-          {INTEREST_OPTIONS.map((i) => {
-            const InterestIcon = INTEREST_DOODLE_ICONS[i.id];
-            const active = !!userInterests[i.id];
-            return (
-              <label
-                key={i.id}
-                className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs cursor-pointer ${
-                  active ? "border-emerald-600 bg-emerald-50" : "border-stone-200"
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={active}
-                  onChange={() => toggleInterest(i.id)}
-                  className="rounded"
-                />
-                {InterestIcon ? (
-                  <span className={`shrink-0 ${active ? "text-[#1B4332]" : "text-[#3D7A68]"}`} aria-hidden>
-                    <InterestIcon className="w-4 h-4" />
-                  </span>
-                ) : null}
-                <span>{i.label}</span>
-              </label>
-            );
-          })}
-        </div>
-      </ProfileCollapsible>
-
-      <ProfileCollapsible
-        title="Upozornění"
-        icon={PROFILE_DOODLE_ICONS.alerts}
-        summary={[
-          notificationPrefs?.messageAlerts !== false ? "Zprávy zapnuté" : "Zprávy vypnuté",
-          notificationPrefs?.lunchMenuAlerts || user.notificationPrefs?.lunchMenuAlerts
-            ? "Menu zapnuté"
-            : "Menu vypnuté",
-        ].join(" · ")}
-      >
-        <label className="flex items-start gap-3 p-3 rounded-xl border border-stone-200 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={Boolean(notificationPrefs?.messageAlerts !== false)}
-            onChange={(e) => toggleMessageAlerts(e.target.checked)}
-            className="mt-0.5 rounded accent-emerald-600"
-          />
-          <span className="text-xs text-stone-600 leading-relaxed">
-            <strong className="text-stone-800">Nové zprávy</strong>
-            <span className="block mt-0.5 text-stone-500">
-              Systémové upozornění v telefonu, když vám někdo napíše.
-            </span>
-          </span>
-        </label>
-        <label className="flex items-start gap-3 p-3 rounded-xl border border-stone-200 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={Boolean(notificationPrefs?.lunchMenuAlerts ?? user.notificationPrefs?.lunchMenuAlerts)}
-            onChange={(e) => toggleLunchMenuAlerts(e.target.checked)}
-            className="mt-0.5 rounded accent-emerald-600"
-          />
-          <span className="text-xs text-stone-600 leading-relaxed">
-            <strong className="text-stone-800">Polední menu v okolí</strong>
-            <span className="block mt-0.5 text-stone-500">
-              Push, když místní gastro zveřejní denní menu.
-            </span>
-          </span>
-        </label>
-        <label className="flex items-start gap-3 p-3 rounded-xl border border-stone-200 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={!trustHomePromptHidden}
-            onChange={(e) =>
-              e.target.checked ? showTrustHomePrompt?.() : hideTrustHomePrompt?.()
-            }
-            className="mt-0.5 rounded accent-emerald-600"
-          />
-          <span className="text-xs text-stone-600 leading-relaxed">
-            <strong className="text-stone-800">Noví sousedé na Domů</strong>
-            <span className="block mt-0.5 text-stone-500">
-              Karty k potvrzení nahoře na Domů. Jinak jen v Síti důvěry.
-            </span>
-          </span>
-        </label>
-      </ProfileCollapsible>
-
       {(isBusinessAccount(user) && resolveBusinessSubtype(user) === "mobilni") && (
         <ProfileCollapsible
           title="Dojezd služby"
@@ -1321,76 +1399,6 @@ export default function MyProfile({ registerLegalBack } = {}) {
         </ProfileCollapsible>
       )}
 
-      <ProfileCollapsible
-        title="Rozlišení u stejného jména"
-        icon={PROFILE_DOODLE_ICONS.nameTag}
-        summary={
-          allowPublicAreaLabel && publicAreaLabel.trim()
-            ? `Popisek: ${publicAreaLabel.trim()}`
-            : "Volitelné · nikdy neukazuje plnou adresu"
-        }
-      >
-        <p className="text-xs text-stone-500 leading-relaxed">
-          Pokud v obci žije někdo stejnojmenný, ostatní uvidí u vašeho jména jen obecný popisek (se souhlasem)
-          nebo hrubou vzdálenost — nikdy plnou adresu bydliště.
-        </p>
-        <label className="flex items-start gap-3 cursor-pointer p-3 rounded-xl border border-stone-200 bg-stone-50/50">
-          <input
-            type="checkbox"
-            checked={allowPublicAreaLabel}
-            onChange={(e) => {
-              const next = e.target.checked;
-              setAllowPublicAreaLabel(next);
-              if (!next) {
-                setPublicAreaLabel("");
-                updatePublicDisambiguation({ allowPublicAreaLabel: false, publicAreaLabel: "" });
-              }
-            }}
-            className="mt-0.5 rounded accent-emerald-600"
-          />
-          <span className="text-xs text-stone-600 leading-relaxed">
-            Zobrazovat u mého jména obecný popisek oblasti (ulice bez čísla, čtvrť…)
-          </span>
-        </label>
-        {allowPublicAreaLabel && (
-          <div className="space-y-2">
-            <input
-              type="text"
-              value={publicAreaLabel}
-              onChange={(e) => setPublicAreaLabel(e.target.value)}
-              placeholder="např. ulice, čtvrť"
-              maxLength={48}
-              className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-            />
-            <p className="text-[11px] text-stone-400 leading-relaxed">{PUBLIC_AREA_LABEL_HINT}</p>
-            <button
-              type="button"
-              onClick={() =>
-                updatePublicDisambiguation({ allowPublicAreaLabel: true, publicAreaLabel })
-              }
-              className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-2 rounded-lg hover:bg-emerald-100"
-            >
-              Uložit popisek
-            </button>
-          </div>
-        )}
-      </ProfileCollapsible>
-
-      <div className="mt-2 mb-4">
-        <LegalLinksSection onOpen={setLegalPage} />
-      </div>
-
-      <ProfileCollapsible title="Heslo a odhlášení" summary="Změna hesla · odhlásit se">
-        <PasswordChangeFields />
-        <button
-          type="button"
-          onClick={logout}
-          className="w-full py-3 text-sm font-semibold text-stone-600 border border-stone-200 rounded-2xl hover:bg-stone-50"
-        >
-          Odhlásit se
-        </button>
-      </ProfileCollapsible>
-
       {photoEditorOpen && (
         <ProfilePhotoEditor
           open
@@ -1433,20 +1441,6 @@ export default function MyProfile({ registerLegalBack } = {}) {
       {showWorkRoleViews && testRoleId === "urad" && (
         <section className="bg-stone-50 border border-stone-200 rounded-2xl p-4 mb-4">
           <p className="text-xs text-stone-500">Obecní úřad nemá peněženku — všechny služby jsou zdarma.</p>
-        </section>
-      )}
-
-      {!showNeighborProfile && (
-        <section className="mt-4 bg-white border border-stone-200 rounded-2xl p-4 space-y-3">
-          <h3 className="text-sm font-bold text-stone-800">Heslo a odhlášení</h3>
-          <PasswordChangeFields />
-          <button
-            type="button"
-            onClick={logout}
-            className="w-full py-3 text-sm font-semibold text-stone-600 border border-stone-200 rounded-2xl hover:bg-stone-50"
-          >
-            Odhlásit se
-          </button>
         </section>
       )}
 

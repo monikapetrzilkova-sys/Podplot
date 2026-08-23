@@ -34,7 +34,7 @@ import BusinessAdsPage from "./components/BusinessAdsPage.jsx";
 import GlobalSearchResults from "./components/GlobalSearchResults.jsx";
 import SectionBackButton from "./components/SectionBackButton.jsx";
 
-import { LOCATION_DOODLE_ICONS } from "./components/doodle/doodleIcons.jsx";
+import { LOCATION_DOODLE_ICONS, PROFILE_DOODLE_ICONS } from "./components/doodle/doodleIcons.jsx";
 import { APP_ROLES } from "./data/userRoles.js";
 import usePullToRefresh, { PullToRefreshIndicator } from "./hooks/usePullToRefresh.jsx";
 
@@ -144,14 +144,15 @@ function Screen() {
   );
 }
 
-function AppPanelOverlay({ open, title, onClose, children }) {
+function AppPanelOverlay({ open, title, onClose, headerTrailing = null, children }) {
   if (!open) return null;
 
   return (
     <div className="pp-profile-overlay" role="dialog" aria-label={title}>
       <div className="pp-profile-overlay-header">
         <SectionBackButton onClick={onClose} ariaLabel="Zpět" />
-        <span className="text-sm font-bold text-stone-900 min-w-0 truncate">{title}</span>
+        <span className="text-sm font-bold text-stone-900 min-w-0 truncate flex-1">{title}</span>
+        {headerTrailing}
       </div>
       <div className="pp-profile-overlay-body">{children}</div>
     </div>
@@ -161,19 +162,45 @@ function AppPanelOverlay({ open, title, onClose, children }) {
 function ProfileOverlay() {
   const { profileOpen, closeProfile } = useApp();
   const legalBackRef = useRef(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const registerLegalBack = useCallback((fn) => {
     legalBackRef.current = fn;
   }, []);
 
+  useEffect(() => {
+    if (!profileOpen) setSettingsOpen(false);
+  }, [profileOpen]);
+
   const handleBack = () => {
     if (legalBackRef.current?.()) return;
+    if (settingsOpen) {
+      setSettingsOpen(false);
+      return;
+    }
     closeProfile();
   };
 
   return (
-    <AppPanelOverlay open={profileOpen} title="Profil" onClose={handleBack}>
-      <MyProfile registerLegalBack={registerLegalBack} />
+    <AppPanelOverlay
+      open={profileOpen}
+      title={settingsOpen ? "Nastavení" : "Profil"}
+      onClose={handleBack}
+      headerTrailing={
+        settingsOpen ? null : (
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Nastavení profilu"
+            title="Nastavení"
+            className="pp-profile-settings-btn shrink-0"
+          >
+            <PROFILE_DOODLE_ICONS.settings className="w-5 h-5" />
+          </button>
+        )
+      }
+    >
+      <MyProfile registerLegalBack={registerLegalBack} settingsOpen={settingsOpen} />
     </AppPanelOverlay>
   );
 }

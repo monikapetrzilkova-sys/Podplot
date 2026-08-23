@@ -246,6 +246,18 @@ export function DoodleNameTagIcon({ className }) {
   );
 }
 
+export function DoodleSettingsIcon({ className }) {
+  return (
+    <DoodleIcon className={className}>
+      <circle {...s} cx="12" cy="12" r="3" />
+      <path
+        {...s}
+        d="M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M5.8 5.8l1.6 1.6M16.6 16.6l1.6 1.6M5.8 18.2l1.6-1.6M16.6 7.4l1.6-1.6"
+      />
+    </DoodleIcon>
+  );
+}
+
 export function DoodleSportIcon({ className }) {
   return (
     <DoodleIcon className={className}>
@@ -738,6 +750,7 @@ export const PROFILE_DOODLE_ICONS = {
   car: DoodleCarIcon,
   promote: DoodleMegaphoneIcon,
   groups: DoodleGroupsIcon,
+  settings: DoodleSettingsIcon,
 };
 
 /** Propagace — push / banner / topování katalogu */
