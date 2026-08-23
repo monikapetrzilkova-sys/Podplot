@@ -2127,6 +2127,158 @@ export function AppProvider({ children }) {
     [showToast]
   );
 
+  /** Smazání vlastního příspěvku (inzerát, hlášení, výpomoc, akce…). */
+  const deleteOwnPost = useCallback(
+    (postId, { kind = null } = {}) => {
+      if (!user || !postId) return { ok: false, error: "Nelze smazat." };
+      const uid = user.id ?? "me";
+      const rawId = String(postId);
+      const normalizedId = rawId
+        .replace(/^post-/, "")
+        .replace(/^help-/, "")
+        .replace(/^event-/, "")
+        .replace(/^feed-/, "");
+
+      const owns = (item) => {
+        if (!item) return false;
+        if (item.mine) return true;
+        if (item.authorId && isSameAppUser(item.authorId, uid)) return true;
+        if (item.ownerUserId && isSameAppUser(item.ownerUserId, uid)) return true;
+        if (user.name && item.author && String(item.author).trim() === String(user.name).trim()) {
+          return true;
+        }
+        if (
+          user.name &&
+          item.organizer &&
+          (item.organizer === "Vy" ||
+            String(item.organizer).trim() === String(user.name).trim())
+        ) {
+          return true;
+        }
+        return false;
+      };
+
+      let removed = false;
+      let label = "Příspěvek";
+
+      if (kind === "event" || rawId.startsWith("event-")) {
+        const eventId = kind === "event" ? normalizedId : normalizedId;
+        const ev = events.find((e) => e.id === eventId);
+        if (ev && owns(ev)) {
+          setEvents((prev) => prev.filter((e) => e.id !== eventId));
+          setJoinedEventIds((prev) => prev.filter((id) => id !== eventId));
+          if (selectedEventId === eventId) setSelectedEventId(null);
+          removed = true;
+          label = "Akce";
+        }
+      }
+
+      if (!removed && (kind === "help" || rawId.startsWith("help-"))) {
+        const helpId = normalizedId;
+        const help = neighborHelp.find((h) => h.id === helpId);
+        if (help && owns(help)) {
+          setNeighborHelp((prev) => prev.filter((h) => h.id !== helpId));
+          removed = true;
+          label = "Výpomoc";
+        }
+      }
+
+      if (!removed) {
+        const post =
+          userPosts.find((p) => p.id === rawId || p.id === normalizedId || p.id === `feed-${normalizedId}`) ??
+          userGroupPosts.find((p) => p.id === rawId || p.id === normalizedId) ??
+          null;
+        if (post && owns(post)) {
+          const pid = post.id;
+          setUserPosts((prev) => prev.filter((p) => p.id !== pid));
+          setUserGroupPosts((prev) => prev.filter((p) => p.id !== pid));
+          setUserLendingItems((prev) =>
+            prev.filter((item) => item.id !== pid && item.fromPostId !== pid)
+          );
+          const reportId =
+            post.fromSecurityReportId ||
+            (String(pid).startsWith("feed-") ? String(pid).slice(5) : null);
+          if (reportId) {
+            setUserReports((prev) => prev.filter((r) => r.id !== reportId));
+            setExtraReports((prev) => prev.filter((r) => r.id !== reportId));
+            setMunicipalityPrompts((prev) =>
+              prev.filter((p) => p.fromReportId !== reportId && p.id !== reportId)
+            );
+          }
+          removed = true;
+          label =
+            post.type === "Hlášení" || post.feedSubtype === "hlaseni"
+              ? "Hlášení"
+              : post.type === "Tip"
+                ? "Tip"
+                : "Příspěvek";
+        }
+      }
+
+      if (!removed) {
+        const help = neighborHelp.find((h) => h.id === rawId || h.id === normalizedId);
+        if (help && owns(help)) {
+          setNeighborHelp((prev) => prev.filter((h) => h.id !== help.id));
+          removed = true;
+          label = "Výpomoc";
+        }
+      }
+
+      if (!removed) {
+        const lending = userLendingItems.find(
+          (item) => item.id === rawId || item.id === normalizedId
+        );
+        if (lending && owns(lending)) {
+          setUserLendingItems((prev) => prev.filter((item) => item.id !== lending.id));
+          setUserPosts((prev) => prev.filter((p) => p.id !== lending.id));
+          removed = true;
+          label = "Půjčovna";
+        }
+      }
+
+      if (!removed) {
+        const report =
+          userReports.find((r) => r.id === rawId || r.id === normalizedId) ??
+          extraReports.find((r) => r.id === rawId || r.id === normalizedId);
+        if (report && owns(report)) {
+          const rid = report.id;
+          setUserReports((prev) => prev.filter((r) => r.id !== rid));
+          setExtraReports((prev) => prev.filter((r) => r.id !== rid));
+          setUserPosts((prev) =>
+            prev.filter(
+              (p) => p.fromSecurityReportId !== rid && p.id !== `feed-${rid}` && p.id !== rid
+            )
+          );
+          setMunicipalityPrompts((prev) =>
+            prev.filter((p) => p.fromReportId !== rid)
+          );
+          removed = true;
+          label = "Hlášení";
+        }
+      }
+
+      if (!removed) {
+        showToast("Smazat lze jen vlastní příspěvek.", "info");
+        return { ok: false, error: "not_owner" };
+      }
+
+      showToast(`${label} bylo smazáno.`, "success");
+      return { ok: true };
+    },
+    [
+      user,
+      events,
+      neighborHelp,
+      userPosts,
+      userGroupPosts,
+      userLendingItems,
+      userReports,
+      extraReports,
+      selectedEventId,
+      showToast,
+    ]
+  );
+
   const reportEvent = useCallback(
     (eventId, reason) => {
       const ev = events.find((e) => e.id === eventId);
@@ -6940,6 +7092,7 @@ export function AppProvider({ children }) {
         setGroupFilter,
         reportedPosts,
         reportPost,
+        deleteOwnPost,
         reportEvent,
         eventReporterIds,
         reportedReports,

@@ -134,6 +134,7 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
     topPost,
     reportedPosts,
     reportPost,
+    deleteOwnPost,
     credits,
     isSearchHighlighted,
     openEditListing,
@@ -363,8 +364,12 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
             {post.type && (
               <span className="pp-badge shrink-0">{post.type}</span>
             )}
-            {!post.mine && !isReported && !isReserved && (
-              <ReportMenu compact onReport={(reason) => reportPost(post.id, reason)} />
+            {!isReported && !isReserved && (
+              <ReportMenu
+                compact
+                onReport={post.mine ? undefined : (reason) => reportPost(post.id, reason)}
+                onDelete={post.mine ? () => deleteOwnPost(post.id) : undefined}
+              />
             )}
           </div>
         </div>

@@ -32,6 +32,7 @@ function OpenCategoryLink({ section, onSelectSection }) {
 
 export default function NeighborsLatestFeed({ onSelectSection }) {
   const {
+    user,
     userPostsForLocation,
     feedPostsForLocation,
     neighborHelp,
@@ -46,6 +47,7 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
     offerHelpOnPost,
     hasOfferedHelp,
     reportPost,
+    deleteOwnPost,
   } = useApp();
 
   const items = useMemo(() => {
@@ -125,6 +127,10 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
 
     const akce = upcomingEvents.slice(0, PER_CATEGORY).map((ev) => {
       const sectionBadge = getNeighborSectionBadge("akce");
+      const mine =
+        Boolean(ev.mine) ||
+        ev.organizer === "Vy" ||
+        Boolean(user?.name && ev.organizer === user.name);
       return {
         id: `event-${ev.id}`,
         section: "akce",
@@ -132,11 +138,10 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
         badge: sectionBadge.label,
         badgeClassName: sectionBadge.className,
         preview: [ev.date, ev.location].filter(Boolean).join(" · "),
-        authorLabel: displayCreatorLabel(ev.organizer, ev.accountType, {
-          mine: ev.organizer === "Vy",
-        }),
+        authorLabel: displayCreatorLabel(ev.organizer, ev.accountType, { mine }),
         event: ev,
-        createdAt: 0,
+        mine,
+        createdAt: ev.createdAt ?? 0,
       };
     });
 
@@ -147,6 +152,7 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
     const rest = ordered.filter((item) => !item.mine);
     return [...fresh, ...rest];
   }, [
+    user?.name,
     userPostsForLocation,
     feedPostsForLocation,
     neighborHelp,
@@ -191,6 +197,8 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
                 onReport={
                   item.post.mine ? undefined : (reason) => reportPost(item.post.id, reason)
                 }
+                onDelete={item.post.mine ? () => deleteOwnPost(item.post.id) : undefined}
+                mine={Boolean(item.post.mine)}
               >
                 <FeedCard post={item.post} detailsOnly bodyInParent />
                 <OpenCategoryLink section="veci" onSelectSection={onSelectSection} />
@@ -210,6 +218,12 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
                 authorLabel={item.authorLabel}
                 preview={item.preview}
                 expandable={helpNeedsExpand}
+                mine={Boolean(item.mine)}
+                onDelete={
+                  item.mine
+                    ? () => deleteOwnPost(item.help?.helpId || item.help?.id, { kind: "help" })
+                    : undefined
+                }
               >
                 {helpNeedsExpand ? (
                   <HelpFeedActions
@@ -234,6 +248,12 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
                 preview={item.preview || item.meta}
                 editedItem={item.post}
                 priceLabel={item.price}
+                mine={Boolean(item.post?.mine || item.mine)}
+                onDelete={
+                  item.post?.mine || item.mine
+                    ? () => deleteOwnPost(item.post.id)
+                    : undefined
+                }
               >
                 <FeedCard post={item.post} detailsOnly bodyInParent />
                 <OpenCategoryLink section="skupiny" onSelectSection={onSelectSection} />
@@ -253,6 +273,12 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
                 authorLabel={item.authorLabel}
                 preview={item.preview}
                 ctaLabel="Detail akce"
+                mine={Boolean(item.mine)}
+                onDelete={
+                  item.mine
+                    ? () => deleteOwnPost(item.event.id, { kind: "event" })
+                    : undefined
+                }
               >
                 <p className="pp-text-body text-sm text-stone-600">
                   {item.event.address ?? item.event.location}

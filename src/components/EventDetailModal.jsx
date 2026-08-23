@@ -27,6 +27,7 @@ export default function EventDetailModal() {
     postEventChat,
     user,
     reportEvent,
+    deleteOwnPost,
     eventReporterIds,
   } = useApp();
   const [text, setText] = useState("");
@@ -67,7 +68,19 @@ export default function EventDetailModal() {
           <div className="h-24 w-full bg-gradient-to-br from-emerald-100 to-emerald-50 pointer-events-none" />
         )}
         <div className="absolute top-3 right-3 z-30 flex items-center gap-1">
-          {!isOwnEvent && (
+          {isOwnEvent ? (
+            <div className="rounded-full bg-white/95 shadow-md flex items-center">
+              <ReportMenu
+                compact
+                label="Moje akce"
+                deleteLabel="Smazat akci"
+                onDelete={() => {
+                  const result = deleteOwnPost(ev.id, { kind: "event" });
+                  if (result?.ok) closeEventDetail();
+                }}
+              />
+            </div>
+          ) : (
             <div className="rounded-full bg-white/95 shadow-md flex items-center">
               {reportCount > 0 && (
                 <span className="pl-2.5 pr-1 text-[10px] font-semibold text-stone-500 whitespace-nowrap">

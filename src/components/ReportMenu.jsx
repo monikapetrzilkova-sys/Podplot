@@ -25,19 +25,34 @@ function IconDots({ className = "w-4 h-4" }) {
 
 export default function ReportMenu({
   onReport,
+  onDelete = null,
   compact = false,
-  label = "Nahlásit příspěvek",
+  label = null,
   reasons = DEFAULT_REASONS,
   disabled = false,
+  deleteLabel = "Smazat příspěvek",
 }) {
   const [open, setOpen] = useState(false);
+  const canReport = typeof onReport === "function";
+  const canDelete = typeof onDelete === "function";
+  const menuLabel = label || (canDelete && !canReport ? "Moje možnosti" : "Nahlásit příspěvek");
 
   const handleReport = (reasonId) => {
     onReport?.(reasonId);
     setOpen(false);
   };
 
-  if (disabled) return null;
+  const handleDelete = () => {
+    const ok =
+      typeof window !== "undefined"
+        ? window.confirm("Opravdu chcete smazat tento příspěvek? Tato akce nejde vrátit.")
+        : true;
+    if (!ok) return;
+    onDelete?.();
+    setOpen(false);
+  };
+
+  if (disabled || (!canReport && !canDelete)) return null;
 
   return (
     <div className="relative shrink-0">
@@ -50,7 +65,7 @@ export default function ReportMenu({
         className={`text-stone-400 hover:text-stone-600 transition-colors ${
           compact ? "p-1" : "p-1.5"
         }`}
-        aria-label={label}
+        aria-label={menuLabel}
       >
         <IconDots className={compact ? "w-4 h-4" : "w-5 h-5"} />
       </button>
@@ -63,19 +78,43 @@ export default function ReportMenu({
             aria-label="Zavřít"
           />
           <div className="absolute right-0 top-7 z-20 bg-white border border-stone-200 rounded-xl shadow-lg py-1 min-w-[160px]">
-            <p className="px-3 py-1.5 text-[10px] font-bold uppercase text-stone-400 tracking-wide">
-              {label}
-            </p>
-            {reasons.map((r) => (
-              <button
-                key={r.id}
-                type="button"
-                className="block w-full text-left px-3 py-2 text-xs text-stone-700 hover:bg-[#F9F9F9]"
-                onClick={() => handleReport(r.id)}
-              >
-                {r.label}
-              </button>
-            ))}
+            {canDelete ? (
+              <>
+                <p className="px-3 py-1.5 text-[10px] font-bold uppercase text-stone-400 tracking-wide">
+                  {canReport ? "Vlastní příspěvek" : menuLabel}
+                </p>
+                <button
+                  type="button"
+                  className="block w-full text-left px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete();
+                  }}
+                >
+                  {deleteLabel}
+                </button>
+              </>
+            ) : null}
+            {canReport ? (
+              <>
+                <p className="px-3 py-1.5 text-[10px] font-bold uppercase text-stone-400 tracking-wide">
+                  {canDelete ? "Nahlásit" : menuLabel}
+                </p>
+                {reasons.map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    className="block w-full text-left px-3 py-2 text-xs text-stone-700 hover:bg-[#F9F9F9]"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleReport(r.id);
+                    }}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </>
+            ) : null}
           </div>
         </>
       )}

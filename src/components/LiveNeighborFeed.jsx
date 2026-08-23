@@ -65,6 +65,7 @@ export default function LiveNeighborFeed() {
     formatPersonName,
     globalSearchQuery,
     reportPost,
+    deleteOwnPost,
     showToast,
     getUsefulCount,
     getSearchHelpCount,
@@ -295,6 +296,11 @@ export default function LiveNeighborFeed() {
                 })}
                 preview={item.subtitle || null}
                 mine={Boolean(item.mine)}
+                onDelete={
+                  item.mine
+                    ? () => deleteOwnPost(item.eventId, { kind: "event" })
+                    : undefined
+                }
                 ctaLabel="Detail akce"
               >
                 {(ev?.address || ev?.location || ev?.categoryLabel) && (
@@ -361,7 +367,10 @@ export default function LiveNeighborFeed() {
                   mine: item.mine,
                 })}
                 preview={item.body}
-                onReport={reportGeneric}
+                onReport={item.mine ? undefined : reportGeneric}
+                onDelete={
+                  item.mine ? () => deleteOwnPost(item.helpId, { kind: "help" }) : undefined
+                }
                 mine={Boolean(item.mine)}
                 expandable={helpNeedsExpand}
               >
@@ -420,7 +429,14 @@ export default function LiveNeighborFeed() {
                 distanceLabel={[distance, placeLabel].filter(Boolean).join(" · ") || null}
                 preview={post.body}
                 editedItem={post}
-                onReport={(reason) => reportPost(post.id, reason)}
+                onReport={
+                  post.mine || item.mine
+                    ? undefined
+                    : (reason) => reportPost(post.id, reason)
+                }
+                onDelete={
+                  post.mine || item.mine ? () => deleteOwnPost(post.id) : undefined
+                }
                 mine={Boolean(post.mine || item.mine)}
                 onMapClick={reportId ? openOnMap : undefined}
                 expandable={needsExpand}
@@ -447,7 +463,16 @@ export default function LiveNeighborFeed() {
                 preview={item.post?.body}
                 priceLabel={item.price}
                 editedItem={item.post}
-                onReport={(reason) => reportPost(item.post.id, reason)}
+                onReport={
+                  item.post?.mine || item.mine
+                    ? undefined
+                    : (reason) => reportPost(item.post.id, reason)
+                }
+                onDelete={
+                  item.post?.mine || item.mine
+                    ? () => deleteOwnPost(item.post.id)
+                    : undefined
+                }
                 expandable={false}
                 onSummaryClick={() => openLendingFromHome(item.post.id)}
                 mine={Boolean(item.mine || item.post?.mine)}
@@ -471,7 +496,16 @@ export default function LiveNeighborFeed() {
               statusLabel={item.reserved ? "V rezervaci" : null}
               priceLabel={item.reserved ? null : item.price}
               editedItem={item.post}
-              onReport={(reason) => reportPost(item.post.id, reason)}
+              onReport={
+                item.post?.mine || item.mine
+                  ? undefined
+                  : (reason) => reportPost(item.post.id, reason)
+              }
+              onDelete={
+                item.post?.mine || item.mine
+                  ? () => deleteOwnPost(item.post.id)
+                  : undefined
+              }
               mine={Boolean(item.mine || item.post?.mine)}
             >
               <FeedCard post={item.post} detailsOnly bodyInParent />

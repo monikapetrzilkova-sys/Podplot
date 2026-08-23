@@ -22,9 +22,10 @@ export default function LiveFeedCard({
   preview = null,
   authorLabel = null,
   distanceLabel = null,
-  onReport,
-  onSummaryClick,
-  onMapClick = null,
+      onReport,
+      onDelete = null,
+      onSummaryClick,
+      onMapClick = null,
   expandable = true,
   children,
   statusLabel = null,
@@ -72,7 +73,7 @@ export default function LiveFeedCard({
         type="button"
         onClick={handleSummaryClick}
         className={`pp-feed-card__summary w-full text-left px-3 py-2 transition-colors box-border ${
-          onReport ? "pr-10" : "pr-3"
+          onReport || onDelete ? "pr-10" : "pr-3"
         } ${mine ? "hover:bg-[#EEF5F1]/90" : "hover:bg-[#FAFAFA]/80"} ${
           canExpand || onSummaryClick ? "" : "cursor-default"
         }`}
@@ -169,9 +170,13 @@ export default function LiveFeedCard({
         </div>
       </button>
 
-      {onReport && (
+      {(onReport || onDelete) && (
         <div className="absolute top-1.5 right-1.5 z-10">
-          <ReportMenu compact onReport={onReport} />
+          <ReportMenu
+            compact
+            onReport={mine ? undefined : onReport}
+            onDelete={mine ? onDelete : undefined}
+          />
         </div>
       )}
 
