@@ -346,6 +346,10 @@ export default function LiveNeighborFeed() {
           }
 
           if (item.kind === "news") {
+            const newsNeedsExpand = feedItemNeedsExpand(
+              { body: item.body, photos: item.newsItem?.photos },
+              { preview: item.body }
+            );
             return (
               <LiveFeedCard
                 key={item.id}
@@ -356,13 +360,20 @@ export default function LiveNeighborFeed() {
                 preview={item.body}
                 editedItem={item.newsItem}
                 onReport={reportGeneric}
-                expandable={false}
-              />
+                expandable={newsNeedsExpand}
+              >
+                {newsNeedsExpand ? (
+                  <p className="pp-text-body text-xs text-stone-600 whitespace-pre-wrap">{item.body}</p>
+                ) : null}
+              </LiveFeedCard>
             );
           }
 
           if (item.kind === "help") {
-            const helpNeedsExpand = !item.mine;
+            const helpNeedsExpand = feedItemNeedsExpand(
+              { body: item.body },
+              { preview: item.body, hasExtraDetail: !item.mine }
+            );
             return (
               <LiveFeedCard
                 key={item.id}
@@ -382,11 +393,15 @@ export default function LiveNeighborFeed() {
                 expandable={helpNeedsExpand}
               >
                 {helpNeedsExpand ? (
-                  <HelpFeedActions
-                    help={item}
-                    onOfferHelp={offerHelpOnPost}
-                    alreadyOffered={hasOfferedHelp(item.helpId)}
-                  />
+                  item.mine ? (
+                    <p className="pp-text-body text-sm whitespace-pre-wrap">{item.body}</p>
+                  ) : (
+                    <HelpFeedActions
+                      help={item}
+                      onOfferHelp={offerHelpOnPost}
+                      alreadyOffered={hasOfferedHelp(item.helpId)}
+                    />
+                  )
                 ) : null}
               </LiveFeedCard>
             );
@@ -406,11 +421,6 @@ export default function LiveNeighborFeed() {
             const placeLabel = post.placeLabel || null;
             const distance = extractDistanceFromMeta(post.meta);
             const mapCategory = isTip ? REPORTS_TIP_CATEGORY_ID : "all";
-            const needsExpand = feedItemNeedsExpand(post, {
-              preview: post.body,
-              // Cizí hlášení: rozbalit kvůli zprávě / „Užitečné“
-              hasExtraDetail: !post.mine && !item.mine,
-            });
 
             const openOnMap = () => {
               if (!reportId) return;
@@ -446,9 +456,8 @@ export default function LiveNeighborFeed() {
                 }
                 mine={Boolean(post.mine || item.mine)}
                 onMapClick={reportId ? openOnMap : undefined}
-                expandable={needsExpand}
               >
-                {needsExpand ? <FeedCard post={post} detailsOnly bodyInParent /> : null}
+                <FeedCard post={post} detailsOnly bodyInParent />
               </LiveFeedCard>
             );
           }

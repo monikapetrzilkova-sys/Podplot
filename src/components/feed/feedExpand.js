@@ -1,6 +1,12 @@
-/** Odhad, zda line-clamp-2 skryje část textu. */
-export function bodyExceedsCollapsedPreview(text, maxChars = 140) {
-  return String(text ?? "").trim().length > maxChars;
+/** Odpovídá sbalenému náhledu LiveFeedCard (`line-clamp-1`). */
+export const COLLAPSED_FEED_PREVIEW_CHARS = 56;
+
+/** Odhad, zda line-clamp-1 skryje část textu. */
+export function bodyExceedsCollapsedPreview(text, maxChars = COLLAPSED_FEED_PREVIEW_CHARS) {
+  const t = String(text ?? "").trim();
+  if (!t) return false;
+  if (t.includes("\n")) return true;
+  return t.length > maxChars;
 }
 
 export function postHasFeedPhotos(post) {

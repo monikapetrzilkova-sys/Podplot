@@ -8,6 +8,7 @@ import { extractListingPrice } from "./CompactListingRow.jsx";
 import { isThingsModuleListing } from "../utils/thingsModule.js";
 import { getRecentGroupPosts, getGroup } from "../data/groups.js";
 import { displayCreatorLabel } from "../data/accountTypes.js";
+import { feedItemNeedsExpand } from "./feed/feedExpand.js";
 
 const SECTION_LABELS = {
   veci: "Věci",
@@ -212,7 +213,13 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
           }
 
           if (item.section === "vypomoc" && item.help) {
-            const helpNeedsExpand = !item.mine;
+            const helpNeedsExpand = feedItemNeedsExpand(
+              { body: item.preview || item.help?.body },
+              {
+                preview: item.preview || item.help?.body,
+                hasExtraDetail: !item.mine,
+              }
+            );
             return (
               <LiveFeedCard
                 key={item.id}
@@ -231,11 +238,17 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
                 }
               >
                 {helpNeedsExpand ? (
-                  <HelpFeedActions
-                    help={item.help}
-                    onOfferHelp={offerHelpOnPost}
-                    alreadyOffered={hasOfferedHelp(item.help.helpId)}
-                  />
+                  item.mine ? (
+                    <p className="pp-text-body text-sm whitespace-pre-wrap">
+                      {item.preview || item.help?.body}
+                    </p>
+                  ) : (
+                    <HelpFeedActions
+                      help={item.help}
+                      onOfferHelp={offerHelpOnPost}
+                      alreadyOffered={hasOfferedHelp(item.help.helpId)}
+                    />
+                  )
                 ) : null}
               </LiveFeedCard>
             );

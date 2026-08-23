@@ -4,6 +4,7 @@ import EditedBadge from "./EditedBadge.jsx";
 import ReportMenu from "./ReportMenu.jsx";
 import FeedBadgePill from "./feed/FeedBadgePill.jsx";
 import { getListingBadge, getNeighborSectionBadge } from "./feed/feedBadgeMeta.js";
+import { bodyExceedsCollapsedPreview } from "./feed/feedExpand.js";
 import { IconMapPin } from "../data/icons.jsx";
 
 export { getListingBadge, getNeighborSectionBadge };
@@ -22,10 +23,10 @@ export default function LiveFeedCard({
   preview = null,
   authorLabel = null,
   distanceLabel = null,
-      onReport,
-      onDelete = null,
-      onSummaryClick,
-      onMapClick = null,
+  onReport,
+  onDelete = null,
+  onSummaryClick,
+  onMapClick = null,
   expandable = true,
   children,
   statusLabel = null,
@@ -41,7 +42,17 @@ export default function LiveFeedCard({
   ctaLabel = null,
 }) {
   const [prefOpen, , togglePref] = useUiPref(accordionKey("liveFeed", itemId), false);
-  const canExpand = expandable && Boolean(children);
+  const authorParts = [authorLabel, distanceLabel].filter(Boolean);
+  const authorText = authorParts.length ? authorParts.join(" · ") : null;
+  const footerLabel = ctaLabel || metaLine || null;
+  const previewText = String(preview ?? "").trim();
+  const titleText = String(title ?? "").trim();
+  const showPreview = Boolean(previewText && previewText !== titleText);
+  /** Když náhled pokračuje za řádek, vždy umožnit rozbalení (i bez children), pokud není odkaz pryč. */
+  const previewNeedsExpand = showPreview && bodyExceedsCollapsedPreview(previewText);
+  const hasChildren = children != null && children !== false;
+  const canExpand =
+    (Boolean(expandable) && hasChildren) || (previewNeedsExpand && !onSummaryClick);
   const controlled = typeof expandedProp === "boolean";
   const isOpen = canExpand && (controlled ? expandedProp : prefOpen);
 
@@ -58,18 +69,11 @@ export default function LiveFeedCard({
     else togglePref();
   };
 
-  const authorParts = [authorLabel, distanceLabel].filter(Boolean);
-  const authorText = authorParts.length ? authorParts.join(" · ") : null;
-  const footerLabel = ctaLabel || metaLine || null;
-  const previewText = String(preview ?? "").trim();
-  const titleText = String(title ?? "").trim();
-  const showPreview = Boolean(previewText && previewText !== titleText);
-
   return (
     <article
       id={domId}
       className={`pp-feed-card relative ${mine ? "pp-feed-card--mine" : ""} ${
-        isOpen ? "pp-feed-card--open" : "pp-feed-card--collapsed"
+        isOpen ? "pp-feed-card--open" : "pp-feed-card--truncated"
       }`.trim()}
     >
       <button
@@ -204,11 +208,11 @@ export default function LiveFeedCard({
         </div>
       )}
 
-      {isOpen && (
+      {isOpen && hasChildren ? (
         <div className="px-3 pt-2 pb-3 border-t border-stone-100 animate-[fadeIn_0.15s_ease-out] space-y-2">
           {children}
         </div>
-      )}
+      ) : null}
     </article>
   );
 }
