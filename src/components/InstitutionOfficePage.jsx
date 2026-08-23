@@ -13,6 +13,7 @@ import InstitutionPresenceBar from "./InstitutionPresenceBar.jsx";
 import { useInstitutionPresence } from "../hooks/useInstitutionPresence.js";
 import { AGENDA_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
 import { isOfficeOrganizedEvent } from "../utils/categoryAccents.js";
+import SectionBackButton from "./SectionBackButton.jsx";
 
 const AGENDA_MAIN = [
   { id: "prompts", label: "Hlášení občanů", shortLabel: "Hlášení", Icon: AGENDA_DOODLE_ICONS.prompts },
@@ -136,13 +137,7 @@ export default function InstitutionOfficePage() {
             <h1 className="text-lg font-bold text-stone-900">Nastavení profilu</h1>
             <p className="text-xs text-stone-500 mt-0.5">Oficiální údaje a úřední hodiny</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setSettingsOpen(false)}
-            className="text-xs font-semibold text-[#3D7A68] px-3 py-1.5 rounded-lg border border-[#C5DDD4] bg-[#F1F6F5]"
-          >
-            ← Zpět
-          </button>
+          <SectionBackButton onClick={() => setSettingsOpen(false)} />
         </div>
 
         <InstitutionPresenceBar peers={peers} conflictPeers={conflictPeers} />

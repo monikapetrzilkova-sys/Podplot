@@ -5,6 +5,7 @@ import CategoryGrid from "../module/CategoryGrid.jsx";
 import MapComponent from "../module/MapComponent.jsx";
 import PhotoUpload from "../PhotoUpload.jsx";
 import ModalDoodleBackdrop from "../ModalDoodleBackdrop.jsx";
+import SectionBackButton from "../SectionBackButton.jsx";
 
 export default function PlaceSuggestionModal() {
   const { submitPlaceSuggestion, activeLocation, user, placeSuggestionOpen, closePlaceSuggestion } =
@@ -103,13 +104,11 @@ export default function PlaceSuggestionModal() {
                 {mapPos && (
                   <p className="text-xs text-emerald-700 font-medium">Místo označeno na mapě ✓</p>
                 )}
-                <button
-                  type="button"
+                <SectionBackButton
                   onClick={() => setStep("form")}
-                  className="w-full py-2 text-sm font-semibold border border-stone-200 rounded-xl"
-                >
-                  ← Zpět k formuláři
-                </button>
+                  label="Zpět k formuláři"
+                  className="w-full justify-center"
+                />
               </>
             ) : (
               <>

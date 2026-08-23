@@ -12,6 +12,7 @@ import {
   topicLastTime,
   chatTopicKindLabel,
 } from "../data/chatTopics.js";
+import SectionBackButton from "./SectionBackButton.jsx";
 
 /** Messenger-style fajfky: odesláno / doručeno / přečteno */
 function MessageTicks({ status = "sent" }) {
@@ -262,15 +263,10 @@ export default function ChatModal({
       <div className="pp-app-sheet-overlay pp-chat-overlay" role="dialog" aria-label={`Chat · ${displayName}`}>
         <div className="pp-app-sheet pp-app-sheet--full pp-chat-sheet flex flex-col">
           <header className="pp-chat-header">
-            <button
-              type="button"
+            <SectionBackButton
               onClick={onClose}
-              className="pp-overlay-back-btn"
-              aria-label="Zpět na zprávy"
-              title="Zpět"
-            >
-              ←
-            </button>
+              ariaLabel="Zpět na zprávy"
+            />
             <Avatar
               initials={participantInitials || "??"}
               roleId="soused"

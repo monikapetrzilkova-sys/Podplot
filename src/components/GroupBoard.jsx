@@ -5,6 +5,7 @@ import { sortPostsByTop } from "../data/pricing.js";
 import FeedCard from "./FeedCard.jsx";
 import { AddListingButton } from "./QuickNav.jsx";
 import { GroupNavIcon, GROUP_ICON_CLASS } from "./communityNavIcons.jsx";
+import SectionBackButton from "./SectionBackButton.jsx";
 
 export default function GroupBoard() {
   const {
@@ -29,13 +30,7 @@ export default function GroupBoard() {
   return (
     <div className="bg-stone-100/80">
       <div className="bg-white border-b border-stone-200 px-4 pt-4 pb-3 shrink-0">
-        <button
-          type="button"
-          onClick={closeGroup}
-          className="text-sm text-[#4D8B7A] font-semibold mb-3 flex items-center gap-1"
-        >
-          ← Zpět na skupiny
-        </button>
+        <SectionBackButton onClick={closeGroup} label="Zpět na skupiny" className="mb-3" />
         <div className="flex items-center gap-3 mb-2">
           <span className="w-12 h-12 rounded-2xl bg-white border border-[#EEEEEE] flex items-center justify-center">
             <GroupNavIcon id={group.id} className="w-5 h-5" />

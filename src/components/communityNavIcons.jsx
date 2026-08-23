@@ -21,6 +21,14 @@ export function IconNavPlus({ className = "w-5 h-5" }) {
   );
 }
 
+export function IconNavBack({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" {...s}>
+      <path d="M15 18l-6-6 6-6" />
+    </svg>
+  );
+}
+
 export function IconWorldCommunity({ className = "w-4 h-4" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" {...s}>

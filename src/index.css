@@ -985,18 +985,22 @@ body,
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  min-height: 40px;
-  padding: 0 12px 0 10px;
-  border-radius: 12px;
-  border: 1.5px solid #c5ddd4;
-  background: #ffffff;
-  color: #1b4d3e;
+  gap: 7px;
+  min-height: 42px;
+  padding: 0 14px 0 12px;
+  border-radius: 999px;
+  border: 2px solid #ffffff;
+  background: #1b4d3e;
+  color: #ffffff;
   font-size: 13px;
   font-weight: 700;
+  letter-spacing: 0.01em;
   line-height: 1;
-  box-shadow: 0 1px 3px rgba(27, 77, 62, 0.08);
-  transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(27, 77, 62, 0.35);
+  transition: transform 0.15s ease, background 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .pp-smart-bar-back {
@@ -1016,14 +1020,14 @@ body,
 
 .pp-smart-bar-back:hover,
 .pp-section-back-btn:hover {
-  background: #f7faf9;
-  border-color: #3d7a68;
-  color: #1b4d3e;
+  background: #163d32;
+  color: #ffffff;
+  border-color: #ffffff;
 }
 
 .pp-smart-bar-back:active,
 .pp-section-back-btn:active {
-  transform: scale(0.97);
+  transform: scale(0.95);
 }
 
 .pp-smart-bar-pills {
@@ -1097,17 +1101,17 @@ body,
 
 .pp-smart-bar--prominent .pp-section-back-btn,
 .pp-smart-bar--prominent .pp-smart-bar-back {
-  background: #ffffff;
-  color: #1b4d3e;
-  border: 1.5px solid #c5ddd4;
-  box-shadow: 0 1px 3px rgba(27, 77, 62, 0.08);
+  background: #1b4d3e;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 14px rgba(27, 77, 62, 0.35);
 }
 
 .pp-smart-bar--prominent .pp-section-back-btn:hover,
 .pp-smart-bar--prominent .pp-smart-bar-back:hover {
-  background: #f7faf9;
-  border-color: #3d7a68;
-  color: #1b4d3e;
+  background: #163d32;
+  color: #ffffff;
+  border-color: #ffffff;
 }
 
 .pp-smart-tab--prominent {
@@ -2617,29 +2621,38 @@ body,
   overscroll-behavior: contain;
 }
 
-/* Zpět v horní liště — spolehlivé na telefonu (ne pod systémovou lištou) */
+/* Zpět v horní liště — stejný výrazný styl jako „+ Nahlásit“ */
 .pp-overlay-back-btn {
   flex-shrink: 0;
-  width: 2.75rem;
-  height: 2.75rem;
-  border-radius: 999px;
-  border: 1px solid #d6e5df;
-  background: #f1f6f5;
-  color: #1b4d3e;
-  font-size: 1.25rem;
-  line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 0 14px 0 12px;
+  border-radius: 999px;
+  border: 2px solid #ffffff;
+  background: #1b4d3e;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(27, 77, 62, 0.35);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   position: relative;
   z-index: 3;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.pp-overlay-back-btn:hover {
+  background: #163d32;
 }
 
 .pp-overlay-back-btn:active {
-  transform: scale(0.96);
-  background: #e8f3ef;
+  transform: scale(0.95);
 }
 
 /* Datum + čas pod sebou — nativní date picker se nepřekrývá s polem času */
@@ -2686,13 +2699,6 @@ input[type="date"].pp-datetime-fields__control {
   .pp-datetime-fields__control {
     min-height: 3rem;
     font-size: 1rem;
-  }
-}
-
-@media (pointer: coarse) {
-  .pp-overlay-back-btn {
-    width: 3rem;
-    height: 3rem;
   }
 }
 

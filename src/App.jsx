@@ -32,6 +32,7 @@ import LocationAccessPrompt from "./components/LocationAccessPrompt.jsx";
 
 import BusinessAdsPage from "./components/BusinessAdsPage.jsx";
 import GlobalSearchResults from "./components/GlobalSearchResults.jsx";
+import SectionBackButton from "./components/SectionBackButton.jsx";
 
 import { LOCATION_DOODLE_ICONS } from "./components/doodle/doodleIcons.jsx";
 import { APP_ROLES } from "./data/userRoles.js";
@@ -149,15 +150,7 @@ function AppPanelOverlay({ open, title, onClose, children }) {
   return (
     <div className="pp-profile-overlay" role="dialog" aria-label={title}>
       <div className="pp-profile-overlay-header">
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Zpět"
-          title="Zpět"
-          className="pp-overlay-back-btn"
-        >
-          ←
-        </button>
+        <SectionBackButton onClick={onClose} ariaLabel="Zpět" />
         <span className="text-sm font-bold text-stone-900 min-w-0 truncate">{title}</span>
       </div>
       <div className="pp-profile-overlay-body">{children}</div>

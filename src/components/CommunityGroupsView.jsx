@@ -14,6 +14,7 @@ import PhotoUpload from "./PhotoUpload.jsx";
 import DoodleEmptyState from "./doodle/DoodleEmptyState.jsx";
 import { ClubCategoryIcon, GroupNavIcon } from "./communityNavIcons.jsx";
 import { displayCreatorLabel } from "../data/accountTypes.js";
+import SectionBackButton from "./SectionBackButton.jsx";
 
 function normalize(text) {
   return (text ?? "")
@@ -427,13 +428,10 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
               {activeGroup.members} členů{isMember ? " · jste člen" : ""}
             </p>
           </div>
-          <button
-            type="button"
+          <SectionBackButton
             onClick={() => setFeedSubFilter(returnFilter)}
-            className="text-[10px] text-[#3D7A68] font-semibold hover:opacity-70 shrink-0"
-          >
-            ← Zpět
-          </button>
+            className="shrink-0"
+          />
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto pb-14 space-y-2">
           <GroupPostComposer groupId={activeGroup.id} />

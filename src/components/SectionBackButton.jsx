@@ -1,17 +1,22 @@
-/** Výrazné tlačítko zpět v hubu Sousedé / Služby */
+import { IconNavBack } from "./communityNavIcons.jsx";
 
-export default function SectionBackButton({ onClick, label = "Zpět", ariaLabel }) {
+/** Výrazné zpět — stejný jazyk jako „+ Nahlásit“ (plná zelená pilulka + ikona + text) */
+
+export default function SectionBackButton({
+  onClick,
+  label = "Zpět",
+  ariaLabel,
+  className = "",
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="pp-section-back-btn"
+      className={`pp-section-back-btn ${className}`.trim()}
       aria-label={ariaLabel ?? label}
       title={label}
     >
-      <span className="pp-section-back-btn-arrow" aria-hidden>
-        ←
-      </span>
+      <IconNavBack className="w-4 h-4 shrink-0" aria-hidden />
       <span className="pp-section-back-btn-label">{label}</span>
     </button>
   );
