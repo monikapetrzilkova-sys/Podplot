@@ -133,7 +133,7 @@ export default function LiveFeedCard({
                           onMapClick();
                         }
                       }}
-                      className="pp-feed-card__map-btn shrink-0"
+                      className="shrink-0 w-[1.15rem] h-[1.15rem] inline-flex items-center justify-center rounded-[0.35rem] border border-[#C5DDD4] bg-white text-[#3D7A68] hover:bg-[#E8F3EF] hover:border-[#3D7A68] transition-colors"
                       aria-label="Zobrazit na mapě"
                       title="Zobrazit na mapě"
                     >
@@ -179,7 +179,7 @@ export default function LiveFeedCard({
                           onMapClick();
                         }
                       }}
-                      className="pp-feed-card__map-btn shrink-0"
+                      className="shrink-0 w-[1.15rem] h-[1.15rem] inline-flex items-center justify-center rounded-[0.35rem] border border-[#C5DDD4] bg-white text-[#3D7A68] hover:bg-[#E8F3EF] hover:border-[#3D7A68] transition-colors"
                       aria-label="Zobrazit na mapě"
                       title="Zobrazit na mapě"
                     >

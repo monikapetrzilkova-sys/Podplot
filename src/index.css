@@ -2792,6 +2792,31 @@ body,
   margin-top: 0;
 }
 
+
+.pp-feed-card--truncated .pp-feed-card__footer {
+  height: 1.15rem;
+  margin-top: 0;
+  align-items: center;
+}
+
+.pp-feed-card__map-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 0.35rem;
+  border: 1px solid #c5ddd4;
+  background: #fff;
+  color: #3d7a68;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.pp-feed-card__map-btn:hover {
+  background: #e8f3ef;
+  border-color: #3d7a68;
+}
+
 .pp-feed-card--open {
   height: auto;
 }
