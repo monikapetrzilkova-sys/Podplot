@@ -390,7 +390,6 @@ export default function LiveNeighborFeed() {
             const placeLabel = post.placeLabel || null;
             const distance = extractDistanceFromMeta(post.meta);
             const mapCategory = isTip ? REPORTS_TIP_CATEGORY_ID : "all";
-            const metaLine = [placeLabel, distance].filter(Boolean).join(" · ") || null;
             const needsExpand = feedItemNeedsExpand(post, {
               preview: post.body,
               // Cizí hlášení: rozbalit kvůli zprávě / „Užitečné“
@@ -418,8 +417,8 @@ export default function LiveNeighborFeed() {
                 authorLabel={displayCreatorLabel(post.author, post.accountType, {
                   mine: post.mine,
                 })}
+                distanceLabel={[distance, placeLabel].filter(Boolean).join(" · ") || null}
                 preview={post.body}
-                metaLine={metaLine}
                 editedItem={post}
                 onReport={(reason) => reportPost(post.id, reason)}
                 mine={Boolean(post.mine || item.mine)}
