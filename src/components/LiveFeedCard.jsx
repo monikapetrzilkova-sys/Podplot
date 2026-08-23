@@ -100,29 +100,50 @@ export default function LiveFeedCard({
               </h3>
               {editedItem && <EditedBadge item={editedItem} className="shrink-0 self-center" />}
             </div>
-            {authorText ? (
-              <p className="pp-feed-card__author pp-text-meta text-[10px] mt-0.5 truncate text-stone-500">
-                {authorText}
-              </p>
-            ) : null}
-            {showPreview ? (
-              <p
-                className={`pp-feed-card__preview pp-text-body text-[11px] leading-snug mt-0.5 text-stone-600 ${
-                  isOpen ? "whitespace-pre-wrap" : "line-clamp-2"
-                }`}
-              >
-                {preview}
-              </p>
-            ) : null}
-            {footerLabel ? (
-              <p
-                className={`pp-feed-card__cta text-[10px] mt-0.5 truncate ${
-                  ctaLabel ? "font-semibold text-[#3D7A68]" : "text-stone-500"
-                }`}
-              >
-                {footerLabel}
-              </p>
-            ) : null}
+            {/* Sbalené: vždy stejné 3 řádky (autor / náhled / CTA), ať mají karty jednotnou výšku */}
+            {isOpen ? (
+              <>
+                {authorText ? (
+                  <p className="pp-feed-card__author pp-text-meta text-[10px] mt-0.5 truncate text-stone-500">
+                    {authorText}
+                  </p>
+                ) : null}
+                {showPreview ? (
+                  <p className="pp-feed-card__preview pp-text-body text-[11px] leading-snug mt-0.5 text-stone-600 whitespace-pre-wrap">
+                    {preview}
+                  </p>
+                ) : null}
+                {footerLabel ? (
+                  <p
+                    className={`pp-feed-card__cta text-[10px] mt-0.5 truncate ${
+                      ctaLabel ? "font-semibold text-[#3D7A68]" : "text-stone-500"
+                    }`}
+                  >
+                    {footerLabel}
+                  </p>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <p className="pp-feed-card__author pp-text-meta text-[10px] mt-0.5 truncate text-stone-500">
+                  {authorText || "\u00A0"}
+                </p>
+                <p className="pp-feed-card__preview pp-text-body text-[11px] leading-snug mt-0.5 text-stone-600 line-clamp-2">
+                  {showPreview ? preview : "\u00A0"}
+                </p>
+                <p
+                  className={`pp-feed-card__cta text-[10px] mt-0.5 truncate ${
+                    footerLabel
+                      ? ctaLabel
+                        ? "font-semibold text-[#3D7A68]"
+                        : "text-stone-500"
+                      : "invisible"
+                  }`}
+                >
+                  {footerLabel || "\u00A0"}
+                </p>
+              </>
+            )}
           </div>
           <div className="flex items-center gap-1 shrink-0 pt-0.5">
             {onMapClick ? (

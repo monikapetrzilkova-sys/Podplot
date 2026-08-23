@@ -2586,12 +2586,48 @@ body,
   transition: box-shadow var(--pp-transition), transform var(--pp-transition-press);
 }
 
+/* Sbalené karty — stejná výška (nadpis + autor + 2 řádky náhledu + CTA) */
+.pp-feed-card--collapsed {
+  height: 7.5rem;
+}
+
 .pp-feed-card--collapsed .pp-feed-card__summary {
   display: block;
+  height: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.pp-feed-card--collapsed .pp-feed-card__author {
+  height: 1rem;
+  line-height: 1rem;
+  margin-top: 0.125rem;
+}
+
+.pp-feed-card--collapsed .pp-feed-card__preview {
+  height: 2.4rem;
+  max-height: 2.4rem;
+  line-height: 1.2rem;
+  margin-top: 0.125rem;
+  overflow: hidden;
+}
+
+.pp-feed-card--collapsed .pp-feed-card__cta {
+  height: 1rem;
+  line-height: 1rem;
+  margin-top: 0.125rem;
+}
+
+.pp-feed-card--open {
+  height: auto;
 }
 
 .pp-feed-card__preview {
   max-height: 2.5rem;
+}
+
+.pp-feed-card--open .pp-feed-card__preview {
+  max-height: none;
 }
 
 /* Vlastní příspěvek — jemné odlišení v sousedském dění */
