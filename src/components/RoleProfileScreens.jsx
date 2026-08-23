@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import { TEST_ROLES } from "../data/testRoles.js";
 import { TEST_PERSONAS } from "../data/businessProfiles.js";
-import { ADDRESS_PRIVACY_NOTE } from "../data/accountTypes.js";
 import { LUNCH_PUBLISH_PLANS } from "../data/lunchMenus.js";
 import {
   CRAFTSMAN_RADIUS_MIN_KM,
@@ -17,6 +16,12 @@ import {
   buildServiceSubcategoryList,
   getServiceCategory,
 } from "../data/serviceCategories.js";
+import {
+  validateAddressFields,
+  formatFullAddress,
+  parseStoredAddress,
+  ADDRESS_PRIVACY_NOTE_INLINE,
+} from "../data/addressValidation.js";
 import { SKIP_REGISTRATION, ENABLE_DEV_ROLE_SWITCH } from "../data/devConfig.js";
 import PaymentModal from "./PaymentModal.jsx";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
@@ -24,6 +29,7 @@ import BusinessEntityManagement from "./entity/BusinessEntityManagement.jsx";
 import ServiceProfileEditor from "./entity/ServiceProfileEditor.jsx";
 import CraftsmanProfilePanel from "./CraftsmanProfilePanel.jsx";
 import CraftCategoryPicker from "./CraftCategoryPicker.jsx";
+import StructuredAddressFields from "./StructuredAddressFields.jsx";
 import { IconMapPin } from "../data/icons.jsx";
 import AccountTypeIcon from "./AccountTypeIcon.jsx";
 
@@ -96,7 +102,11 @@ export default function MyProfilesPanel({ embedded = false }) {
   } = useApp();
   const [adding, setAdding] = useState(false);
   const [setupRoleId, setSetupRoleId] = useState(null);
-  const [address, setAddress] = useState("");
+  const [street, setStreet] = useState("");
+  const [houseNumber, setHouseNumber] = useState("");
+  const [psc, setPsc] = useState("");
+  const [city, setCity] = useState("");
+  const [addressErrors, setAddressErrors] = useState({});
   const [businessName, setBusinessName] = useState("");
   const [serviceDescription, setServiceDescription] = useState("");
   const [serviceHomeGroup, setServiceHomeGroup] = useState("domov-zahrada");
@@ -126,9 +136,26 @@ export default function MyProfilesPanel({ embedded = false }) {
     secondarySubcategories
   );
 
+  const resetAddressFields = () => {
+    setStreet("");
+    setHouseNumber("");
+    setPsc("");
+    setCity("");
+    setAddressErrors({});
+  };
+
+  const loadAddressFields = (fullAddress) => {
+    const parsed = parseStoredAddress(fullAddress || "");
+    setStreet(parsed.street);
+    setHouseNumber(parsed.houseNumber);
+    setPsc(parsed.psc);
+    setCity(parsed.city);
+    setAddressErrors({});
+  };
+
   const resetSetupForm = () => {
     setSetupRoleId(null);
-    setAddress("");
+    resetAddressFields();
     setBusinessName("");
     setServiceDescription("");
     setServiceHomeGroup("domov-zahrada");
@@ -142,7 +169,7 @@ export default function MyProfilesPanel({ embedded = false }) {
 
   const startSetup = (roleId) => {
     setSetupRoleId(roleId);
-    setAddress(user?.address ?? "");
+    loadAddressFields(user?.address ?? "");
     setBusinessName("");
     setServiceDescription("");
     setServiceHomeGroup("domov-zahrada");
@@ -162,16 +189,23 @@ export default function MyProfilesPanel({ embedded = false }) {
 
   const submitSetup = () => {
     setFormError("");
+    const addressResult = validateAddressFields({ street, houseNumber, psc, city });
+    setAddressErrors(addressResult.errors);
+    if (!addressResult.valid) {
+      setFormError("Doplňte adresu ve správném formátu (ulice, č.p., PSČ).");
+      return;
+    }
     if (isMobilniSetup && !primarySubcategory) {
       setFormError("Vyberte hlavní zaměření služby.");
       return;
     }
+    const fullAddress = formatFullAddress({ street, houseNumber, psc, city });
     const keywords = customKeywords
       .split(",")
       .map((k) => k.trim())
       .filter(Boolean);
     const result = setupAdditionalProfile?.(setupRoleId, {
-      address,
+      address: fullAddress,
       businessName: businessName.trim() || undefined,
       serviceDescription,
       serviceHomeGroup,
@@ -300,21 +334,20 @@ export default function MyProfilesPanel({ embedded = false }) {
             </label>
           )}
 
-          <label className="block">
-            <span className="text-xs font-semibold text-stone-600">
-              {isMobilniSetup ? "Výchozí adresa / působnost" : "Adresa provozovny"}
-            </span>
-            <input
-              type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="např. Vaše ulice, obec"
-              className="w-full mt-1 px-3 py-2 border border-stone-200 rounded-xl text-sm bg-white"
-            />
-            <span className="block text-[10px] text-stone-400 mt-1 leading-relaxed">
-              {ADDRESS_PRIVACY_NOTE}
-            </span>
-          </label>
+          <StructuredAddressFields
+            street={street}
+            houseNumber={houseNumber}
+            psc={psc}
+            city={city}
+            onStreetChange={setStreet}
+            onHouseNumberChange={setHouseNumber}
+            onPscChange={setPsc}
+            onCityChange={setCity}
+            fieldErrors={addressErrors}
+            onClearError={(key) => setAddressErrors((prev) => ({ ...prev, [key]: "" }))}
+            legend={isMobilniSetup ? "Výchozí adresa / působnost" : "Adresa provozovny"}
+            privacyNote={ADDRESS_PRIVACY_NOTE_INLINE}
+          />
 
           {isMobilniSetup && (
             <>
@@ -667,7 +700,12 @@ function CraftsmanAccountSettings() {
   const { user, updateAccountProfile, changePassword, logout } = useApp();
   const [name, setName] = useState(user?.name ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
-  const [address, setAddress] = useState(user?.address ?? "");
+  const [street, setStreet] = useState("");
+  const [houseNumber, setHouseNumber] = useState("");
+  const [psc, setPsc] = useState("");
+  const [city, setCity] = useState("");
+  const [addressErrors, setAddressErrors] = useState({});
+  const [formError, setFormError] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
 
@@ -675,11 +713,26 @@ function CraftsmanAccountSettings() {
     if (!user) return;
     setName(user.name ?? "");
     setEmail(user.email ?? "");
-    setAddress(user.address ?? "");
+    const parsed = parseStoredAddress(user.address ?? "");
+    setStreet(parsed.street);
+    setHouseNumber(parsed.houseNumber);
+    setPsc(parsed.psc);
+    setCity(parsed.city);
   }, [user?.name, user?.email, user?.address, user]);
 
   const saveProfile = () => {
-    updateAccountProfile({ name, email, address });
+    setFormError("");
+    const addressResult = validateAddressFields({ street, houseNumber, psc, city });
+    setAddressErrors(addressResult.errors);
+    if (!addressResult.valid) {
+      setFormError("Doplňte adresu ve správném formátu (ulice, č.p., PSČ).");
+      return;
+    }
+    updateAccountProfile({
+      name,
+      email,
+      address: formatFullAddress({ street, houseNumber, psc, city }),
+    });
   };
 
   const savePassword = async () => {
@@ -694,7 +747,7 @@ function CraftsmanAccountSettings() {
     <section className="bg-white border border-stone-200 rounded-2xl p-4">
       <h3 className="text-sm font-bold mb-1">Údaje účtu</h3>
       <p className="text-xs text-stone-500 mb-3">
-        Stejné přihlášení jako u sousedského profilu — můžete upravit výchozí adresu působnosti.
+        Upravte výchozí adresu působnosti ve stejném formátu jako při registraci.
       </p>
       <div className="space-y-3">
         <label className="block">
@@ -715,19 +768,24 @@ function CraftsmanAccountSettings() {
             className="w-full mt-1 px-3 py-2 border border-stone-200 rounded-xl text-sm"
           />
         </label>
-        <div className="flex items-start gap-2 text-sm text-stone-600 bg-stone-50 rounded-xl p-3">
-          <IconMapPin className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-bold uppercase text-stone-400">Výchozí adresa</p>
-            <input
-              type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              className="w-full mt-1 px-3 py-2 border border-stone-200 rounded-xl text-sm bg-white"
-            />
-            <p className="text-[11px] text-stone-400 mt-2 leading-relaxed">{ADDRESS_PRIVACY_NOTE}</p>
-          </div>
-        </div>
+        <StructuredAddressFields
+          street={street}
+          houseNumber={houseNumber}
+          psc={psc}
+          city={city}
+          onStreetChange={setStreet}
+          onHouseNumberChange={setHouseNumber}
+          onPscChange={setPsc}
+          onCityChange={setCity}
+          fieldErrors={addressErrors}
+          onClearError={(key) => setAddressErrors((prev) => ({ ...prev, [key]: "" }))}
+          legend="Výchozí adresa / působnost"
+        />
+        {formError ? (
+          <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+            {formError}
+          </p>
+        ) : null}
         <button
           type="button"
           onClick={saveProfile}

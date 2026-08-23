@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
-import { ADDRESS_PRIVACY_NOTE } from "../data/accountTypes.js";
 import {
   CRAFTSMAN_RADIUS_MIN_KM,
   CRAFTSMAN_RADIUS_MAX_KM,
@@ -16,8 +15,14 @@ import {
   formatServiceSubcategoryLabels,
   getServiceCategory,
 } from "../data/serviceCategories.js";
+import {
+  validateAddressFields,
+  formatFullAddress,
+  parseStoredAddress,
+} from "../data/addressValidation.js";
 import { IconMapPin } from "../data/icons.jsx";
 import CraftCategoryPicker from "./CraftCategoryPicker.jsx";
+import StructuredAddressFields from "./StructuredAddressFields.jsx";
 
 function OverviewRow({ label, value, onEdit }) {
   return (
@@ -41,6 +46,14 @@ function OverviewRow({ label, value, onEdit }) {
   );
 }
 
+function applyAddressState(fullAddress, setters) {
+  const parsed = parseStoredAddress(fullAddress || "");
+  setters.setStreet(parsed.street);
+  setters.setHouseNumber(parsed.houseNumber);
+  setters.setPsc(parsed.psc);
+  setters.setCity(parsed.city);
+}
+
 /**
  * Krátký přehled mobilní služby + editace (bez údajů účtu a bez recenzí).
  */
@@ -62,7 +75,11 @@ export default function CraftsmanProfilePanel() {
 
   const [editing, setEditing] = useState(false);
   const [catalogName, setCatalogName] = useState("");
-  const [address, setAddress] = useState("");
+  const [street, setStreet] = useState("");
+  const [houseNumber, setHouseNumber] = useState("");
+  const [psc, setPsc] = useState("");
+  const [city, setCity] = useState("");
+  const [addressErrors, setAddressErrors] = useState({});
   const [description, setDescription] = useState("");
   const [homeGroup, setHomeGroup] = useState("domov-zahrada");
   const [primarySubcategory, setPrimarySubcategory] = useState(null);
@@ -75,7 +92,12 @@ export default function CraftsmanProfilePanel() {
 
   useEffect(() => {
     setCatalogName(ownedService?.name || user?.businessName || "");
-    setAddress(ownedService?.defaultAddress || user?.address || "");
+    applyAddressState(ownedService?.defaultAddress || user?.address || "", {
+      setStreet,
+      setHouseNumber,
+      setPsc,
+      setCity,
+    });
     setDescription(ownedService?.serviceDescription || "");
     setHomeGroup(ownedService?.homeGroupId || "domov-zahrada");
     const primary = getPrimaryServiceSubcategoryId(ownedService);
@@ -109,9 +131,17 @@ export default function CraftsmanProfilePanel() {
       );
   const subcategories = buildServiceSubcategoryList(primarySubcategory, secondarySubcategories);
   const focusLabel = formatServiceSubcategoryLabels(getServiceSubcategoryIds(ownedService));
+  const displayAddress = ownedService?.defaultAddress || user?.address || "";
 
   const openEdit = () => {
     setFormError("");
+    setAddressErrors({});
+    applyAddressState(ownedService?.defaultAddress || user?.address || "", {
+      setStreet,
+      setHouseNumber,
+      setPsc,
+      setCity,
+    });
     setEditing(true);
   };
 
@@ -122,17 +152,20 @@ export default function CraftsmanProfilePanel() {
       setFormError("Vyplňte katalogové jméno.");
       return;
     }
-    if (!address.trim()) {
-      setFormError("Vyplňte výchozí adresu.");
+    const addressResult = validateAddressFields({ street, houseNumber, psc, city });
+    setAddressErrors(addressResult.errors);
+    if (!addressResult.valid) {
+      setFormError("Doplňte adresu působnosti ve správném formátu.");
       return;
     }
     if (!primarySubcategory) {
       setFormError("Vyberte hlavní zaměření.");
       return;
     }
+    const fullAddress = formatFullAddress({ street, houseNumber, psc, city });
     updateAccountProfile({
       businessName: name,
-      address: address.trim(),
+      address: fullAddress,
     });
     if (ownedService?.id) {
       updateServiceDescription(ownedService.id, description.trim());
@@ -190,16 +223,18 @@ export default function CraftsmanProfilePanel() {
           />
         </label>
 
-        <label className="block">
-          <span className="text-xs font-semibold text-stone-600">Výchozí adresa / působnost</span>
-          <input
-            type="text"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            className="w-full mt-1 px-3 py-2 border border-stone-200 rounded-xl text-sm"
-          />
-          <span className="block text-[10px] text-stone-400 mt-1">{ADDRESS_PRIVACY_NOTE}</span>
-        </label>
+        <StructuredAddressFields
+          street={street}
+          houseNumber={houseNumber}
+          psc={psc}
+          city={city}
+          onStreetChange={setStreet}
+          onHouseNumberChange={setHouseNumber}
+          onPscChange={setPsc}
+          onCityChange={setCity}
+          fieldErrors={addressErrors}
+          onClearError={(key) => setAddressErrors((prev) => ({ ...prev, [key]: "" }))}
+        />
 
         <label className="block">
           <span className="text-xs font-semibold text-stone-600">Popis služeb</span>
@@ -310,11 +345,7 @@ export default function CraftsmanProfilePanel() {
           value={ownedService?.name || user?.businessName}
           onEdit={openEdit}
         />
-        <OverviewRow
-          label="Výchozí adresa"
-          value={ownedService?.defaultAddress || user?.address}
-          onEdit={openEdit}
-        />
+        <OverviewRow label="Výchozí adresa" value={displayAddress} onEdit={openEdit} />
         <OverviewRow
           label="Popis služeb"
           value={ownedService?.serviceDescription}
