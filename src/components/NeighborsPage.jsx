@@ -105,15 +105,28 @@ export default function NeighborsPage() {
   const [eventsSearch, setEventsSearch] = useState("");
   const [eventsSearchExpanded, setEventsSearchExpanded] = useState(false);
   const skipNeighborsRootReset = useRef(true);
+  const prevNeighborsSection = useRef(null);
 
   const hasMyGroups = getMyMemberGroups(communityGroups, activeLocationId).length > 0;
+  const defaultSkupinyFilter = hasMyGroups ? "moje" : "vse";
 
   const applySkupinyFilter = (filterId) => {
     const id = filterId === "moje" ? "moje" : "vse";
     setSkupinyListFilter(id);
-    setFeedSubFilter(id === "vse" ? "skupiny" : "moje");
-    selectFeedSubFilter(id === "vse" ? "skupiny" : "moje");
+    const feedId = id === "vse" ? "skupiny" : "moje";
+    setFeedSubFilter(feedId);
+    selectFeedSubFilter(feedId);
   };
+
+  /** První vstup do Skupin: Moje pokud jste členem, jinak Všechny. */
+  useEffect(() => {
+    const prev = prevNeighborsSection.current;
+    prevNeighborsSection.current = activeSection;
+    if (activeSection === "skupiny" && prev !== "skupiny") {
+      applySkupinyFilter(defaultSkupinyFilter);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- jen při vstupu do sekce
+  }, [activeSection, defaultSkupinyFilter]);
 
   useEffect(() => {
     saveNavSession({ neighborsSection: activeSection });
@@ -137,30 +150,22 @@ export default function NeighborsPage() {
     const section = pendingNeighborsSection;
     setActiveSection(section);
     setPendingNeighborsSection(null);
-    if (section === "skupiny") {
-      const id = hasMyGroups ? "moje" : "vse";
-      setSkupinyListFilter(id);
-      setFeedSubFilter(id === "vse" ? "skupiny" : "moje");
-      selectFeedSubFilter(id === "vse" ? "skupiny" : "moje");
-    }
-  }, [
-    pendingNeighborsSection,
-    setPendingNeighborsSection,
-    hasMyGroups,
-    setFeedSubFilter,
-    selectFeedSubFilter,
-  ]);
+  }, [pendingNeighborsSection, setPendingNeighborsSection]);
 
-  const skupinySubs = useMemo(
-    () =>
-      getSkupinySubfilters(communityGroups).map((s) => ({
-        id: s.id,
-        label: s.label,
-        shortLabel: s.shortLabel ?? s.label,
-        Icon: SKUPINY_FILTER_DOODLE_ICONS[s.id] ?? SKUPINY_FILTER_DOODLE_ICONS.vse,
-      })),
-    [communityGroups]
-  );
+  const skupinySubs = useMemo(() => {
+    const items = getSkupinySubfilters(communityGroups).map((s) => ({
+      id: s.id,
+      label: s.label,
+      shortLabel: s.shortLabel ?? s.label,
+      Icon: SKUPINY_FILTER_DOODLE_ICONS[s.id] ?? SKUPINY_FILTER_DOODLE_ICONS.vse,
+    }));
+    if (!hasMyGroups) return items;
+    return [...items].sort((a, b) => {
+      if (a.id === "moje") return -1;
+      if (b.id === "moje") return 1;
+      return 0;
+    });
+  }, [communityGroups, hasMyGroups]);
 
   const subItems = useMemo(() => {
     if (activeSection === "veci") return VECI_SUBS;
@@ -184,7 +189,7 @@ export default function NeighborsPage() {
       setThingsLendingSubCategory(null);
     }
     if (id === "skupiny") {
-      applySkupinyFilter(hasMyGroups ? "moje" : "vse");
+      applySkupinyFilter(defaultSkupinyFilter);
     }
     if (id === "vypomoc") setHelpFilter("vse");
     if (id === "akce") {
