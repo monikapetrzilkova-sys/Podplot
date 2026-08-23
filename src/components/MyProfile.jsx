@@ -825,19 +825,32 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                 Místa
               </p>
               {!addingLocation && !editingLocationId ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const targetId = activeLocationId || locations[0]?.id;
-                    if (!targetId) return;
-                    setAddingLocation(false);
-                    setEditingLocationId(targetId);
-                    if (targetId === "domov") setEditingHomeAddress(true);
-                  }}
-                  className="text-[10px] font-semibold text-[#3D7A68]"
-                >
-                  Upravit
-                </button>
+                <div className="flex items-center gap-2.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingLocationId(null);
+                      setEditingHomeAddress(false);
+                      setAddingLocation(true);
+                    }}
+                    className="text-[11px] font-semibold text-[#3D7A68]"
+                  >
+                    + Přidat
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const targetId = activeLocationId || locations[0]?.id;
+                      if (!targetId) return;
+                      setAddingLocation(false);
+                      setEditingLocationId(targetId);
+                      if (targetId === "domov") setEditingHomeAddress(true);
+                    }}
+                    className="text-[11px] font-semibold text-[#3D7A68]"
+                  >
+                    Upravit
+                  </button>
+                </div>
               ) : null}
             </div>
 
@@ -864,19 +877,6 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                     </button>
                   );
                 })}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingLocationId(null);
-                    setEditingHomeAddress(false);
-                    setAddingLocation(true);
-                  }}
-                  className="inline-flex items-center justify-center w-8 h-8 rounded-xl border border-dashed border-[#3D7A68]/45 text-[#1B4D3E] bg-[#F7FAF9] text-sm font-bold"
-                  aria-label="Přidat místo"
-                  title="Přidat místo"
-                >
-                  +
-                </button>
               </div>
             ) : null}
 

@@ -231,7 +231,7 @@ export default function MyProfilesPanel({ embedded = false }) {
       }
     >
       <div className="flex items-center justify-between gap-2 mb-1.5">
-        <h3 className="text-[11px] font-bold text-stone-800 uppercase tracking-wide">
+        <h3 className="text-[10px] font-bold text-stone-400 uppercase tracking-wide">
           Moje profily
         </h3>
         {addableProfiles.length > 0 && !adding && !setupRole && (
