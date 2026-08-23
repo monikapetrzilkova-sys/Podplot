@@ -1,7 +1,7 @@
 import { useApp } from "../context/AppContext.jsx";
 import { APP_ROLES } from "../data/userRoles.js";
 
-export default function ViewAsNeighborToggle({ className = "", prominent = false }) {
+export default function ViewAsNeighborToggle({ className = "" }) {
   const { viewAsNeighbor, toggleViewAsNeighbor, appUserRole } = useApp();
 
   if (appUserRole === APP_ROLES.NEIGHBOR) return null;
@@ -15,11 +15,6 @@ export default function ViewAsNeighborToggle({ className = "", prominent = false
 
   return (
     <div className={className}>
-      {toNeighbor && prominent ? (
-        <p className="text-[11px] text-stone-500 mb-1.5 leading-snug">
-          Sousedský profil má feed, skupiny a peněženku jako doma — přepněte sem, až skončíte práci.
-        </p>
-      ) : null}
       <button
         type="button"
         onClick={toggleViewAsNeighbor}

@@ -1014,7 +1014,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
           <ViewAsNeighborToggle className="mb-4" />
         </>
       ) : (
-        <ViewAsNeighborToggle className="mb-3" prominent={!viewAsNeighbor && isWorkProfileMode} />
+        <ViewAsNeighborToggle className="mb-3" />
       )}
 
       {showWorkRoleViews && testRoleId === "remeslnik" && <CraftsmanRoleView />}
