@@ -295,6 +295,17 @@ export default function EventsModule({
       ) : (
         <>
           {viewToggle}
+          {showLocalSearch ? (
+            <CompactSearchToggle
+              value={localSearch}
+              onChange={setLocalSearch}
+              expanded={false}
+              onExpandedChange={setSearchExpanded}
+              placeholder="Hledat v akcích…"
+              ariaLabel="Hledat v akcích"
+              className="shrink-0"
+            />
+          ) : null}
           {hideTopFilters && onCreateEvent && (
             <button
               type="button"
@@ -305,16 +316,6 @@ export default function EventsModule({
               +
             </button>
           )}
-          {showLocalSearch ? (
-            <CompactSearchToggle
-              value={localSearch}
-              onChange={setLocalSearch}
-              expanded={false}
-              onExpandedChange={setSearchExpanded}
-              placeholder="Hledat v akcích…"
-              ariaLabel="Hledat v akcích"
-            />
-          ) : null}
         </>
       )}
     </div>

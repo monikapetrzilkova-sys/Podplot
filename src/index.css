@@ -776,6 +776,13 @@ body,
   min-width: 0;
 }
 
+.pp-catalog-cat-switch__trailing {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  margin-left: 2px;
+}
+
 .pp-catalog-cat-switch__icon-btn {
   flex-shrink: 0;
   width: 40px;
@@ -1378,7 +1385,7 @@ body,
 .pp-events-toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 4px;
@@ -1389,8 +1396,8 @@ body,
 .pp-events-view-toggle {
   flex: 1 1 auto;
   min-width: 0;
-  max-width: 240px;
-  margin-left: auto;
+  max-width: none;
+  margin-right: 0;
 }
 
 .pp-events-akce-topbar .pp-events-view-toggle {

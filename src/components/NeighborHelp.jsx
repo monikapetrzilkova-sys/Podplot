@@ -107,14 +107,17 @@ export default function NeighborHelp({
       )}
 
       {!showCreateForm && (
-        <CompactSearchToggle
-          value={searchQuery}
-          onChange={setSearchQuery}
-          expanded={searchActive}
-          onExpandedChange={setSearchExpanded}
-          placeholder="Hledat ve výpomoci…"
-          ariaLabel="Hledat ve výpomoci"
-        />
+        <div className="flex items-center justify-end">
+          <CompactSearchToggle
+            value={searchQuery}
+            onChange={setSearchQuery}
+            expanded={searchActive}
+            onExpandedChange={setSearchExpanded}
+            placeholder="Hledat ve výpomoci…"
+            ariaLabel="Hledat ve výpomoci"
+            className={searchActive ? "w-full" : "shrink-0"}
+          />
+        </div>
       )}
 
       {filtered.length === 0 ? (

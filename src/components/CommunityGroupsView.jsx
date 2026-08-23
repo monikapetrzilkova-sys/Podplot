@@ -321,15 +321,15 @@ function CategoryTrunk({
 function GroupsToolsRow({ value, onChange, showNew = false, onNew }) {
   const searching = Boolean(String(value).trim());
   return (
-    <div className="pp-groups-tools flex items-center gap-1.5 px-3 pb-1.5 shrink-0 min-w-0">
+    <div className="pp-groups-tools flex items-center justify-end gap-1.5 px-3 pb-1.5 shrink-0 min-w-0">
       <CompactSearchToggle
         value={value}
         onChange={onChange}
         placeholder="Hledat ve skupinách…"
         ariaLabel="Hledat ve skupinách"
-        className={searching ? "flex-1" : ""}
+        className={searching ? "flex-1" : "shrink-0"}
       />
-      {showNew && (
+      {showNew && !searching && (
         <button
           type="button"
           onClick={onNew}
