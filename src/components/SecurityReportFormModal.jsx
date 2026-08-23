@@ -6,7 +6,7 @@ import ReportCategoryGrid from "./module/ReportCategoryGrid.jsx";
 import AutoGrowTextarea from "./module/AutoGrowTextarea.jsx";
 import { MAP_CENTER } from "../data/mapRadiusSettings.js";
 import { posToDistanceLabel } from "../data/mapData.js";
-import { REPORT_EXPIRY_DISCLAIMER } from "../data/reportExpiry.js";
+import { REPORT_EXPIRY_DISCLAIMER, REPORT_VALIDITY_MODE } from "../data/reportExpiry.js";
 import {
   URGENCY_REACH_COPY,
   URGENT_LOCAL_RADIUS_M,
@@ -41,6 +41,8 @@ export default function SecurityReportFormModal({
   setReportPhotos,
   reportValidUntil,
   setReportValidUntil,
+  reportValidityMode = REPORT_VALIDITY_MODE.TTL,
+  setReportValidityMode,
   validUntilError,
   alsoAsPrompt,
   setAlsoAsPrompt,
@@ -233,14 +235,61 @@ export default function SecurityReportFormModal({
                 />
                 <PhotoUpload photos={reportPhotos} onChange={setReportPhotos} />
                 <div>
-                  <p className="block text-sm font-semibold text-stone-800 mb-1">
-                    Platné do <span className="font-normal text-stone-500">(volitelné)</span>
-                  </p>
-                  <CzechDateTimeFields
-                    id="report-valid-until-modal"
-                    value={reportValidUntil}
-                    onChange={setReportValidUntil}
-                  />
+                  <p className="block text-sm font-semibold text-stone-800 mb-1.5">Platnost</p>
+                  <div className="space-y-1.5">
+                    {[
+                      {
+                        id: REPORT_VALIDITY_MODE.TTL,
+                        label: "48 hodin",
+                        hint: "Pak zmizí z mapy i feedu",
+                      },
+                      {
+                        id: REPORT_VALIDITY_MODE.CUSTOM,
+                        label: "Do data a času",
+                        hint: "Zvolíte vlastní termín",
+                      },
+                      {
+                        id: REPORT_VALIDITY_MODE.UNTIL_RESOLVED,
+                        label: "Dokud se nevyřeší",
+                        hint: "Zůstane, dokud ho označíte jako vyřešené",
+                      },
+                    ].map((opt) => (
+                      <label
+                        key={opt.id}
+                        className={`flex items-start gap-2.5 px-3 py-2 rounded-xl border cursor-pointer transition-colors ${
+                          reportValidityMode === opt.id
+                            ? "border-[#3D7A68] bg-[#E8F3EF]"
+                            : "border-stone-200 bg-white hover:border-[#C5DDD4]"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="report-validity-mode"
+                          className="mt-0.5 accent-[#3D7A68]"
+                          checked={reportValidityMode === opt.id}
+                          onChange={() => {
+                            setReportValidityMode?.(opt.id);
+                            if (opt.id !== REPORT_VALIDITY_MODE.CUSTOM) {
+                              setReportValidUntil("");
+                            }
+                          }}
+                        />
+                        <span className="min-w-0">
+                          <span className="block text-sm font-semibold text-stone-800">{opt.label}</span>
+                          <span className="block text-[11px] text-stone-500 leading-snug">{opt.hint}</span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  {reportValidityMode === REPORT_VALIDITY_MODE.CUSTOM ? (
+                    <div className="mt-2">
+                      <CzechDateTimeFields
+                        id="report-valid-until-modal"
+                        value={reportValidUntil}
+                        onChange={setReportValidUntil}
+                      />
+                    </div>
+                  ) : null}
                   <p className="text-[11px] text-stone-400 mt-1.5 leading-relaxed">{REPORT_EXPIRY_DISCLAIMER}</p>
                   {validUntilError && <p className="text-xs text-red-600 mt-1">{validUntilError}</p>}
                 </div>

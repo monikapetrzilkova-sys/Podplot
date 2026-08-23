@@ -58,7 +58,10 @@ import {
   isThingsModuleListing,
   sortInstitutionsByPriority,
 } from "../utils/thingsModule.js";
-import { computeExpiresAt } from "../data/reportExpiry.js";
+import {
+  computeExpiresAt,
+  REPORT_STATUS,
+} from "../data/reportExpiry.js";
 import { URGENT_SCOPE, URGENT_LOCAL_RADIUS_M, resolveReportDistance, describeUrgentAudience } from "../data/reportUrgency.js";
 import {
   loadUiPreferences,
@@ -2997,7 +3000,19 @@ export function AppProvider({ children }) {
   }, [user?.id, activeLocation?.municipality, user?.geo?.city, user, activateGroupFromProposal]);
 
   const addSecurityReport = useCallback(
-    ({ type, body, urgent = false, urgentScope = URGENT_SCOPE.LOCAL, mapPos = null, alsoAsPrompt = false, photos = [], validUntil = null, reportCategoryId = null, lossKind = null }) => {
+    ({
+      type,
+      body,
+      urgent = false,
+      urgentScope = URGENT_SCOPE.LOCAL,
+      mapPos = null,
+      alsoAsPrompt = false,
+      photos = [],
+      validUntil = null,
+      reportCategoryId = null,
+      lossKind = null,
+      untilResolved = false,
+    }) => {
       if (!user) return;
       const isMunicipalityWide = urgent && urgentScope === URGENT_SCOPE.MUNICIPALITY;
       const rawMapPos = isMunicipalityWide ? mapPos ?? { x: 50, y: 50 } : mapPos;
@@ -3022,8 +3037,8 @@ export function AppProvider({ children }) {
       const distance = resolveReportDistance({ urgent, urgentScope }, pointDistance);
       const photoUrls = photos.map((p) => (typeof p === "string" ? p : p.url)).filter(Boolean);
       const createdAt = new Date().toISOString();
-      const validUntilIso = validUntil ? new Date(validUntil).toISOString() : null;
-      const expiresAt = computeExpiresAt(createdAt, validUntilIso);
+      const validUntilIso = !untilResolved && validUntil ? new Date(validUntil).toISOString() : null;
+      const expiresAt = computeExpiresAt(createdAt, validUntilIso, { untilResolved });
       const report = {
         id: `rep-${Date.now()}`,
         role: user.role,
@@ -3038,6 +3053,8 @@ export function AppProvider({ children }) {
         time: "Právě teď",
         createdAt,
         validUntil: validUntilIso,
+        untilResolved: Boolean(untilResolved),
+        status: REPORT_STATUS.OPEN,
         expiresAt,
         confirmations: 0,
         urgent,
@@ -3084,6 +3101,10 @@ export function AppProvider({ children }) {
         createdAt,
         lat: report.lat ?? null,
         lng: report.lng ?? null,
+        expiresAt,
+        untilResolved: Boolean(untilResolved),
+        status: REPORT_STATUS.OPEN,
+        validUntil: validUntilIso,
       };
       setUserPosts((prev) => [feedPost, ...prev]);
       void publishRemotePost(feedPost, user);
@@ -4275,6 +4296,38 @@ export function AppProvider({ children }) {
         })
       );
       showToast("Hlášení bylo upraveno.", "success");
+      return true;
+    },
+    [showToast]
+  );
+
+  const resolveSecurityReport = useCallback(
+    (reportId) => {
+      if (!reportId) return false;
+      const resolvedAt = new Date().toISOString();
+      const patchReport = (r) => {
+        if (r.id !== reportId) return r;
+        return {
+          ...r,
+          status: REPORT_STATUS.RESOLVED,
+          resolvedAt,
+          updatedAt: resolvedAt,
+        };
+      };
+      setUserReports((prev) => prev.map(patchReport));
+      setExtraReports((prev) => prev.map(patchReport));
+      setUserPosts((prev) =>
+        prev.map((p) => {
+          if (p.fromSecurityReportId !== reportId && p.id !== `feed-${reportId}`) return p;
+          return {
+            ...p,
+            status: REPORT_STATUS.RESOLVED,
+            resolvedAt,
+            updatedAt: resolvedAt,
+          };
+        })
+      );
+      showToast("Hlášení označeno jako vyřešené — zmizí z mapy i feedu.", "success");
       return true;
     },
     [showToast]
@@ -7122,6 +7175,7 @@ export function AppProvider({ children }) {
         publishListing,
         updateUserPost,
         updateSecurityReport,
+        resolveSecurityReport,
         updateAreaNewsItem,
         updateOfficePrompt,
         topPost,

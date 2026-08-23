@@ -1,4 +1,4 @@
-/** Platnost hlášení — volitelný termín nebo automaticky 48 h */
+/** Platnost hlášení — časová (48 h / vlastní termín) nebo dokud se nevyřeší */
 
 import { formatCzechDateTimeFull, minDateTimeLocalValue } from "./czechDateTime.js";
 
@@ -6,10 +6,34 @@ export { minDateTimeLocalValue };
 
 export const REPORT_DEFAULT_TTL_MS = 48 * 60 * 60 * 1000;
 
-export const REPORT_EXPIRY_DISCLAIMER =
-  "Hlášení bez uvedeného termínu platnosti se automaticky skryje 48 hodin od zveřejnění. S uvedeným termínem zmizí po jeho uplynutí.";
+/** Režimy při vytváření */
+export const REPORT_VALIDITY_MODE = {
+  TTL: "ttl",
+  CUSTOM: "custom",
+  UNTIL_RESOLVED: "until_resolved",
+};
 
-export function computeExpiresAt(createdAt, validUntil = null) {
+export const REPORT_STATUS = {
+  OPEN: "open",
+  RESOLVED: "resolved",
+};
+
+export const REPORT_EXPIRY_DISCLAIMER =
+  "Bez termínu se tipy, ztráty a varování skryjí po 48 hodinách. Závady defaultně zůstávají, dokud je neoznačíte jako vyřešené. Stejné pravidlo platí ve feedu i na mapě.";
+
+/** Závada — default „dokud se nevyřeší“ */
+export function categoryDefaultsToUntilResolved(categoryId) {
+  return categoryId === "damage";
+}
+
+export function defaultValidityModeForCategory(categoryId) {
+  return categoryDefaultsToUntilResolved(categoryId)
+    ? REPORT_VALIDITY_MODE.UNTIL_RESOLVED
+    : REPORT_VALIDITY_MODE.TTL;
+}
+
+export function computeExpiresAt(createdAt, validUntil = null, { untilResolved = false } = {}) {
+  if (untilResolved) return null;
   const created = new Date(createdAt).getTime();
   if (validUntil) {
     const until = new Date(validUntil).getTime();
@@ -20,22 +44,88 @@ export function computeExpiresAt(createdAt, validUntil = null) {
   return new Date(created + REPORT_DEFAULT_TTL_MS).toISOString();
 }
 
+export function isReportResolved(report) {
+  if (!report) return false;
+  return report.status === REPORT_STATUS.RESOLVED || Boolean(report.resolvedAt);
+}
+
+/**
+ * Viditelné ve feedu i na mapě — jedno pravidlo.
+ * Dokud nevyřešeno + (untilResolved NEBO ještě neexpirovalo).
+ */
 export function isReportActive(report, now = Date.now()) {
   if (!report) return false;
+  const r = report.untilResolved != null || report.status != null ? report : normalizeReportValidity(report);
+  if (isReportResolved(r)) return false;
+  if (r.untilResolved) return true;
   const expiresAt =
-    report.expiresAt ?? computeExpiresAt(report.createdAt ?? new Date(now).toISOString(), report.validUntil);
+    r.expiresAt ??
+    computeExpiresAt(r.createdAt ?? new Date(now).toISOString(), r.validUntil, {
+      untilResolved: false,
+    });
+  if (!expiresAt) return true;
   return now < new Date(expiresAt).getTime();
 }
 
 export function filterActiveReports(reports, now = Date.now()) {
-  return reports.filter((r) => isReportActive(r, now));
+  return reports.filter((r) => isReportActive(normalizeReportValidity(r), now));
 }
 
 export function formatReportExpiryLabel(report) {
-  const expiresAt = report.expiresAt ?? computeExpiresAt(report.createdAt ?? Date.now(), report.validUntil);
+  if (!report) return null;
+  if (isReportResolved(report)) {
+    return report.resolvedAt
+      ? `Vyřešeno ${formatCzechDateTimeFull(new Date(report.resolvedAt))}`
+      : "Vyřešeno";
+  }
+  if (report.untilResolved) {
+    return "Platí, dokud se nevyřeší";
+  }
+  const expiresAt =
+    report.expiresAt ?? computeExpiresAt(report.createdAt ?? Date.now(), report.validUntil);
+  if (!expiresAt) return null;
   const date = new Date(expiresAt);
   if (Number.isNaN(date.getTime())) return null;
   const hasCustom = Boolean(report.validUntil);
   const formatted = formatCzechDateTimeFull(date);
+  if (!isReportActive(report)) {
+    return hasCustom ? `Vypršelo ${formatted}` : `Automaticky vypršelo ${formatted}`;
+  }
   return hasCustom ? `Platné do ${formatted}` : `Automaticky zmizí ${formatted}`;
+}
+
+/** Badge pro Moje hlášení */
+export function getReportLifecycleBadge(report, now = Date.now()) {
+  if (!report) return { id: "unknown", label: "—", tone: "muted" };
+  if (isReportResolved(report)) {
+    return { id: "resolved", label: "Vyřešeno", tone: "ok" };
+  }
+  if (!isReportActive(report, now)) {
+    return { id: "expired", label: "Vypršelo", tone: "muted" };
+  }
+  if (report.untilResolved) {
+    return { id: "open_until", label: "Otevřené", tone: "active" };
+  }
+  return { id: "open", label: "Aktivní", tone: "active" };
+}
+
+/** Normalizace mock / starých záznamů */
+export function normalizeReportValidity(report) {
+  if (!report) return report;
+  const untilResolved =
+    report.untilResolved === true ||
+    (report.untilResolved !== false &&
+      categoryDefaultsToUntilResolved(report.reportCategoryId) &&
+      !report.validUntil);
+  const status = report.status ?? (report.resolvedAt ? REPORT_STATUS.RESOLVED : REPORT_STATUS.OPEN);
+  const expiresAt = untilResolved
+    ? null
+    : report.expiresAt ??
+      computeExpiresAt(report.createdAt ?? new Date().toISOString(), report.validUntil ?? null);
+  return {
+    ...report,
+    untilResolved: Boolean(untilResolved),
+    status,
+    expiresAt,
+  };
 }

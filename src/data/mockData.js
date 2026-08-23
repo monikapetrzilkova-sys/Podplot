@@ -1,6 +1,6 @@
 /** Ukázková data pro všechny role a moduly */
 
-import { computeExpiresAt } from "./reportExpiry.js";
+import { normalizeReportValidity } from "./reportExpiry.js";
 
 export const CURRENT_USER = {
   name: "Monika Petržílková",
@@ -709,10 +709,7 @@ export const SECURITY_REPORTS = [
     municipality: "Přední Lhota",
     mapPos: { x: 50, y: 50 },
   },
-].map((r) => ({
-  ...r,
-  expiresAt: computeExpiresAt(r.createdAt, r.validUntil ?? null),
-}));
+].map((r) => normalizeReportValidity(r));
 
 export const MY_GROUPS = [
   { id: "maminky", name: "Maminky", emoji: "👶", members: 84 },

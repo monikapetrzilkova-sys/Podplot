@@ -4,7 +4,7 @@ import ReportsModule from "../modules/ReportsModule.jsx";
 import SecurityReportFormModal from "./SecurityReportFormModal.jsx";
 import { useApp } from "../context/AppContext.jsx";
 import { filterSecurityReportsByLocation } from "../data/geoFilter.js";
-import { filterActiveReports } from "../data/reportExpiry.js";
+import { filterActiveReports, defaultValidityModeForCategory, REPORT_VALIDITY_MODE } from "../data/reportExpiry.js";
 import { MODULE_IDS } from "../data/moduleConfig.js";
 import {
   getReportCategory,
@@ -76,6 +76,7 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
   const [alsoAsPrompt, setAlsoAsPrompt] = useState(false);
   const [reportPhotos, setReportPhotos] = useState([]);
   const [reportValidUntil, setReportValidUntil] = useState("");
+  const [reportValidityMode, setReportValidityMode] = useState(REPORT_VALIDITY_MODE.TTL);
   const [nowTick, setNowTick] = useState(() => Date.now());
 
   useEffect(() => {
@@ -120,6 +121,7 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
     setAlsoAsPrompt(false);
     setReportPhotos([]);
     setReportValidUntil("");
+    setReportValidityMode(REPORT_VALIDITY_MODE.TTL);
     setPendingForm(null);
   };
 
@@ -234,7 +236,11 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
       setPinError("Nejdřív klepněte na mapu nebo zvolte svou polohu.");
       return;
     }
-    if (reportValidUntil.trim()) {
+    if (reportValidityMode === REPORT_VALIDITY_MODE.CUSTOM) {
+      if (!reportValidUntil.trim()) {
+        setValidUntilError("Zvolte termín platnosti.");
+        return;
+      }
       const until = new Date(reportValidUntil).getTime();
       if (Number.isNaN(until) || until <= Date.now()) {
         setValidUntilError("Termín platnosti musí být v budoucnosti.");
@@ -250,6 +256,7 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
     const typeLabel = reportTypeDetail.trim()
       ? `${baseType} — ${reportTypeDetail.trim()}`
       : baseType;
+    const untilResolved = reportValidityMode === REPORT_VALIDITY_MODE.UNTIL_RESOLVED;
     addSecurityReport({
       type: typeLabel,
       reportCategoryId,
@@ -260,7 +267,9 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
       urgentScope: isUrgent ? urgentScope : null,
       alsoAsPrompt: alsoAsPrompt && !isInstitution && reportCategoryId !== "tip",
       photos: reportPhotos,
-      validUntil: reportValidUntil.trim() || null,
+      untilResolved,
+      validUntil:
+        reportValidityMode === REPORT_VALIDITY_MODE.CUSTOM ? reportValidUntil.trim() : null,
     });
     resetForms();
   };
@@ -559,6 +568,10 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
             setAlsoAsPrompt(false);
             setIsUrgent(false);
           }
+          setReportValidityMode(defaultValidityModeForCategory(id));
+          if (defaultValidityModeForCategory(id) !== REPORT_VALIDITY_MODE.CUSTOM) {
+            setReportValidUntil("");
+          }
         }}
         lossKind={lossKind}
         setLossKind={(kind) => {
@@ -574,6 +587,8 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
         setReportPhotos={setReportPhotos}
         reportValidUntil={reportValidUntil}
         setReportValidUntil={setReportValidUntil}
+        reportValidityMode={reportValidityMode}
+        setReportValidityMode={setReportValidityMode}
         validUntilError={validUntilError}
         alsoAsPrompt={alsoAsPrompt}
         setAlsoAsPrompt={setAlsoAsPrompt}

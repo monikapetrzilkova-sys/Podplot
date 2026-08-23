@@ -4,7 +4,7 @@ import RoleBadge, { Avatar } from "./RoleBadge.jsx";
 import ReportMenu from "./ReportMenu.jsx";
 import { PostPhotos } from "./PhotoUpload.jsx";
 import ReportListIcon from "./module/ReportListIcon.jsx";
-import { formatReportExpiryLabel } from "../data/reportExpiry.js";
+import { formatReportExpiryLabel, isReportActive, isReportResolved } from "../data/reportExpiry.js";
 import { getUrgentReachLabel } from "../data/reportUrgency.js";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
 import AppPanelPortal from "./AppPanelPortal.jsx";
@@ -17,7 +17,7 @@ import { useApp } from "../context/AppContext.jsx";
 import MapComponent from "./module/MapComponent.jsx";
 
 export default function ReportDetailModal({ report, onClose, onReport }) {
-  const { updateSecurityReport, activeLocation, user } = useApp();
+  const { updateSecurityReport, resolveSecurityReport, activeLocation, user } = useApp();
   const [editOpen, setEditOpen] = useState(false);
 
   if (!report) return null;
@@ -29,6 +29,7 @@ export default function ReportDetailModal({ report, onClose, onReport }) {
   const tip = isTipReport(report);
   const titleColor = tip ? REPORT_TIP_ACCENT : reportPinAccentColor(report);
   const showMap = hasReportMapPosition(report);
+  const canResolve = Boolean(report.mine) && isReportActive(report) && !isReportResolved(report);
 
   return (
     <AppPanelPortal>
@@ -110,13 +111,26 @@ export default function ReportDetailModal({ report, onClose, onReport }) {
               </div>
               <p className="text-sm text-stone-700 leading-relaxed">{report.body}</p>
               {report.mine && (
-                <button
-                  type="button"
-                  onClick={() => setEditOpen(true)}
-                  className="mt-3 text-xs font-semibold text-[#3D7A68] border border-[#C5DDD4] bg-white px-3 py-1.5 rounded-xl hover:bg-[#F1F6F5]"
-                >
-                  Upravit
-                </button>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditOpen(true)}
+                    className="text-xs font-semibold text-[#3D7A68] border border-[#C5DDD4] bg-white px-3 py-1.5 rounded-xl hover:bg-[#F1F6F5]"
+                  >
+                    Upravit
+                  </button>
+                  {canResolve ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (resolveSecurityReport?.(report.id)) onClose?.();
+                      }}
+                      className="text-xs font-semibold text-white bg-[#1B4D3E] border border-[#1B4D3E] px-3 py-1.5 rounded-xl hover:bg-[#163f33]"
+                    >
+                      Označit jako vyřešené
+                    </button>
+                  ) : null}
+                </div>
               )}
             </div>
           </div>

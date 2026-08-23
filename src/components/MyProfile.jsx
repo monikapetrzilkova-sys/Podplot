@@ -19,6 +19,7 @@ import { MIN_PASSWORD_LENGTH } from "../data/authApi.js";
 import { isThingsModuleListing, isCommunityAnnouncementPost } from "../utils/thingsModule.js";
 import { MODULE_IDS } from "../data/moduleConfig.js";
 import ReportDetailModal from "./ReportDetailModal.jsx";
+import { getReportLifecycleBadge } from "../data/reportExpiry.js";
 import FeedCard from "./FeedCard.jsx";
 import GroupProposalCard from "./GroupProposalCard.jsx";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
@@ -1305,19 +1306,35 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
           </p>
         ) : (
           <div className="space-y-2">
-            {myReportItems.map((r) => (
+            {myReportItems.map((r) => {
+              const badge = getReportLifecycleBadge(r.report);
+              const badgeClass =
+                badge.tone === "ok"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                  : badge.tone === "active"
+                    ? "border-[#C5DDD4] bg-[#E8F3EF] text-[#1B4D3E]"
+                    : "border-stone-200 bg-stone-50 text-stone-500";
+              return (
               <button
                 key={r.id}
                 type="button"
                 onClick={() => setDetailReport(r.report)}
                 className="rounded-xl border border-stone-200 bg-[#FAFCFB] p-3 w-full text-left hover:bg-stone-50 transition-colors"
               >
-                <p className="text-xs font-semibold text-[#3D7A68] mb-0.5">Hlášení · klepněte pro detail</p>
+                <div className="flex items-start justify-between gap-2 mb-0.5">
+                  <p className="text-xs font-semibold text-[#3D7A68]">Hlášení · klepněte pro detail</p>
+                  <span
+                    className={`shrink-0 text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg border ${badgeClass}`}
+                  >
+                    {badge.label}
+                  </span>
+                </div>
                 <p className="text-xs font-bold text-stone-800">{r.type}</p>
                 <p className="text-sm text-stone-600 mt-1">{r.body}</p>
                 <p className="text-xs text-stone-400 mt-2">{r.time}</p>
               </button>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

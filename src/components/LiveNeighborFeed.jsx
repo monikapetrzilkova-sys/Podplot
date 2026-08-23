@@ -18,6 +18,8 @@ import { displayCreatorLabel } from "../data/accountTypes.js";
 import { lendingDisplayTitle } from "../data/lendingItemTypes.js";
 import { reportSnapshotFromFeedPost } from "../utils/reportPinUtils.js";
 import { feedItemNeedsExpand } from "./feed/feedExpand.js";
+import { isReportActive, normalizeReportValidity } from "../data/reportExpiry.js";
+import { SECURITY_REPORTS } from "../data/mockData.js";
 
 function listingPreview(post, title) {
   const body = String(post?.body ?? "").trim();
@@ -79,11 +81,37 @@ export default function LiveNeighborFeed() {
     getHelpOffers,
     listingSaleOrders,
     user,
+    extraReports,
+    userReports,
   } = useApp();
 
   const reportGeneric = () => showToast("Děkujeme za nahlášení.", "info");
 
   const items = useMemo(() => {
+    const reportById = new Map();
+    for (const r of [...SECURITY_REPORTS, ...(extraReports ?? []), ...(userReports ?? [])]) {
+      if (r?.id) reportById.set(r.id, normalizeReportValidity(r));
+    }
+
+    const isAnnouncementStillVisible = (post) => {
+      const rid =
+        post.fromSecurityReportId ||
+        (String(post.id || "").startsWith("feed-") ? String(post.id).slice(5) : null);
+      if (rid && reportById.has(rid)) {
+        return isReportActive(reportById.get(rid));
+      }
+      if (
+        rid ||
+        post.feedSubtype === "hlaseni" ||
+        post.reportCategoryId ||
+        post.expiresAt != null ||
+        post.untilResolved
+      ) {
+        return isReportActive(normalizeReportValidity(post));
+      }
+      return true;
+    };
+
     const engagementForPost = (post) => {
       if (!post?.id) return 0;
       const type = getPostInteractionType(post);
@@ -201,6 +229,7 @@ export default function LiveNeighborFeed() {
 
     const announcements = communityPosts
       .filter(isCommunityAnnouncementPost)
+      .filter(isAnnouncementStillVisible)
       .map((p) => ({
         id: `hlaseni-${p.id}`,
         kind: "announcement",
@@ -250,6 +279,8 @@ export default function LiveNeighborFeed() {
     getSearchHelpCount,
     getHelpOffers,
     listingSaleOrders,
+    extraReports,
+    userReports,
   ]);
 
   const filteredItems = useMemo(() => {
