@@ -319,6 +319,14 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
   const isOfficeProfile = testRoleId === "urad";
   const showNeighborProfile = testRoleId === "soused" || viewAsNeighbor;
   const showWorkRoleViews = !viewAsNeighbor;
+  /** Stejná horní karta (avatar, peněženka, místa, profily) i u mobilní služby / provozovny */
+  const showIdentityHeader =
+    testRoleId === "soused" ||
+    testRoleId === "remeslnik" ||
+    testRoleId === "podnik" ||
+    viewAsNeighbor;
+  const isWorkProfileMode =
+    showWorkRoleViews && (testRoleId === "remeslnik" || testRoleId === "podnik");
 
   const [topUpOpen, setTopUpOpen] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState(100);
@@ -685,8 +693,16 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
         </p>
       ) : null}
 
+      {isWorkProfileMode ? (
+        <p className="mb-3 text-[11px] font-semibold text-stone-700 bg-[#F7FAF9] border border-[#C5DDD4] rounded-xl px-3 py-2">
+          {testRoleId === "podnik"
+            ? "Pracovní profil provozovny — nahoře můžete přepnout na souseda."
+            : "Pracovní profil mobilní služby — nahoře můžete přepnout na souseda."}
+        </p>
+      ) : null}
+
       {/* Identita nahoře: kompaktní řádek + adresy + peněženka + profily */}
-      {showNeighborProfile && (
+      {showIdentityHeader && (
         <div id="profile-identity" className="pp-card p-3 mb-3 scroll-mt-4">
           <div className="flex items-start gap-3">
             <div className="relative shrink-0">
@@ -997,7 +1013,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
           <ViewAsNeighborToggle className="mb-4" />
         </>
       ) : (
-        <ViewAsNeighborToggle className="mb-4" />
+        <ViewAsNeighborToggle className="mb-3" prominent={!viewAsNeighbor && isWorkProfileMode} />
       )}
 
       {showWorkRoleViews && testRoleId === "remeslnik" && <CraftsmanRoleView />}
