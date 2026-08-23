@@ -41,7 +41,6 @@ function ThingLendingDetail({ item, onReserve }) {
   const onVacation = Boolean(item.onVacation);
   return (
     <div className="space-y-1.5 pp-thing-detail">
-      <p className="pp-text-body">{item.description ?? item.subtitle}</p>
       <LendingOwnerStatus
         onVacation={onVacation}
         availabilityMessage={item.availabilityMessage}
@@ -82,7 +81,11 @@ function ThingListRow({ item, expanded, onToggle }) {
       : item.label;
   const badgeInfo = getListingBadge(item.type ?? thingCategoryId(item));
   const creator = displayCreatorLabel(item.author, item.accountType, { mine: item.mine });
-  const preview = item.description ?? item.subtitle ?? item.body ?? null;
+  const rawPreview = item.description ?? item.subtitle ?? item.body ?? null;
+  const preview =
+    rawPreview && String(rawPreview).trim() !== String(title ?? "").trim()
+      ? rawPreview
+      : null;
 
   return (
     <LiveFeedCard
@@ -102,7 +105,7 @@ function ThingListRow({ item, expanded, onToggle }) {
       {item.thingKind === "lending" || thingCategoryId(item) === "pujcovna" ? (
         <ThingLendingDetail item={item} onReserve={item.onReserve} />
       ) : (
-        <FeedCard post={item} detailsOnly />
+        <FeedCard post={item} detailsOnly bodyInParent />
       )}
     </LiveFeedCard>
   );

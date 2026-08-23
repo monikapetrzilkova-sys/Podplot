@@ -61,6 +61,9 @@ export default function LiveFeedCard({
   const authorParts = [authorLabel, distanceLabel].filter(Boolean);
   const authorText = authorParts.length ? authorParts.join(" · ") : null;
   const footerLabel = ctaLabel || metaLine || null;
+  const previewText = String(preview ?? "").trim();
+  const titleText = String(title ?? "").trim();
+  const showPreview = Boolean(previewText && previewText !== titleText);
 
   return (
     <article
@@ -102,7 +105,7 @@ export default function LiveFeedCard({
                 {authorText}
               </p>
             ) : null}
-            {preview ? (
+            {showPreview ? (
               <p
                 className={`pp-feed-card__preview pp-text-body text-[11px] leading-snug mt-0.5 text-stone-600 ${
                   isOpen ? "whitespace-pre-wrap" : "line-clamp-2"

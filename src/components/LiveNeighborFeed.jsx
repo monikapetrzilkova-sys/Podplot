@@ -19,6 +19,13 @@ import { lendingDisplayTitle } from "../data/lendingItemTypes.js";
 import { reportSnapshotFromFeedPost } from "../utils/reportPinUtils.js";
 import { feedItemNeedsExpand } from "./feed/feedExpand.js";
 
+function listingPreview(post, title) {
+  const body = String(post?.body ?? "").trim();
+  if (!body) return null;
+  if (title && body === String(title).trim()) return null;
+  return post.body;
+}
+
 function lendingToLivePost(item) {
   const thing = normalizeLendingToThing(item);
   const title = lendingDisplayTitle(thing) || thing.label || thing.item || "Půjčovna";
@@ -460,7 +467,7 @@ export default function LiveNeighborFeed() {
                 authorLabel={displayCreatorLabel(item.post?.author, item.post?.accountType, {
                   mine: item.post?.mine,
                 })}
-                preview={item.post?.body}
+                preview={listingPreview(item.post, item.title)}
                 priceLabel={item.price}
                 editedItem={item.post}
                 onReport={
@@ -492,7 +499,7 @@ export default function LiveNeighborFeed() {
               authorLabel={displayCreatorLabel(item.post?.author, item.post?.accountType, {
                 mine: item.post?.mine,
               })}
-              preview={item.post?.body}
+              preview={listingPreview(item.post, item.title)}
               statusLabel={item.reserved ? "V rezervaci" : null}
               priceLabel={item.reserved ? null : item.price}
               editedItem={item.post}

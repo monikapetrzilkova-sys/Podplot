@@ -11,15 +11,12 @@ export function postHasFeedPhotos(post) {
 
 /**
  * Má smysl rozbalovat kartu feedu?
- * Krátký text bez fotek a bez dalšího obsahu v children → ne.
+ * Krátký text bez fotek a bez dalšího obsahu → ne (ať se neukazuje stejný text znovu).
  */
 export function feedItemNeedsExpand(post, { preview = null, hasExtraDetail = false } = {}) {
   if (hasExtraDetail) return true;
   if (postHasFeedPhotos(post)) return true;
   const body = String(post?.body ?? preview ?? "").trim();
   if (bodyExceedsCollapsedPreview(body)) return true;
-  const cat = post?.categoryId ?? post?.feedSubtype;
-  if (["daruji", "prodam", "shanim", "pujcovna"].includes(cat)) return true;
-  if (["Daruji", "Prodám", "Sháním", "Půjčovna"].includes(post?.type)) return true;
   return false;
 }

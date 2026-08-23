@@ -205,10 +205,13 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
   );
 
   if (detailsOnly) {
+    const bodyText = String(post.body ?? "").trim();
+    const titleText = String(post.title ?? "").trim();
+    const showBody = !bodyInParent && bodyText && bodyText !== titleText;
     return (
       <div className="space-y-2">
         {!bodyInParent && <EditedBadge item={post} />}
-        {!bodyInParent && <p className="pp-text-body">{post.body}</p>}
+        {showBody ? <p className="pp-text-body">{post.body}</p> : null}
         <PostPhotos photos={post.photos} compact />
         {!isReported && (
           <div

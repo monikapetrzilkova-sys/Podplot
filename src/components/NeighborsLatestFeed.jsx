@@ -190,7 +190,12 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
                 badgeClassName={item.badgeClassName}
                 title={item.title}
                 authorLabel={item.authorLabel}
-                preview={item.preview}
+                preview={
+                  item.preview &&
+                  String(item.preview).trim() !== String(item.title ?? "").trim()
+                    ? item.preview
+                    : null
+                }
                 editedItem={item.post}
                 priceLabel={item.price}
                 statusLabel={item.statusLabel}
