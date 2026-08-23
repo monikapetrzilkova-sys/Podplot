@@ -11,7 +11,6 @@ import {
   normalizeLendingToThing,
 } from "../utils/thingsModule.js";
 import { isServiceOrSponsoredAdPost } from "../utils/categoryAccents.js";
-import { IconMapPin } from "../data/icons.jsx";
 import { REPORTS_TIP_CATEGORY_ID, resolveReportCategoryId } from "../data/reportCategories.js";
 import { getPostInteractionType, INTERACTION_TYPES } from "../data/postInteractions.js";
 import { getActiveListingSale } from "../data/listingSales.js";
@@ -381,34 +380,12 @@ export default function LiveNeighborFeed() {
                 onMapClick={reportId ? openOnMap : undefined}
               >
                 <FeedCard post={post} detailsOnly />
-                {(placeLabel || distance || reportId) && (
-                  <div className="pt-1">
-                    {reportId ? (
-                      <button
-                        type="button"
-                        onClick={openOnMap}
-                        className={`w-full flex items-center gap-2 text-left text-xs rounded-lg py-1.5 -mx-0.5 px-1.5 hover:bg-[#F7FAF9] transition-colors ${
-                          isTip ? "text-[#5A7A1E]" : "text-[#3D7A68]"
-                        }`}
-                        aria-label={`Zobrazit ${placeLabel || "místo"} na mapě`}
-                      >
-                        <IconMapPin
-                          className={`w-3.5 h-3.5 shrink-0 ${isTip ? "text-[#8FAE3E]" : "text-[#3D7A68]"}`}
-                          aria-hidden
-                        />
-                        <span className="flex-1 min-w-0 truncate font-medium">
-                          {[placeLabel, distance].filter(Boolean).join(" · ") || "Zobrazit na mapě"}
-                        </span>
-                        <span className="text-[10px] font-semibold shrink-0 opacity-80">Mapa ›</span>
-                      </button>
-                    ) : (
-                      <p className="flex items-center gap-1.5 text-xs text-stone-500">
-                        <span className="flex-1 min-w-0 truncate">
-                          {[placeLabel, distance].filter(Boolean).join(" · ")}
-                        </span>
-                      </p>
-                    )}
-                  </div>
+                {(placeLabel || distance) && (
+                  <p className="flex items-center gap-1.5 text-xs text-stone-500 pt-1">
+                    <span className="flex-1 min-w-0 truncate">
+                      {[placeLabel, distance].filter(Boolean).join(" · ")}
+                    </span>
+                  </p>
                 )}
               </LiveFeedCard>
             );

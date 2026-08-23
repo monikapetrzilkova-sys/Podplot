@@ -61,8 +61,8 @@ export default function LiveFeedCard({
         type="button"
         onClick={handleSummaryClick}
         className={`w-full text-left px-3 py-2 transition-colors box-border ${
-          onMapClick || onReport ? "pr-16" : "pr-9"
-        } ${mine ? "hover:bg-[#EEF5F1]/90" : "hover:bg-[#FAFAFA]/80"}`}
+          onReport ? "pr-10" : "pr-3"
+        } ${onMapClick ? "pb-10" : ""} ${mine ? "hover:bg-[#EEF5F1]/90" : "hover:bg-[#FAFAFA]/80"}`}
         aria-expanded={isOpen}
       >
         <div className="flex items-start gap-2 min-w-0">
@@ -123,31 +123,11 @@ export default function LiveFeedCard({
         </div>
       </button>
 
-      {/* Ikonka mapy vždy viditelná ve sbaleném stavu — mimo velké tlačítko karty */}
-      {onMapClick && !isOpen && (
-        <div className="px-3 pb-2 -mt-0.5">
-          <button
-            type="button"
-            onClick={onMapClick}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[#C5DDD4] bg-[#F7FAF9] px-2 py-1 text-[11px] font-semibold text-[#3D7A68] hover:bg-[#E8F3EF] transition-colors"
-            aria-label="Zobrazit na mapě"
-          >
-            <IconMapPin className="w-3.5 h-3.5 shrink-0" aria-hidden />
-            Na mapě
-          </button>
-        </div>
-      )}
-
       {onMapClick && (
         <button
           type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onMapClick();
-          }}
-          className={`absolute top-1.5 z-10 w-8 h-8 flex items-center justify-center rounded-xl border border-[#C5DDD4] bg-white text-[#3D7A68] shadow-sm hover:bg-[#E8F3EF] transition-colors ${
-            onReport ? "right-8" : "right-1.5"
-          }`}
+          onClick={onMapClick}
+          className="absolute bottom-2 right-2 z-10 w-8 h-8 flex items-center justify-center rounded-xl border border-[#C5DDD4] bg-white text-[#3D7A68] shadow-sm hover:bg-[#E8F3EF] transition-colors"
           aria-label="Zobrazit na mapě"
           title="Zobrazit na mapě"
         >
@@ -162,7 +142,7 @@ export default function LiveFeedCard({
       )}
 
       {isOpen && (
-        <div className="px-3 pb-3 pt-2 border-t border-stone-100 animate-[fadeIn_0.15s_ease-out] space-y-2">
+        <div className={`px-3 pt-2 border-t border-stone-100 animate-[fadeIn_0.15s_ease-out] space-y-2 ${onMapClick ? "pb-11" : "pb-3"}`}>
           {children}
         </div>
       )}
