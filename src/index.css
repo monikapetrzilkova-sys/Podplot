@@ -1742,8 +1742,106 @@ body,
   min-height: 2.25rem;
 }
 
-.pp-group-proposals-quiet {
-  min-height: 1.75rem;
+/* Návrhy skupin — viditelný chip s počtem (ne dominantní, ale nelze přehlédnout) */
+.pp-group-proposals-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 7px 10px 7px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(61, 122, 104, 0.28);
+  background: linear-gradient(180deg, #ffffff 0%, #eef7f3 100%);
+  box-shadow:
+    0 0 0 1px rgba(100, 160, 141, 0.12),
+    0 1px 4px rgba(27, 77, 62, 0.08);
+  color: #1b4d3e;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.pp-group-proposals-chip:hover {
+  border-color: rgba(61, 122, 104, 0.45);
+  box-shadow:
+    0 0 0 2px rgba(100, 160, 141, 0.18),
+    0 2px 8px rgba(27, 77, 62, 0.1);
+}
+
+.pp-group-proposals-chip--open {
+  border-color: rgba(61, 122, 104, 0.4);
+  background: #e8f3ef;
+}
+
+.pp-group-proposals-chip__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #3d7a68;
+  box-shadow: 0 0 0 3px rgba(61, 122, 104, 0.2);
+  flex-shrink: 0;
+  animation: pp-proposals-pulse 2s ease-in-out infinite;
+}
+
+@keyframes pp-proposals-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px rgba(61, 122, 104, 0.18);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(61, 122, 104, 0.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pp-group-proposals-chip__dot {
+    animation: none;
+  }
+}
+
+.pp-group-proposals-chip__label {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pp-group-proposals-chip__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #1b4d3e;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.pp-group-proposals-panel {
+  border-radius: 14px;
+  border: 1px solid #d7e8e1;
+  background: #fafcfb;
+  padding: 10px 12px 12px;
+}
+
+.pp-group-proposals-slot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 0 12px 8px;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.pp-group-proposals-slot .pp-group-proposals-panel {
+  width: 100%;
 }
 
 /* Mapa — sjednocený toolbar nad mapou (Hlášení / Průvodce) */

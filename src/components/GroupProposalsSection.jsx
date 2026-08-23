@@ -5,7 +5,7 @@ import { useApp } from "../context/AppContext.jsx";
 
 export default function GroupProposalsSection({
   proposals,
-  dismissedProposals,
+  dismissedProposals = [],
   onVote,
   onDismiss,
   onRestore,
@@ -23,16 +23,10 @@ export default function GroupProposalsSection({
     return false;
   };
 
-  if (proposals.length === 0 && dismissedProposals.length === 0) return null;
+  /** Bez aktivních návrhů se vstup vůbec nezobrazí — archiv skrytých je jen uvnitř rozbalení. */
+  if (!proposals?.length) return null;
 
-  const countLabel =
-    proposals.length > 0
-      ? proposals.length === 1
-        ? "1 návrh"
-        : proposals.length < 5
-          ? `${proposals.length} návrhy`
-          : `${proposals.length} návrhů`
-      : null;
+  const count = proposals.length;
 
   if (minimized) {
     return (
@@ -40,56 +34,61 @@ export default function GroupProposalsSection({
         type="button"
         onClick={toggleMinimized}
         aria-expanded={false}
-        className="pp-group-proposals-quiet w-full flex items-center justify-between gap-2 px-1 py-1.5 text-left rounded-lg hover:bg-[#F4F8F6] transition-colors"
+        className="pp-group-proposals-chip"
       >
-        <span className="text-[11px] text-[#8A9590] truncate">
-          Návrhy na nové skupiny
-          {countLabel ? <span className="text-[#6b7280]"> · {countLabel}</span> : null}
+        <span className="pp-group-proposals-chip__dot" aria-hidden />
+        <span className="pp-group-proposals-chip__label">Návrhy na nové skupiny</span>
+        <span className="pp-group-proposals-chip__count" aria-label={`${count} návrhů`}>
+          {count > 9 ? "9+" : count}
         </span>
-        <span className="shrink-0 text-[10px] font-medium text-[#9CA3AF]">Zobrazit ›</span>
       </button>
     );
   }
 
   const titleClass = compactTitle
-    ? "text-[11px] font-semibold text-[#6b7280]"
+    ? "text-[12px] font-semibold text-[#1B4D3E]"
     : "text-sm font-bold text-stone-900";
 
   return (
-    <section className="pp-group-proposals-panel rounded-xl border border-[#E8EEEB] bg-[#FAFCFB] p-3">
-      <div className="flex items-start justify-between gap-2 mb-1">
-        <h3 className={titleClass}>Návrhy na nové skupiny</h3>
+    <section className="pp-group-proposals-panel">
+      <div className="flex items-start justify-between gap-2 mb-1.5">
         <button
           type="button"
           onClick={toggleMinimized}
-          className="shrink-0 text-[10px] font-medium text-[#9CA3AF] hover:text-[#6b7280] px-1.5 py-0.5 rounded-md hover:bg-white"
+          className="pp-group-proposals-chip pp-group-proposals-chip--open"
           aria-expanded={true}
+        >
+          <span className="pp-group-proposals-chip__dot" aria-hidden />
+          <span className="pp-group-proposals-chip__label">Návrhy na nové skupiny</span>
+          <span className="pp-group-proposals-chip__count">{count > 9 ? "9+" : count}</span>
+        </button>
+        <button
+          type="button"
+          onClick={toggleMinimized}
+          className="shrink-0 text-[10px] font-medium text-[#6b7280] hover:text-[#1B4D3E] px-1.5 py-1 rounded-md hover:bg-white"
           title="Sbalit sekci návrhů"
         >
           Sbalit
         </button>
       </div>
 
-      {proposals.length > 0 && (
-        <>
-          <p className="text-[11px] text-[#8A9590] mb-2.5">{hint}</p>
-          <div className="space-y-2">
-            {proposals.map((p) => (
-              <GroupProposalCard
-                key={p.id}
-                proposal={p}
-                onVote={onVote}
-                onDismiss={onDismiss}
-                onEdit={onEdit ?? openEditGroupProposal}
-                mine={isMine(p)}
-              />
-            ))}
-          </div>
-        </>
-      )}
+      <p className={`${titleClass} sr-only`}>Návrhy na nové skupiny</p>
+      <p className="text-[11px] text-[#6b7280] mb-2.5">{hint}</p>
+      <div className="space-y-2">
+        {proposals.map((p) => (
+          <GroupProposalCard
+            key={p.id}
+            proposal={p}
+            onVote={onVote}
+            onDismiss={onDismiss}
+            onEdit={onEdit ?? openEditGroupProposal}
+            mine={isMine(p)}
+          />
+        ))}
+      </div>
 
       {dismissedProposals.length > 0 && (
-        <div className={proposals.length > 0 ? "mt-3" : ""}>
+        <div className="mt-3">
           <button
             type="button"
             onClick={() => setShowDismissed(!showDismissed)}

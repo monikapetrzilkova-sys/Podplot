@@ -534,20 +534,6 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
             </div>
           </>
         )}
-
-        {(visibleProposals.length > 0 || dismissedProposals.length > 0) && (
-          <div className="shrink-0 mt-auto pt-1 border-t border-[#EEF2F0]">
-            <GroupProposalsSection
-              proposals={visibleProposals}
-              dismissedProposals={dismissedProposals}
-              onVote={voteGroupProposal}
-              onDismiss={dismissGroupProposal}
-              onRestore={restoreGroupProposal}
-              compactTitle
-              hint="Podpořte vznik nové skupiny. Nezajímavé návrhy skryjte křížkem."
-            />
-          </div>
-        )}
       </div>
     );
   } else {
@@ -582,25 +568,25 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
         {query && catsToShow.length === 0 && (
           <DoodleEmptyState illustration="group" message="Žádná skupina neodpovídá hledání." />
         )}
-
-        {(visibleProposals.length > 0 || dismissedProposals.length > 0) && (
-          <div className="pt-2 mt-1 border-t border-[#EEF2F0]">
-            <GroupProposalsSection
-              proposals={visibleProposals}
-              dismissedProposals={dismissedProposals}
-              onVote={voteGroupProposal}
-              onDismiss={dismissGroupProposal}
-              onRestore={restoreGroupProposal}
-              compactTitle
-              hint="Podpořte vznik nové skupiny. Nezajímavé návrhy skryjte křížkem."
-            />
-          </div>
-        )}
       </div>
     );
   }
 
   const showSearch = isOverview || isMyGroups;
+  const proposalsSlot =
+    showSearch && visibleProposals.length > 0 ? (
+      <div className="pp-group-proposals-slot">
+        <GroupProposalsSection
+          proposals={visibleProposals}
+          dismissedProposals={dismissedProposals}
+          onVote={voteGroupProposal}
+          onDismiss={dismissGroupProposal}
+          onRestore={restoreGroupProposal}
+          compactTitle
+          hint="Podpořte vznik nové skupiny. Nezajímavé návrhy skryjte křížkem."
+        />
+      </div>
+    ) : null;
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -613,6 +599,7 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
           onNew={() => openCreateGroupModal?.()}
         />
       )}
+      {proposalsSlot}
       {body}
     </div>
   );

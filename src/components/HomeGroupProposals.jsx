@@ -26,7 +26,7 @@ export default function HomeGroupProposals() {
     [groupProposals, dismissedGroupProposalIds]
   );
 
-  if (visibleProposals.length === 0 && dismissedProposals.length === 0) return null;
+  if (visibleProposals.length === 0) return null;
 
   return (
     <section className="px-4 pt-3 pb-1" aria-label="Návrhy na nové skupiny">
