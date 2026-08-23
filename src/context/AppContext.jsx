@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { CURRENT_USER } from "../data/mockData.js";
 import { getCategory } from "../data/listingCategories.js";
-import { getGroup, isGroupWallPost, isGroupBoardDiscussionPost } from "../data/groups.js";
+import { getGroup, isGroupBoardDiscussionPost } from "../data/groups.js";
 import {
   SEED_GROUP_POST_COMMENTS,
   commentsForPost,
