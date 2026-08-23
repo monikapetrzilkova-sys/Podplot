@@ -838,28 +838,30 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
             </div>
 
             {!addingLocation && !editingLocationId ? (
-              <div className="flex flex-wrap items-center gap-1.5">
-                {locations.map((loc) => {
-                  const LocIcon = locationIconFor(loc);
-                  const isActive = activeLocationId === loc.id;
-                  const label = locationChipLabel(loc);
-                  return (
-                    <button
-                      key={loc.id}
-                      type="button"
-                      onClick={() => setActiveLocation(loc.id)}
-                      title={loc.shortLabel || loc.address || label}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-semibold transition-colors ${
-                        isActive
-                          ? "border-[#3D7A68] bg-[#E8F3EF] text-[#1B4D3E]"
-                          : "border-stone-200 bg-white text-stone-600 hover:border-[#C5DDD4]"
-                      }`}
-                    >
-                      <LocIcon className="w-3.5 h-3.5 shrink-0" aria-hidden />
-                      {label}
-                    </button>
-                  );
-                })}
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {locations.map((loc) => {
+                    const LocIcon = locationIconFor(loc);
+                    const isActive = activeLocationId === loc.id;
+                    const label = locationChipLabel(loc);
+                    return (
+                      <button
+                        key={loc.id}
+                        type="button"
+                        onClick={() => setActiveLocation(loc.id)}
+                        title={loc.shortLabel || loc.address || label}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-semibold transition-colors ${
+                          isActive
+                            ? "border-[#3D7A68] bg-[#E8F3EF] text-[#1B4D3E]"
+                            : "border-stone-200 bg-white text-stone-600 hover:border-[#C5DDD4]"
+                        }`}
+                      >
+                        <LocIcon className="w-3.5 h-3.5 shrink-0" aria-hidden />
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
                 <button
                   type="button"
                   onClick={() => {
@@ -869,9 +871,9 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                     setEditingLocationId(targetId);
                     if (targetId === "domov") setEditingHomeAddress(true);
                   }}
-                  className="pp-profile-sec-btn pp-profile-sec-btn--ghost"
+                  className="pp-profile-sec-edit"
                 >
-                  Upravit
+                  Upravit vybrané místo
                 </button>
               </div>
             ) : null}
