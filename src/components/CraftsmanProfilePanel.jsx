@@ -61,9 +61,7 @@ export default function CraftsmanProfilePanel() {
   const {
     user,
     ownedService,
-    updateAccountProfile,
-    updateServiceDescription,
-    updateServiceFocus,
+    saveCraftsmanCatalogProfile,
     craftsmanAcceptsOrders,
     setCraftsmanAcceptsOrders,
     craftsmanRadius,
@@ -90,8 +88,8 @@ export default function CraftsmanProfilePanel() {
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [formError, setFormError] = useState("");
 
-  useEffect(() => {
-    setCatalogName(ownedService?.name || user?.businessName || "");
+  const hydrateFromService = () => {
+    setCatalogName(ownedService?.name || user?.businessName || user?.name || "");
     applyAddressState(ownedService?.defaultAddress || user?.address || "", {
       setStreet,
       setHouseNumber,
@@ -99,17 +97,34 @@ export default function CraftsmanProfilePanel() {
       setCity,
     });
     setDescription(ownedService?.serviceDescription || "");
-    setHomeGroup(ownedService?.homeGroupId || "domov-zahrada");
-    const primary = getPrimaryServiceSubcategoryId(ownedService);
-    const secondary = getSecondaryServiceSubcategoryIds(ownedService);
+    setHomeGroup(
+      ownedService?.homeGroupId || user?.serviceHomeGroup || "domov-zahrada"
+    );
+    const primary =
+      getPrimaryServiceSubcategoryId(ownedService) ||
+      user?.primarySubcategory ||
+      user?.serviceSubcategory ||
+      null;
+    const secondary = ownedService
+      ? getSecondaryServiceSubcategoryIds(ownedService)
+      : (user?.serviceSubcategories || []).filter((id) => id && id !== primary);
     setPrimarySubcategory(primary);
     setSecondarySubcategories(secondary);
     const ids = buildServiceSubcategoryList(primary, secondary);
     const autoLabels = new Set(ids.map((id) => getServiceCategory(id)?.label).filter(Boolean));
     setKeywordsText(
-      (ownedService?.keywords ?? []).filter((k) => !autoLabels.has(k)).join(", ")
+      (ownedService?.keywords ?? user?.serviceKeywords ?? [])
+        .filter((k) => !autoLabels.has(k))
+        .join(", ")
     );
+  };
+
+  useEffect(() => {
+    if (editing) return;
+    hydrateFromService();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- hydrate only when catalog/user data changes outside edit
   }, [
+    editing,
     ownedService?.id,
     ownedService?.name,
     ownedService?.defaultAddress,
@@ -120,6 +135,8 @@ export default function CraftsmanProfilePanel() {
     ownedService?.keywords,
     user?.businessName,
     user?.address,
+    user?.primarySubcategory,
+    user?.serviceSubcategories,
   ]);
 
   const nationwide = isNationwideRadius(craftsmanRadius);
@@ -130,18 +147,20 @@ export default function CraftsmanProfilePanel() {
         Math.max(CRAFTSMAN_RADIUS_MIN_KM, Number(craftsmanRadius) || CRAFTSMAN_RADIUS_MIN_KM)
       );
   const subcategories = buildServiceSubcategoryList(primarySubcategory, secondarySubcategories);
-  const focusLabel = formatServiceSubcategoryLabels(getServiceSubcategoryIds(ownedService));
+  const focusLabel = formatServiceSubcategoryLabels(
+    getServiceSubcategoryIds(ownedService).length
+      ? getServiceSubcategoryIds(ownedService)
+      : buildServiceSubcategoryList(
+          user?.primarySubcategory || user?.serviceSubcategory,
+          user?.serviceSubcategories
+        )
+  );
   const displayAddress = ownedService?.defaultAddress || user?.address || "";
 
   const openEdit = () => {
     setFormError("");
     setAddressErrors({});
-    applyAddressState(ownedService?.defaultAddress || user?.address || "", {
-      setStreet,
-      setHouseNumber,
-      setPsc,
-      setCity,
-    });
+    hydrateFromService();
     setEditing(true);
   };
 
@@ -163,28 +182,26 @@ export default function CraftsmanProfilePanel() {
       return;
     }
     const fullAddress = formatFullAddress({ street, houseNumber, psc, city });
-    updateAccountProfile({
+    const selectedLabels = new Set(
+      subcategories.map((id) => getServiceCategory(id)?.label).filter(Boolean)
+    );
+    const custom = keywordsText
+      .split(/[,;]+/)
+      .map((k) => k.trim())
+      .filter(Boolean)
+      .filter((k) => !selectedLabels.has(k));
+    const result = saveCraftsmanCatalogProfile({
       businessName: name,
       address: fullAddress,
+      serviceDescription: description.trim(),
+      homeGroupId: homeGroup,
+      primarySubcategory,
+      subcategories,
+      keywords: custom,
     });
-    if (ownedService?.id) {
-      updateServiceDescription(ownedService.id, description.trim());
-      const selectedLabels = new Set(
-        subcategories.map((id) => getServiceCategory(id)?.label).filter(Boolean)
-      );
-      const custom = keywordsText
-        .split(/[,;]+/)
-        .map((k) => k.trim())
-        .filter(Boolean)
-        .filter((k) => !selectedLabels.has(k));
-      updateServiceFocus({
-        serviceId: ownedService.id,
-        homeGroupId: homeGroup,
-        primarySubcategory,
-        subcategories,
-        subcategory: primarySubcategory,
-        keywords: custom,
-      });
+    if (!result?.ok) {
+      setFormError(result?.error || "Nepodařilo se uložit profil.");
+      return;
     }
     setEditing(false);
   };

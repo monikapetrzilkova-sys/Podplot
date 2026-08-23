@@ -4897,6 +4897,117 @@ export function AppProvider({ children }) {
     showToast("Popis služeb uložen.", "success");
   }, [showToast]);
 
+  /** Vytvoří nebo aktualizuje katalogový profil mobilní služby (včetně popisu a oboru). */
+  const saveCraftsmanCatalogProfile = useCallback(
+    ({
+      businessName,
+      address,
+      serviceDescription = "",
+      homeGroupId = "domov-zahrada",
+      primarySubcategory = null,
+      subcategories = null,
+      keywords = [],
+    } = {}) => {
+      if (!user) return { ok: false, error: "Nejste přihlášeni." };
+      const primary = primarySubcategory || null;
+      const rawSubs = Array.isArray(subcategories) ? subcategories : [];
+      const subIds = [
+        ...new Set(
+          (primary ? [primary, ...rawSubs.filter((id) => id !== primary)] : rawSubs).filter(Boolean)
+        ),
+      ];
+      if (!primary || subIds.length === 0) {
+        return { ok: false, error: "Vyberte hlavní zaměření." };
+      }
+      const name =
+        (typeof businessName === "string" && businessName.trim()) ||
+        user.businessName ||
+        user.name ||
+        "Služba";
+      const fullAddress =
+        (typeof address === "string" && address.trim()) || user.address || "";
+      if (!fullAddress) {
+        return { ok: false, error: "Vyplňte výchozí adresu." };
+      }
+      const labelsJoined = formatServiceSubcategoryLabels(subIds);
+      const catLabels = subIds.map((id) => getServiceCategory(id)?.label).filter(Boolean);
+      const kw = [...catLabels, ...(Array.isArray(keywords) ? keywords : [])]
+        .map((k) => String(k).trim())
+        .filter(Boolean);
+      const uniqueKw = [...new Set(kw.map((k) => k.toLowerCase()))].map(
+        (k) => kw.find((x) => x.toLowerCase() === k) ?? k
+      );
+      const cityLabel =
+        user.geo?.city ||
+        user.location ||
+        fullAddress.split(",").map((p) => p.trim()).filter(Boolean).slice(-1)[0] ||
+        fullAddress;
+      const userId = user.id ?? "me";
+      const radiusKm = Number(craftsmanRadius);
+      const description =
+        typeof serviceDescription === "string" ? serviceDescription.trim() : "";
+
+      setServicesCatalog((prev) => {
+        const existing =
+          prev.find((s) => s.ownerUserId === userId) ??
+          prev.find((s) => s.id === "svc-mine") ??
+          null;
+        const nextEntry = {
+          ...(existing || {}),
+          id: existing?.id || "svc-mine",
+          name,
+          profession: labelsJoined || "Služba",
+          keywords: uniqueKw,
+          subcategory: primary,
+          primarySubcategory: primary,
+          subcategories: subIds,
+          subcategoryLabel: labelsJoined || "Ostatní služby",
+          homeGroupId: homeGroupId || existing?.homeGroupId || "domov-zahrada",
+          address: cityLabel,
+          locationId: existing?.locationId || "domov",
+          defaultAddress: fullAddress,
+          actionRadius: existing?.actionRadius ?? (Number.isFinite(radiusKm) ? radiusKm : 15),
+          isVerified: Boolean(user.isVerified),
+          isPremium: Boolean(existing?.isPremium),
+          kapacitaPlna:
+            existing?.kapacitaPlna ?? !craftsmanAcceptsOrders,
+          distanceKm: existing?.distanceKm ?? 0.1,
+          rating: existing?.rating ?? null,
+          serviceDescription: description,
+          ownerUserId: userId,
+          reviews: existing?.reviews ?? [],
+          ico: true,
+          accountType: "podnik",
+          businessSubtype: "mobilni",
+          pushPoptavkyEnabled: Boolean(existing?.pushPoptavkyEnabled),
+        };
+        if (existing) {
+          return prev.map((s) => (s.id === existing.id ? nextEntry : s));
+        }
+        return [nextEntry, ...prev.filter((s) => s.id !== "svc-mine")];
+      });
+
+      setUser((u) =>
+        u
+          ? {
+              ...u,
+              businessName: name,
+              address: fullAddress,
+              serviceHomeGroup: homeGroupId || u.serviceHomeGroup || "domov-zahrada",
+              serviceSubcategory: primary,
+              primarySubcategory: primary,
+              serviceSubcategories: subIds,
+              serviceKeywords: uniqueKw,
+            }
+          : u
+      );
+
+      showToast("Profil mobilní služby uložen.", "success");
+      return { ok: true };
+    },
+    [user, craftsmanRadius, craftsmanAcceptsOrders, showToast]
+  );
+
   const updateServiceFocus = useCallback(
     ({
       serviceId,
@@ -6957,6 +7068,7 @@ export function AppProvider({ children }) {
         reportPlaceReview,
         updateServiceDescription,
         updateServiceFocus,
+        saveCraftsmanCatalogProfile,
         b2bInquiries: b2bInquiriesForRole,
         markB2bInquiryRead,
         sendEventOutreach,
