@@ -36,7 +36,7 @@ import AccountTypeIcon from "./AccountTypeIcon.jsx";
 /** Osobní profily uživatele — bez institucionálních účtů (úřad). */
 const PERSONAL_ROLE_IDS = ["soused", "podnik", "remeslnik"];
 
-function ProfileRoleChip({ role, active, onClick, emphasize = false }) {
+function ProfileRoleChip({ role, active, onClick }) {
   return (
     <button
       type="button"
@@ -44,17 +44,12 @@ function ProfileRoleChip({ role, active, onClick, emphasize = false }) {
       className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-semibold transition-colors ${
         active
           ? "border-[#3D7A68] bg-[#E8F3EF] text-[#1B4D3E]"
-          : emphasize
-            ? "border-[#3D7A68] border-dashed bg-[#F1F6F5] text-[#1B4D3E]"
-            : "border-stone-200 bg-white text-stone-600 hover:border-[#C5DDD4]"
+          : "border-stone-200 bg-white text-stone-600 hover:border-[#C5DDD4]"
       }`}
     >
       <AccountTypeIcon roleId={role.id} accountType={role.accountType} className="w-3.5 h-3.5" />
       {role.label}
       {active ? <span className="text-[9px] uppercase opacity-70">●</span> : null}
-      {emphasize && !active ? (
-        <span className="text-[9px] font-bold uppercase text-[#3D7A68]">přepnout</span>
-      ) : null}
     </button>
   );
 }
@@ -252,22 +247,14 @@ export default function MyProfilesPanel({ embedded = false }) {
       ) : null}
 
       <div className="flex flex-wrap items-center gap-1.5">
-        {activeProfiles.map((r) => {
-          const isSousedHint =
-            r.id === "soused" &&
-            testRoleId !== "soused" &&
-            !adding &&
-            !setupRole;
-          return (
-            <ProfileRoleChip
-              key={r.id}
-              role={r}
-              active={testRoleId === r.id}
-              onClick={() => switchTestRole(r.id)}
-              emphasize={isSousedHint}
-            />
-          );
-        })}
+        {activeProfiles.map((r) => (
+          <ProfileRoleChip
+            key={r.id}
+            role={r}
+            active={testRoleId === r.id}
+            onClick={() => switchTestRole(r.id)}
+          />
+        ))}
       </div>
 
       {adding && !setupRole && (
