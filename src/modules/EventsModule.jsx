@@ -3,7 +3,7 @@ import { useApp } from "../context/AppContext.jsx";
 import MapComponent from "../components/module/MapComponent.jsx";
 import ViewModeToggle from "../components/module/ViewModeToggle.jsx";
 import ListView, { ListItemShell } from "../components/module/ListView.jsx";
-import MapRadiusSettingsChip from "../components/map/MapRadiusSettingsChip.jsx";
+import MapRadiusOverlay from "../components/map/MapRadiusOverlay.jsx";
 import { MapEventPreviewSheet } from "../components/map/MapEntityPreviewSheet.jsx";
 import EventsCalendarMonth from "../components/EventsCalendarMonth.jsx";
 import { MODULE_IDS, EVENTS_VIEW_MODES } from "../data/moduleConfig.js";
@@ -166,10 +166,10 @@ export default function EventsModule({
   const selectedId = moduleSelection?.module === moduleId ? moduleSelection.id : null;
   const selectedEvent = eventsForMap.find((e) => e.id === selectedId) ?? null;
 
-  const radiusChip = (
-    <MapRadiusSettingsChip
+  const radiusControl = (
+    <MapRadiusOverlay
       id="events-map-radius"
-      label="Aktuální okruh"
+      label="Okruh akcí"
       value={eventsMapRadiusKm}
       min={MIN_EVENTS_MAP_RADIUS_KM}
       max={MAX_EVENTS_MAP_RADIUS_KM}
@@ -241,6 +241,9 @@ export default function EventsModule({
               onClose={clearModuleSelection}
             />
           )}
+          <div className="pp-map-radius-overlay pp-map-radius-overlay--with-toggle pp-map-radius-overlay--compact">
+            {radiusControl}
+          </div>
         </>
       ) : viewMode === "calendar" ? (
         <EventsCalendarMonth
@@ -294,7 +297,6 @@ export default function EventsModule({
         </div>
       ) : (
         <>
-          {radiusChip}
           {viewToggle}
           {hideTopFilters && onCreateEvent && (
             <button
@@ -319,8 +321,6 @@ export default function EventsModule({
         </>
       )}
     </div>
-  ) : viewMode === "map" ? (
-    <div className="pp-events-toolbar shrink-0 px-0.5 mb-1">{radiusChip}</div>
   ) : null;
 
   const body = (
