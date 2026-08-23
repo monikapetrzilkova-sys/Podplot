@@ -5,6 +5,7 @@ import MapModule from "../modules/MapModule.jsx";
 import MapGrid from "./MapGrid.jsx";
 import MapGuideToolbar from "./map/MapGuideToolbar.jsx";
 import MapReportsToolbar from "./map/MapReportsToolbar.jsx";
+import { prefetchNearbyPlaces } from "../data/placesApi.js";
 
 export default function MapPage({ lockedSection = null, officeOverview = false }) {
   const {
@@ -15,12 +16,18 @@ export default function MapPage({ lockedSection = null, officeOverview = false }
     mapRootKey,
     pendingMapReportsCategory,
     clearPendingMapReportsCategory,
+    activeLocation,
   } = useApp();
 
   const [section, setSection] = useState(lockedSection ?? "reports");
   const [provozovnaType, setProvozovnaType] = useState(null);
   const [reportsCategoryFilter, setReportsCategoryFilter] = useState("all");
   const prevMapRootKeyRef = useRef(null);
+
+  // Přednačti místa už na Hlášeních — po kliknutí na Místa jsou v cache
+  useEffect(() => {
+    prefetchNearbyPlaces(activeLocation);
+  }, [activeLocation?.id, activeLocation?.lat, activeLocation?.lng, activeLocation?.radiusKm]);
 
   useEffect(() => {
     if (lockedSection) return;
@@ -103,15 +110,30 @@ export default function MapPage({ lockedSection = null, officeOverview = false }
           )}
         </div>
 
-        <div className="pp-map-content flex-1 min-h-0 flex flex-col overflow-hidden">
-          {activeSection === "reports" ? (
+        <div className="pp-map-content flex-1 min-h-0 flex flex-col overflow-hidden relative">
+          <div
+            className={
+              activeSection === "reports"
+                ? "flex flex-1 min-h-0 flex-col overflow-hidden"
+                : "invisible absolute inset-0 pointer-events-none"
+            }
+            aria-hidden={activeSection !== "reports"}
+          >
             <SecurityReports
               key={`reports-${mapRootKey}`}
               reportsCategoryFilter={reportsCategoryFilter}
             />
-          ) : (
+          </div>
+          <div
+            className={
+              activeSection === "places"
+                ? "flex flex-1 min-h-0 flex-col overflow-hidden"
+                : "invisible absolute inset-0 pointer-events-none"
+            }
+            aria-hidden={activeSection !== "places"}
+          >
             <MapModule key={`places-${mapRootKey}`} provozovnaType={provozovnaType} />
-          )}
+          </div>
         </div>
       </div>
     </div>

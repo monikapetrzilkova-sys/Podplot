@@ -143,7 +143,7 @@ const server = createServer(async (req, res) => {
       const params = new URL(req.url, "http://localhost").searchParams;
       const lat = params.get("lat");
       const lng = params.get("lng");
-      const radius = Math.min(5000, Math.max(200, Number(params.get("radius")) || 1500));
+      const radius = Math.min(15000, Math.max(200, Number(params.get("radius")) || 5000));
       const type = params.get("type") ?? "";
       const category = params.get("category") ?? "vse";
       if (!lat || !lng) {

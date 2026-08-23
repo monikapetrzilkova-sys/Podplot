@@ -92,7 +92,7 @@ export default function MapModule({ provozovnaType = null }) {
   const isProvozovny = activeCategory === SLUZBY_CATEGORY_ID;
   const showMap = isGuideMapCategory(activeCategory);
 
-  const { googlePlaces, source } = useGuideGooglePlaces(
+  const { googlePlaces, loading: placesLoading, source } = useGuideGooglePlaces(
     activeCategory,
     activeLocation,
     localGuideSearchQuery
@@ -177,6 +177,11 @@ export default function MapModule({ provozovnaType = null }) {
                 Lokálně běží ukázková místa — do <code className="font-mono">app/.env</code> doplňte{" "}
                 <code className="font-mono">GOOGLE_MAPS_SERVER_API_KEY</code> (klíč bez HTTP referrer) a
                 restartujte SPUSTIT.bat.
+              </p>
+            )}
+            {placesLoading && filtered.length === 0 && (
+              <p className="shrink-0 mx-0.5 mb-1 px-2 py-1.5 text-[10px] leading-snug rounded-lg border border-stone-200 bg-white/90 text-stone-600">
+                Načítám místa v okolí…
               </p>
             )}
             {viewMode === "map" ? (

@@ -1,7 +1,7 @@
 import { googlePlacesNearby, mockNearbyPlaces } from "../../lib/podplotBackend.mjs";
 
 export const config = {
-  maxDuration: 60,
+  maxDuration: 30,
 };
 
 export default async function handler(req, res) {

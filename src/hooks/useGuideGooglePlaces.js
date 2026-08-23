@@ -156,7 +156,7 @@ export function useGuideGooglePlaces(activeCategory, activeLocation, searchQuery
     if (locationKeyRef.current !== locationKey) {
       locationKeyRef.current = locationKey;
       loadedCategoriesRef.current = new Set();
-      setAllPlaces([]);
+      // Nemaž hned pinů — nech stará data, dokud nepřijdou nová (méně prázdné mapy)
     }
 
     let cancelled = false;

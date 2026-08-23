@@ -493,6 +493,9 @@ export function formatGoogleHours(weekdayText = []) {
   return weekdayText.join(" · ");
 }
 
+/** In-memory cache — stejná lokalita po přepnutí Hlášení↔Místa bez nového čekání. */
+const nearbyPlacesMemoryCache = new Map();
+
 export async function fetchNearbyPlaces({ lat, lng, radiusM = 7000, type = "", category = "vse" } = {}) {
   const params = new URLSearchParams({
     lat: String(lat),
@@ -501,9 +504,47 @@ export async function fetchNearbyPlaces({ lat, lng, radiusM = 7000, type = "", c
     category: category || "vse",
   });
   if (type) params.set("type", type);
-  const res = await fetch(`/api/places/nearby?${params}`);
-  if (!res.ok) return { places: [], source: "error" };
-  return res.json();
+
+  const cacheKey = `${params.toString()}`;
+  const cached = nearbyPlacesMemoryCache.get(cacheKey);
+  if (cached) {
+    if (cached.data) return cached.data;
+    if (cached.promise) return cached.promise;
+  }
+
+  const promise = fetch(`/api/places/nearby?${params}`)
+    .then(async (res) => {
+      if (!res.ok) return { places: [], source: "error" };
+      return res.json();
+    })
+    .then((data) => {
+      nearbyPlacesMemoryCache.set(cacheKey, { data, at: Date.now() });
+      return data;
+    })
+    .catch(() => {
+      nearbyPlacesMemoryCache.delete(cacheKey);
+      return { places: [], source: "error" };
+    });
+
+  nearbyPlacesMemoryCache.set(cacheKey, { promise, at: Date.now() });
+  return promise;
+}
+
+/** Přednačte přehled míst (Mapa → Hlášení), ať po kliknutí na Místa už jsou v cache. */
+export function prefetchNearbyPlaces(activeLocation) {
+  if (activeLocation?.lat == null || activeLocation?.lng == null) return;
+  const fromLocationKm = Number(activeLocation.radiusKm);
+  const meters =
+    Number.isFinite(fromLocationKm) && fromLocationKm > 0
+      ? Math.round(fromLocationKm * 1000)
+      : 7000;
+  const radiusM = Math.min(15000, Math.max(5000, meters));
+  void fetchNearbyPlaces({
+    lat: activeLocation.lat,
+    lng: activeLocation.lng,
+    radiusM,
+    category: "vse",
+  });
 }
 
 export async function fetchPlaceDetails(placeId) {
