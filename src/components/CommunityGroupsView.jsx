@@ -30,7 +30,17 @@ function matchesQuery(query, ...parts) {
 }
 
 function GroupPostRow({ post, groupName, expanded, onToggle }) {
+  const { getGroupPostComments } = useApp();
   const resolvedGroupName = groupName ?? post.groupName ?? "Skupina";
+  const commentCount = getGroupPostComments(post.id).length;
+  const cta =
+    commentCount > 0
+      ? commentCount === 1
+        ? "1 komentář · Diskuse"
+        : commentCount < 5
+          ? `${commentCount} komentáře · Diskuse`
+          : `${commentCount} komentářů · Diskuse`
+      : "Diskuse ve skupině";
 
   return (
     <LiveFeedCard
@@ -42,6 +52,7 @@ function GroupPostRow({ post, groupName, expanded, onToggle }) {
       preview={post.body}
       editedItem={post}
       priceLabel={null}
+      ctaLabel={cta}
       expanded={expanded}
       onToggle={onToggle}
     >

@@ -2,6 +2,10 @@ import { createContext, useContext, useState, useCallback, useMemo, useEffect, u
 import { CURRENT_USER } from "../data/mockData.js";
 import { getCategory } from "../data/listingCategories.js";
 import { getGroup, isGroupWallPost } from "../data/groups.js";
+import {
+  SEED_GROUP_POST_COMMENTS,
+  commentsForPost,
+} from "../data/groupPostComments.js";
 import { calculateTopCost, getTopPlan, canTopCategory } from "../data/pricing.js";
 import { getAccountType, normalizeAccountType, resolveBusinessSubtype } from "../data/accountTypes.js";
 import { CLUB_VOTES_REQUIRED, getClubCategory } from "../data/clubCategories.js";
@@ -297,6 +301,7 @@ export function AppProvider({ children }) {
   const [listingSaleOrders, setListingSaleOrders] = useState([]);
   const [userPosts, setUserPosts] = useState([]);
   const [userGroupPosts, setUserGroupPosts] = useState([]);
+  const [groupPostComments, setGroupPostComments] = useState(SEED_GROUP_POST_COMMENTS);
   const [userLendingItems, setUserLendingItems] = useState([]);
   const [lendingAvailability, setLendingAvailability] = useState({
     onVacation: false,
@@ -4796,6 +4801,30 @@ export function AppProvider({ children }) {
     [user, showToast, activeLocationId, communityGroups]
   );
 
+  const getGroupPostComments = useCallback(
+    (postId) => commentsForPost(groupPostComments, postId),
+    [groupPostComments]
+  );
+
+  const addGroupPostComment = useCallback(
+    (postId, text) => {
+      if (!user || !postId || !String(text ?? "").trim()) return;
+      const comment = {
+        id: `gpc-${Date.now()}`,
+        postId,
+        authorId: user.id ?? "me",
+        authorName: user.name,
+        authorInitials: user.initials,
+        accountType: user.accountType,
+        mine: true,
+        text: String(text).trim(),
+        createdAt: Date.now(),
+      };
+      setGroupPostComments((prev) => [...prev, comment]);
+    },
+    [user]
+  );
+
   const addServiceRequest = useCallback(
     ({ text, categoryLabel = "Katalog", categoryId = "vse", broadcastPush = true }) => {
       if (!user || !text.trim()) return;
@@ -7269,6 +7298,8 @@ export function AppProvider({ children }) {
         neighborHelp: neighborHelpForLocation.filter((h) => !blockedUserIds.includes(h.id)),
         addNeighborHelpPost,
         addGroupBoardPost,
+        getGroupPostComments,
+        addGroupPostComment,
         serviceRequests,
         addServiceRequest,
         neighborHelpFilter,

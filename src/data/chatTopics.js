@@ -10,6 +10,7 @@ const KIND_LABELS = {
   inquiry: "Poptávka",
   service: "Služba",
   place: "Místo",
+  group: "Skupina",
   general: "Obecná konverzace",
 };
 
@@ -225,5 +226,16 @@ export function topicFromLending(item) {
     refId: item.id,
     title: item.item || item.title || item.itemTypeLabel,
     label: "Půjčovna",
+  });
+}
+
+/** Soukromá zpráva k příspěvku ve skupině (1:1 s autorem) */
+export function topicFromGroupPost(post) {
+  if (!post?.id) return null;
+  return normalizeChatTopic({
+    kind: "group",
+    refId: post.id,
+    title: post.title,
+    label: post.groupName ? `Skupina · ${post.groupName}` : "Skupina",
   });
 }

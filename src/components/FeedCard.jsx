@@ -20,7 +20,8 @@ import {
   LISTING_SALE_STATUS,
 } from "../data/listingSales.js";
 import { ACTION_BTN } from "./PostInteractions.jsx";
-import { topicFromPost } from "../data/chatTopics.js";
+import { topicFromPost, topicFromGroupPost } from "../data/chatTopics.js";
+import GroupPostComments from "./GroupPostComments.jsx";
 
 function extractDistance(meta) {
   if (!meta) return null;
@@ -154,7 +155,8 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
   const acc = post.accountType ? getAccountType(post.accountType) : null;
   const accRole = acc ? getRole(acc.role) : null;
   const authorLabel = formatAuthorName(post.author, post.accountType);
-  const messageTopic = topicFromPost(post);
+  const messageTopic = post.groupId ? topicFromGroupPost(post) : topicFromPost(post);
+  const isGroupDiscussion = Boolean(post.groupId);
   const distance = extractDistance(post.meta);
   const searchHighlight = isSearchHighlighted(post.id);
   const isListingEdit =
@@ -220,7 +222,7 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
             }`}
           >
             {editControls}
-            {!post.mine && !isReserved && <PostInteractions post={post} />}
+            {!isGroupDiscussion && !post.mine && !isReserved && <PostInteractions post={post} />}
             {!post.mine && (
               <>
                 <MessageButton
@@ -228,17 +230,19 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
                   participantName={post.author}
                   topic={messageTopic}
                   compact
+                  label={isGroupDiscussion ? "Soukromě" : undefined}
                 />
-                <ListingSaleActions post={post} />
+                {!isGroupDiscussion && <ListingSaleActions post={post} />}
               </>
             )}
-            {post.mine && <PostInteractions post={post} />}
-            {post.mine && <ListingSaleActions post={post} />}
+            {!isGroupDiscussion && post.mine && <PostInteractions post={post} />}
+            {!isGroupDiscussion && post.mine && <ListingSaleActions post={post} />}
             {!post.mine && !isReserved && (
               <ReportUserButton targetId={authorId} targetName={post.author} compact />
             )}
           </div>
         )}
+        {isGroupDiscussion && !isReported ? <GroupPostComments postId={post.id} /> : null}
         {showTopButton && !isReported && (
           <div className="space-y-2 pt-1">
             <p className="text-[11px] text-stone-500">Posunout nahoru ve feedu:</p>
@@ -393,7 +397,7 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
           }`}
         >
           {editControls}
-          {!post.mine && !isReserved && <PostInteractions post={post} />}
+          {!isGroupDiscussion && !post.mine && !isReserved && <PostInteractions post={post} />}
           {!post.mine && (
             <>
               <MessageButton
@@ -401,17 +405,24 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
                 participantName={post.author}
                 topic={messageTopic}
                 compact
+                label={isGroupDiscussion ? "Soukromě" : undefined}
               />
-              <ListingSaleActions post={post} />
+              {!isGroupDiscussion && <ListingSaleActions post={post} />}
             </>
           )}
-          {post.mine && <PostInteractions post={post} />}
-          {post.mine && <ListingSaleActions post={post} />}
+          {!isGroupDiscussion && post.mine && <PostInteractions post={post} />}
+          {!isGroupDiscussion && post.mine && <ListingSaleActions post={post} />}
           {!post.mine && !isReserved && (
             <ReportUserButton targetId={authorId} targetName={post.author} compact />
           )}
         </div>
       )}
+
+      {isGroupDiscussion && !compact && !isReported ? (
+        <div className="px-4 pb-3">
+          <GroupPostComments postId={post.id} />
+        </div>
+      ) : null}
 
       {showTopButton && !compact && !isReported && (
         <div className="px-4 pb-4 space-y-2">

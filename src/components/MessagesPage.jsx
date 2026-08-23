@@ -119,6 +119,8 @@ export function MessageButton({
   topicTitle = null,
   topicLabel = null,
   initialMessage = null,
+  /** Vlastní popisek tlačítka (jinak Zpráva / Napsat zprávu) */
+  label: labelProp = null,
   /** Profil bez provozovatele — tlačítko vypadá neaktivně, po kliknutí vysvětlení */
   inactive = false,
   inactiveMessage = UNCLAIMED_PROFILE_MESSAGE,
@@ -136,7 +138,7 @@ export function MessageButton({
         }
       : null);
 
-  const label = primary || !compact ? "Napsat zprávu" : "Zpráva";
+  const label = labelProp || (primary || !compact ? "Napsat zprávu" : "Zpráva");
 
   const base = primary
     ? inactive
