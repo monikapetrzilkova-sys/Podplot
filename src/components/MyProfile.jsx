@@ -1013,9 +1013,9 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
           <MunicipalityRoleView />
           <ViewAsNeighborToggle className="mb-4" />
         </>
-      ) : (
+      ) : !isOfficeProfile ? (
         <ViewAsNeighborToggle className="mb-3" />
-      )}
+      ) : null}
 
       {showWorkRoleViews && testRoleId === "remeslnik" && <CraftsmanRoleView />}
       {showWorkRoleViews && testRoleId === "podnik" && <BusinessRoleView />}

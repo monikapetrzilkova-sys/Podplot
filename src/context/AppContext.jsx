@@ -62,6 +62,7 @@ import {
   computeExpiresAt,
   REPORT_STATUS,
 } from "../data/reportExpiry.js";
+import { writeRegisterIntent } from "../data/registrationIntent.js";
 import { URGENT_SCOPE, URGENT_LOCAL_RADIUS_M, resolveReportDistance, describeUrgentAudience } from "../data/reportUrgency.js";
 import {
   loadUiPreferences,
@@ -2111,6 +2112,51 @@ export function AppProvider({ children }) {
     showToast("Odhlášeno. Pro vstup se znovu přihlaste nebo zaregistrujte.", "info");
   }, [showToast]);
 
+  /** Odhlásit a otevřít registraci odděleného účtu (úřad ↔ soused). */
+  const logoutAndRegisterAs = useCallback(
+    async (accountType, { notice } = {}) => {
+      if (accountType !== "soused" && accountType !== "urad") return;
+      writeRegisterIntent({
+        accountType,
+        notice:
+          notice ||
+          (accountType === "urad"
+            ? "Dokončete registraci úřadu s oficiálním e-mailem obce."
+            : "Dokončete registraci sousedského účtu."),
+      });
+      await authSignOut();
+      clearUserSession();
+      setUser(null);
+      setPasswordRecovery(false);
+      setLocations(DEFAULT_LOCATIONS);
+      setActiveLocationId("domov");
+      setCommunityGroups(
+        mergeCommunityGroups(
+          getGroupsForLocation("domov"),
+          filterUserGroupsForMunicipality(
+            loadStoredUserGroups(),
+            DEFAULT_LOCATIONS[0]?.municipality
+          )
+        )
+      );
+      setCredits(CURRENT_USER.credits);
+      setTestRoleId("soused");
+      setUserProfileIds(["soused"]);
+      setServicesCatalog(SERVICES_CATALOG);
+      setShowDiscoveryWall(true);
+      setViewAsNeighbor(false);
+      workUserBackupRef.current = null;
+      setActiveTab("home");
+      showToast(
+        accountType === "urad"
+          ? "Pokračujte registrací úředního účtu (oficiální e-mail obce)."
+          : "Pokračujte registrací sousedského účtu.",
+        "info"
+      );
+    },
+    [showToast]
+  );
+
   const setActiveLocation = useCallback(
     (id) => {
       if (id === activeLocationId) return;
@@ -3391,6 +3437,14 @@ export function AppProvider({ children }) {
   );
 
   const toggleViewAsNeighbor = useCallback(() => {
+    // Produkce: úřad ↔ soused jen jako oddělené účty (viz logoutAndRegisterAs).
+    if (!ENABLE_DEV_ROLE_SWITCH) {
+      showToast(
+        "Úřad a soused jsou oddělené účty — použijte propojení v profilu.",
+        "info"
+      );
+      return;
+    }
     if (!viewAsNeighbor) {
       if (user) workUserBackupRef.current = { ...user };
       setViewAsNeighbor(true);
@@ -7095,6 +7149,7 @@ export function AppProvider({ children }) {
         register,
         login,
         logout,
+        logoutAndRegisterAs,
         requestPasswordReset,
         completePasswordRecovery,
         changePassword,

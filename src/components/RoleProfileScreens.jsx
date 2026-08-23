@@ -32,6 +32,7 @@ import CraftCategoryPicker from "./CraftCategoryPicker.jsx";
 import StructuredAddressFields from "./StructuredAddressFields.jsx";
 import { IconMapPin } from "../data/icons.jsx";
 import AccountTypeIcon from "./AccountTypeIcon.jsx";
+import { AddOfficeAccountCard, AddNeighborAccountCard } from "./LinkedAccountCards.jsx";
 
 /** Osobní profily uživatele — bez institucionálních účtů (úřad). */
 const PERSONAL_ROLE_IDS = ["soused", "podnik", "remeslnik"];
@@ -241,8 +242,8 @@ export default function MyProfilesPanel({ embedded = false }) {
 
       {!embedded ? (
         <p className="text-[10px] text-stone-500 mb-2 leading-snug">
-          Přepínejte mezi sousedem, mobilní službou a podnikem. Úřední účet se zakládá
-          jen samostatnou registrací s oficiálním e-mailem obce.
+          Přepínejte mezi sousedem, mobilní službou a podnikem. Úřad je samostatný účet
+          s oficiálním e-mailem obce — nelze ho přepnout z osobního přihlášení.
         </p>
       ) : null}
 
@@ -256,6 +257,8 @@ export default function MyProfilesPanel({ embedded = false }) {
           />
         ))}
       </div>
+
+      <AddOfficeAccountCard className="mt-3" />
 
       {adding && !setupRole && (
         <div className="mt-2 flex flex-wrap gap-1.5">
@@ -1001,6 +1004,8 @@ export function MunicipalityRoleView() {
       >
         Otevřít Agendu
       </button>
+
+      <AddNeighborAccountCard />
     </div>
   );
 }

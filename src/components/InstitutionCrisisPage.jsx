@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
-import ViewAsNeighborToggle from "./ViewAsNeighborToggle.jsx";
 import EditedBadge from "./EditedBadge.jsx";
 import ContentEditModal from "./ContentEditModal.jsx";
 import { IconAlert } from "../data/icons.jsx";
@@ -110,7 +109,6 @@ export default function InstitutionCrisisPage() {
         <p className="text-xs text-stone-500">
           Co vydává úřad — klepněte na typ a doplňte nadpis s textem
         </p>
-        <ViewAsNeighborToggle className="mt-3" />
       </div>
 
       {plusPicker && (

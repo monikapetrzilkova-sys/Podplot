@@ -1,6 +1,5 @@
 ﻿import { useApp } from "../context/AppContext.jsx";
 import { TEST_PERSONAS, CRAFTSMAN_NEARBY_REQUESTS } from "../data/businessProfiles.js";
-import ViewAsNeighborToggle from "./ViewAsNeighborToggle.jsx";
 import { MessageButton } from "./MessagesPage.jsx";
 import PaymentModal from "./PaymentModal.jsx";
 import { useState } from "react";
@@ -12,7 +11,6 @@ function DashShell({ title, subtitle, children }) {
         <h1 className="text-lg font-bold text-stone-900">{title}</h1>
         {subtitle && <p className="text-xs text-stone-500 mt-0.5">{subtitle}</p>}
       </div>
-      <ViewAsNeighborToggle />
       {children}
     </div>
   );

@@ -3,7 +3,6 @@ import { useApp } from "../context/AppContext.jsx";
 import { TEST_PERSONAS } from "../data/businessProfiles.js";
 import { getDefaultDemoInstitution } from "../data/institutions/index.js";
 import { isActiveOfficePrompt } from "../data/municipalityPrompts.js";
-import ViewAsNeighborToggle from "./ViewAsNeighborToggle.jsx";
 import SmartSectionBar from "./SmartSectionBar.jsx";
 import LiveFeedCard from "./LiveFeedCard.jsx";
 import OfficePromptCard from "./OfficePromptCard.jsx";
@@ -199,8 +198,6 @@ export default function InstitutionOfficePage() {
         >
           Uložit nastavení
         </button>
-
-        <ViewAsNeighborToggle className="mt-2" />
       </div>
     );
   }

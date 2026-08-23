@@ -26,6 +26,7 @@ import {
   lookupMunicipalityEmailDomain,
 } from "../data/institutions/index.js";
 import { MIN_PASSWORD_LENGTH, validatePassword } from "../data/authApi.js";
+import { readRegisterIntent, clearRegisterIntent } from "../data/registrationIntent.js";
 
 const AUTH_INPUT =
   "w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-700/30";
@@ -39,6 +40,7 @@ export default function RegisterScreen() {
     passwordRecovery,
   } = useApp();
   const [authMode, setAuthMode] = useState("register"); // register | login | forgot
+  const [linkNotice, setLinkNotice] = useState(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -83,6 +85,15 @@ export default function RegisterScreen() {
     }
     return verifyWorkEmailForInstitution(email, selectedInstitution, municipalityLookup.domain);
   }, [isUrad, selectedInstitution, email, municipalityLookup]);
+
+  useEffect(() => {
+    const intent = readRegisterIntent();
+    if (!intent) return;
+    setAuthMode("register");
+    setAccountType(intent.accountType);
+    if (intent.notice) setLinkNotice(intent.notice);
+    clearRegisterIntent();
+  }, []);
 
   useEffect(() => {
     if (!isUrad) {
@@ -471,6 +482,11 @@ export default function RegisterScreen() {
         <div className="bg-white border border-stone-200 rounded-2xl p-6 shadow-sm">
           <h1 className="text-lg font-bold text-stone-900 mb-1">Vytvořte si účet</h1>
           <p className="text-sm text-stone-500 mb-4">Registrace je povinná. Účet zůstane uložený v tomto telefonu i po aktualizaci.</p>
+          {linkNotice ? (
+            <p className="text-[12px] font-medium text-[#1B4D3E] bg-[#E8F3EF] border border-[#C5DDD4] rounded-xl px-3 py-2 mb-4 leading-snug">
+              {linkNotice}
+            </p>
+          ) : null}
           <p className="text-sm text-stone-500 mb-6">
             Už máte účet?{" "}
             <button type="button" className="text-teal-800 font-semibold" onClick={() => { setSubmitError(""); setAuthMode("login"); }}>

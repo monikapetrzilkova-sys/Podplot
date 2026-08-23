@@ -42,7 +42,7 @@ export const ACCOUNT_TYPES = {
     shortLabel: "Úřad",
     icon: "🏛️",
     role: "urad",
-    hint: "Samostatný účet obce — jen s oficiálním e-mailem ověřeným podle webu obce",
+    hint: "Samostatný účet obce — oficiální e-mail; nelze přepnout ze souseda na stejném přihlášení",
     nameLabel: "Název úřadu / instituce",
     namePlaceholder: "Název úřadu (doplní se výběrem)",
     addressLabel: "Sídlo úřadu",
