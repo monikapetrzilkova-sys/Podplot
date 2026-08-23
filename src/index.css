@@ -989,14 +989,14 @@ body,
   min-height: 40px;
   padding: 0 12px 0 10px;
   border-radius: 12px;
-  border: 2px solid #1b4d3e;
-  background: #1b4d3e;
-  color: #ffffff;
+  border: 1.5px solid #c5ddd4;
+  background: #ffffff;
+  color: #1b4d3e;
   font-size: 13px;
   font-weight: 700;
   line-height: 1;
-  box-shadow: 0 3px 10px rgba(27, 77, 62, 0.28);
-  transition: background 0.15s ease, transform 0.12s ease;
+  box-shadow: 0 1px 3px rgba(27, 77, 62, 0.08);
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
 }
 
 .pp-smart-bar-back {
@@ -1016,8 +1016,9 @@ body,
 
 .pp-smart-bar-back:hover,
 .pp-section-back-btn:hover {
-  background: #163d32;
-  border-color: #163d32;
+  background: #f7faf9;
+  border-color: #3d7a68;
+  color: #1b4d3e;
 }
 
 .pp-smart-bar-back:active,
@@ -1088,35 +1089,51 @@ body,
   flex-shrink: 0;
 }
 
-/* Výrazné záložky — zelená jako záhlaví */
+/* Výrazné záložky — světlé dlaždice jako Hlášení / Místa (ne tmavě zelené podbarvení) */
 .pp-smart-bar--prominent {
   padding: 2px 0;
+  gap: 8px;
+}
+
+.pp-smart-bar--prominent .pp-section-back-btn,
+.pp-smart-bar--prominent .pp-smart-bar-back {
+  background: #ffffff;
+  color: #1b4d3e;
+  border: 1.5px solid #c5ddd4;
+  box-shadow: 0 1px 3px rgba(27, 77, 62, 0.08);
+}
+
+.pp-smart-bar--prominent .pp-section-back-btn:hover,
+.pp-smart-bar--prominent .pp-smart-bar-back:hover {
+  background: #f7faf9;
+  border-color: #3d7a68;
+  color: #1b4d3e;
 }
 
 .pp-smart-tab--prominent {
   padding: 8px 6px;
   border-radius: 14px;
   border: 1.5px solid transparent;
-  background: var(--pp-header-brand);
-  color: #ffffff;
+  background: transparent;
+  color: #4d8b7a;
   font-size: 11px;
   font-weight: 700;
   line-height: 1.15;
-  box-shadow: 0 2px 6px rgba(27, 77, 62, 0.18);
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  box-shadow: none;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
 }
 
 .pp-smart-tab--prominent:hover {
-  background: #245a48;
+  background: rgba(255, 255, 255, 0.85);
+  color: #1b4d3e;
 }
 
 .pp-smart-tab--prominent-active {
-  background: #3d7a68;
-  border-color: rgba(255, 255, 255, 0.35);
-  color: #ffffff;
-  box-shadow: 0 3px 12px rgba(27, 77, 62, 0.35);
-  outline: 2px solid rgba(255, 255, 255, 0.25);
-  outline-offset: -3px;
+  background: #ffffff;
+  border-color: transparent;
+  color: #1b4d3e;
+  box-shadow: 0 1px 4px rgba(27, 77, 62, 0.12);
+  outline: none;
 }
 
 /* Katalog / úzký panel: jen ikony + tip při hoveru */
@@ -1171,18 +1188,27 @@ body,
   transform: translateX(-50%) translateY(0);
 }
 
-/* Sousedé — ikona nad textem, celý label viditelný */
+/* Sousedé — ikona nad textem, celý label viditelný (jako mřížka Hlášení / Místa) */
 .pp-smart-bar--fit.pp-smart-bar--prominent:not(.pp-smart-bar--prefer-icons) .pp-smart-tab--prominent {
   flex-direction: column;
   gap: 3px;
-  padding: 8px 6px 7px;
+  padding: 8px 4px 7px;
   font-size: 10px;
   letter-spacing: 0;
+  min-height: 52px;
 }
 
 .pp-smart-bar--fit.pp-smart-bar--prominent:not(.pp-smart-bar--prefer-icons) .pp-smart-tab-icon .pp-doodle-icon {
-  width: 1.45rem;
-  height: 1.45rem;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.pp-smart-bar--fit.pp-smart-bar--prominent:not(.pp-smart-bar--prefer-icons) .pp-smart-tab--prominent:not(.pp-smart-tab--prominent-active) .pp-smart-tab-icon {
+  color: #4d8b7a;
+}
+
+.pp-smart-bar--fit.pp-smart-bar--prominent:not(.pp-smart-bar--prefer-icons) .pp-smart-tab--prominent-active .pp-smart-tab-icon {
+  color: #1b4d3e;
 }
 
 /* Jednotný obal pro horní filtry / rychlé akce pod vyhledáváním */
@@ -2969,7 +2995,7 @@ form .subfilter-scroll {
   flex-shrink: 0;
   max-width: 8.5rem;
   vertical-align: middle;
-  line-height: 1.1;
+  line-height: 1.35;
 }
 
 .pp-feed-stamp__mark {
@@ -2999,6 +3025,10 @@ form .subfilter-scroll {
   text-overflow: ellipsis;
   text-transform: none;
   color: currentColor;
+  /* Háčky u české diakritiky (Ú, Ř, Ž…) nesmí oříznout overflow */
+  line-height: 1.35;
+  padding-top: 1px;
+  padding-bottom: 1px;
 }
 
 /* Hlubší tóny — elegantní k tmavě zelenému brandu */

@@ -784,3 +784,16 @@ export const VECI_TYPE_DOODLE_ICONS = {
   shanim: DoodleWantIcon,
   pujcovna: DoodleLendIcon,
 };
+
+/** Filtry Výpomoc — Vše / Hledám / Nabízím */
+export const VYPOMOC_FILTER_DOODLE_ICONS = {
+  vse: DoodleAllIcon,
+  hledam: DoodleWantIcon,
+  nabizim: DoodleHandIcon,
+};
+
+/** Filtry Skupiny */
+export const SKUPINY_FILTER_DOODLE_ICONS = {
+  vse: DoodleGroupsIcon,
+  moje: DoodlePersonIcon,
+};

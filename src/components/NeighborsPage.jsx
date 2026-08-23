@@ -9,7 +9,7 @@ import CalendarPage from "./CalendarPage.jsx";
 import { VECI_TYPE_FILTERS } from "../utils/thingsModule.js";
 import { getSkupinySubfilters } from "../data/worldNavigation.js";
 import { getMyMemberGroups } from "../data/locations.js";
-import { NEIGHBOR_DOODLE_ICONS, VECI_TYPE_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
+import { NEIGHBOR_DOODLE_ICONS, VECI_TYPE_DOODLE_ICONS, VYPOMOC_FILTER_DOODLE_ICONS, SKUPINY_FILTER_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
 import SectionBackButton from "./SectionBackButton.jsx";
 
 const NEIGHBORS_MAIN = NEIGHBORS_TILES.map((tile) => ({
@@ -25,9 +25,9 @@ const VECI_SUBS = VECI_TYPE_FILTERS.map((f) => ({
 }));
 
 const VYPOMOC_SUBS = [
-  { id: "vse", label: "Vše" },
-  { id: "hledam", label: "Hledám" },
-  { id: "nabizim", label: "Nabízím" },
+  { id: "vse", label: "Vše", shortLabel: "Vše", Icon: VYPOMOC_FILTER_DOODLE_ICONS.vse },
+  { id: "hledam", label: "Hledám", shortLabel: "Hledám", Icon: VYPOMOC_FILTER_DOODLE_ICONS.hledam },
+  { id: "nabizim", label: "Nabízím", shortLabel: "Nabízím", Icon: VYPOMOC_FILTER_DOODLE_ICONS.nabizim },
 ];
 
 function NeighborsContent({ section, helpFilter, onHelpFilterChange }) {
@@ -141,6 +141,7 @@ export default function NeighborsPage() {
         id: s.id,
         label: s.label,
         shortLabel: s.shortLabel ?? s.label,
+        Icon: SKUPINY_FILTER_DOODLE_ICONS[s.id] ?? SKUPINY_FILTER_DOODLE_ICONS.vse,
       })),
     [communityGroups]
   );
