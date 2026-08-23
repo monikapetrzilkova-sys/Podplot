@@ -464,7 +464,7 @@ export default function RegisterScreen() {
                 onBlur={() => {
                   if (email.trim()) setEmailError(validateEmail(email).error || "");
                 }}
-                placeholder={canVerifyAccountType(accountType) ? "info@jesenice.cz" : "monika@email.cz"}
+                placeholder={canVerifyAccountType(accountType) ? "info@obec.cz" : "vas@email.cz"}
                 className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-700/30 ${
                   emailError ? "border-red-300 bg-red-50/50" : "border-stone-200"
                 }`}
@@ -558,7 +558,7 @@ export default function RegisterScreen() {
                     setStreet(e.target.value);
                     if (fieldErrors.street) setFieldErrors((p) => ({ ...p, street: "" }));
                   }}
-                  placeholder="Na Louce"
+                  placeholder="např. Hlavní"
                   className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-700/30 ${
                     fieldErrors.street ? "border-red-300" : "border-stone-200"
                   }`}
@@ -654,7 +654,7 @@ export default function RegisterScreen() {
                     type="text"
                     value={publicAreaLabel}
                     onChange={(e) => setPublicAreaLabel(e.target.value)}
-                    placeholder="např. ulice Lípová, Na Louce"
+                    placeholder="např. ulice, čtvrť"
                     maxLength={48}
                     className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-700/30"
                   />

@@ -32,9 +32,9 @@ export const ACCOUNT_TYPES = {
     role: "soused",
     hint: "Běžný obyvatel — půjčování, hlášení, komunitní život",
     nameLabel: "Jméno a příjmení",
-    namePlaceholder: "Monika Petržílková",
+    namePlaceholder: "Jan Novák",
     addressLabel: "Domovská adresa",
-    addressPlaceholder: "např. Karlova 12, 602 00 Brno",
+    addressPlaceholder: "např. Hlavní 12, 602 00 Brno",
   },
   urad: {
     id: "urad",
@@ -134,7 +134,7 @@ export function getPodnikatelSubtypeLabel(userOrType) {
   return subtype ? BUSINESS_SUBTYPES[subtype]?.label ?? null : null;
 }
 
-/** Veřejné jméno souseda: křestní + iniciála příjmení (např. Monika P.) */
+/** Veřejné jméno souseda: křestní + iniciála příjmení (např. Jan N.) */
 export function formatNeighborShortName(author = "") {
   const parts = String(author)
     .trim()
