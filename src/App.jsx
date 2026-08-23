@@ -195,7 +195,8 @@ function ProfileOverlay() {
             title="Nastavení"
             className="pp-profile-settings-btn shrink-0"
           >
-            <PROFILE_DOODLE_ICONS.settings className="w-5 h-5" />
+            <PROFILE_DOODLE_ICONS.settings className="w-[1.15rem] h-[1.15rem]" />
+            <span>Nastavení</span>
           </button>
         )
       }

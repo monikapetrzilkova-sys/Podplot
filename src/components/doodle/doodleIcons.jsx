@@ -249,11 +249,11 @@ export function DoodleNameTagIcon({ className }) {
 export function DoodleSettingsIcon({ className }) {
   return (
     <DoodleIcon className={className}>
-      <circle {...s} cx="12" cy="12" r="3" />
       <path
         {...s}
-        d="M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M5.8 5.8l1.6 1.6M16.6 16.6l1.6 1.6M5.8 18.2l1.6-1.6M16.6 7.4l1.6-1.6"
+        d="M10.2 3h3.6l.5 2.1 1.9-.6 1.8 3.1-1.6 1.2.5 2.1h2.1v3.6h-2.1l-.5 2.1 1.6 1.2-1.8 3.1-1.9-.6-.5 2.1h-3.6l-.5-2.1-1.9.6-1.8-3.1 1.6-1.2-.5-2.1H4.5V9.8h2.1l.5-2.1-1.6-1.2 1.8-3.1 1.9.6.5-2.1z"
       />
+      <circle {...s} cx="12" cy="12" r="2.6" />
     </DoodleIcon>
   );
 }
