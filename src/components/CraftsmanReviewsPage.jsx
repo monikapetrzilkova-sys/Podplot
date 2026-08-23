@@ -114,7 +114,7 @@ export default function CraftsmanReviewsPage() {
   const rating = serviceId ? computeServiceRating(serviceReviews, serviceId) : null;
   const pendingCount = reviews.filter(isReviewPendingModeration).length;
   const profileName =
-    ownedService?.name ?? ownedInstitution?.name ?? (isFyzickaWorkMode ? "Vaše provozovna" : null);
+    ownedService?.name ?? ownedInstitution?.name ?? (isFyzickaWorkMode ? "Váš podnik" : null);
 
   if (!ownedService && !isFyzickaWorkMode) {
     return (

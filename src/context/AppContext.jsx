@@ -3592,7 +3592,7 @@ export function AppProvider({ children }) {
         return { ok: false, error: "Vyplňte katalogové jméno." };
       }
       if (role.businessSubtype === "fyzicka" && !businessName) {
-        return { ok: false, error: "Vyplňte název provozovny." };
+        return { ok: false, error: "Vyplňte název podniku." };
       }
       if (!address) {
         return { ok: false, error: "Vyplňte výchozí adresu." };
@@ -3746,7 +3746,7 @@ export function AppProvider({ children }) {
         return;
       }
       if (!isOfficeTarget && isOfficeAccount && !ENABLE_DEV_ROLE_SWITCH) {
-        showToast("Úřední účet nelze kombinovat s řemeslníkem ani provozovnou.", "error");
+        showToast("Úřední účet nelze kombinovat s řemeslníkem ani podnikem.", "error");
         return;
       }
 
@@ -3952,7 +3952,7 @@ export function AppProvider({ children }) {
         {
           id: `n-biz-note-${Date.now()}`,
           type: "green",
-          title: `${user?.name ?? "Provozovna"} — aktualita`,
+          title: `${user?.name ?? "Podnik"} — aktualita`,
           body: note.slice(0, 90),
           read: false,
           time: "právě teď",

@@ -247,7 +247,7 @@ export default function MyProfilesPanel({ embedded = false }) {
 
       {!embedded ? (
         <p className="text-[10px] text-stone-500 mb-2 leading-snug">
-          Přepínejte mezi sousedem, mobilní službou a provozovnou. Úřední účet se zakládá
+          Přepínejte mezi sousedem, mobilní službou a podnikem. Úřední účet se zakládá
           jen samostatnou registrací s oficiálním e-mailem obce.
         </p>
       ) : null}
@@ -327,7 +327,7 @@ export default function MyProfilesPanel({ embedded = false }) {
               <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-3">
                 <label className="block">
                   <span className="text-xs font-semibold text-stone-600">
-                    {isMobilniSetup ? "Katalogové jméno" : "Název provozovny"}
+                    {isMobilniSetup ? "Katalogové jméno" : "Název podniku"}
                   </span>
                   <input
                     type="text"
@@ -353,7 +353,7 @@ export default function MyProfilesPanel({ embedded = false }) {
                   onCityChange={setCity}
                   fieldErrors={addressErrors}
                   onClearError={(key) => setAddressErrors((prev) => ({ ...prev, [key]: "" }))}
-                  legend={isMobilniSetup ? "Výchozí adresa / působnost" : "Adresa provozovny"}
+                  legend={isMobilniSetup ? "Výchozí adresa / působnost" : "Adresa podniku"}
                   privacyNote={ADDRESS_PRIVACY_NOTE_INLINE}
                 />
 
@@ -961,7 +961,7 @@ export function BusinessRoleView() {
   const [withdrawAmount, setWithdrawAmount] = useState(500);
 
   const venueName =
-    ownedInstitution?.name || user?.businessName || user?.name || "Provozovna";
+    ownedInstitution?.name || user?.businessName || user?.name || "Podnik";
   const venueAddress = ownedInstitution?.address || user?.address || "";
   const hoursLabel = ownedInstitution?.hours || businessHours || "";
   const statusLabel = [
@@ -976,7 +976,7 @@ export function BusinessRoleView() {
     <div className="space-y-4">
       <section className="rounded-2xl border border-[#C5DDD4] bg-white p-4">
         <div className="flex items-center justify-between gap-2 mb-1">
-          <h3 className="text-sm font-bold text-stone-900">Provozovna</h3>
+          <h3 className="text-sm font-bold text-stone-900">Podnik</h3>
         </div>
 
         <div className="flex items-start justify-between gap-3 py-2.5 border-b border-stone-100">

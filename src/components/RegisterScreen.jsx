@@ -736,7 +736,7 @@ export default function RegisterScreen() {
             <div>
               <label className="block text-xs font-semibold text-stone-600 mb-2">Typ účtu</label>
               <p className="text-[11px] text-stone-500 mb-2 leading-relaxed">
-                Většina lidí volí Soused — ostatní typy až když máte provozovnu nebo úřad.
+                Většina lidí volí Soused — ostatní typy až když máte podnik nebo úřad.
               </p>
               <div className="space-y-2">
                 {ACCOUNT_TYPE_LIST.filter((t) => t.id === "soused").map((type) => (

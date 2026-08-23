@@ -23,7 +23,7 @@ export const TEST_ROLES = [
   },
   {
     id: "podnik",
-    label: "Provozovna",
+    label: "Podnik",
     hint: "Gastro, obchod — fyzická adresa",
     accountType: "podnik",
     businessSubtype: "fyzicka",

@@ -696,7 +696,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
       {isWorkProfileMode ? (
         <p className="mb-3 text-[11px] font-semibold text-stone-700 bg-[#F7FAF9] border border-[#C5DDD4] rounded-xl px-3 py-2">
           {testRoleId === "podnik"
-            ? "Pracovní profil provozovny — nahoře můžete přepnout na souseda."
+            ? "Pracovní profil podniku — nahoře můžete přepnout na souseda."
             : "Pracovní profil mobilní služby — nahoře můžete přepnout na souseda."}
         </p>
       ) : null}

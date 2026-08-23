@@ -164,7 +164,7 @@ export default function BusinessAdsPage() {
           onChange={(e) => setHeadline(e.target.value)}
           maxLength={48}
           className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm bg-white"
-          placeholder={isCraftsman ? "Jméno / firma" : "Název provozovny"}
+          placeholder={isCraftsman ? "Jméno / firma" : "Název podniku"}
         />
       </label>
       <label className="block space-y-1">

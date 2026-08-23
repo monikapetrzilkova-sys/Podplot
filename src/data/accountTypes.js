@@ -3,19 +3,19 @@
 export const BUSINESS_SUBTYPES = {
   fyzicka: {
     id: "fyzicka",
-    label: "Fyzická pobočka / provozovna",
-    shortLabel: "Provozovna",
+    label: "Podnik s pobočkou",
+    shortLabel: "Podnik",
     hint: "Kamenná adresa — zákazníci k vám mohou přijít (gastro, obchod, služba na místě).",
     nameLabel: "Název podniku",
     namePlaceholder: "Kavárna U Ráje",
-    addressLabel: "Adresa provozovny",
+    addressLabel: "Adresa podniku",
     addressPlaceholder: "např. Náměstí 5, 602 00 Brno",
   },
   mobilni: {
     id: "mobilni",
     label: "Mobilní / dojíždějící řemeslník / služba",
     shortLabel: "Mobilní služba",
-    hint: "Bez stálé provozovny — jezdíte za zákazníky, definujete oblast působnosti.",
+    hint: "Bez stálé pobočky — jezdíte za zákazníky, definujete oblast působnosti.",
     nameLabel: "Jméno nebo název služby",
     namePlaceholder: "např. Jan Novák — instalatér",
     addressLabel: "Výchozí adresa / působnost",
