@@ -56,6 +56,8 @@ export default function LiveNeighborFeed() {
     upcomingEvents,
     openEventGalleryFromFeed,
     openEventDetail,
+    joinEvent,
+    isJoinedEvent,
     openLendingFromHome,
     openReportOnMapFromHome,
     offerHelpOnPost,
@@ -279,6 +281,8 @@ export default function LiveNeighborFeed() {
           }
 
           if (item.kind === "event") {
+            const ev = item.event;
+            const joined = isJoinedEvent(item.eventId);
             return (
               <LiveFeedCard
                 key={item.id}
@@ -286,14 +290,45 @@ export default function LiveNeighborFeed() {
                 badge="Akce"
                 badgeClassName="pp-badge--akce"
                 title={item.title}
-                authorLabel={displayCreatorLabel(item.event?.organizer, item.event?.accountType, {
+                authorLabel={displayCreatorLabel(ev?.organizer, ev?.accountType, {
                   mine: item.mine,
                 })}
                 preview={item.subtitle || null}
                 mine={Boolean(item.mine)}
-                expandable={false}
-                onSummaryClick={() => openEventDetail(item.eventId)}
-              />
+                ctaLabel="Detail akce"
+              >
+                {(ev?.address || ev?.location || ev?.categoryLabel) && (
+                  <p className="pp-text-body text-xs text-stone-600">
+                    {[ev?.address ?? ev?.location, ev?.categoryLabel].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+                {ev?.description ? (
+                  <p className="pp-text-body text-xs text-stone-600 line-clamp-4 whitespace-pre-wrap">
+                    {ev.description}
+                  </p>
+                ) : null}
+                <div className="flex flex-wrap gap-2 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => joinEvent(item.eventId)}
+                    disabled={joined}
+                    className={`py-2 px-4 text-sm font-semibold rounded-xl transition-colors ${
+                      joined
+                        ? "bg-[#E8F3EF] text-[#1B4D3E] cursor-default"
+                        : "text-white pp-btn-primary"
+                    }`}
+                  >
+                    {joined ? "Jdete na akci" : "Jdu na akci"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openEventDetail(item.eventId)}
+                    className="py-2 px-4 text-sm font-semibold rounded-xl border border-[#C5DDD4] text-[#3D7A68] bg-white hover:bg-[#E8F3EF] transition-colors"
+                  >
+                    Celý detail
+                  </button>
+                </div>
+              </LiveFeedCard>
             );
           }
 

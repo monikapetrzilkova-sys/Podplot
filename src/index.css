@@ -2470,6 +2470,25 @@ body,
   transition: box-shadow var(--pp-transition), transform var(--pp-transition-press);
 }
 
+/* Sbalené karty — stejná výška řádku (profesionální feed) */
+.pp-feed-card--collapsed .pp-feed-card__summary {
+  min-height: 5.75rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.pp-feed-card__author {
+  min-height: 1rem;
+}
+
+.pp-feed-card__preview {
+  min-height: 2.35rem;
+}
+
+.pp-feed-card__cta {
+  min-height: 1rem;
+}
+
 /* Vlastní příspěvek — jemné odlišení v sousedském dění */
 .pp-feed-card--mine {
   background: linear-gradient(135deg, #f3f8f5 0%, #eef5f1 55%, #f6faf8 100%);

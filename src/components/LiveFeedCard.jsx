@@ -10,7 +10,7 @@ export { getListingBadge, getNeighborSectionBadge };
 
 /**
  * Sbalený řádek feedu Domů / Sousedé — razítko kategorie + nadpis, náhled, rozbalení.
- * Volitelně řízené (`expanded` + `onToggle`), jinak ukládá stav do UI prefs.
+ * Sbalené karty mají stejnou výšku (profesionální mřížka).
  */
 export default function LiveFeedCard({
   itemId,
@@ -37,6 +37,7 @@ export default function LiveFeedCard({
   domId,
   mine = false,
   metaLine = null,
+  ctaLabel = null,
 }) {
   const [prefOpen, , togglePref] = useUiPref(accordionKey("liveFeed", itemId), false);
   const canExpand = expandable && Boolean(children);
@@ -44,11 +45,14 @@ export default function LiveFeedCard({
   const isOpen = canExpand && (controlled ? expandedProp : prefOpen);
 
   const handleSummaryClick = () => {
-    if (onSummaryClick) {
+    if (onSummaryClick && !canExpand) {
       onSummaryClick();
       return;
     }
-    if (!canExpand) return;
+    if (!canExpand) {
+      onSummaryClick?.();
+      return;
+    }
     if (controlled && onToggle) onToggle();
     else togglePref();
   };
@@ -56,20 +60,22 @@ export default function LiveFeedCard({
   return (
     <article
       id={domId}
-      className={`pp-feed-card relative ${mine ? "pp-feed-card--mine" : ""}`.trim()}
+      className={`pp-feed-card relative ${mine ? "pp-feed-card--mine" : ""} ${
+        isOpen ? "pp-feed-card--open" : "pp-feed-card--collapsed"
+      }`.trim()}
     >
       <button
         type="button"
         onClick={handleSummaryClick}
-        className={`w-full text-left px-3 py-2 transition-colors box-border ${
+        className={`pp-feed-card__summary w-full text-left px-3 py-2.5 transition-colors box-border ${
           onReport ? "pr-10" : "pr-3"
-        } ${onMapClick && !isOpen ? "pb-10" : ""} ${mine ? "hover:bg-[#EEF5F1]/90" : "hover:bg-[#FAFAFA]/80"} ${
-          canExpand ? "" : "cursor-default"
+        } ${mine ? "hover:bg-[#EEF5F1]/90" : "hover:bg-[#FAFAFA]/80"} ${
+          canExpand || onSummaryClick ? "" : "cursor-default"
         }`}
         aria-expanded={canExpand ? isOpen : undefined}
       >
-        <div className="flex items-start gap-2 min-w-0">
-          <div className="flex-1 min-w-0">
+        <div className="flex items-start gap-2 min-w-0 h-full">
+          <div className="flex-1 min-w-0 flex flex-col min-h-0">
             <div className="flex items-center gap-2 min-w-0">
               {badge ? (
                 <FeedBadgePill
@@ -81,30 +87,28 @@ export default function LiveFeedCard({
                   className="shrink-0 self-center"
                 />
               ) : null}
-              <h3
-                className={`font-semibold text-[12px] leading-[1.35] text-stone-900 flex-1 min-w-0 self-center ${
-                  isOpen ? "whitespace-normal break-words" : "line-clamp-1"
-                }`}
-              >
+              <h3 className="font-semibold text-[12px] leading-[1.35] text-stone-900 flex-1 min-w-0 self-center line-clamp-1">
                 {title}
               </h3>
               {editedItem && <EditedBadge item={editedItem} className="shrink-0 self-center" />}
             </div>
-            {authorLabel ? (
-              <p className="pp-text-meta text-[10px] mt-0.5 truncate text-stone-500">{authorLabel}</p>
-            ) : null}
-            {preview ? (
-              <p
-                className={`pp-text-body text-[11px] leading-snug mt-0.5 text-stone-600 ${
-                  isOpen ? "whitespace-pre-wrap" : "line-clamp-2"
-                }`}
-              >
-                {preview}
-              </p>
-            ) : null}
-            {metaLine ? (
-              <p className="text-[10px] text-stone-500 mt-0.5 truncate">{metaLine}</p>
-            ) : null}
+            <p className="pp-feed-card__author pp-text-meta text-[10px] mt-0.5 truncate text-stone-500">
+              {authorLabel || "\u00a0"}
+            </p>
+            <p
+              className={`pp-feed-card__preview pp-text-body text-[11px] leading-snug mt-0.5 text-stone-600 ${
+                isOpen ? "whitespace-pre-wrap" : "line-clamp-2"
+              }`}
+            >
+              {preview || "\u00a0"}
+            </p>
+            <p
+              className={`pp-feed-card__cta text-[10px] mt-auto pt-1 truncate ${
+                ctaLabel ? "font-semibold text-[#3D7A68]" : "text-stone-500"
+              }`}
+            >
+              {ctaLabel || metaLine || "\u00a0"}
+            </p>
           </div>
           <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
             {statusIcon ? (
@@ -126,7 +130,7 @@ export default function LiveFeedCard({
                 {priceLabel}
               </span>
             ) : null}
-            {canExpand && !onSummaryClick && (
+            {canExpand && (
               <span className="pp-text-meta text-[10px]">{isOpen ? "▲" : "▼"}</span>
             )}
           </div>
@@ -137,11 +141,11 @@ export default function LiveFeedCard({
         <button
           type="button"
           onClick={onMapClick}
-          className="absolute bottom-2 right-2 z-10 w-8 h-8 flex items-center justify-center rounded-xl border border-[#C5DDD4] bg-white text-[#3D7A68] shadow-sm hover:bg-[#E8F3EF] transition-colors"
+          className="absolute bottom-2 right-2 z-10 w-7 h-7 flex items-center justify-center rounded-lg border border-[#C5DDD4] bg-white text-[#3D7A68] shadow-sm hover:bg-[#E8F3EF] transition-colors"
           aria-label="Zobrazit na mapě"
           title="Zobrazit na mapě"
         >
-          <IconMapPin className="w-4 h-4" aria-hidden />
+          <IconMapPin className="w-3.5 h-3.5" aria-hidden />
         </button>
       )}
 
@@ -154,7 +158,7 @@ export default function LiveFeedCard({
       {isOpen && (
         <div
           className={`px-3 pt-2 border-t border-stone-100 animate-[fadeIn_0.15s_ease-out] space-y-2 ${
-            onMapClick ? "pb-11" : "pb-3"
+            onMapClick ? "pb-10" : "pb-3"
           }`}
         >
           {children}

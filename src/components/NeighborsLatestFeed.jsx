@@ -38,6 +38,8 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
     userGroupPosts,
     upcomingEvents,
     openEventDetail,
+    joinEvent,
+    isJoinedEvent,
     communityGroups,
     getHelpOffers,
     listingSaleOrders,
@@ -240,6 +242,7 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
           }
 
           if (item.section === "akce" && item.event) {
+            const joined = isJoinedEvent(item.event.id);
             return (
               <LiveFeedCard
                 key={item.id}
@@ -249,18 +252,38 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
                 title={item.title}
                 authorLabel={item.authorLabel}
                 preview={item.preview}
+                ctaLabel="Detail akce"
               >
-                <p className="pp-text-body text-sm">
+                <p className="pp-text-body text-sm text-stone-600">
                   {item.event.address ?? item.event.location}
                   {item.event.categoryLabel ? ` · ${item.event.categoryLabel}` : ""}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => openEventDetail(item.event.id)}
-                  className="py-2 px-4 text-sm font-semibold text-white rounded-xl pp-btn-primary"
-                >
-                  Detail akce
-                </button>
+                {item.event.description ? (
+                  <p className="pp-text-body text-xs text-stone-600 line-clamp-4 whitespace-pre-wrap">
+                    {item.event.description}
+                  </p>
+                ) : null}
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => joinEvent(item.event.id)}
+                    disabled={joined}
+                    className={`py-2 px-4 text-sm font-semibold rounded-xl transition-colors ${
+                      joined
+                        ? "bg-[#E8F3EF] text-[#1B4D3E] cursor-default"
+                        : "text-white pp-btn-primary"
+                    }`}
+                  >
+                    {joined ? "Jdete na akci" : "Jdu na akci"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openEventDetail(item.event.id)}
+                    className="py-2 px-4 text-sm font-semibold rounded-xl border border-[#C5DDD4] text-[#3D7A68] bg-white hover:bg-[#E8F3EF] transition-colors"
+                  >
+                    Celý detail
+                  </button>
+                </div>
                 <OpenCategoryLink section="akce" onSelectSection={onSelectSection} />
               </LiveFeedCard>
             );
