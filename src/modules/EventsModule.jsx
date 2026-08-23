@@ -155,16 +155,13 @@ export default function EventsModule({
     return baseUpcoming.filter((e) => matchesEventSearch(e, effectiveSearch));
   }, [baseUpcoming, effectiveSearch]);
 
-  const eventsForMap = useMemo(
+  const eventsInRadius = useMemo(
     () => filterEventsForMapView(sourceEvents, eventsMapRadiusKm, undefined, activeLocation),
     [sourceEvents, eventsMapRadiusKm, activeLocation]
   );
 
-  /** Seznam a kalendář ukazují všechny nadcházející v lokalitě — okruh platí jen na mapě. */
-  const eventsForList = sourceEvents;
-
   const selectedId = moduleSelection?.module === moduleId ? moduleSelection.id : null;
-  const selectedEvent = eventsForMap.find((e) => e.id === selectedId) ?? null;
+  const selectedEvent = eventsInRadius.find((e) => e.id === selectedId) ?? null;
 
   const radiusControl = (
     <MapRadiusOverlay
@@ -218,7 +215,7 @@ export default function EventsModule({
           <MapComponent
             mapMode="events"
             radiusKm={eventsMapRadiusKm}
-            events={eventsForMap}
+            events={eventsInRadius}
             onEventPinClick={(ev) => {
               if (selectedId === ev.id) clearModuleSelection();
               else selectModuleItem(moduleId, ev.id);
@@ -228,7 +225,7 @@ export default function EventsModule({
             userGeo={user?.geo ?? null}
             areaLabel={activeLocation?.shortLabel}
             homeLabel={activeLocation?.label ?? "Domov"}
-            totalCount={eventsForMap.length}
+            totalCount={eventsInRadius.length}
             fluid
             hideStats
             hideLegend
@@ -248,7 +245,7 @@ export default function EventsModule({
       ) : viewMode === "calendar" ? (
         <EventsCalendarMonth
           className="flex-1 min-h-0"
-          events={eventsForList}
+          events={eventsInRadius}
           onOpenEvent={openEventDetail}
           onJoin={compact ? joinEvent : undefined}
           isJoined={isJoinedEvent}
@@ -259,8 +256,8 @@ export default function EventsModule({
         <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
           <ListView
             className={`flex-1 min-h-0 ${fillsViewport ? "" : "max-h-72"}`}
-            items={eventsForList}
-            emptyMessage="Zatím žádné nadcházející akce — přidejte první sousedskou akci."
+            items={eventsInRadius}
+            emptyMessage="V tomto okruhu zatím žádné nadcházející akce."
             emptyIllustration="neighborEvent"
             renderItem={(event) => (
               <EventListRow
@@ -276,7 +273,7 @@ export default function EventsModule({
               />
             )}
           />
-          {embedded ? <EventsSparseDoodle count={eventsForList.length} /> : null}
+          {embedded ? <EventsSparseDoodle count={eventsInRadius.length} /> : null}
         </div>
       )}
     </div>
@@ -327,6 +324,15 @@ export default function EventsModule({
     <>
       {toolbar}
       {mapArea}
+      {(viewMode === "list" || viewMode === "calendar") && (
+        <div
+          className={`pp-map-radius-inline pp-map-radius-inline--compact shrink-0 ${
+            fillsViewport ? "mt-1.5" : "mt-2"
+          }`}
+        >
+          {radiusControl}
+        </div>
+      )}
       {outreachBlock}
     </>
   );
