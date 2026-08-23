@@ -75,7 +75,7 @@ export default function LiveFeedCard({
       <button
         type="button"
         onClick={handleSummaryClick}
-        className={`pp-feed-card__summary w-full text-left px-3 py-2 transition-colors box-border ${
+        className={`pp-feed-card__summary w-full text-left px-3 py-1.5 transition-colors box-border ${
           onReport || onDelete ? "pr-10" : "pr-3"
         } ${mine ? "hover:bg-[#EEF5F1]/90" : "hover:bg-[#FAFAFA]/80"} ${
           canExpand || onSummaryClick ? "" : "cursor-default"
@@ -125,14 +125,14 @@ export default function LiveFeedCard({
               </>
             ) : (
               <>
-                <p className="pp-feed-card__author pp-text-meta text-[10px] mt-0.5 truncate text-stone-500">
+                <p className="pp-feed-card__author pp-text-meta text-[10px] mt-0 truncate text-stone-500">
                   {authorText || "\u00A0"}
                 </p>
-                <p className="pp-feed-card__preview pp-text-body text-[11px] leading-snug mt-0.5 text-stone-600 line-clamp-2">
+                <p className="pp-feed-card__preview pp-text-body text-[11px] leading-snug mt-0 text-stone-600 line-clamp-1">
                   {showPreview ? preview : "\u00A0"}
                 </p>
                 <p
-                  className={`pp-feed-card__cta text-[10px] mt-0.5 truncate ${
+                  className={`pp-feed-card__cta text-[10px] mt-0 truncate ${
                     footerLabel
                       ? ctaLabel
                         ? "font-semibold text-[#3D7A68]"
@@ -145,7 +145,7 @@ export default function LiveFeedCard({
               </>
             )}
           </div>
-          <div className="flex items-center gap-1 shrink-0 pt-0.5">
+          <div className="flex items-center gap-1 shrink-0 self-start">
             {onMapClick ? (
               <span
                 role="button"
@@ -161,11 +161,11 @@ export default function LiveFeedCard({
                     onMapClick();
                   }
                 }}
-                className="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-[#C5DDD4] bg-white text-[#3D7A68] hover:bg-[#E8F3EF] transition-colors"
+                className="w-6 h-6 inline-flex items-center justify-center rounded-md border border-[#C5DDD4] bg-white text-[#3D7A68] hover:bg-[#E8F3EF] transition-colors"
                 aria-label="Zobrazit na mapě"
                 title="Zobrazit na mapě"
               >
-                <IconMapPin className="w-3.5 h-3.5" aria-hidden />
+                <IconMapPin className="w-3 h-3" aria-hidden />
               </span>
             ) : null}
             {statusIcon ? (

@@ -2598,14 +2598,14 @@ body,
   background: #ffffff;
   border-radius: var(--pp-radius-lg);
   box-shadow: var(--pp-shadow);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   border: none;
   transition: box-shadow var(--pp-transition), transform var(--pp-transition-press);
 }
 
-/* Sbalené karty — stejná výška (nadpis + autor + 2 řádky náhledu + CTA) */
+/* Sbalené karty — jednotná, úsporná výška (nadpis + autor + 1 řádek náhledu + CTA) */
 .pp-feed-card--collapsed {
-  height: 7.5rem;
+  height: 5.65rem;
 }
 
 .pp-feed-card--collapsed .pp-feed-card__summary {
@@ -2616,23 +2616,23 @@ body,
 }
 
 .pp-feed-card--collapsed .pp-feed-card__author {
-  height: 1rem;
-  line-height: 1rem;
-  margin-top: 0.125rem;
+  height: 0.9rem;
+  line-height: 0.9rem;
+  margin-top: 0;
 }
 
 .pp-feed-card--collapsed .pp-feed-card__preview {
-  height: 2.4rem;
-  max-height: 2.4rem;
-  line-height: 1.2rem;
-  margin-top: 0.125rem;
+  height: 1.15rem;
+  max-height: 1.15rem;
+  line-height: 1.15rem;
+  margin-top: 0;
   overflow: hidden;
 }
 
 .pp-feed-card--collapsed .pp-feed-card__cta {
-  height: 1rem;
-  line-height: 1rem;
-  margin-top: 0.125rem;
+  height: 0.9rem;
+  line-height: 0.9rem;
+  margin-top: 0;
 }
 
 .pp-feed-card--open {
