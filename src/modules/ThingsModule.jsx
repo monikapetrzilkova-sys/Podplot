@@ -203,14 +203,12 @@ export default function ThingsModule({ hideCategoryFilters = false }) {
         </div>
       )}
 
-      {thingsCategory === "vse" ? null : (
-        <LendingSubFilterRow
-          value={thingsLendingSubCategory}
-          onChange={setThingsLendingSubCategory}
-          resetKey={thingsCategory}
-          className="shrink-0 px-0.5 pb-0.5"
-        />
-      )}
+      <LendingSubFilterRow
+        value={thingsLendingSubCategory}
+        onChange={setThingsLendingSubCategory}
+        resetKey={thingsCategory}
+        className="shrink-0 px-0.5 pb-0.5"
+      />
 
       {hideCategoryFilters && (searchOpen || thingsSearchQuery) ? (
         <div className="shrink-0 flex items-center gap-1.5">
