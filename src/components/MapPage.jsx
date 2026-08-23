@@ -111,29 +111,14 @@ export default function MapPage({ lockedSection = null, officeOverview = false }
         </div>
 
         <div className="pp-map-content flex-1 min-h-0 flex flex-col overflow-hidden relative">
-          <div
-            className={
-              activeSection === "reports"
-                ? "flex flex-1 min-h-0 flex-col overflow-hidden"
-                : "invisible absolute inset-0 pointer-events-none"
-            }
-            aria-hidden={activeSection !== "reports"}
-          >
+          {activeSection === "reports" ? (
             <SecurityReports
               key={`reports-${mapRootKey}`}
               reportsCategoryFilter={reportsCategoryFilter}
             />
-          </div>
-          <div
-            className={
-              activeSection === "places"
-                ? "flex flex-1 min-h-0 flex-col overflow-hidden"
-                : "invisible absolute inset-0 pointer-events-none"
-            }
-            aria-hidden={activeSection !== "places"}
-          >
+          ) : (
             <MapModule key={`places-${mapRootKey}`} provozovnaType={provozovnaType} />
-          </div>
+          )}
         </div>
       </div>
     </div>
