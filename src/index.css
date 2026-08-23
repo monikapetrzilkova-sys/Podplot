@@ -1847,8 +1847,23 @@ body,
   min-width: 0;
 }
 
+.pp-group-proposals-slot:empty {
+  display: none;
+  padding: 0;
+}
+
 .pp-group-proposals-slot .pp-group-proposals-panel {
   width: 100%;
+}
+
+.pp-groups-tools .pp-group-proposals-chip {
+  max-width: min(11rem, 42vw);
+  padding: 6px 8px 6px 8px;
+  gap: 6px;
+}
+
+.pp-groups-tools .pp-group-proposals-chip__label {
+  font-size: 10px;
 }
 
 /* Mapa — sjednocený toolbar nad mapou (Hlášení / Průvodce) */

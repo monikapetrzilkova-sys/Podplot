@@ -318,7 +318,13 @@ function CategoryTrunk({
   );
 }
 
-function GroupsToolsRow({ value, onChange, showNew = false, onNew }) {
+function GroupsToolsRow({
+  value,
+  onChange,
+  showNew = false,
+  onNew,
+  proposalsChip = null,
+}) {
   const searching = Boolean(String(value).trim());
   return (
     <div className="pp-groups-tools flex items-center justify-end gap-1.5 px-3 pb-1.5 shrink-0 min-w-0">
@@ -329,6 +335,7 @@ function GroupsToolsRow({ value, onChange, showNew = false, onNew }) {
         ariaLabel="Hledat ve skupinách"
         className={searching ? "flex-1" : "shrink-0"}
       />
+      {!searching && proposalsChip}
       {showNew && !searching && (
         <button
           type="button"
@@ -573,20 +580,15 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
   }
 
   const showSearch = isOverview || isMyGroups;
-  const proposalsSlot =
-    showSearch && visibleProposals.length > 0 ? (
-      <div className="pp-group-proposals-slot">
-        <GroupProposalsSection
-          proposals={visibleProposals}
-          dismissedProposals={dismissedProposals}
-          onVote={voteGroupProposal}
-          onDismiss={dismissGroupProposal}
-          onRestore={restoreGroupProposal}
-          compactTitle
-          hint="Podpořte vznik nové skupiny. Nezajímavé návrhy skryjte křížkem."
-        />
-      </div>
-    ) : null;
+  const proposalProps = {
+    proposals: visibleProposals,
+    dismissedProposals,
+    onVote: voteGroupProposal,
+    onDismiss: dismissGroupProposal,
+    onRestore: restoreGroupProposal,
+    compactTitle: true,
+    hint: "Podpořte vznik nové skupiny. Nezajímavé návrhy skryjte křížkem.",
+  };
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -597,9 +599,18 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
           onChange={setSearch}
           showNew={hideFilterBar}
           onNew={() => openCreateGroupModal?.()}
+          proposalsChip={
+            visibleProposals.length > 0 ? (
+              <GroupProposalsSection {...proposalProps} slot="chip" chipLabel="Návrhy" />
+            ) : null
+          }
         />
       )}
-      {proposalsSlot}
+      {showSearch && visibleProposals.length > 0 ? (
+        <div className="pp-group-proposals-slot">
+          <GroupProposalsSection {...proposalProps} slot="panel" />
+        </div>
+      ) : null}
       {body}
     </div>
   );
