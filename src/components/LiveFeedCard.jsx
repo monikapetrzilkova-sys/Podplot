@@ -66,7 +66,7 @@ export default function LiveFeedCard({
       >
         <div className="flex items-start gap-2 min-w-0">
           <div className="flex-1 min-w-0">
-            <div className={`flex gap-2 min-w-0 ${isOpen ? "items-start flex-wrap" : "items-center"}`}>
+            <div className="flex items-center gap-2 min-w-0">
               {badge ? (
                 <FeedBadgePill
                   badge={badge}
@@ -74,17 +74,17 @@ export default function LiveFeedCard({
                   reportCategoryId={reportCategoryId}
                   tone={badgeTone}
                   Icon={BadgeIcon}
-                  className="shrink-0"
+                  className="shrink-0 self-center"
                 />
               ) : null}
               <h3
-                className={`font-semibold text-[12px] leading-snug text-stone-900 flex-1 min-w-0 ${
+                className={`font-semibold text-[12px] leading-[1.35] text-stone-900 flex-1 min-w-0 self-center ${
                   isOpen ? "whitespace-normal break-words" : "line-clamp-1"
                 }`}
               >
                 {title}
               </h3>
-              {editedItem && <EditedBadge item={editedItem} className="shrink-0" />}
+              {editedItem && <EditedBadge item={editedItem} className="shrink-0 self-center" />}
             </div>
             {authorLabel ? (
               <p className="pp-text-meta text-[10px] mt-0.5 truncate text-stone-500">{authorLabel}</p>

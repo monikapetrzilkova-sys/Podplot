@@ -2996,6 +2996,8 @@ form .subfilter-scroll {
   max-width: 8.5rem;
   vertical-align: middle;
   line-height: 1.35;
+  /* Stejná optická výška jako nadpis ve feedu */
+  min-height: 28px;
 }
 
 .pp-feed-stamp__mark {
