@@ -16,6 +16,23 @@ import ReportMenu, { EVENT_REPORT_REASONS } from "../components/ReportMenu.jsx";
 import CompactSearchToggle from "../components/CompactSearchToggle.jsx";
 import { displayCreatorLabel } from "../data/accountTypes.js";
 import { DoodleCheckIcon, DoodleJoinIcon } from "../components/doodle/doodleIcons.jsx";
+import { DoodleSousedskaAkceScene } from "../components/doodle/doodleIllustrations.jsx";
+
+/** Pod seznamem — větší doodle, hlavně když je málo akcí (1–3). Prázdný stav řeší ListView. */
+function EventsSparseDoodle({ count }) {
+  if (count <= 0 || count >= 4) return null;
+  return (
+    <div
+      className="pp-events-sparse-doodle flex flex-col items-center justify-end px-3 pt-6 pb-3 mt-auto shrink-0 pointer-events-none"
+      aria-hidden
+    >
+      <DoodleSousedskaAkceScene className="w-full max-w-[300px] opacity-90" />
+      <p className="text-[11px] text-center text-[#3D7A68]/70 mt-2 max-w-[16rem] leading-snug">
+        Sousedská akce — místo, kde se potkáte u plotu.
+      </p>
+    </div>
+  );
+}
 
 function matchesEventSearch(event, query) {
   const q = String(query ?? "").trim().toLowerCase();
@@ -84,6 +101,7 @@ export default function EventsModule({
   embedded = false,
   onCreateEvent,
   hideTopFilters = false,
+  hideToolbar = false,
   searchQuery = "",
 }) {
   const {
@@ -114,7 +132,8 @@ export default function EventsModule({
 
   const effectiveSearch = searchQuery || localSearch;
   const searchActive = searchExpanded || Boolean(effectiveSearch.trim());
-  const showLocalSearch = hideTopFilters && searchQuery === "";
+  const showLocalSearch = hideTopFilters && !hideToolbar && searchQuery === "";
+  const showToolbar = !hideToolbar;
 
   const moduleId = MODULE_IDS.EVENTS;
   const rawViewMode = moduleViewModes[moduleId];
@@ -234,29 +253,33 @@ export default function EventsModule({
           attendanceMode="all"
         />
       ) : (
-        <ListView
-          className={`flex-1 min-h-0 overflow-y-auto ${fillsViewport ? "" : "max-h-72"}`}
-          items={eventsForList}
-          emptyMessage="Zatím žádné nadcházející akce."
-          renderItem={(event) => (
-            <EventListRow
-              key={event.id}
-              event={event}
-              selected={selectedId === event.id}
-              onOpen={openEventDetail}
-              onShowOnMap={() => showModuleItemOnMap(moduleId, event.id)}
-              onJoin={compact ? joinEvent : undefined}
-              joined={isJoinedEvent(event.id)}
-              canReport={event.organizer !== "Vy" && event.organizer !== user?.name}
-              onReport={reportEvent}
-            />
-          )}
-        />
+        <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
+          <ListView
+            className={`flex-1 min-h-0 ${fillsViewport ? "" : "max-h-72"}`}
+            items={eventsForList}
+            emptyMessage="Zatím žádné nadcházející akce — přidejte první sousedskou akci."
+            emptyIllustration="neighborEvent"
+            renderItem={(event) => (
+              <EventListRow
+                key={event.id}
+                event={event}
+                selected={selectedId === event.id}
+                onOpen={openEventDetail}
+                onShowOnMap={() => showModuleItemOnMap(moduleId, event.id)}
+                onJoin={compact ? joinEvent : undefined}
+                joined={isJoinedEvent(event.id)}
+                canReport={event.organizer !== "Vy" && event.organizer !== user?.name}
+                onReport={reportEvent}
+              />
+            )}
+          />
+          {embedded ? <EventsSparseDoodle count={eventsForList.length} /> : null}
+        </div>
       )}
     </div>
   );
 
-  const toolbar = (
+  const toolbar = showToolbar ? (
     <div className="pp-events-toolbar tab-header-container shrink-0">
       {showLocalSearch && searchActive ? (
         <div className="w-full min-w-0">
@@ -296,7 +319,9 @@ export default function EventsModule({
         </>
       )}
     </div>
-  );
+  ) : viewMode === "map" ? (
+    <div className="pp-events-toolbar shrink-0 px-0.5 mb-1">{radiusChip}</div>
+  ) : null;
 
   const body = (
     <>

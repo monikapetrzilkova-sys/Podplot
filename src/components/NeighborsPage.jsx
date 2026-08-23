@@ -6,11 +6,11 @@ import ThingsModule from "../modules/ThingsModule.jsx";
 import NeighborHelp from "./NeighborHelp.jsx";
 import CommunityGroupsView from "./CommunityGroupsView.jsx";
 import CalendarPage from "./CalendarPage.jsx";
+import EventsAkceTopBar from "./EventsAkceTopBar.jsx";
 import { VECI_TYPE_FILTERS } from "../utils/thingsModule.js";
 import { getSkupinySubfilters } from "../data/worldNavigation.js";
 import { getMyMemberGroups } from "../data/locations.js";
 import { NEIGHBOR_DOODLE_ICONS, VECI_TYPE_DOODLE_ICONS, VYPOMOC_FILTER_DOODLE_ICONS, SKUPINY_FILTER_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
-import SectionBackButton from "./SectionBackButton.jsx";
 import { loadNavSession, saveNavSession } from "../data/navSession.js";
 
 const NEIGHBORS_MAIN = NEIGHBORS_TILES.map((tile) => ({
@@ -31,7 +31,7 @@ const VYPOMOC_SUBS = [
   { id: "nabizim", label: "Nabízím", shortLabel: "Nabízím", Icon: VYPOMOC_FILTER_DOODLE_ICONS.nabizim },
 ];
 
-function NeighborsContent({ section, helpFilter, onHelpFilterChange }) {
+function NeighborsContent({ section, helpFilter, onHelpFilterChange, eventsSearch = "" }) {
   const { communityGroups } = useApp();
 
   if (section === "veci") {
@@ -58,7 +58,7 @@ function NeighborsContent({ section, helpFilter, onHelpFilterChange }) {
   if (section === "akce") {
     return (
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-        <CalendarPage embedded hideTopFilters />
+        <CalendarPage embedded hideTopFilters hideToolbar searchQuery={eventsSearch} />
       </div>
     );
   }
@@ -102,6 +102,8 @@ export default function NeighborsPage() {
   );
   const [helpFilter, setHelpFilter] = useState("vse");
   const [skupinyListFilter, setSkupinyListFilter] = useState("vse");
+  const [eventsSearch, setEventsSearch] = useState("");
+  const [eventsSearchExpanded, setEventsSearchExpanded] = useState(false);
   const skipNeighborsRootReset = useRef(true);
 
   const hasMyGroups = getMyMemberGroups(communityGroups, activeLocationId).length > 0;
@@ -126,6 +128,8 @@ export default function NeighborsPage() {
     setHelpFilter("vse");
     setCalendarFilter("all");
     setSkupinyListFilter("vse");
+    setEventsSearch("");
+    setEventsSearchExpanded(false);
   }, [neighborsRootKey, setCalendarFilter]);
 
   useEffect(() => {
@@ -183,7 +187,11 @@ export default function NeighborsPage() {
       applySkupinyFilter(hasMyGroups ? "moje" : "vse");
     }
     if (id === "vypomoc") setHelpFilter("vse");
-    if (id === "akce") setCalendarFilter("all");
+    if (id === "akce") {
+      setCalendarFilter("all");
+      setEventsSearch("");
+      setEventsSearchExpanded(false);
+    }
   };
 
   const handleSelectSub = (id) => {
@@ -207,9 +215,13 @@ export default function NeighborsPage() {
         <>
           <div className="tab-header-container px-3 pt-2 pb-0 shrink-0 w-full">
             {activeSection === "akce" ? (
-              <div className="flex items-center gap-2 w-full py-0.5">
-                <SectionBackButton onClick={handleBack} />
-              </div>
+              <EventsAkceTopBar
+                onBack={handleBack}
+                search={eventsSearch}
+                onSearchChange={setEventsSearch}
+                searchExpanded={eventsSearchExpanded}
+                onSearchExpandedChange={setEventsSearchExpanded}
+              />
             ) : (
               <SmartSectionBar
                 mode="sub"
@@ -230,6 +242,7 @@ export default function NeighborsPage() {
             section={activeSection}
             helpFilter={helpFilter}
             onHelpFilterChange={setHelpFilter}
+            eventsSearch={eventsSearch}
           />
         </>
       ) : (

@@ -918,6 +918,12 @@ body,
   color: var(--pp-doodle-ink-light);
 }
 
+.pp-doodle-empty-art--lg {
+  width: min(100%, 18rem);
+  height: auto;
+  max-height: 11rem;
+}
+
 .pp-doodle-empty {
   color: var(--pp-doodle-ink);
   background: rgba(255, 255, 255, 0.85);
@@ -1373,6 +1379,17 @@ body,
   min-width: 0;
   max-width: 240px;
   margin-left: auto;
+}
+
+.pp-events-akce-topbar .pp-events-view-toggle {
+  max-width: none;
+  margin-left: 0;
+}
+
+.pp-events-akce-topbar .pp-view-mode-toggle button {
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+  font-size: 10px;
 }
 
 .pp-events-page .pp-events-calendar-legend {

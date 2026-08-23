@@ -73,7 +73,12 @@ function PastEventListItem({
   );
 }
 
-export default function CalendarPage({ embedded = false, hideTopFilters = false }) {
+export default function CalendarPage({
+  embedded = false,
+  hideTopFilters = false,
+  hideToolbar = false,
+  searchQuery = "",
+}) {
   const {
     pastEvents,
     openEventDetail,
@@ -162,6 +167,8 @@ export default function CalendarPage({ embedded = false, hideTopFilters = false 
         unreadBadge={unreadCalendarGalleryCount}
         onCreateEvent={embedded ? openCreate : undefined}
         hideTopFilters={hideTopFilters}
+        hideToolbar={hideToolbar}
+        searchQuery={searchQuery}
       />
 
       {pastMine.length > 0 && (

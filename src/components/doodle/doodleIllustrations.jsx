@@ -290,10 +290,98 @@ export function DoodleSousedstviScene({ className = "w-full max-w-[280px] h-auto
   );
 }
 
+/**
+ * Sousedská akce — větší scéna dole v Akcích (vidět hlavně při málo příspěvcích).
+ * Stan / praporek, stůl s občerstvením, sousedi a kalendář.
+ */
+export function DoodleSousedskaAkceScene({ className = "w-full max-w-[320px] h-auto" }) {
+  return (
+    <svg
+      viewBox="0 0 320 168"
+      fill="none"
+      className={`pp-doodle-characters text-[#3D7A68] ${className}`}
+      aria-hidden
+    >
+      {/* Terén */}
+      <path
+        {...s}
+        stroke={DOODLE_OLIVE}
+        strokeWidth={1.5}
+        d="M10 142c36-10 70-8 102 2 34 10 62 8 94-2 30-10 62-8 94 4 12 5 18 3 20 0"
+        opacity={0.6}
+      />
+
+      {/* Stan / baldachýn */}
+      <path {...s} d="M48 78l42-28 42 28" strokeWidth={1.85} />
+      <path {...s} d="M52 78v40M128 78v40" opacity={0.9} />
+      <path {...s} d="M48 78h84" opacity={0.75} />
+      <path {...s} stroke={DOODLE_OLIVE} d="M90 50v-10" strokeWidth={1.5} opacity={0.7} />
+      <path {...s} stroke={DOODLE_OLIVE} d="M84 40h12l-2 8h-8l-2-8z" strokeWidth={1.4} opacity={0.8} />
+
+      {/* Stůl */}
+      <path {...s} d="M58 108h72" strokeWidth={1.85} />
+      <path {...s} d="M68 108v18M120 108v18" opacity={0.8} />
+      <ellipse cx="78" cy="102" rx="7" ry="4" {...s} opacity={0.75} />
+      <ellipse cx="98" cy="100" rx="5" ry="3.5" {...s} stroke={DOODLE_OLIVE} opacity={0.8} />
+      <path {...s} d="M112 104c2-4 8-4 10 0" opacity={0.7} />
+
+      {/* Kalendář vpravo nahoře */}
+      <path
+        {...s}
+        d="M214 28c.2-2 1.6-3.5 3.5-3.5h40c1.9 0 3.3 1.5 3.5 3.5v36c-.2 2-1.6 3.5-3.5 3.5h-40c-1.9 0-3.3-1.5-3.5-3.5V28z"
+      />
+      <path {...s} d="M213.5 40h47" />
+      <path {...s} d="M226 24v6M246 24v6" />
+      <circle cx="228" cy="52" r="2.2" fill="currentColor" stroke="none" opacity={0.4} />
+      <circle cx="238" cy="52" r="2.2" fill="currentColor" stroke="none" opacity={0.4} />
+      <circle cx="248" cy="52" r="2.2" {...s} stroke={DOODLE_OLIVE} opacity={0.85} />
+      <circle cx="228" cy="60" r="2.2" fill="currentColor" stroke="none" opacity={0.35} />
+      <circle cx="238" cy="60" r="2.2" fill="currentColor" stroke="none" opacity={0.35} />
+
+      {/* Sousedi u stolu */}
+      <circle cx="72" cy="86" r="5.5" {...s} />
+      <path {...s} d="M72 91.5v12M72 97l-6 4M72 97l6 3.5" />
+      <path {...s} d="M72 103.5l-4 10M72 103.5l4 10" />
+
+      <circle cx="118" cy="84" r="5" {...s} />
+      <path {...s} d="M118 89v12M118 95l-6 4M118 95l6 3" />
+      <path {...s} d="M118 101l-3.5 10M118 101l3.5 10" />
+      <path {...s} d="M112 90l-4-5" opacity={0.75} />
+
+      {/* Třetí soused s míčem / hrou */}
+      <circle cx="168" cy="96" r="5.5" {...s} />
+      <path {...s} d="M168 101.5v14M168 108l-7 5M168 108l7 4" />
+      <path {...s} d="M168 115.5l-4.5 12M168 115.5l4.5 12" />
+      <circle cx="182" cy="118" r="5" {...s} stroke={DOODLE_OLIVE} opacity={0.85} />
+      <path {...s} stroke={DOODLE_OLIVE} d="M179 118h6M182 115v6" strokeWidth={1.25} opacity={0.55} />
+
+      {/* Bublina */}
+      <path
+        {...s}
+        stroke={DOODLE_OLIVE}
+        d="M148 72c3-2 8-1.5 10 2s-1 7-5 7.5c-1.5.2-2.5 1.5-2.5 1.5l-2.5-1.5s-3-.5-4-3 1.5-6.5 4-6.5z"
+        opacity={0.8}
+      />
+      <path {...s} stroke={DOODLE_OLIVE} d="M152 77h6" strokeWidth={1.25} opacity={0.55} />
+
+      {/* Sluníčko */}
+      <circle cx="292" cy="28" r="7" {...s} stroke={DOODLE_OLIVE} opacity={0.65} />
+      <path
+        {...s}
+        stroke={DOODLE_OLIVE}
+        strokeWidth={1.3}
+        d="M292 16v2.5M292 37.5V40M304 28h2.5M277.5 28H280M301 19l1.8 1.8M281 35l1.8 1.8M301 37l1.8-1.8M281 21l1.8-1.8"
+        opacity={0.4}
+      />
+    </svg>
+  );
+}
+
 export const DOODLE_EMPTY_ILLUSTRATIONS = {
   chat: DoodleEmptyChat,
   hands: DoodleEmptyHands,
   group: DoodleEmptyGroup,
   box: DoodleEmptyBox,
   calendar: DoodleEmptyCalendar,
+  neighborEvent: DoodleSousedskaAkceScene,
 };
