@@ -22,7 +22,10 @@ import { useApp } from "../context/AppContext.jsx";
 import AccountTypeIcon from "./AccountTypeIcon.jsx";
 import { BUSINESS_SUBTYPE_DOODLE_ICONS, CATALOG_DOODLE_ICONS, DoodleCheckIcon, DoodleSousedIcon, SERVICE_CATEGORY_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
 import InstitutionAutocomplete from "./InstitutionAutocomplete.jsx";
-import { verifyWorkEmailForInstitution } from "../data/institutions/index.js";
+import {
+  verifyWorkEmailForInstitution,
+  lookupMunicipalityEmailDomain,
+} from "../data/institutions/index.js";
 import { MIN_PASSWORD_LENGTH, validatePassword } from "../data/authApi.js";
 
 const AUTH_INPUT =
@@ -59,6 +62,8 @@ export default function RegisterScreen() {
   const [allowPublicAreaLabel, setAllowPublicAreaLabel] = useState(false);
   const [publicAreaLabel, setPublicAreaLabel] = useState("");
   const [selectedInstitution, setSelectedInstitution] = useState(null);
+  const [municipalityLookup, setMunicipalityLookup] = useState(null);
+  const [municipalityLookupBusy, setMunicipalityLookupBusy] = useState(false);
 
   const selectedType = getAccountType(accountType);
   const registrationFields = getRegistrationFields(accountType, businessSubtype);
@@ -73,13 +78,38 @@ export default function RegisterScreen() {
     [email, accountType]
   );
   const institutionEmailCheck = useMemo(() => {
-    if (!isUrad || !selectedInstitution || !email.includes("@")) return null;
-    return verifyWorkEmailForInstitution(email, selectedInstitution);
-  }, [isUrad, selectedInstitution, email]);
+    if (!isUrad || !selectedInstitution || !email.includes("@") || !municipalityLookup?.ok) {
+      return null;
+    }
+    return verifyWorkEmailForInstitution(email, selectedInstitution, municipalityLookup.domain);
+  }, [isUrad, selectedInstitution, email, municipalityLookup]);
 
   useEffect(() => {
-    if (!isUrad) setSelectedInstitution(null);
+    if (!isUrad) {
+      setSelectedInstitution(null);
+      setMunicipalityLookup(null);
+      setMunicipalityLookupBusy(false);
+    }
   }, [isUrad]);
+
+  useEffect(() => {
+    if (!isUrad || !selectedInstitution) {
+      setMunicipalityLookup(null);
+      setMunicipalityLookupBusy(false);
+      return undefined;
+    }
+    let cancelled = false;
+    setMunicipalityLookupBusy(true);
+    setMunicipalityLookup(null);
+    lookupMunicipalityEmailDomain(selectedInstitution).then((result) => {
+      if (cancelled) return;
+      setMunicipalityLookup(result);
+      setMunicipalityLookupBusy(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isUrad, selectedInstitution?.id]);
 
   useEffect(() => {
     if (!selectedInstitution) return;
@@ -177,10 +207,18 @@ export default function RegisterScreen() {
     }
 
     if (isUrad && selectedInstitution) {
-      const check = verifyWorkEmailForInstitution(email, selectedInstitution);
+      if (municipalityLookupBusy || !municipalityLookup?.ok) {
+        setSubmitError("Počkejte na ověření oficiálního webu obce, nebo vyberte úřad znovu.");
+        return;
+      }
+      const check = verifyWorkEmailForInstitution(
+        email,
+        selectedInstitution,
+        municipalityLookup.domain
+      );
       if (!check.ok) {
         setSubmitError(
-          `Pracovní e-mail musí být na oficiální doméně @${selectedInstitution.allowedEmailDomain}.`
+          `Pracovní e-mail musí být na oficiální doméně obce @${municipalityLookup.domain} (dohledáno z webu obce).`
         );
         return;
       }
@@ -470,27 +508,53 @@ export default function RegisterScreen() {
                 }`}
               />
               {emailError && <p className="mt-1.5 text-xs text-red-600">{emailError}</p>}
-              {!emailError && isUrad && selectedInstitution && institutionEmailCheck && email.includes("@") && validateEmail(email).valid && (
-                <div
-                  className={`mt-2 flex items-center gap-2 text-xs rounded-xl px-3 py-2 ${
-                    institutionEmailCheck.ok
-                      ? "bg-teal-50 text-teal-800 border border-teal-200"
-                      : "bg-amber-50 text-amber-900 border border-amber-200"
-                  }`}
-                >
-                  {institutionEmailCheck.ok ? (
-                    <>
-                      <VerifiedBadge accountType={accountType} compact />
-                      <span>
-                        Doména odpovídá úřadu — přístup ihned bez ručního schválení
-                        (@{selectedInstitution.allowedEmailDomain}).
-                      </span>
-                    </>
-                  ) : (
-                    <span>
-                      E-mail musí končit @{selectedInstitution.allowedEmailDomain}.
-                    </span>
-                  )}
+              {!emailError && isUrad && selectedInstitution && (
+                <div className="mt-2 space-y-1.5">
+                  {municipalityLookupBusy ? (
+                    <div className="flex items-center gap-2 text-xs rounded-xl px-3 py-2 bg-stone-50 text-stone-600 border border-stone-200">
+                      Ověřuji oficiální web obce…
+                    </div>
+                  ) : null}
+                  {!municipalityLookupBusy && municipalityLookup?.ok ? (
+                    <div className="text-xs rounded-xl px-3 py-2 bg-teal-50 text-teal-900 border border-teal-200 leading-snug">
+                      Dohledáno z webu obce
+                      {municipalityLookup.website ? (
+                        <>
+                          {" "}
+                          (<span className="font-semibold break-all">{municipalityLookup.website}</span>)
+                        </>
+                      ) : null}
+                      : e-mail musí být @{municipalityLookup.domain}.
+                    </div>
+                  ) : null}
+                  {!municipalityLookupBusy && municipalityLookup && !municipalityLookup.ok ? (
+                    <div className="text-xs rounded-xl px-3 py-2 bg-amber-50 text-amber-900 border border-amber-200">
+                      Oficiální web obce se nepodařilo ověřit. Zkuste jiný úřad v seznamu.
+                    </div>
+                  ) : null}
+                  {institutionEmailCheck && email.includes("@") && validateEmail(email).valid ? (
+                    <div
+                      className={`flex items-center gap-2 text-xs rounded-xl px-3 py-2 ${
+                        institutionEmailCheck.ok
+                          ? "bg-teal-50 text-teal-800 border border-teal-200"
+                          : "bg-amber-50 text-amber-900 border border-amber-200"
+                      }`}
+                    >
+                      {institutionEmailCheck.ok ? (
+                        <>
+                          <VerifiedBadge accountType={accountType} compact />
+                          <span>
+                            Doména odpovídá oficiálnímu webu obce — účet úřadu bude ověřen
+                            (@{municipalityLookup.domain}).
+                          </span>
+                        </>
+                      ) : (
+                        <span>
+                          Osobní schránky (Gmail, Seznam…) nestačí. Použijte @{municipalityLookup.domain}.
+                        </span>
+                      )}
+                    </div>
+                  ) : null}
                 </div>
               )}
               {!emailError && !isUrad && verification.eligible && email.includes("@") && validateEmail(email).valid && (

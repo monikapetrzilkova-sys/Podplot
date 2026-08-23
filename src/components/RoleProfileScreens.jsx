@@ -53,7 +53,7 @@ function ProfileRoleChip({ role, active, onClick }) {
   );
 }
 
-/** Zkušební přepínač rolí (Developer Mode) — v produkci skrytý přes ENABLE_DEV_ROLE_SWITCH. */
+/** Zkušební přepínač rolí (Developer Mode) — v produkci skrytý. Úřad jen jako samostatný účet. */
 export function ProfileTypeTestSwitcher() {
   const { testRoleId, switchTestRole } = useApp();
   if (!ENABLE_DEV_ROLE_SWITCH) return null;
@@ -74,6 +74,9 @@ export function ProfileTypeTestSwitcher() {
           />
         ))}
       </div>
+      <p className="text-[10px] text-amber-800/80 mb-1.5 leading-snug">
+        Úřad je samostatná registrace (oficiální e-mail obce) — zde jen pro vývoj.
+      </p>
       <div className="flex flex-wrap gap-1.5">
         {office.map((r) => (
           <ProfileRoleChip
@@ -204,16 +207,13 @@ export default function MyProfilesPanel() {
         )}
       </div>
 
+      <p className="text-[10px] text-stone-500 mb-2 leading-snug">
+        Přepínejte mezi sousedem, mobilní službou a provozovnou. Úřední účet se zakládá
+        jen samostatnou registrací s oficiálním e-mailem obce.
+      </p>
+
       <div className="flex flex-wrap gap-1.5">
         {activeProfiles.map((r) => (
-          <ProfileRoleChip
-            key={r.id}
-            role={r}
-            active={testRoleId === r.id}
-            onClick={() => switchTestRole(r.id)}
-          />
-        ))}
-        {TEST_ROLES.filter((r) => r.id === "urad").map((r) => (
           <ProfileRoleChip
             key={r.id}
             role={r}

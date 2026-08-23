@@ -42,7 +42,7 @@ export const ACCOUNT_TYPES = {
     shortLabel: "Úřad",
     icon: "🏛️",
     role: "urad",
-    hint: "Veřejná správa, město, obec — krizová hlášení a podněty",
+    hint: "Samostatný účet obce — jen s oficiálním e-mailem ověřeným podle webu obce",
     nameLabel: "Název úřadu / instituce",
     namePlaceholder: "Název úřadu (doplní se výběrem)",
     addressLabel: "Sídlo úřadu",

@@ -104,6 +104,11 @@ import { inferLendingMeta } from "../data/lendingCategories.js";
 import { lendingCategoryToMarket } from "../data/marketCategories.js";
 import { SKIP_REGISTRATION, ENABLE_DEV_ROLE_SWITCH, getDevTestUser } from "../data/devConfig.js";
 import {
+  getInstitutionById,
+  verifyWorkEmailForInstitution,
+  lookupMunicipalityEmailDomain,
+} from "../data/institutions/index.js";
+import {
   loadUserSession,
   persistUserSession,
   clearUserSession,
@@ -325,12 +330,24 @@ export function AppProvider({ children }) {
   const [placeSuggestionOpen, setPlaceSuggestionOpen] = useState(false);
   const [testRoleId, setTestRoleId] = useState(() => {
     if (SKIP_REGISTRATION) return "soused";
-    return loadUserSession()?.testRoleId ?? "soused";
+    const saved = loadUserSession();
+    const isOffice =
+      saved?.user?.accountType === "urad" || saved?.user?.accountType === "instituce";
+    if (isOffice) return "urad";
+    const id = saved?.testRoleId ?? "soused";
+    return id === "urad" ? "soused" : id;
   });
   /** Osobní profily uživatele (bez úřadu) — pro sekci Moje profily */
   const [userProfileIds, setUserProfileIds] = useState(() => {
     if (SKIP_REGISTRATION) return ["soused"];
-    return loadUserSession()?.userProfileIds ?? ["soused"];
+    const saved = loadUserSession();
+    const ids = saved?.userProfileIds ?? ["soused"];
+    const isOffice =
+      saved?.user?.accountType === "urad" || saved?.user?.accountType === "instituce";
+    if (isOffice) return ["urad"];
+    return (Array.isArray(ids) ? ids : ["soused"]).filter(
+      (id) => id !== "urad" && ["soused", "podnik", "remeslnik"].includes(id)
+    );
   });
   const [viewAsNeighbor, setViewAsNeighbor] = useState(false);
   /** Záloha pracovního uživatele při „Přepnout na sousedský profil“ */
@@ -1641,10 +1658,31 @@ export function AppProvider({ children }) {
       const normalizedType = normalizeAccountType(accountType);
       const acc = getAccountType(normalizedType);
       let { isVerified, domain } = verifyEmailDomain(email, normalizedType);
-      if (normalizedType === "urad" && institutionId) {
-        // Doména se ověřuje vůči číselníku instituce (RegisterScreen); zde důvěřujeme matchi.
+      if (normalizedType === "urad") {
+        if (!institutionId) {
+          showToast("Vyberte obecní nebo městský úřad.", "error");
+          return { ok: false, error: "missing_institution" };
+        }
+        const institution = await getInstitutionById(institutionId);
+        if (!institution) {
+          showToast("Úřad se nepodařilo ověřit v registru.", "error");
+          return { ok: false, error: "institution_not_found" };
+        }
+        const lookup = await lookupMunicipalityEmailDomain(institution);
+        if (!lookup.ok) {
+          showToast("Nepodařilo se dohledat oficiální web obce pro ověření e-mailu.", "error");
+          return { ok: false, error: "municipality_lookup_failed" };
+        }
+        const check = verifyWorkEmailForInstitution(email, institution, lookup.domain);
+        if (!check.ok) {
+          showToast(
+            `Úřední účet vyžaduje oficiální e-mail obce (@${lookup.domain}), ne osobní schránku.`,
+            "error"
+          );
+          return { ok: false, error: "office_email_mismatch" };
+        }
         isVerified = true;
-        domain = extractEmailDomain(email);
+        domain = lookup.domain;
       }
       const cityFromGeo = geo?.city || address.split(",").pop()?.trim() || address;
       const municipality = String(cityFromGeo).trim();
@@ -1759,6 +1797,12 @@ export function AppProvider({ children }) {
       if (normalizedType === "urad") {
         setTestRoleId("urad");
         setUserProfileIds(["urad"]);
+      } else if (normalizedType === "podnik" && resolvedSubtype === "mobilni") {
+        setTestRoleId("remeslnik");
+        setUserProfileIds(["soused", "remeslnik"]);
+      } else if (normalizedType === "podnik") {
+        setTestRoleId("podnik");
+        setUserProfileIds(["soused", "podnik"]);
       } else {
         setTestRoleId("soused");
         setUserProfileIds(["soused"]);
@@ -1827,6 +1871,10 @@ export function AppProvider({ children }) {
         });
         if (subIds.length) {
           setTestRoleId("remeslnik");
+          setUserProfileIds((prev) => {
+            const base = prev.filter((id) => id !== "urad");
+            return base.includes("remeslnik") ? base : [...base, "remeslnik"];
+          });
         }
       }
 
@@ -1900,8 +1948,24 @@ export function AppProvider({ children }) {
           )
         );
         if (typeof saved.credits === "number") setCredits(saved.credits);
-        if (Array.isArray(saved.userProfileIds)) setUserProfileIds(saved.userProfileIds);
-        if (saved.testRoleId) setTestRoleId(saved.testRoleId);
+        if (Array.isArray(saved.userProfileIds)) {
+          const isOffice =
+            nextUser.accountType === "urad" || nextUser.accountType === "instituce";
+          setUserProfileIds(
+            isOffice
+              ? ["urad"]
+              : saved.userProfileIds.filter(
+                  (id) => id !== "urad" && ["soused", "podnik", "remeslnik"].includes(id)
+                )
+          );
+        }
+        if (saved.testRoleId) {
+          const isOffice =
+            nextUser.accountType === "urad" || nextUser.accountType === "instituce";
+          if (isOffice) setTestRoleId("urad");
+          else if (saved.testRoleId !== "urad") setTestRoleId(saved.testRoleId);
+          else setTestRoleId("soused");
+        }
       } else {
         const municipality = nextUser.geo?.city || nextUser.location || "Obec";
         const home = buildHomeLocation({
@@ -3435,12 +3499,36 @@ export function AppProvider({ children }) {
     (roleId) => {
       const role = getTestRole(roleId);
       if (!role || !user) return;
+
+      const isOfficeTarget =
+        roleId === "urad" || role.accountType === "urad" || role.accountType === "instituce";
+      const isOfficeAccount =
+        user.accountType === "urad" ||
+        user.accountType === "instituce" ||
+        testRoleId === "urad";
+
+      // Úřad není přepínatelný profil souseda / řemeslníka — jen samostatná registrace.
+      if (isOfficeTarget && !isOfficeAccount && !ENABLE_DEV_ROLE_SWITCH) {
+        showToast(
+          "Úřední účet nelze přidat k sousedovi. Registrujte se oficiálním e-mailem obce.",
+          "error"
+        );
+        return;
+      }
+      if (!isOfficeTarget && isOfficeAccount && !ENABLE_DEV_ROLE_SWITCH) {
+        showToast("Úřední účet nelze kombinovat s řemeslníkem ani provozovnou.", "error");
+        return;
+      }
+
       setTestRoleId(roleId);
       setViewAsNeighbor(false);
       workUserBackupRef.current = null;
       setWorkDashboardTab("poptavky");
-      if (roleId !== "urad" && role.accountType !== "urad" && role.accountType !== "instituce") {
-        setUserProfileIds((prev) => (prev.includes(roleId) ? prev : [...prev, roleId]));
+      if (!isOfficeTarget) {
+        setUserProfileIds((prev) => {
+          const cleaned = prev.filter((id) => id !== "urad");
+          return cleaned.includes(roleId) ? cleaned : [...cleaned, roleId];
+        });
       }
 
       // Registrovanou identitu nikdy nepřepisujeme demo personou (Libor / U Javoru).
@@ -3511,7 +3599,7 @@ export function AppProvider({ children }) {
       }
       showToast(`Přepnuto: ${role.label}`, "info");
     },
-    [user, citizenProfile, showToast]
+    [user, citizenProfile, showToast, testRoleId]
   );
 
   const acknowledgeNews = useCallback((id) => {

@@ -8,6 +8,7 @@ import {
   isEligibleMunicipalityOfficeName,
   normalizeEmailDomain,
 } from "./institutionTypes.js";
+import { isPublicEmailDomain } from "../domainVerification.js";
 import { INSTITUTIONS_SEED } from "./registrySeed.js";
 import { mergeInstitutionsImport, parseInstitutionsCsv } from "./institutionsImport.js";
 
@@ -22,6 +23,7 @@ function normalizeRecord(row) {
     seatCity: row.seatCity ?? row.seat_city ?? "",
     seatAddress: row.seatAddress ?? row.seat_address ?? null,
     allowedEmailDomain: normalizeEmailDomain(row.allowedEmailDomain ?? row.allowed_email_domain) ?? "",
+    officialWebsite: row.officialWebsite ?? row.official_website ?? null,
     kind: row.kind ?? "obecni_urad",
     region: row.region ?? null,
     isActive: row.isActive ?? row.is_active ?? true,
@@ -39,6 +41,7 @@ function mapDbRow(row) {
     seat_city: row.seat_city,
     seat_address: row.seat_address,
     allowed_email_domain: row.allowed_email_domain,
+    official_website: row.official_website,
     kind: row.kind,
     region: row.region,
     is_active: row.is_active,
@@ -116,16 +119,23 @@ export async function searchInstitutions(query, opts = {}) {
 }
 
 /**
- * Ověření: e-mail musí končit doménou instituce (ne veřejnou schránkou).
+ * Ověření: e-mail musí končit oficiální doménou obce (z webu / registru).
+ * @param {string} email
+ * @param {object} institution
+ * @param {string} [expectedDomain] — výsledek dohledání na webu obce
  */
-export function verifyWorkEmailForInstitution(email, institution) {
+export function verifyWorkEmailForInstitution(email, institution, expectedDomain = null) {
   const domain = normalizeEmailDomain(email);
-  const allowed = normalizeEmailDomain(institution?.allowedEmailDomain);
+  const allowed =
+    normalizeEmailDomain(expectedDomain) ||
+    normalizeEmailDomain(institution?.allowedEmailDomain);
   if (!domain || !allowed) {
-    return { ok: false, reason: "missing_domain", domain: domain ?? null };
+    return { ok: false, reason: "missing_domain", domain: domain ?? null, allowedDomain: allowed };
   }
-  const matches =
-    domain === allowed || domain.endsWith(`.${allowed}`);
+  if (isPublicEmailDomain(domain)) {
+    return { ok: false, reason: "public_mailbox", domain, allowedDomain: allowed };
+  }
+  const matches = domain === allowed || domain.endsWith(`.${allowed}`);
   return {
     ok: matches,
     reason: matches ? "domain_match" : "domain_mismatch",

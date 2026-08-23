@@ -9,6 +9,12 @@ export {
 } from "./institutionsApi.js";
 
 export {
+  lookupMunicipalityEmailDomain,
+  resolveMunicipalityEmailDomain,
+  getInstitutionOfficialWebsite,
+} from "./municipalityDomainLookup.js";
+
+export {
   INSTITUTION_KINDS,
   INSTITUTION_MEMBER_ROLES,
   isEligibleMunicipalityOfficeName,
