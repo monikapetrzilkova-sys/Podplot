@@ -33,17 +33,36 @@ export const GUIDE_MAP_CATEGORY_IDS = ["vse", ...GUIDE_GRID_CATEGORIES.filter((c
   (c) => c.id
 )];
 
-/** Typy provozoven (filtr v kategorii Provozovny) */
+/** Typy provozoven (filtr v kategorii Provozovny) — pár praktických skupin */
 export const PROVOZOVNY_TYPE_FILTERS = [
-  { id: "automycka", label: "Myčka" },
-  { id: "autoservis", label: "Autoservis" },
+  { id: "krasa", label: "Péče a krása" },
+  { id: "auto", label: "Auto" },
   { id: "klicove", label: "Klíče" },
   { id: "bankomat", label: "Bankomat" },
+  { id: "cistirna", label: "Čistírna" },
   { id: "ostatni", label: "Ostatní" },
 ];
 
+/** Starší / detailní typy → skupina filtru */
+export const PROVOZOVNA_TYPE_ALIASES = {
+  krasa: ["krasa", "kadernictvi", "kosmetika", "beauty"],
+  auto: ["auto", "autoservis", "automycka"],
+  klicove: ["klicove"],
+  bankomat: ["bankomat"],
+  cistirna: ["cistirna", "pradelna"],
+  ostatni: ["ostatni"],
+};
+
 export function getProvozovnaType(id) {
   return PROVOZOVNY_TYPE_FILTERS.find((t) => t.id === id);
+}
+
+export function normalizeProvozovnaTypeId(typeId) {
+  if (!typeId) return "ostatni";
+  for (const [groupId, aliases] of Object.entries(PROVOZOVNA_TYPE_ALIASES)) {
+    if (aliases.includes(typeId)) return groupId;
+  }
+  return "ostatni";
 }
 
 /** Mapování starých / interních kategorií na filtry mřížky */
@@ -1194,8 +1213,10 @@ export function normalizeGuideCategoryId(categoryId) {
 
 export function institutionMatchesProvozovnaType(place, typeId) {
   if (!typeId) return true;
-  if (place.category !== SLUZBY_CATEGORY_ID) return true;
-  return (place.provozovnaType ?? "ostatni") === typeId;
+  if (place.category !== SLUZBY_CATEGORY_ID) return false;
+  const placeType = normalizeProvozovnaTypeId(place.provozovnaType);
+  const aliases = PROVOZOVNA_TYPE_ALIASES[typeId] ?? [typeId];
+  return aliases.includes(placeType) || aliases.includes(place.provozovnaType);
 }
 
 export function institutionMatchesCategory(place, categoryId) {

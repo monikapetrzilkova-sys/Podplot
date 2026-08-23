@@ -102,12 +102,16 @@ const GOOGLE_TYPE_TO_CATEGORY = {
 
 /** Google type → podtyp Provozovny */
 const GOOGLE_TYPE_TO_PROVOZOVNA = {
-  car_repair: "autoservis",
-  car_dealer: "autoservis",
-  car_wash: "automycka",
+  car_repair: "auto",
+  car_dealer: "auto",
+  car_wash: "auto",
   atm: "bankomat",
   bank: "bankomat",
   locksmith: "klicove",
+  beauty_salon: "krasa",
+  hair_care: "krasa",
+  spa: "krasa",
+  laundry: "cistirna",
 };
 
 const IGNORED_GOOGLE_TYPES = new Set([
@@ -140,7 +144,7 @@ const GUIDE_CATEGORY_IDS = new Set([
 const NAME_CATEGORY_RULES = [
   {
     category: "sluzby",
-    provozovnaType: "autoservis",
+    provozovnaType: "auto",
     patterns: [
       /\bpneu(servis)?\b/i,
       /\bpneumatik/i,
@@ -152,12 +156,12 @@ const NAME_CATEGORY_RULES = [
       /\bcar\s*service\b/i,
       /\btire\b/i,
       /\btyre\b/i,
+      /\bmyčka\b/i,
+      /\bmycka\b/i,
+      /\bcar\s*wash\b/i,
+      /\bautomyčka\b/i,
+      /\bautomycka\b/i,
     ],
-  },
-  {
-    category: "sluzby",
-    provozovnaType: "automycka",
-    patterns: [/\bmyčka\b/i, /\bmycka\b/i, /\bcar\s*wash\b/i, /\bautomyčka\b/i, /\bautomycka\b/i],
   },
   {
     category: "sluzby",
@@ -168,6 +172,29 @@ const NAME_CATEGORY_RULES = [
     category: "sluzby",
     provozovnaType: "klicove",
     patterns: [/\bklíč/i, /\bklic/i, /\blocksmith\b/i, /\bvýroba\s*klíč/i],
+  },
+  {
+    category: "sluzby",
+    provozovnaType: "krasa",
+    patterns: [
+      /\bkosmetik/i,
+      /\bkadeř/i,
+      /\bkader/i,
+      /\bpedikúr/i,
+      /\bmanikúr/i,
+      /\bbarber\b/i,
+      /\bhair\b/i,
+      /\bbeauty\b/i,
+      /\bnehty\b/i,
+      /\bvizáž/i,
+      /\bmasáž/i,
+      /\bmasaz\b/i,
+    ],
+  },
+  {
+    category: "sluzby",
+    provozovnaType: "cistirna",
+    patterns: [/\bčistírn/i, /\bcistirn/i, /\bprádeln/i, /\bpradeln/i, /\blaundry\b/i],
   },
   {
     category: "obchody",
@@ -238,13 +265,6 @@ const NAME_CATEGORY_RULES = [
       /\bfitcentrum\b/i,
       /\bposilovna\b/i,
       /\badams\s*family\b/i,
-      /\bkosmetik/i,
-      /\bkadeř/i,
-      /\bkader/i,
-      /\bpedikúr/i,
-      /\bmanikúr/i,
-      /\bbarber\b/i,
-      /\bsalon\b/i,
     ],
   },
   {

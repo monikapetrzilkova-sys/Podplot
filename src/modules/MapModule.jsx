@@ -100,21 +100,16 @@ export default function MapModule({ provozovnaType = null }) {
 
   const filtered = useMemo(
     () => {
+      const matches = (p) =>
+        institutionMatchesCategory(p, activeCategory) &&
+        institutionMatchesProvozovnaType(p, isProvozovny ? provozovnaType : null) &&
+        institutionMatchesSearch(p, localGuideSearchQuery);
+
       const local = sortInstitutionsByPriority([
-        ...institutionsSorted.filter(
-          (p) =>
-            institutionMatchesCategory(p, activeCategory) &&
-            institutionMatchesProvozovnaType(p, isProvozovny ? provozovnaType : null) &&
-            institutionMatchesSearch(p, localGuideSearchQuery)
-        ),
-        ...pendingPlaceSuggestions.filter(
-          (p) =>
-            institutionMatchesCategory(p, activeCategory) &&
-            institutionMatchesProvozovnaType(p, isProvozovny ? provozovnaType : null) &&
-            institutionMatchesSearch(p, localGuideSearchQuery)
-        ),
+        ...institutionsSorted.filter(matches),
+        ...pendingPlaceSuggestions.filter(matches),
       ]);
-      return mergeInstitutionsWithGoogle(local, googlePlaces);
+      return mergeInstitutionsWithGoogle(local, googlePlaces).filter(matches);
     },
     [
       institutionsSorted,

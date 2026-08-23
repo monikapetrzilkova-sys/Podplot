@@ -56,7 +56,8 @@ export function resolveInstitutionIconKey(place) {
   if ((cat === "verejny-prostor" || cat === "vybavenost" || cat === "odpad") && place.wasteType) {
     return "waste";
   }
-  if (cat === "sluzby" && place.provozovnaType === "automycka") return "carwash";
+  if (cat === "sluzby" && (place.provozovnaType === "automycka" || place.provozovnaType === "auto"))
+    return "carwash";
   if (cat === "sluzby") return "sluzby";
   if (cat === "vybavenost" || cat === "odpad") return "verejny-prostor";
 

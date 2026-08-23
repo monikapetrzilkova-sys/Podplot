@@ -190,10 +190,13 @@ export function IconGuideSubOther({ className = "w-3.5 h-3.5" }) {
 }
 
 const PROVOZOVNA_SUB_ICON = {
-  automycka: IconProvozovnaCarWash,
-  autoservis: IconProvozovnaGarage,
+  krasa: IconHomeServiceBeauty,
+  auto: IconProvozovnaGarage,
   klicove: IconProvozovnaKeys,
   bankomat: IconProvozovnaAtm,
+  cistirna: IconGuideSubOther,
+  automycka: IconProvozovnaCarWash,
+  autoservis: IconProvozovnaGarage,
   ostatni: IconGuideSubOther,
 };
 
