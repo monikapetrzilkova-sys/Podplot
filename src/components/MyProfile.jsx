@@ -454,6 +454,209 @@ export default function MyProfile({ registerLegalBack } = {}) {
 
   return (
     <div className="px-4 py-4 pb-8">
+      {showNeighborProfile && viewAsNeighbor && testRoleId !== "soused" ? (
+        <p className="mb-3 text-[11px] font-semibold text-[#3D7A68] bg-[#E8F3EF] border border-[#C5DDD4] rounded-xl px-3 py-2">
+          Prohlížíte sousedský profil — pracovní účet zůstává v pozadí.
+        </p>
+      ) : null}
+
+      {/* Identita nahoře: avatar, jméno, e-mail, adresy */}
+      {showNeighborProfile && (
+        <div className="pp-card p-5 mb-3">
+          <div className="flex flex-col items-center text-center mb-4">
+            <button
+              type="button"
+              className="pp-avatar-ring relative mb-3"
+              onClick={() => {
+                if (unreadGroupProposalSupportersCount > 0 && unreadTrustVerifiersCount === 0) {
+                  document
+                    .getElementById("profile-group-supports")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  markGroupProposalSupportersSeen?.();
+                  return;
+                }
+                if (unreadTrustVerifiersCount > 0 || trustVerifiers.length > 0) {
+                  document
+                    .getElementById("profile-trust-received")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  markTrustVerifiersSeen?.();
+                  return;
+                }
+                if (groupProposalSupporters.length > 0) {
+                  document
+                    .getElementById("profile-group-supports")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  markGroupProposalSupportersSeen?.();
+                }
+              }}
+              aria-label={
+                unreadProfileBadgeCount > 0
+                  ? `${unreadProfileBadgeCount} nové aktivity v profilu`
+                  : "Profilová fotka"
+              }
+            >
+              <Avatar initials={displayInitials} roleId={acc.role} size="lg" photo={user.profilePhoto} />
+              {unreadProfileBadgeCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[1.15rem] h-[1.15rem] px-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center shadow-sm border-2 border-white">
+                  {unreadProfileBadgeCount > 9 ? "9+" : unreadProfileBadgeCount}
+                </span>
+              )}
+            </button>
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              <h2 className="text-lg font-bold text-stone-900">{displayName}</h2>
+              {user.isVerified && <VerifiedBadge accountType={user.accountType} />}
+              {isCommunityVerified && (
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
+                  Ověřený soused
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-stone-500 mt-1">{user.email}</p>
+            <div className="flex flex-wrap justify-center gap-2 mt-3">
+              <button
+                type="button"
+                onClick={() => setPhotoEditorOpen(true)}
+                className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg hover:bg-emerald-100"
+              >
+                {user.profilePhoto ? "Změnit fotku" : "Přidat fotku"}
+              </button>
+              {user.profilePhoto && (
+                <button
+                  type="button"
+                  onClick={removeProfilePhoto}
+                  className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-100"
+                >
+                  Smazat fotku
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div id="profile-home-address" className="scroll-mt-4 space-y-2">
+            {locations.map((loc) => {
+              const LocIcon = LOCATION_DOODLE_ICONS[loc.id] ?? LOCATION_DOODLE_ICONS.domov;
+              const isActive = activeLocationId === loc.id;
+              const isEditing = editingLocationId === loc.id;
+              const isHome = loc.id === "domov";
+              return (
+                <div
+                  key={loc.id}
+                  className={`rounded-xl border p-3 text-left ${
+                    isActive ? "border-emerald-600 bg-emerald-50/80" : "border-stone-200 bg-stone-50"
+                  }`}
+                >
+                  {isEditing ? (
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-stone-700">
+                        {isHome ? addressLabel : `Upravit · ${loc.label}`}
+                      </p>
+                      <HomeAddressForm
+                        key={`edit-${loc.id}`}
+                        compact
+                        initialAddress={loc.address}
+                        initialLabel={loc.label}
+                        showLabel={!isHome}
+                        labelRequired={!isHome}
+                        submitLabel="Uložit"
+                        onSave={async (payload) => {
+                          const ok = await updateUserLocation(loc.id, payload);
+                          if (ok) {
+                            setEditingLocationId(null);
+                            if (isHome) setEditingHomeAddress(false);
+                          }
+                          return ok;
+                        }}
+                        onCancel={() => {
+                          setEditingLocationId(null);
+                          if (isHome) setEditingHomeAddress(false);
+                        }}
+                      />
+                      {!isHome ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(`Odstranit místo „${loc.label}“?`)) {
+                              removeUserLocation(loc.id);
+                              setEditingLocationId(null);
+                            }
+                          }}
+                          className="text-[11px] font-semibold text-red-600"
+                        >
+                          Odstranit místo
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setActiveLocation(loc.id)}
+                        className="flex-1 min-w-0 text-left flex items-start gap-2"
+                      >
+                        <LocIcon className="w-4 h-4 shrink-0 mt-0.5 text-[#3D7A68]" aria-hidden />
+                        <span className="min-w-0">
+                          <span className="text-[10px] font-bold uppercase text-stone-400 block">
+                            {isHome ? addressLabel : loc.label}
+                            {isActive ? " · aktivní" : ""}
+                          </span>
+                          <span className="text-sm font-medium text-stone-800 block">
+                            {loc.address || user.address}
+                          </span>
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAddingLocation(false);
+                          setEditingLocationId(loc.id);
+                          if (isHome) setEditingHomeAddress(true);
+                        }}
+                        className="text-[11px] font-semibold text-emerald-700 shrink-0"
+                      >
+                        Upravit
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {addingLocation ? (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 space-y-2">
+                <p className="text-xs font-semibold text-stone-800">Nové místo (chata, práce…)</p>
+                <HomeAddressForm
+                  key="add-location"
+                  compact
+                  showLabel
+                  labelRequired
+                  labelPlaceholder="Název (např. Chata, Práce)"
+                  submitLabel="Přidat a přepnout"
+                  onSave={async (payload) => {
+                    const ok = await addUserLocation(payload);
+                    if (ok) setAddingLocation(false);
+                    return ok;
+                  }}
+                  onCancel={() => setAddingLocation(false)}
+                />
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingLocationId(null);
+                  setEditingHomeAddress(false);
+                  setAddingLocation(true);
+                }}
+                className="w-full py-2 rounded-xl text-xs font-semibold border border-dashed border-[#3D7A68]/45 text-[#1B4D3E] bg-[#F7FAF9]"
+              >
+                + Přidat další adresu (chata, práce…)
+              </button>
+            )}
+            <p className="text-[10px] text-stone-400 leading-relaxed px-0.5">{ADDRESS_PRIVACY_NOTE}</p>
+          </div>
+        </div>
+      )}
+
       {ENABLE_DEV_ROLE_SWITCH ? (
         <ProfileTypeTestSwitcher />
       ) : (
@@ -474,173 +677,6 @@ export default function MyProfile({ registerLegalBack } = {}) {
 
       {showNeighborProfile && (
         <>
-      {viewAsNeighbor && testRoleId !== "soused" ? (
-        <p className="mb-3 text-[11px] font-semibold text-[#3D7A68] bg-[#E8F3EF] border border-[#C5DDD4] rounded-xl px-3 py-2">
-          Prohlížíte sousedský profil — pracovní účet zůstává v pozadí.
-        </p>
-      ) : null}
-      <div className="pp-card p-5 mb-4">
-        <div className="flex items-start gap-4 mb-4">
-          <button
-            type="button"
-            className="pp-avatar-ring shrink-0 relative"
-            onClick={() => {
-              if (unreadGroupProposalSupportersCount > 0 && unreadTrustVerifiersCount === 0) {
-                document
-                  .getElementById("profile-group-supports")
-                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                markGroupProposalSupportersSeen?.();
-                return;
-              }
-              if (unreadTrustVerifiersCount > 0 || trustVerifiers.length > 0) {
-                document
-                  .getElementById("profile-trust-received")
-                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                markTrustVerifiersSeen?.();
-                return;
-              }
-              if (groupProposalSupporters.length > 0) {
-                document
-                  .getElementById("profile-group-supports")
-                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                markGroupProposalSupportersSeen?.();
-              }
-            }}
-            aria-label={
-              unreadProfileBadgeCount > 0
-                ? `${unreadProfileBadgeCount} nové aktivity v profilu`
-                : "Profilová fotka"
-            }
-          >
-            <Avatar initials={displayInitials} roleId={acc.role} size="lg" photo={user.profilePhoto} />
-            {unreadProfileBadgeCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[1.15rem] h-[1.15rem] px-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center shadow-sm border-2 border-white">
-                {unreadProfileBadgeCount > 9 ? "9+" : unreadProfileBadgeCount}
-              </span>
-            )}
-          </button>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-lg font-bold text-stone-900">{displayName}</h2>
-              {user.isVerified && <VerifiedBadge accountType={user.accountType} />}
-              {isBusinessAccount(user) && podnikatelSubtype && (
-                <span className="text-[10px] font-semibold text-[#3D7A68] bg-[#F1F6F5] px-2 py-0.5 rounded-lg">
-                  {podnikatelSubtype}
-                </span>
-              )}
-              {isCommunityVerified && (
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
-                  Komunitou ověřený soused
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-stone-500 mt-0.5">{user.email}</p>
-            {user.isVerified && user.verifiedDomain && (
-              <p className="text-[11px] text-emerald-700 font-medium mt-1">
-                {getVerifiedLabel(user.accountType)} · @{user.verifiedDomain}
-              </p>
-            )}
-            <span className="inline-flex items-center gap-1.5 mt-2 text-xs font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-lg">
-              <AccountTypeIcon
-                accountType={user.accountType}
-                businessSubtype={resolveBusinessSubtype(user)}
-                className="w-3.5 h-3.5"
-              />
-              {acc.shortLabel}
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                document
-                  .getElementById("profile-trust-received")
-                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                markTrustVerifiersSeen?.();
-              }}
-              className="mt-2 text-left text-xs text-stone-600 hover:text-emerald-800"
-            >
-              <span className="font-bold text-stone-800 tabular-nums">
-                {trustVerifiers.length}
-              </span>{" "}
-              {trustVerifiers.length === 1 ? "potvrzení sousedství" : "potvrzení sousedství"}
-              {unreadTrustVerifiersCount > 0 ? (
-                <span className="ml-1.5 text-emerald-700 font-semibold">
-                  · {unreadTrustVerifiersCount} nová
-                </span>
-              ) : null}
-            </button>
-            {(groupProposalSupporters.length > 0 || unreadGroupProposalSupportersCount > 0) && (
-              <button
-                type="button"
-                onClick={() => {
-                  document
-                    .getElementById("profile-group-supports")
-                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                  markGroupProposalSupportersSeen?.();
-                }}
-                className="mt-1.5 text-left text-xs text-stone-600 hover:text-emerald-800 block"
-              >
-                <span className="font-bold text-stone-800 tabular-nums">
-                  {groupProposalSupporters.length}
-                </span>{" "}
-                {groupProposalSupporters.length === 1 ? "podpora návrhů" : "podpor návrhů"}
-                {unreadGroupProposalSupportersCount > 0 ? (
-                  <span className="ml-1.5 text-emerald-700 font-semibold">
-                    · {unreadGroupProposalSupportersCount} nová
-                  </span>
-                ) : null}
-              </button>
-            )}
-            <div className="flex flex-wrap gap-2 mt-3">
-              <button
-                type="button"
-                onClick={() => setPhotoEditorOpen(true)}
-                className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg hover:bg-emerald-100"
-              >
-                {user.profilePhoto ? "Změnit fotku" : "Přidat fotku"}
-              </button>
-              {user.profilePhoto && (
-                <button
-                  type="button"
-                  onClick={removeProfilePhoto}
-                  className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-100"
-                >
-                  Smazat fotku
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-        <div id="profile-home-address" className="flex items-start gap-2 text-sm text-stone-600 bg-stone-50 rounded-xl p-3 scroll-mt-4">
-          <span className="shrink-0 mt-0.5 text-[#3D7A68]" aria-hidden>
-            <PROFILE_DOODLE_ICONS.places className="w-4 h-4" />
-          </span>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-2 mb-1">
-              <p className="text-[10px] font-bold uppercase text-stone-400">{addressLabel}</p>
-              <button
-                type="button"
-                onClick={() => {
-                  setAddingLocation(false);
-                  setEditingLocationId("domov");
-                  setEditingHomeAddress(true);
-                  requestAnimationFrame(() => {
-                    document.getElementById("profile-my-places")?.scrollIntoView({
-                      behavior: "smooth",
-                      block: "start",
-                    });
-                  });
-                }}
-                className="text-[11px] font-semibold text-emerald-700 hover:underline shrink-0"
-              >
-                Upravit
-              </button>
-            </div>
-            <p className="font-medium text-stone-800">{user.address}</p>
-            <p className="text-[11px] text-stone-400 mt-2 leading-relaxed">{ADDRESS_PRIVACY_NOTE}</p>
-          </div>
-        </div>
-      </div>
-
       <section id="profile-trust-received" className="pp-card p-4 mb-4 scroll-mt-4">
         <div className="flex items-start justify-between gap-2 mb-3">
           <ProfileSectionTitle icon={PROFILE_DOODLE_ICONS.trust} className="mb-0">
@@ -681,147 +717,6 @@ export default function MyProfile({ registerLegalBack } = {}) {
             ))}
           </div>
         )}
-      </section>
-
-      <section className="pp-card p-4 mb-4" id="profile-my-places">
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <ProfileSectionTitle icon={PROFILE_DOODLE_ICONS.places} className="mb-0">
-            Moje místa
-          </ProfileSectionTitle>
-          {!addingLocation && !editingLocationId && (
-            <button
-              type="button"
-              onClick={() => {
-                setAddingLocation(true);
-                setEditingLocationId(null);
-                setEditingHomeAddress(false);
-              }}
-              className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg shrink-0"
-            >
-              + Přidat místo
-            </button>
-          )}
-        </div>
-        <p className="text-[11px] text-stone-500 mb-3 leading-relaxed">
-          Přepnutím místa se zeď, mapa i okolí přemapují na danou lokalitu. Každé místo můžete upravit.
-        </p>
-        <div className="space-y-2">
-          {locations.map((loc) => {
-            const LocIcon = LOCATION_DOODLE_ICONS[loc.id] ?? LOCATION_DOODLE_ICONS.domov;
-            const isActive = activeLocationId === loc.id;
-            const isEditing = editingLocationId === loc.id;
-            return (
-              <div
-                key={loc.id}
-                className={`w-full text-left p-3 rounded-xl border text-sm ${
-                  isActive ? "border-emerald-600 bg-emerald-50" : "border-stone-200"
-                }`}
-              >
-                {isEditing ? (
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold text-stone-700">
-                      Upravit · {loc.label}
-                    </p>
-                    <HomeAddressForm
-                      key={`edit-${loc.id}`}
-                      compact
-                      initialAddress={loc.address}
-                      initialLabel={loc.label}
-                      showLabel={loc.id !== "domov"}
-                      labelRequired={loc.id !== "domov"}
-                      submitLabel="Uložit místo"
-                      onSave={async (payload) => {
-                        const ok = await updateUserLocation(loc.id, payload);
-                        if (ok) {
-                          setEditingLocationId(null);
-                          if (loc.id === "domov") setEditingHomeAddress(false);
-                        }
-                        return ok;
-                      }}
-                      onCancel={() => {
-                        setEditingLocationId(null);
-                        if (loc.id === "domov") setEditingHomeAddress(false);
-                      }}
-                    />
-                    {loc.id !== "domov" ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (window.confirm(`Odstranit místo „${loc.label}“?`)) {
-                            removeUserLocation(loc.id);
-                            setEditingLocationId(null);
-                          }
-                        }}
-                        className="text-[11px] font-semibold text-red-600"
-                      >
-                        Odstranit místo
-                      </button>
-                    ) : null}
-                  </div>
-                ) : (
-                  <div className="flex items-start justify-between gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setActiveLocation(loc.id)}
-                      className="flex-1 min-w-0 text-left flex items-start gap-2.5"
-                    >
-                      <span
-                        className={`mt-0.5 shrink-0 ${isActive ? "text-[#1B4332]" : "text-[#4D8B7A]"}`}
-                      >
-                        <LocIcon className="w-5 h-5" />
-                      </span>
-                      <span className="min-w-0">
-                        <span className="font-semibold block flex items-center gap-1.5 flex-wrap">
-                          {loc.label}
-                          {isActive ? (
-                            <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-md">
-                              Aktivní
-                            </span>
-                          ) : null}
-                        </span>
-                        <span className="block text-xs text-stone-500">{loc.address}</span>
-                        <span className="block text-[10px] text-stone-400 mt-0.5">
-                          {loc.municipality || loc.shortLabel}
-                          {loc.radiusKm ? ` · okruh ${loc.radiusKm} km` : ""}
-                        </span>
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAddingLocation(false);
-                        setEditingLocationId(loc.id);
-                        if (loc.id === "domov") setEditingHomeAddress(true);
-                      }}
-                      className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg shrink-0"
-                    >
-                      Upravit
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {addingLocation ? (
-          <div className="mt-3 p-3 rounded-xl border border-emerald-200 bg-emerald-50/50 space-y-2">
-            <p className="text-xs font-semibold text-stone-800">Nové místo</p>
-            <HomeAddressForm
-              key="add-location"
-              compact
-              showLabel
-              labelRequired
-              submitLabel="Přidat a přepnout"
-              onSave={async (payload) => {
-                const ok = await addUserLocation(payload);
-                if (ok) setAddingLocation(false);
-                return ok;
-              }}
-              onCancel={() => setAddingLocation(false)}
-            />
-          </div>
-        ) : null}
       </section>
 
       <section id="profile-my-group-proposals" className="pp-card p-4 mb-4 scroll-mt-4">
