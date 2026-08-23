@@ -317,13 +317,21 @@ export default function CraftsmanProfilePanel() {
             secondaryIds={secondarySubcategories}
             onSecondaryChange={setSecondarySubcategories}
           />
-          <input
-            type="text"
-            value={keywordsText}
-            onChange={(e) => setKeywordsText(e.target.value)}
-            placeholder="Klíčová slova oddělená čárkou"
-            className="w-full px-3 py-2 border border-stone-200 rounded-xl text-sm"
-          />
+          <div>
+            <label className="block text-xs font-semibold text-stone-600 mb-1">
+              Klíčová slova (volitelně)
+            </label>
+            <input
+              type="text"
+              value={keywordsText}
+              onChange={(e) => setKeywordsText(e.target.value)}
+              placeholder="např. bojler, sifon"
+              className="w-full px-3 py-2 border border-stone-200 rounded-xl text-sm"
+            />
+            <p className="text-[10px] text-stone-400 mt-1 leading-snug">
+              Oddělujte čárkou. Pomáhají při párování poptávek.
+            </p>
+          </div>
         </div>
 
         {formError && (

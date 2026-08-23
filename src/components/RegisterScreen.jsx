@@ -855,8 +855,8 @@ export default function RegisterScreen() {
                     placeholder="např. bojler, sifon, havárie vody"
                     className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#3D7A68]/30"
                   />
-                  <p className="text-[10px] text-stone-400 mt-1">
-                    Oddělte čárkou. Pomáhají při párování poptávek.
+                  <p className="text-[10px] text-stone-400 mt-1 leading-snug">
+                    Oddělujte čárkou (např. bojler, sifon). Pomáhají při párování poptávek.
                   </p>
                 </div>
               </div>
