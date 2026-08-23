@@ -231,19 +231,13 @@ export default function MyProfilesPanel({ embedded = false }) {
           : "rounded-xl border border-[#C5DDD4] bg-white p-3 mb-3"
       }
     >
-      <div className="flex items-center justify-between gap-2 mb-1.5">
-        <h3 className="text-[10px] font-bold text-stone-400 uppercase tracking-wide">
-          Moje profily
-        </h3>
-        {addableProfiles.length > 0 && !adding && !setupRole && (
-          <button
-            type="button"
-            onClick={() => setAdding(true)}
-            className="text-[11px] font-semibold text-[#3D7A68]"
-          >
+      <div className="pp-profile-sec-head">
+        <h3 className="pp-profile-sec-title">Moje profily</h3>
+        {addableProfiles.length > 0 && !adding && !setupRole ? (
+          <button type="button" onClick={() => setAdding(true)} className="pp-profile-sec-btn">
             + Přidat
           </button>
-        )}
+        ) : null}
       </div>
 
       {!embedded ? (
@@ -253,7 +247,7 @@ export default function MyProfilesPanel({ embedded = false }) {
         </p>
       ) : null}
 
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
         {activeProfiles.map((r) => (
           <ProfileRoleChip
             key={r.id}

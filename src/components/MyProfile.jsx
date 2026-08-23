@@ -820,37 +820,20 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
           ) : null}
 
           <div id="profile-home-address" className="scroll-mt-4 mt-3">
-            <div className="flex items-center justify-between gap-2 mb-1.5">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-stone-400">
-                Místa
-              </p>
+            <div className="pp-profile-sec-head">
+              <p className="pp-profile-sec-title">Místa</p>
               {!addingLocation && !editingLocationId ? (
-                <div className="flex items-center gap-2.5 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingLocationId(null);
-                      setEditingHomeAddress(false);
-                      setAddingLocation(true);
-                    }}
-                    className="text-[11px] font-semibold text-[#3D7A68]"
-                  >
-                    + Přidat
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const targetId = activeLocationId || locations[0]?.id;
-                      if (!targetId) return;
-                      setAddingLocation(false);
-                      setEditingLocationId(targetId);
-                      if (targetId === "domov") setEditingHomeAddress(true);
-                    }}
-                    className="text-[11px] font-semibold text-[#3D7A68]"
-                  >
-                    Upravit
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingLocationId(null);
+                    setEditingHomeAddress(false);
+                    setAddingLocation(true);
+                  }}
+                  className="pp-profile-sec-btn"
+                >
+                  + Přidat
+                </button>
               ) : null}
             </div>
 
@@ -877,6 +860,19 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                     </button>
                   );
                 })}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const targetId = activeLocationId || locations[0]?.id;
+                    if (!targetId) return;
+                    setAddingLocation(false);
+                    setEditingLocationId(targetId);
+                    if (targetId === "domov") setEditingHomeAddress(true);
+                  }}
+                  className="pp-profile-sec-btn pp-profile-sec-btn--ghost"
+                >
+                  Upravit
+                </button>
               </div>
             ) : null}
 
