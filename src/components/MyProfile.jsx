@@ -1115,7 +1115,7 @@ export default function MyProfile({ registerLegalBack } = {}) {
         )}
       </section>
 
-      <section>
+      <section id="profile-my-reports" className="mb-6 scroll-mt-4">
         <h3 className="text-sm font-bold text-stone-800 mb-3">Moje hlášení</h3>
         {myReportItems.length === 0 ? (
           <p className="text-sm text-stone-500 bg-stone-50 rounded-2xl p-4">
@@ -1140,7 +1140,7 @@ export default function MyProfile({ registerLegalBack } = {}) {
         )}
       </section>
 
-      <section>
+      <section id="profile-my-prompts" className="mb-6 scroll-mt-4">
         <h3 className="text-sm font-bold text-stone-800 mb-3">Moje podněty úřadu</h3>
         {myMunicipalityPrompts.length === 0 ? (
           <p className="text-sm text-stone-500 bg-stone-50 rounded-2xl p-4">
