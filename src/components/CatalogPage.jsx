@@ -3,8 +3,52 @@ import { useApp } from "../context/AppContext.jsx";
 import CatalogGrid, { CATALOG_TILES } from "./CatalogGrid.jsx";
 import ServicesList from "../modules/ServicesList.jsx";
 import CompactSearchToggle from "./CompactSearchToggle.jsx";
-import SectionBackButton from "./SectionBackButton.jsx";
 import { CATALOG_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
+
+/** Aktivní kategorie + malé ikony ostatních (jeden typ příspěvků — bez Zpět) */
+function CatalogCategorySwitch({ activeId, onSelect }) {
+  const active = CATALOG_TILES.find((t) => t.id === activeId);
+  const ActiveIcon = activeId ? CATALOG_DOODLE_ICONS[activeId] : null;
+  const others = CATALOG_TILES.filter((t) => t.id !== activeId);
+
+  return (
+    <div
+      className="pp-catalog-cat-switch"
+      role="tablist"
+      aria-label="Kategorie služeb"
+    >
+      <div className="pp-catalog-cat-switch__active" role="tab" aria-selected="true">
+        {ActiveIcon ? (
+          <span className="pp-catalog-cat-switch__active-icon" aria-hidden>
+            <ActiveIcon />
+          </span>
+        ) : null}
+        <span className="pp-catalog-cat-switch__active-label">
+          {active?.shortLabel ?? active?.label ?? "Služby"}
+        </span>
+      </div>
+      <div className="pp-catalog-cat-switch__others">
+        {others.map((tile) => {
+          const Icon = CATALOG_DOODLE_ICONS[tile.id];
+          return (
+            <button
+              key={tile.id}
+              type="button"
+              role="tab"
+              aria-selected={false}
+              aria-label={tile.label}
+              title={tile.label}
+              onClick={() => onSelect(tile.id)}
+              className="pp-catalog-cat-switch__icon-btn"
+            >
+              {Icon ? <Icon /> : null}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function CatalogPage() {
   const { catalogRootKey } = useApp();
@@ -19,31 +63,12 @@ export default function CatalogPage() {
   }, [catalogRootKey]);
 
   const searchActive = searchExpanded || Boolean(catalogSearch.trim());
-  const activeTile = CATALOG_TILES.find((t) => t.id === homeSub);
-  const ActiveIcon = homeSub ? CATALOG_DOODLE_ICONS[homeSub] : null;
 
   if (homeSub) {
     return (
       <div className="pp-page pp-page--doodle flex flex-col min-h-full bg-abstract-organic has-deco">
-        <div className="tab-header-container px-3 pt-2 pb-0 shrink-0 w-full flex items-center gap-2">
-          <SectionBackButton
-            onClick={() => {
-              setHomeSub(null);
-              setCatalogSearch("");
-              setSearchExpanded(false);
-            }}
-            ariaLabel="Zpět na kategorie"
-          />
-          <div className="flex-1 min-w-0 flex items-center gap-2">
-            {ActiveIcon ? (
-              <span className="text-[#3D7A68] shrink-0">
-                <ActiveIcon />
-              </span>
-            ) : null}
-            <p className="text-sm font-bold text-stone-900 truncate">
-              {activeTile?.label ?? "Služby"}
-            </p>
-          </div>
+        <div className="tab-header-container px-3 pt-2 pb-0 shrink-0 w-full">
+          <CatalogCategorySwitch activeId={homeSub} onSelect={setHomeSub} />
         </div>
         <div className="flex-1 min-h-0 flex flex-col px-3 pb-8 pt-2 gap-2">
           <CompactSearchToggle
