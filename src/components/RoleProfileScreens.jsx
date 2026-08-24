@@ -242,8 +242,7 @@ export default function MyProfilesPanel({ embedded = false }) {
 
       {!embedded ? (
         <p className="text-[10px] text-stone-500 mb-2 leading-snug">
-          Přepínejte mezi sousedem, mobilní službou a podnikem. Úřad je samostatný účet
-          s oficiálním e-mailem obce — nelze ho přepnout z osobního přihlášení.
+          Přepínejte mezi sousedem, mobilní službou a podnikem.
         </p>
       ) : null}
 
