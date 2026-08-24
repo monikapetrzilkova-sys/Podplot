@@ -129,6 +129,8 @@ export default function MyProfilesPanel({ embedded = false }) {
   const addableProfiles = SKIP_REGISTRATION
     ? []
     : TEST_ROLES.filter((r) => PERSONAL_ROLE_IDS.includes(r.id) && !activeIds.includes(r.id));
+  const canOfferOfficeAccount = !SKIP_REGISTRATION;
+  const canOpenAddMenu = addableProfiles.length > 0 || canOfferOfficeAccount;
 
   const setupRole = setupRoleId ? TEST_ROLES.find((r) => r.id === setupRoleId) : null;
   const isMobilniSetup = setupRole?.businessSubtype === "mobilni";
@@ -233,7 +235,7 @@ export default function MyProfilesPanel({ embedded = false }) {
     >
       <div className="pp-profile-sec-head">
         <h3 className="pp-profile-sec-title">Moje profily</h3>
-        {addableProfiles.length > 0 && !adding && !setupRole ? (
+        {canOpenAddMenu && !adding && !setupRole ? (
           <button type="button" onClick={() => setAdding(true)} className="pp-profile-sec-btn">
             + Přidat
           </button>
@@ -257,25 +259,28 @@ export default function MyProfilesPanel({ embedded = false }) {
         ))}
       </div>
 
-      <AddOfficeAccountCard className="mt-3" />
-
       {adding && !setupRole && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {addableProfiles.map((r) => (
-            <button
-              key={r.id}
-              type="button"
-              onClick={() => startSetup(r.id)}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-dashed border-[#3D7A68]/50 text-[11px] font-semibold text-[#1B4D3E] bg-[#F1F6F5]"
-            >
-              <AccountTypeIcon roleId={r.id} accountType={r.accountType} className="w-3.5 h-3.5" />
-              {r.label}
-            </button>
-          ))}
+        <div className="mt-2 space-y-2">
+          {addableProfiles.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {addableProfiles.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => startSetup(r.id)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-dashed border-[#3D7A68]/50 text-[11px] font-semibold text-[#1B4D3E] bg-[#F1F6F5]"
+                >
+                  <AccountTypeIcon roleId={r.id} accountType={r.accountType} className="w-3.5 h-3.5" />
+                  {r.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {canOfferOfficeAccount ? <AddOfficeAccountCard /> : null}
           <button
             type="button"
             onClick={() => setAdding(false)}
-            className="text-[11px] font-semibold text-stone-400 px-2"
+            className="text-[11px] font-semibold text-stone-400 px-1"
           >
             Zrušit
           </button>
