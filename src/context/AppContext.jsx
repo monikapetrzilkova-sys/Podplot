@@ -63,6 +63,12 @@ import {
   REPORT_STATUS,
 } from "../data/reportExpiry.js";
 import { writeRegisterIntent } from "../data/registrationIntent.js";
+import {
+  loadStoredReports,
+  persistStoredReports,
+  mergeReportsById,
+} from "../data/reportsStorage.js";
+import { reportFromFeedPost } from "../utils/reportPinUtils.js";
 import { URGENT_SCOPE, URGENT_LOCAL_RADIUS_M, resolveReportDistance, describeUrgentAudience } from "../data/reportUrgency.js";
 import {
   loadUiPreferences,
@@ -442,8 +448,40 @@ export function AppProvider({ children }) {
   const [reportedReports, setReportedReports] = useState([]);
   /** eventId → pole id nahlásivších (po 3 se akce smaže) */
   const [eventReporterIds, setEventReporterIds] = useState({});
-  const [userReports, setUserReports] = useState([]);
-  const [extraReports, setExtraReports] = useState([]);
+  const [userReports, setUserReports] = useState(() => {
+    try {
+      const session = loadUserSession();
+      const uid = session?.user?.id;
+      if (!uid) return [];
+      return loadStoredReports(uid).filter((r) => r.mine);
+    } catch {
+      return [];
+    }
+  });
+  const [extraReports, setExtraReports] = useState(() => {
+    try {
+      const session = loadUserSession();
+      const uid = session?.user?.id;
+      return uid ? loadStoredReports(uid) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const stored = loadStoredReports(user.id);
+    if (!stored.length) return;
+    setExtraReports((prev) => mergeReportsById(stored, prev));
+    setUserReports((prev) => mergeReportsById(stored.filter((r) => r.mine), prev));
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    // Neukládej prázdno hned po mountu dřív, než doběhne merge z feedu — jen když už něco máme
+    // nebo když uživatel opravdu smazal všechno (prev !== initial empty po akci).
+    persistStoredReports(user.id, extraReports);
+  }, [user?.id, extraReports]);
   const [communityGroups, setCommunityGroups] = useState(() => {
     const locId = SKIP_REGISTRATION
       ? "domov"
@@ -1318,6 +1356,26 @@ export function AppProvider({ children }) {
         return [...byId.values()].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
       });
 
+      const revivedReports = feedRemote
+        .filter(
+          (p) =>
+            p.fromSecurityReportId ||
+            p.feedSubtype === "hlaseni" ||
+            (p.type ?? "").toLowerCase().includes("hlášení") ||
+            (p.type ?? "").toLowerCase() === "tip"
+        )
+        .map((p) => reportFromFeedPost(p))
+        .filter(Boolean);
+      if (revivedReports.length) {
+        setExtraReports((prev) => mergeReportsById(prev, revivedReports));
+        setUserReports((prev) =>
+          mergeReportsById(
+            prev,
+            revivedReports.filter((r) => r.mine)
+          )
+        );
+      }
+
       unsubscribe = await subscribeRemotePosts((row) => {
         const post = rowToFeedPost(row, user.id);
         const activeMun = activeLocation?.municipality ?? user.geo?.city ?? null;
@@ -1375,6 +1433,13 @@ export function AppProvider({ children }) {
           if (prev.some((p) => p.id === post.id)) return prev;
           return [post, ...prev];
         });
+        const revived = reportFromFeedPost(post);
+        if (revived) {
+          setExtraReports((prev) => mergeReportsById(prev, [revived]));
+          if (revived.mine) {
+            setUserReports((prev) => mergeReportsById(prev, [revived]));
+          }
+        }
       });
     })();
 
@@ -2108,6 +2173,8 @@ export function AppProvider({ children }) {
     setShowDiscoveryWall(true);
     setViewAsNeighbor(false);
     workUserBackupRef.current = null;
+    setExtraReports([]);
+    setUserReports([]);
     setActiveTab("home");
     showToast("Odhlášeno. Pro vstup se znovu přihlaste nebo zaregistrujte.", "info");
   }, [showToast]);

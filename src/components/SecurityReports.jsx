@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { SECURITY_REPORTS } from "../data/mockData.js";
 import ReportsModule from "../modules/ReportsModule.jsx";
 import SecurityReportFormModal from "./SecurityReportFormModal.jsx";
 import { useApp } from "../context/AppContext.jsx";
 import { filterSecurityReportsByLocation } from "../data/geoFilter.js";
 import { filterActiveReports, defaultValidityModeForCategory, REPORT_VALIDITY_MODE } from "../data/reportExpiry.js";
+import { reportFromFeedPost } from "../utils/reportPinUtils.js";
+import { mergeReportsById } from "../data/reportsStorage.js";
 import { MODULE_IDS } from "../data/moduleConfig.js";
 import {
   getReportCategory,
@@ -26,6 +28,7 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
     user,
     testRoleId,
     extraReports,
+    userPosts,
     reportedReports,
     addSecurityReport,
     isAdminMode,
@@ -85,7 +88,20 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
     return () => clearInterval(timer);
   }, []);
 
-  const allReportsRaw = [...extraReports, ...SECURITY_REPORTS];
+  const allReportsRaw = useMemo(() => {
+    const fromFeed = (userPosts ?? [])
+      .filter(
+        (p) =>
+          p.fromSecurityReportId ||
+          p.feedSubtype === "hlaseni" ||
+          (String(p.type ?? "").toLowerCase().includes("hlášení") ||
+            String(p.type ?? "").toLowerCase() === "tip")
+      )
+      .map((p) => reportFromFeedPost(p))
+      .filter(Boolean);
+    // extraReports (včetně localStorage) mají přednost před obnovou z feedu
+    return mergeReportsById(SECURITY_REPORTS, fromFeed, extraReports);
+  }, [extraReports, userPosts]);
   const allReportsActive = filterActiveReports(allReportsRaw, nowTick);
   const allReports = filterSecurityReportsByLocation(allReportsActive, activeLocationId, activeLocation);
   const showingCalls = reportsCategoryFilter === REPORTS_CALLS_FILTER_ID;

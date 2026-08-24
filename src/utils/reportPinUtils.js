@@ -65,6 +65,37 @@ export function reportSnapshotFromFeedPost(post) {
   return snapshot;
 }
 
+/**
+ * Plné hlášení z feed postu — obnova mapy/seznamu po refreshi (když extraReports zmizí).
+ */
+export function reportFromFeedPost(post) {
+  const snap = reportSnapshotFromFeedPost(post);
+  if (!snap) return null;
+  const { fromFeedFocus: _ff, ...base } = snap;
+  const createdRaw = post.createdAt;
+  const createdAt =
+    typeof createdRaw === "number"
+      ? new Date(createdRaw).toISOString()
+      : createdRaw
+        ? new Date(createdRaw).toISOString()
+        : new Date().toISOString();
+  return {
+    ...base,
+    role: post.role ?? null,
+    createdAt,
+    expiresAt: post.expiresAt ?? null,
+    untilResolved: post.untilResolved,
+    status: post.status ?? null,
+    validUntil: post.validUntil ?? null,
+    locationId: post.locationId ?? null,
+    municipality: post.municipality ?? null,
+    urgent: Boolean(post.urgent),
+    urgentScope: post.urgentScope ?? null,
+    confirmations: post.confirmations ?? 0,
+    time: post.time ?? (typeof post.meta === "string" ? post.meta : null) ?? "—",
+  };
+}
+
 /** Posune překrývající se špendlíky — zejména vlastní hlášení u špendlíku Domov. */
 export function buildReportDisplayPositions(reports, homeCenter = MAP_CENTER) {
   const positions = new Map();
