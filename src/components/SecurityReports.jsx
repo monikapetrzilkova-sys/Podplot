@@ -7,6 +7,7 @@ import { filterSecurityReportsByLocation } from "../data/geoFilter.js";
 import { filterActiveReports, defaultValidityModeForCategory, REPORT_VALIDITY_MODE } from "../data/reportExpiry.js";
 import { reportFromFeedPost } from "../utils/reportPinUtils.js";
 import { mergeReportsById } from "../data/reportsStorage.js";
+import { isDeletedPost, isDeletedReport } from "../data/deletedContentStorage.js";
 import { MODULE_IDS } from "../data/moduleConfig.js";
 import {
   getReportCategory,
@@ -53,6 +54,7 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
     clearPendingOfficeAction,
     activeTab,
     showToast,
+    deletedContent,
   } = useApp();
 
   const reportsViewMode = moduleViewModes[MODULE_IDS.REPORTS];
@@ -101,11 +103,14 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
           (String(p.type ?? "").toLowerCase().includes("hlášení") ||
             String(p.type ?? "").toLowerCase() === "tip")
       )
+      .filter((p) => !isDeletedPost(p, deletedContent))
       .map((p) => reportFromFeedPost(p))
-      .filter(Boolean);
+      .filter((r) => r && !isDeletedReport(r, deletedContent));
     // extraReports (včetně localStorage) mají přednost před obnovou z feedu
-    return mergeReportsById(SECURITY_REPORTS, fromFeed, extraReports);
-  }, [extraReports, userPosts]);
+    return mergeReportsById(SECURITY_REPORTS, fromFeed, extraReports).filter(
+      (r) => !isDeletedReport(r, deletedContent)
+    );
+  }, [extraReports, userPosts, deletedContent]);
   const allReportsActive = filterActiveReports(allReportsRaw, nowTick);
   const allReports = filterSecurityReportsByLocation(allReportsActive, activeLocationId, activeLocation);
   const showingCalls = reportsCategoryFilter === REPORTS_CALLS_FILTER_ID;

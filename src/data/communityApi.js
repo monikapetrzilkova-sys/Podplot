@@ -521,6 +521,26 @@ export async function publishRemotePost(post, user) {
   return false;
 }
 
+/** Soft-delete / hard-delete vlastního příspěvku v Supabase. */
+export async function deleteRemotePost(postId, userId = null) {
+  if (!postId) return false;
+  const sb = await ensureSupabase();
+  if (!sb) return false;
+
+  let query = sb.from("posts").delete().eq("id", postId);
+  if (userId) query = query.eq("author_id", userId);
+
+  const { error } = await query;
+  if (!error) return true;
+
+  // Fallback bez author filtru (RLS stejně omezí na vlastní)
+  const { error: err2 } = await sb.from("posts").delete().eq("id", postId);
+  if (!err2) return true;
+
+  console.warn("[supabase] delete post", error?.message || err2?.message);
+  return false;
+}
+
 export async function fetchRemotePosts({ municipality = null, limit = 80, currentUserId = null } = {}) {
   const sb = await ensureSupabase();
   if (!sb) return [];

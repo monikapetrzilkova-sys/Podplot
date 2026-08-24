@@ -68,6 +68,16 @@ import {
   persistStoredReports,
   mergeReportsById,
 } from "../data/reportsStorage.js";
+import {
+  loadDeletedContent,
+  persistDeletedContent,
+  emptyDeletedContent,
+  collectDeletionIds,
+  mergeDeletedContent,
+  removeDeletedContentIds,
+  isDeletedPost,
+  isDeletedReport,
+} from "../data/deletedContentStorage.js";
 import { reportFromFeedPost } from "../utils/reportPinUtils.js";
 import { URGENT_SCOPE, URGENT_LOCAL_RADIUS_M, resolveReportDistance, describeUrgentAudience } from "../data/reportUrgency.js";
 import {
@@ -133,6 +143,7 @@ import {
 import {
   upsertRemoteProfile,
   publishRemotePost,
+  deleteRemotePost,
   fetchRemotePosts,
   subscribeRemotePosts,
   rowToFeedPost,
@@ -455,7 +466,8 @@ export function AppProvider({ children }) {
       const session = loadUserSession();
       const uid = session?.user?.id;
       if (!uid) return [];
-      return loadStoredReports(uid).filter((r) => r.mine);
+      const deleted = loadDeletedContent(uid);
+      return loadStoredReports(uid).filter((r) => r.mine && !isDeletedReport(r, deleted));
     } catch {
       return [];
     }
@@ -464,25 +476,56 @@ export function AppProvider({ children }) {
     try {
       const session = loadUserSession();
       const uid = session?.user?.id;
-      return uid ? loadStoredReports(uid) : [];
+      if (!uid) return [];
+      const deleted = loadDeletedContent(uid);
+      return loadStoredReports(uid).filter((r) => !isDeletedReport(r, deleted));
     } catch {
       return [];
     }
   });
+  const [deletedContent, setDeletedContent] = useState(() => {
+    try {
+      const session = loadUserSession();
+      const uid = session?.user?.id;
+      return uid ? loadDeletedContent(uid) : emptyDeletedContent();
+    } catch {
+      return emptyDeletedContent();
+    }
+  });
+  const deletedContentRef = useRef(deletedContent);
+  deletedContentRef.current = deletedContent;
 
   useEffect(() => {
     if (!user?.id) return;
-    const stored = loadStoredReports(user.id);
+    const deleted = loadDeletedContent(user.id);
+    setDeletedContent(deleted);
+    const stored = loadStoredReports(user.id).filter((r) => !isDeletedReport(r, deleted));
     if (!stored.length) return;
-    setExtraReports((prev) => mergeReportsById(stored, prev));
-    setUserReports((prev) => mergeReportsById(stored.filter((r) => r.mine), prev));
+    setExtraReports((prev) =>
+      mergeReportsById(stored, prev).filter((r) => !isDeletedReport(r, deleted))
+    );
+    setUserReports((prev) =>
+      mergeReportsById(
+        stored.filter((r) => r.mine),
+        prev
+      ).filter((r) => r.mine && !isDeletedReport(r, deleted))
+    );
   }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    persistDeletedContent(user.id, deletedContent);
+  }, [user?.id, deletedContent]);
 
   useEffect(() => {
     if (!user?.id) return;
     // Neukládej prázdno hned po mountu dřív, než doběhne merge z feedu — jen když už něco máme
     // nebo když uživatel opravdu smazal všechno (prev !== initial empty po akci).
-    persistStoredReports(user.id, extraReports);
+    const deleted = deletedContentRef.current;
+    persistStoredReports(
+      user.id,
+      (extraReports ?? []).filter((r) => !isDeletedReport(r, deleted))
+    );
   }, [user?.id, extraReports]);
   const [communityGroups, setCommunityGroups] = useState(() => {
     const locId = SKIP_REGISTRATION
@@ -1349,11 +1392,14 @@ export function AppProvider({ children }) {
       );
       if (!cancelled) applyGroupProposalSupports(supports, { notifyNew: false });
 
-      const feedRemote = remote.filter(
-        (p) => !isGroupProposalPost(p) && !isGroupProposalVotePost(p)
-      );
+      const feedRemote = remote
+        .filter((p) => !isGroupProposalPost(p) && !isGroupProposalVotePost(p))
+        .filter((p) => !isDeletedPost(p, deletedContentRef.current));
       setUserPosts((prev) => {
-        const byId = new Map(prev.map((p) => [p.id, p]));
+        const deleted = deletedContentRef.current;
+        const byId = new Map(
+          prev.filter((p) => !isDeletedPost(p, deleted)).map((p) => [p.id, p])
+        );
         for (const p of feedRemote) {
           if (!byId.has(p.id)) byId.set(p.id, p);
         }
@@ -1369,19 +1415,24 @@ export function AppProvider({ children }) {
             (p.type ?? "").toLowerCase() === "tip"
         )
         .map((p) => reportFromFeedPost(p))
-        .filter(Boolean);
+        .filter((r) => r && !isDeletedReport(r, deletedContentRef.current));
       if (revivedReports.length) {
-        setExtraReports((prev) => mergeReportsById(prev, revivedReports));
+        setExtraReports((prev) =>
+          mergeReportsById(prev, revivedReports).filter(
+            (r) => !isDeletedReport(r, deletedContentRef.current)
+          )
+        );
         setUserReports((prev) =>
           mergeReportsById(
             prev,
             revivedReports.filter((r) => r.mine)
-          )
+          ).filter((r) => r.mine && !isDeletedReport(r, deletedContentRef.current))
         );
       }
 
       unsubscribe = await subscribeRemotePosts((row) => {
         const post = rowToFeedPost(row, user.id);
+        if (isDeletedPost(post, deletedContentRef.current)) return;
         const activeMun = activeLocation?.municipality ?? user.geo?.city ?? null;
         if (activeMun && post.municipality && !municipalitiesMatch(post.municipality, activeMun)) {
           return;
@@ -1438,7 +1489,7 @@ export function AppProvider({ children }) {
           return [post, ...prev];
         });
         const revived = reportFromFeedPost(post);
-        if (revived) {
+        if (revived && !isDeletedReport(revived, deletedContentRef.current)) {
           setExtraReports((prev) => mergeReportsById(prev, [revived]));
           if (revived.mine) {
             setUserReports((prev) => mergeReportsById(prev, [revived]));
@@ -2451,7 +2502,31 @@ export function AppProvider({ children }) {
         return { ok: false, error: "not_owner" };
       }
 
-      undoDeleteRef.current = snapshot;
+      const deletionIds = collectDeletionIds({
+        post: snapshot.post ?? null,
+        report: snapshot.report ?? null,
+        postId: snapshot.post?.id ?? null,
+        reportId: snapshot.report?.id ?? null,
+      });
+      if (Array.isArray(snapshot.linkedPosts)) {
+        for (const p of snapshot.linkedPosts) {
+          const extra = collectDeletionIds({ post: p });
+          deletionIds.postIds.push(...extra.postIds);
+          deletionIds.reportIds.push(...extra.reportIds);
+        }
+      }
+      setDeletedContent((prev) => {
+        const next = mergeDeletedContent(prev, deletionIds);
+        deletedContentRef.current = next;
+        if (user?.id) persistDeletedContent(user.id, next);
+        return next;
+      });
+      const remoteIds = [...new Set(deletionIds.postIds)];
+      for (const id of remoteIds) {
+        void deleteRemotePost(id, user.id);
+      }
+
+      undoDeleteRef.current = { ...snapshot, deletionIds };
       showToast(`${label} bylo smazáno.`, "success", {
         durationMs: 5500,
         actionLabel: "Zpět",
@@ -2459,6 +2534,14 @@ export function AppProvider({ children }) {
           const snap = undoDeleteRef.current;
           undoDeleteRef.current = null;
           if (!snap) return;
+          if (snap.deletionIds) {
+            setDeletedContent((prev) => {
+              const next = removeDeletedContentIds(prev, snap.deletionIds);
+              deletedContentRef.current = next;
+              if (user?.id) persistDeletedContent(user.id, next);
+              return next;
+            });
+          }
           if (snap.event) {
             setEvents((prev) =>
               prev.some((e) => e.id === snap.event.id) ? prev : [snap.event, ...prev]
@@ -2478,6 +2561,7 @@ export function AppProvider({ children }) {
             setUserPosts((prev) =>
               prev.some((p) => p.id === snap.post.id) ? prev : [snap.post, ...prev]
             );
+            void publishRemotePost(snap.post, user);
           }
           if (snap.groupPost) {
             setUserGroupPosts((prev) =>
@@ -2508,6 +2592,9 @@ export function AppProvider({ children }) {
               const ids = new Set(prev.map((p) => p.id));
               return [...snap.linkedPosts.filter((p) => !ids.has(p.id)), ...prev];
             });
+            for (const p of snap.linkedPosts) {
+              void publishRemotePost(p, user);
+            }
           }
           if (Array.isArray(snap.prompts) && snap.prompts.length) {
             setMunicipalityPrompts((prev) => {
@@ -6926,9 +7013,11 @@ export function AppProvider({ children }) {
   }, [activeLocationId, activeLocation, listingSaleOrders, user?.id]);
 
   const userPostsForLocation = useMemo(() => {
-    const base = filterByActiveLocation(userPosts, activeLocationId, activeLocation);
+    const base = filterByActiveLocation(userPosts, activeLocationId, activeLocation).filter(
+      (p) => !isDeletedPost(p, deletedContent)
+    );
     return applyListingSaleVisibility(base, listingSaleOrders, user?.id ?? "me");
-  }, [userPosts, activeLocationId, activeLocation, listingSaleOrders, user?.id]);
+  }, [userPosts, activeLocationId, activeLocation, listingSaleOrders, user?.id, deletedContent]);
 
   const neighborHelpForLocation = useMemo(
     () => filterByActiveLocation(neighborHelp, activeLocationId, activeLocation),
@@ -7516,6 +7605,7 @@ export function AppProvider({ children }) {
         reportSecurityReport,
         userReports,
         extraReports,
+        deletedContent,
         addSecurityReport,
         proposedClubs,
         activeClubs,
