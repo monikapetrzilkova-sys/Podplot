@@ -4,6 +4,10 @@ import SponsoredStrip from "./SponsoredStrip.jsx";
 import WorkDashboard from "./WorkDashboard.jsx";
 import BusinessOperationsDashboard from "./BusinessOperationsDashboard.jsx";
 import LunchMenuWidget from "./LunchMenuWidget.jsx";
+import WelcomeCard from "./WelcomeCard.jsx";
+import TrustNeighborHomePrompt from "./TrustNeighborHomePrompt.jsx";
+import NeighborOnboardingChecklist from "./NeighborOnboardingChecklist.jsx";
+import OpenReportsReminder from "./OpenReportsReminder.jsx";
 
 export default function Dashboard() {
   const {
@@ -22,6 +26,10 @@ export default function Dashboard() {
 
   return (
     <div className="pp-page pp-page--doodle flex flex-col min-h-full bg-abstract-organic has-deco pb-20">
+      <WelcomeCard />
+      <NeighborOnboardingChecklist />
+      <OpenReportsReminder />
+      <TrustNeighborHomePrompt />
       {/* Placená propagace nahoře — viditelná hodnota za Partner */}
       <SponsoredStrip />
       <LunchMenuWidget />

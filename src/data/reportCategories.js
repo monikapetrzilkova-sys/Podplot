@@ -20,20 +20,21 @@ export const REPORT_CATEGORIES = [
   { id: "default", label: "Jiné hlášení", shortLabel: "Jiné", typeLabel: "Hlášení" },
 ];
 
-/** Filtry na mapě / v Dění — 2×4; Tipy a Výzvy vždy na konci */
+/** Filtry na mapě / v Dění — Moje hned po Vše; Tipy a Výzvy na konci */
 export const MAP_REPORT_FILTER_CATEGORIES = [
   { id: "all", label: "Vše" },
+  { id: "mine", label: "Moje", filterId: "mine", isMine: true },
   { id: "loss", label: "Ztráta/Nález", filterId: "loss" },
   { id: "animal", label: "Zvíře", filterId: "animal" },
   { id: "damage", label: "Závada", filterId: "damage" },
   { id: "warning", label: "Varování", filterId: "warning" },
-  { id: "default", label: "Jiné", filterId: "default" },
   { id: "tip", label: "Tipy", filterId: "tip", isTip: true },
   { id: "vyzvy", label: "Výzvy", filterId: "vyzvy", isCalls: true },
 ];
 
 export const REPORTS_CALLS_FILTER_ID = "vyzvy";
 export const REPORTS_TIP_CATEGORY_ID = "tip";
+export const REPORTS_MINE_FILTER_ID = "mine";
 
 /** Podtyp u kategorie Ztráta / nález — povinný výběr ve formuláři */
 export const LOSS_KIND_OPTIONS = [
@@ -81,6 +82,9 @@ export function isTipReport(report) {
 export function reportMatchesMapCategoryFilter(report, filterId = "all") {
   if (!filterId || filterId === "all") return true;
   if (filterId === REPORTS_CALLS_FILTER_ID || filterId === "vyzvy") return false;
+  if (filterId === REPORTS_MINE_FILTER_ID || filterId === "mine") {
+    return Boolean(report?.mine);
+  }
 
   const category = resolveReportCategoryId(report);
 

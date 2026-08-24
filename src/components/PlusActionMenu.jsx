@@ -13,8 +13,15 @@ import {
   IconTabNeighbors,
 } from "../data/icons.jsx";
 
-/** Hlavní 3 akce souseda — zbytek pod Další */
+/** Hlavní 3 akce souseda — nejčastější nahoře; zbytek pod Další */
 const NEIGHBOR_PRIMARY = [
+  {
+    id: "report",
+    label: "Nahlásit",
+    hint: "Závada, ztráta nebo tip na mapě",
+    icon: IconAlert,
+    action: "report",
+  },
   {
     id: "offer",
     label: "Nabídnout",
@@ -29,13 +36,6 @@ const NEIGHBOR_PRIMARY = [
     hint: "Výpomoc od lidí v okolí",
     icon: IconTabNeighbors,
     action: "help",
-  },
-  {
-    id: "report",
-    label: "Nahlásit",
-    hint: "Závada, ztráta nebo tip na mapě",
-    icon: IconAlert,
-    action: "report",
   },
 ];
 

@@ -20,6 +20,7 @@ import { getPromptStatusStyle } from "../data/municipalityPrompts.js";
 import { isTipReport, REPORT_TIP_ACCENT } from "../data/reportCategories.js";
 import { reportPinAccentColor } from "../utils/reportPinUtils.js";
 import EditedBadge from "../components/EditedBadge.jsx";
+import ReportLifecycleChip from "../components/ReportLifecycleChip.jsx";
 import { displayCreatorLabel } from "../data/accountTypes.js";
 import { SECURITY_REPORTS } from "../data/mockData.js";
 import { isReportActive } from "../data/reportExpiry.js";
@@ -62,6 +63,7 @@ function ReportListRow({ report, onOpen }) {
               >
                 {report.type}
               </p>
+              <ReportLifecycleChip report={report} />
               <EditedBadge item={report} />
               {report.urgent && (
                 <span className="text-[9px] font-bold uppercase text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
@@ -110,6 +112,7 @@ export default function ReportsModule({
     showModuleItemOnMap,
     extraReports,
     userReports,
+    openMapReport,
   } = useApp();
 
   const [detailReport, setDetailReport] = useState(null);
@@ -274,6 +277,8 @@ export default function ReportsModule({
           }`}
           items={sortedReports}
           emptyMessage="V této kategorii v okruhu zatím žádná hlášení."
+          emptyActionLabel="Nahlásit"
+          onEmptyAction={() => openMapReport?.()}
           renderItem={(report) => (
             <ReportListRow
               key={report.id}

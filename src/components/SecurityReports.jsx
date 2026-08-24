@@ -22,6 +22,8 @@ import MapPickConfirmBar from "./map/MapPickConfirmBar.jsx";
 import { URGENT_SCOPE } from "../data/reportUrgency.js";
 import AppPanelPortal from "./AppPanelPortal.jsx";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
+import { UI_KEYS } from "../data/uiPreferences.js";
+import { useUiPref } from "../hooks/useUiPref.js";
 
 export default function SecurityReports({ reportsCategoryFilter = "all" }) {
   const {
@@ -56,6 +58,8 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
   const reportsViewMode = moduleViewModes[MODULE_IDS.REPORTS];
 
   const isInstitution = testRoleId === "urad" || user?.accountType === "urad" || user?.accountType === "instituce";
+
+  const [recentCategories, setRecentCategories] = useUiPref(UI_KEYS.RECENT_REPORT_CATEGORIES, []);
 
   const [activeForm, setActiveForm] = useState(null);
   /** Výběr místa na mapě před otevřením formuláře */
@@ -297,6 +301,14 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
         validUntil:
           reportValidityMode === REPORT_VALIDITY_MODE.CUSTOM ? reportValidUntil.trim() : null,
       });
+      if (reportCategoryId) {
+        setRecentCategories(
+          [reportCategoryId, ...(recentCategories ?? []).filter((id) => id !== reportCategoryId)].slice(
+            0,
+            3
+          )
+        );
+      }
       resetForms();
     } catch (err) {
       console.error(err);

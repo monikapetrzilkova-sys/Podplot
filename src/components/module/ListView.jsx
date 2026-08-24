@@ -1,42 +1,30 @@
 /** Jednotný seznam s výběrem položky */
 
-
-
 import DoodleEmptyState from "../doodle/DoodleEmptyState.jsx";
 
-
-
 export default function ListView({
-
   items,
-
   renderItem,
-
   emptyMessage = "V tomto okruhu zatím nic není.",
-
   emptyIllustration = "box",
-
+  emptyActionLabel = null,
+  onEmptyAction = null,
   className = "",
-
 }) {
-
   if (items.length === 0) {
-
     return (
-
-      <DoodleEmptyState illustration={emptyIllustration} message={emptyMessage} className={className} />
-
+      <DoodleEmptyState
+        illustration={emptyIllustration}
+        message={emptyMessage}
+        className={className}
+        actionLabel={emptyActionLabel}
+        onAction={onEmptyAction}
+      />
     );
-
   }
 
-
-
   return <div className={`space-y-1.5 ${className}`}>{items.map((item) => renderItem(item))}</div>;
-
 }
-
-
 
 export function ListItemShell({ selected, onShowOnMap, children, id, accentColor, muted = false }) {
   return (
@@ -71,5 +59,3 @@ export function ListItemShell({ selected, onShowOnMap, children, id, accentColor
     </article>
   );
 }
-
-

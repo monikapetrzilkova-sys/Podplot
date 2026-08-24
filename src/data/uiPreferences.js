@@ -9,6 +9,10 @@ export const UI_KEYS = {
   EVENTS_PAST_ARCHIVE_OPEN: "sections.events.pastArchiveOpen",
   CRISIS_ALERT_EXPANDED: "sections.crisisAlert.expanded",
   WELCOME_CARD_DISMISSED: "sections.welcomeCard.dismissed",
+  ONBOARDING_CHECKLIST_DISMISSED: "sections.onboardingChecklist.dismissed",
+  ONBOARDING_MAP_VISITED: "sections.onboardingChecklist.mapVisited",
+  OPEN_REPORT_REMINDER_DISMISSED: "dismissed.openReportReminders",
+  RECENT_REPORT_CATEGORIES: "reports.recentCategories",
   DISMISSED_PROMPT_CALLS: "dismissed.promptCalls",
   DISMISSED_GROUP_PROPOSALS: "dismissed.groupProposals",
 };

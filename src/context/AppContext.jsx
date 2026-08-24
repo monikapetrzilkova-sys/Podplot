@@ -307,6 +307,8 @@ export function AppProvider({ children }) {
   creditsRef.current = credits;
   const [activeTab, setActiveTab] = useState(() => loadSavedActiveTab("home"));
   const [toast, setToast] = useState(null);
+  const [reportSubmitSuccess, setReportSubmitSuccess] = useState(null);
+  const [feedRefreshTick, setFeedRefreshTick] = useState(0);
   const [reservations, setReservations] = useState([]);
   /** Prodeje bazaru: platba v úschově (held) → po „Převzato a zaplaceno“ released */
   const [listingSaleOrders, setListingSaleOrders] = useState([]);
@@ -577,6 +579,8 @@ export function AppProvider({ children }) {
   const chatModalRef = useRef(null);
   chatModalRef.current = chatModal;
   const toastClearRef = useRef(null);
+  const toastActionRef = useRef(null);
+  const undoDeleteRef = useRef(null);
   const notificationPrefsRef = useRef(notificationPrefs);
   notificationPrefsRef.current = notificationPrefs;
   const [craftsmanProfileOpen, setCraftsmanProfileOpen] = useState(null);
@@ -1594,15 +1598,34 @@ export function AppProvider({ children }) {
   const lunchSubscribersCount = 47;
 
   const showToast = useCallback((message, type = "success", options = null) => {
+    toastActionRef.current = options?.onAction ?? null;
     setToast({
       message,
       type,
       locationId: options?.locationId ?? null,
+      actionLabel: options?.actionLabel ?? null,
     });
     const ms = options?.durationMs ?? 3500;
     if (toastClearRef.current) window.clearTimeout(toastClearRef.current);
-    toastClearRef.current = window.setTimeout(() => setToast(null), ms);
+    toastClearRef.current = window.setTimeout(() => {
+      setToast(null);
+      toastActionRef.current = null;
+    }, ms);
   }, []);
+
+  const runToastAction = useCallback(() => {
+    const action = toastActionRef.current;
+    if (toastClearRef.current) window.clearTimeout(toastClearRef.current);
+    setToast(null);
+    toastActionRef.current = null;
+    if (typeof action === "function") action();
+  }, []);
+
+  const softRefreshApp = useCallback(async () => {
+    setFeedRefreshTick((n) => n + 1);
+    setCatalogShuffleSeed(Math.random().toString(36).slice(2));
+    showToast("Obsah obnoven.", "info", { durationMs: 1800 });
+  }, [showToast]);
 
   const notifyLocationRemap = useCallback(
     (locationId, loc) => {
@@ -2267,7 +2290,7 @@ export function AppProvider({ children }) {
     [showToast]
   );
 
-  /** Smazání vlastního příspěvku (inzerát, hlášení, výpomoc, akce…). */
+  /** Smazání vlastního příspěvku (inzerát, hlášení, výpomoc, akce…) — ~5 s Zpět. */
   const deleteOwnPost = useCallback(
     (postId, { kind = null } = {}) => {
       if (!user || !postId) return { ok: false, error: "Nelze smazat." };
@@ -2300,11 +2323,15 @@ export function AppProvider({ children }) {
 
       let removed = false;
       let label = "Příspěvek";
+      /** @type {Record<string, unknown>} */
+      const snapshot = {};
 
       if (kind === "event" || rawId.startsWith("event-")) {
         const eventId = kind === "event" ? normalizedId : normalizedId;
         const ev = events.find((e) => e.id === eventId);
         if (ev && owns(ev)) {
+          snapshot.event = ev;
+          snapshot.wasJoined = (joinedEventIds ?? []).includes(eventId);
           setEvents((prev) => prev.filter((e) => e.id !== eventId));
           setJoinedEventIds((prev) => prev.filter((id) => id !== eventId));
           if (selectedEventId === eventId) setSelectedEventId(null);
@@ -2317,6 +2344,7 @@ export function AppProvider({ children }) {
         const helpId = normalizedId;
         const help = neighborHelp.find((h) => h.id === helpId);
         if (help && owns(help)) {
+          snapshot.help = help;
           setNeighborHelp((prev) => prev.filter((h) => h.id !== helpId));
           removed = true;
           label = "Výpomoc";
@@ -2330,21 +2358,34 @@ export function AppProvider({ children }) {
           null;
         if (post && owns(post)) {
           const pid = post.id;
-          setUserPosts((prev) => prev.filter((p) => p.id !== pid));
-          setUserGroupPosts((prev) => prev.filter((p) => p.id !== pid));
-          setUserLendingItems((prev) =>
-            prev.filter((item) => item.id !== pid && item.fromPostId !== pid)
+          snapshot.post = post;
+          snapshot.groupPost = userGroupPosts.find((p) => p.id === pid) ?? null;
+          const linkedLending = userLendingItems.filter(
+            (item) => item.id === pid || item.fromPostId === pid
           );
+          if (linkedLending.length) snapshot.lendingItems = linkedLending;
           const reportId =
             post.fromSecurityReportId ||
             (String(pid).startsWith("feed-") ? String(pid).slice(5) : null);
           if (reportId) {
+            snapshot.report =
+              userReports.find((r) => r.id === reportId) ??
+              extraReports.find((r) => r.id === reportId) ??
+              null;
+            snapshot.prompts = municipalityPrompts.filter(
+              (p) => p.fromReportId === reportId || p.id === reportId
+            );
             setUserReports((prev) => prev.filter((r) => r.id !== reportId));
             setExtraReports((prev) => prev.filter((r) => r.id !== reportId));
             setMunicipalityPrompts((prev) =>
               prev.filter((p) => p.fromReportId !== reportId && p.id !== reportId)
             );
           }
+          setUserPosts((prev) => prev.filter((p) => p.id !== pid));
+          setUserGroupPosts((prev) => prev.filter((p) => p.id !== pid));
+          setUserLendingItems((prev) =>
+            prev.filter((item) => item.id !== pid && item.fromPostId !== pid)
+          );
           removed = true;
           label =
             post.type === "Hlášení" || post.feedSubtype === "hlaseni"
@@ -2358,6 +2399,7 @@ export function AppProvider({ children }) {
       if (!removed) {
         const help = neighborHelp.find((h) => h.id === rawId || h.id === normalizedId);
         if (help && owns(help)) {
+          snapshot.help = help;
           setNeighborHelp((prev) => prev.filter((h) => h.id !== help.id));
           removed = true;
           label = "Výpomoc";
@@ -2369,6 +2411,8 @@ export function AppProvider({ children }) {
           (item) => item.id === rawId || item.id === normalizedId
         );
         if (lending && owns(lending)) {
+          snapshot.lending = lending;
+          snapshot.post = userPosts.find((p) => p.id === lending.id) ?? null;
           setUserLendingItems((prev) => prev.filter((item) => item.id !== lending.id));
           setUserPosts((prev) => prev.filter((p) => p.id !== lending.id));
           removed = true;
@@ -2382,6 +2426,11 @@ export function AppProvider({ children }) {
           extraReports.find((r) => r.id === rawId || r.id === normalizedId);
         if (report && owns(report)) {
           const rid = report.id;
+          snapshot.report = report;
+          snapshot.linkedPosts = userPosts.filter(
+            (p) => p.fromSecurityReportId === rid || p.id === `feed-${rid}` || p.id === rid
+          );
+          snapshot.prompts = municipalityPrompts.filter((p) => p.fromReportId === rid);
           setUserReports((prev) => prev.filter((r) => r.id !== rid));
           setExtraReports((prev) => prev.filter((r) => r.id !== rid));
           setUserPosts((prev) =>
@@ -2402,7 +2451,73 @@ export function AppProvider({ children }) {
         return { ok: false, error: "not_owner" };
       }
 
-      showToast(`${label} bylo smazáno.`, "success");
+      undoDeleteRef.current = snapshot;
+      showToast(`${label} bylo smazáno.`, "success", {
+        durationMs: 5500,
+        actionLabel: "Zpět",
+        onAction: () => {
+          const snap = undoDeleteRef.current;
+          undoDeleteRef.current = null;
+          if (!snap) return;
+          if (snap.event) {
+            setEvents((prev) =>
+              prev.some((e) => e.id === snap.event.id) ? prev : [snap.event, ...prev]
+            );
+            if (snap.wasJoined) {
+              setJoinedEventIds((prev) =>
+                prev.includes(snap.event.id) ? prev : [...prev, snap.event.id]
+              );
+            }
+          }
+          if (snap.help) {
+            setNeighborHelp((prev) =>
+              prev.some((h) => h.id === snap.help.id) ? prev : [snap.help, ...prev]
+            );
+          }
+          if (snap.post) {
+            setUserPosts((prev) =>
+              prev.some((p) => p.id === snap.post.id) ? prev : [snap.post, ...prev]
+            );
+          }
+          if (snap.groupPost) {
+            setUserGroupPosts((prev) =>
+              prev.some((p) => p.id === snap.groupPost.id) ? prev : [snap.groupPost, ...prev]
+            );
+          }
+          if (snap.lending) {
+            setUserLendingItems((prev) =>
+              prev.some((i) => i.id === snap.lending.id) ? prev : [snap.lending, ...prev]
+            );
+          }
+          if (Array.isArray(snap.lendingItems)) {
+            setUserLendingItems((prev) => {
+              const ids = new Set(prev.map((i) => i.id));
+              return [...snap.lendingItems.filter((i) => !ids.has(i.id)), ...prev];
+            });
+          }
+          if (snap.report) {
+            setUserReports((prev) =>
+              prev.some((r) => r.id === snap.report.id) ? prev : [snap.report, ...prev]
+            );
+            setExtraReports((prev) =>
+              prev.some((r) => r.id === snap.report.id) ? prev : [snap.report, ...prev]
+            );
+          }
+          if (Array.isArray(snap.linkedPosts)) {
+            setUserPosts((prev) => {
+              const ids = new Set(prev.map((p) => p.id));
+              return [...snap.linkedPosts.filter((p) => !ids.has(p.id)), ...prev];
+            });
+          }
+          if (Array.isArray(snap.prompts) && snap.prompts.length) {
+            setMunicipalityPrompts((prev) => {
+              const ids = new Set(prev.map((p) => p.id));
+              return [...snap.prompts.filter((p) => !ids.has(p.id)), ...prev];
+            });
+          }
+          showToast("Smazání bylo vráceno.", "success", { durationMs: 2500 });
+        },
+      });
       return { ok: true };
     },
     [
@@ -2414,6 +2529,8 @@ export function AppProvider({ children }) {
       userLendingItems,
       userReports,
       extraReports,
+      municipalityPrompts,
+      joinedEventIds,
       selectedEventId,
       showToast,
     ]
@@ -3317,15 +3434,37 @@ export function AppProvider({ children }) {
           `Urgentní hlášení v okolí místa (cca ${URGENT_LOCAL_RADIUS_M} m). Plné SOS mohou vydat úřad nebo admin.`,
           "info"
         );
-      } else if (alsoAsPrompt) {
-        showToast("Hlášení je na mapě, v živém dění a u úřadu jako podnět.");
-      } else {
-        showToast("Hlášení je na mapě a nahoře v živém sousedském dění.");
       }
-      goToHomeWall();
+
+      setReportSubmitSuccess({
+        reportId: report.id,
+        alsoAsPrompt: Boolean(alsoAsPrompt),
+        isTip,
+        mapPos: report.mapPos,
+      });
     },
-    [user, showToast, isAdminMode, activeLocation, activeLocationId, reportsMapRadiusKm, goToHomeWall]
+    [user, showToast, isAdminMode, activeLocation, activeLocationId, reportsMapRadiusKm]
   );
+
+  const dismissReportSubmitSuccess = useCallback(
+    (goHome = true) => {
+      setReportSubmitSuccess(null);
+      if (goHome) goToHomeWall();
+    },
+    [goToHomeWall]
+  );
+
+  const viewReportFromSubmitSuccess = useCallback(() => {
+    const payload = reportSubmitSuccess;
+    setReportSubmitSuccess(null);
+    if (payload?.reportId) {
+      openReportOnMapFromHome(payload.reportId, {
+        category: payload.isTip ? "tip" : "all",
+      });
+    } else {
+      goToHomeWall();
+    }
+  }, [reportSubmitSuccess, openReportOnMapFromHome, goToHomeWall]);
 
   const submitMunicipalityPrompt = useCallback(
     ({ title, body, mapPos = null, callId = null }) => {
@@ -7291,6 +7430,12 @@ export function AppProvider({ children }) {
         clearMapFocus,
         confirmLendingReturn,
         toast,
+        runToastAction,
+        softRefreshApp,
+        feedRefreshTick,
+        reportSubmitSuccess,
+        dismissReportSubmitSuccess,
+        viewReportFromSubmitSuccess,
         showToast,
         rentItem,
         buyListing,

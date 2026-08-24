@@ -18,8 +18,13 @@ export default function usePullToRefresh(scrollRef, { enabled = true, onRefresh 
     setRefreshing(true);
     setPull(THRESHOLD);
     try {
-      if (onRefresh) await onRefresh();
-      else window.location.reload();
+      if (onRefresh) {
+        await onRefresh();
+        setRefreshing(false);
+        setPull(0);
+      } else {
+        window.location.reload();
+      }
     } catch {
       setRefreshing(false);
       setPull(0);

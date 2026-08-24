@@ -761,6 +761,11 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                 ) : null}
               </div>
               <p className="text-[11px] text-stone-500 truncate mt-0.5">{user.email}</p>
+              <p className="text-[11px] text-[#3D7A68] mt-1 leading-snug">
+                {user.isVerified || isCommunityVerified
+                  ? "Ověřený soused — ostatní vám snáz důvěřují."
+                  : "Získejte ověření od 3 sousedů — vyšší důvěra v okolí."}
+              </p>
               <div className="flex flex-wrap items-center gap-2 mt-1.5">
                 <button
                   type="button"

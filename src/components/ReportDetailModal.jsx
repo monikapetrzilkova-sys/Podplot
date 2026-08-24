@@ -12,12 +12,13 @@ import { getPromptStatusStyle } from "../data/municipalityPrompts.js";
 import { isTipReport, REPORT_TIP_ACCENT } from "../data/reportCategories.js";
 import { hasReportMapPosition, reportPinAccentColor } from "../utils/reportPinUtils.js";
 import EditedBadge from "./EditedBadge.jsx";
+import ReportLifecycleChip from "./ReportLifecycleChip.jsx";
 import ContentEditModal from "./ContentEditModal.jsx";
 import { useApp } from "../context/AppContext.jsx";
 import MapComponent from "./module/MapComponent.jsx";
 
 export default function ReportDetailModal({ report, onClose, onReport }) {
-  const { updateSecurityReport, resolveSecurityReport, activeLocation, user } = useApp();
+  const { updateSecurityReport, resolveSecurityReport, activeLocation, user, showToast } = useApp();
   const [editOpen, setEditOpen] = useState(false);
 
   if (!report) return null;
@@ -86,6 +87,7 @@ export default function ReportDetailModal({ report, onClose, onReport }) {
                   <h3 className="text-base font-bold" style={{ color: titleColor }}>
                     {report.type}
                   </h3>
+                  <ReportLifecycleChip report={report} />
                   <EditedBadge item={report} />
                   {report.urgent && (
                     <>
@@ -130,6 +132,64 @@ export default function ReportDetailModal({ report, onClose, onReport }) {
                       Označit jako vyřešené
                     </button>
                   ) : null}
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const url = `${window.location.origin}${window.location.pathname}?report=${encodeURIComponent(report.id)}`;
+                      try {
+                        if (navigator.share) {
+                          await navigator.share({
+                            title: report.type || "Hlášení Podplot",
+                            text: report.body || "",
+                            url,
+                          });
+                        } else if (navigator.clipboard?.writeText) {
+                          await navigator.clipboard.writeText(url);
+                          showToast?.("Odkaz na hlášení zkopírován.", "success");
+                        } else {
+                          showToast?.("Sdílení v tomto prohlížeči není dostupné.", "info");
+                        }
+                      } catch (err) {
+                        if (err?.name === "AbortError") return;
+                        try {
+                          await navigator.clipboard?.writeText(url);
+                          showToast?.("Odkaz na hlášení zkopírován.", "success");
+                        } catch {
+                          showToast?.("Odkaz se nepodařilo sdílet.", "error");
+                        }
+                      }
+                    }}
+                    className="text-xs font-semibold text-stone-600 border border-stone-200 bg-white px-3 py-1.5 rounded-xl hover:bg-stone-50"
+                  >
+                    Sdílet odkaz
+                  </button>
+                </div>
+              )}
+              {!report.mine && (
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const url = `${window.location.origin}${window.location.pathname}?report=${encodeURIComponent(report.id)}`;
+                      try {
+                        if (navigator.share) {
+                          await navigator.share({
+                            title: report.type || "Hlášení Podplot",
+                            text: report.body || "",
+                            url,
+                          });
+                        } else if (navigator.clipboard?.writeText) {
+                          await navigator.clipboard.writeText(url);
+                          showToast?.("Odkaz na hlášení zkopírován.", "success");
+                        }
+                      } catch (err) {
+                        if (err?.name === "AbortError") return;
+                      }
+                    }}
+                    className="text-xs font-semibold text-stone-600 border border-stone-200 bg-white px-3 py-1.5 rounded-xl hover:bg-stone-50"
+                  >
+                    Sdílet odkaz
+                  </button>
                 </div>
               )}
             </div>

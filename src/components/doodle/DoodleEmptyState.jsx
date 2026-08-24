@@ -5,6 +5,8 @@ export default function DoodleEmptyState({
   illustration = "chat",
   message = "Zatím tu nic není.",
   className = "",
+  actionLabel = null,
+  onAction = null,
 }) {
   const Illustration = DOODLE_EMPTY_ILLUSTRATIONS[illustration] ?? DOODLE_EMPTY_ILLUSTRATIONS.chat;
   const large = illustration === "neighborEvent";
@@ -13,6 +15,15 @@ export default function DoodleEmptyState({
     <div className={`pp-doodle-empty flex flex-col items-center justify-center py-8 px-4 ${className}`}>
       <Illustration className={`pp-doodle-empty-art mb-3 ${large ? "pp-doodle-empty-art--lg" : ""}`} />
       <p className="text-sm text-center font-medium text-[#3D7A68]/80 max-w-xs leading-relaxed">{message}</p>
+      {actionLabel && onAction ? (
+        <button
+          type="button"
+          onClick={onAction}
+          className="mt-4 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-[#3D7A68] hover:bg-[#346859]"
+        >
+          {actionLabel}
+        </button>
+      ) : null}
     </div>
   );
 }

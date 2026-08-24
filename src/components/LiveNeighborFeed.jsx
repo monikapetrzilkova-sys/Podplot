@@ -1,8 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import FeedCard from "./FeedCard.jsx";
 import LiveFeedCard, { getListingBadge } from "./LiveFeedCard.jsx";
 import HelpFeedActions from "./HelpFeedActions.jsx";
+import DoodleEmptyState from "./doodle/DoodleEmptyState.jsx";
+import FeedSkeleton from "./FeedSkeleton.jsx";
 import { extractDistanceFromMeta, extractListingPrice } from "./CompactListingRow.jsx";
 import {
   isThingsModuleListing,
@@ -76,6 +78,8 @@ export default function LiveNeighborFeed() {
     reportPost,
     deleteOwnPost,
     showToast,
+    openMapReport,
+    openCreateHelp,
     getUsefulCount,
     getSearchHelpCount,
     getHelpOffers,
@@ -84,6 +88,12 @@ export default function LiveNeighborFeed() {
     extraReports,
     userReports,
   } = useApp();
+
+  const [showSkeleton, setShowSkeleton] = useState(true);
+  useEffect(() => {
+    const t = window.setTimeout(() => setShowSkeleton(false), 420);
+    return () => window.clearTimeout(t);
+  }, []);
 
   const reportGeneric = () => showToast("Děkujeme za nahlášení.", "info");
 
@@ -295,7 +305,40 @@ export default function LiveNeighborFeed() {
     );
   }, [items, globalSearchQuery]);
 
-  if (filteredItems.length === 0) return null;
+  if (filteredItems.length === 0) {
+    if (showSkeleton) {
+      return (
+        <section className="px-4 pt-2 pb-3 shrink-0">
+          <h2 className="text-xs font-bold uppercase tracking-widest mb-2 text-[#3D7A68]">
+            Živé dění v okolí
+          </h2>
+          <FeedSkeleton rows={3} className="px-0" />
+        </section>
+      );
+    }
+    return (
+      <section className="px-4 pt-2 pb-3 shrink-0">
+        <h2 className="text-xs font-bold uppercase tracking-widest mb-2 text-[#3D7A68]">
+          Živé dění v okolí
+        </h2>
+        <DoodleEmptyState
+          illustration="chat"
+          message="V okolí zatím nic nového. Buďte první — nahlaste tip nebo požádejte o pomoc."
+          actionLabel="Nahlásit"
+          onAction={() => openMapReport?.()}
+        />
+        <div className="flex justify-center mt-1">
+          <button
+            type="button"
+            onClick={() => openCreateHelp?.()}
+            className="text-xs font-semibold text-[#3D7A68] hover:underline"
+          >
+            Nebo požádat o pomoc
+          </button>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="px-4 pt-2 pb-3 shrink-0">

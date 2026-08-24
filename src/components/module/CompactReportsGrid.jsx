@@ -34,6 +34,20 @@ function ReportFilterIcon({ id, className = "w-[18px] h-[18px]" }) {
     );
   }
 
+  if (id === "mine") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+        <circle cx="12" cy="8" r="3.2" stroke="currentColor" strokeWidth="1.5" />
+        <path
+          d="M5.5 19c1.2-3.2 3.4-4.8 6.5-4.8S17.3 15.8 18.5 19"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+      </svg>
+    );
+  }
+
   const cat = getReportCategory(id);
   return (
     <ReportPinIcon

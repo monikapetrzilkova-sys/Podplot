@@ -29,6 +29,7 @@ import ProfileHintModal from "./components/ProfileHintModal.jsx";
 import PlaceSuggestionModal from "./components/entity/PlaceSuggestionModal.jsx";
 import HomeEventGalleryOverlay from "./components/HomeEventGalleryOverlay.jsx";
 import LocationAccessPrompt from "./components/LocationAccessPrompt.jsx";
+import ReportSubmitSuccessSheet from "./components/ReportSubmitSuccessSheet.jsx";
 
 import BusinessAdsPage from "./components/BusinessAdsPage.jsx";
 import GlobalSearchResults from "./components/GlobalSearchResults.jsx";
@@ -39,7 +40,7 @@ import { APP_ROLES } from "./data/userRoles.js";
 import usePullToRefresh, { PullToRefreshIndicator } from "./hooks/usePullToRefresh.jsx";
 
 function Toast() {
-  const { toast } = useApp();
+  const { toast, runToastAction } = useApp();
   if (!toast) return null;
 
   const bg = {
@@ -52,9 +53,13 @@ function Toast() {
     ? LOCATION_DOODLE_ICONS[toast.locationId] ?? LOCATION_DOODLE_ICONS.domov
     : null;
 
+  const hasAction = Boolean(toast.actionLabel && runToastAction);
+
   return (
     <div
-      className="fixed bottom-24 left-4 right-4 max-w-md mx-auto z-[100] px-4 py-3.5 rounded-2xl text-sm font-medium shadow-lg text-white flex items-center gap-2.5 pointer-events-none"
+      className={`fixed bottom-24 left-4 right-4 max-w-md mx-auto z-[100] px-4 py-3.5 rounded-2xl text-sm font-medium shadow-lg text-white flex items-center gap-2.5 ${
+        hasAction ? "pointer-events-auto" : "pointer-events-none"
+      }`}
       style={bg[toast.type] ?? bg.info}
       role="status"
       aria-live="polite"
@@ -64,15 +69,26 @@ function Toast() {
           <LocIcon className="w-4 h-4" />
         </span>
       )}
-      <span className="min-w-0 leading-snug">{toast.message}</span>
+      <span className="min-w-0 leading-snug flex-1">{toast.message}</span>
+      {hasAction ? (
+        <button
+          type="button"
+          onClick={() => runToastAction()}
+          className="shrink-0 text-xs font-bold uppercase tracking-wide px-2.5 py-1.5 rounded-lg bg-white/20 hover:bg-white/30"
+        >
+          {toast.actionLabel}
+        </button>
+      ) : null}
     </div>
   );
 }
 
 function MainScroll({ children, fill = false }) {
   const scrollRef = useRef(null);
+  const { softRefreshApp } = useApp();
   const { pull, refreshing, threshold } = usePullToRefresh(scrollRef, {
     enabled: !fill,
+    onRefresh: softRefreshApp,
   });
 
   return (
@@ -269,6 +285,7 @@ function GlobalModals() {
         onConfirm={confirmPendingPayment}
       />
       <SosOverlay />
+      <ReportSubmitSuccessSheet />
       <ProfileHintModal
         open={!!profileHint}
         variant={profileHint?.variant}
@@ -280,7 +297,7 @@ function GlobalModals() {
 }
 
 export default function AppShell() {
-  const { user, passwordRecovery } = useApp();
+  const { user, passwordRecovery, openReportOnMapFromHome } = useApp();
   /** Telefonní rámeček jen na desktopu s myší — telefony/touch vždy full-bleed */
   const [desktopFrame, setDesktopFrame] = useState(false);
 
@@ -291,6 +308,23 @@ export default function AppShell() {
     mq.addEventListener("change", sync);
     return () => mq.removeEventListener("change", sync);
   }, []);
+
+  useEffect(() => {
+    if (!user) return undefined;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const reportId = params.get("report");
+      if (!reportId) return undefined;
+      openReportOnMapFromHome?.(reportId);
+      params.delete("report");
+      const next = params.toString();
+      const url = `${window.location.pathname}${next ? `?${next}` : ""}${window.location.hash || ""}`;
+      window.history.replaceState({}, "", url);
+    } catch {
+      /* ignore */
+    }
+    return undefined;
+  }, [user, openReportOnMapFromHome]);
 
   if (!user || passwordRecovery) {
     return (
