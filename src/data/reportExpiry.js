@@ -111,6 +111,35 @@ export function getReportLifecycleBadge(report, now = Date.now()) {
   return { id: "open", label: "Aktivní", tone: "active" };
 }
 
+/** Jak dlouho ještě držet vypršelá / vyřešená hlášení v profilu (Moje hlášení). */
+export const REPORT_PROFILE_RETENTION_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Vlastní přehled v profilu — aktivní vždy; po vypršení/vyřešení ještě ~1 den, pak pryč.
+ */
+export function isReportVisibleInOwnerProfile(report, now = Date.now()) {
+  if (!report) return false;
+  const r = normalizeReportValidity(report);
+  if (isReportActive(r, now)) return true;
+
+  if (isReportResolved(r)) {
+    const resolvedAt = r.resolvedAt ? new Date(r.resolvedAt).getTime() : NaN;
+    if (!Number.isFinite(resolvedAt)) return false;
+    return now < resolvedAt + REPORT_PROFILE_RETENTION_MS;
+  }
+
+  const expiresAt =
+    r.expiresAt ??
+    computeExpiresAt(r.createdAt ?? new Date(now).toISOString(), r.validUntil, {
+      untilResolved: false,
+    });
+  if (!expiresAt) return false;
+  const ts = new Date(expiresAt).getTime();
+  if (Number.isNaN(ts)) return false;
+  // ještě v „grace“ okně po expiraci
+  return now >= ts && now < ts + REPORT_PROFILE_RETENTION_MS;
+}
+
 /** Normalizace mock / starých záznamů */
 export function normalizeReportValidity(report) {
   if (!report) return report;

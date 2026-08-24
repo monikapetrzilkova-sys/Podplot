@@ -19,7 +19,8 @@ import { MIN_PASSWORD_LENGTH } from "../data/authApi.js";
 import { isThingsModuleListing, isCommunityAnnouncementPost } from "../utils/thingsModule.js";
 import { MODULE_IDS } from "../data/moduleConfig.js";
 import ReportDetailModal from "./ReportDetailModal.jsx";
-import { getReportLifecycleBadge } from "../data/reportExpiry.js";
+import { getReportLifecycleBadge, isReportVisibleInOwnerProfile, normalizeReportValidity } from "../data/reportExpiry.js";
+import { formatContentAge } from "../data/czechDateTime.js";
 import FeedCard from "./FeedCard.jsx";
 import GroupProposalCard from "./GroupProposalCard.jsx";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
@@ -622,7 +623,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
         type: r.type,
         body: r.body,
         time: r.time ?? "—",
-        report: r,
+        report: normalizeReportValidity(r),
       });
     }
     for (const r of extraReports ?? []) {
@@ -632,7 +633,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
         type: r.type,
         body: r.body,
         time: r.time ?? "—",
-        report: r,
+        report: normalizeReportValidity(r),
       });
     }
     for (const p of userPosts) {
@@ -644,7 +645,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
       if (!isReport) continue;
       const id = p.fromSecurityReportId || p.id;
       if (byId.has(id) || byId.has(p.id)) continue;
-      const report = {
+      const report = normalizeReportValidity({
         id,
         type: p.title || p.type || "Hlášení",
         body: p.body || "",
@@ -661,7 +662,12 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
         accountType: p.accountType,
         reportCategoryId: p.reportCategoryId ?? null,
         urgent: Boolean(p.urgent),
-      };
+        expiresAt: p.expiresAt ?? null,
+        untilResolved: p.untilResolved ?? false,
+        status: p.status ?? null,
+        validUntil: p.validUntil ?? null,
+        resolvedAt: p.resolvedAt ?? null,
+      });
       remember(id, {
         id,
         type: report.type,
@@ -670,7 +676,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
         report,
       });
     }
-    return [...byId.values()];
+    return [...byId.values()].filter((item) => isReportVisibleInOwnerProfile(item.report));
   })();
 
   const openListingOnMap = (post) => {
@@ -1336,7 +1342,9 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                 </div>
                 <p className="text-xs font-bold text-stone-800">{r.type}</p>
                 <p className="text-sm text-stone-600 mt-1">{r.body}</p>
-                <p className="text-xs text-stone-400 mt-2">{r.time}</p>
+                <p className="text-xs text-stone-400 mt-2">
+                  {formatContentAge(r.report) || r.time}
+                </p>
               </button>
               );
             })}
