@@ -115,6 +115,65 @@ export function nowCzechTime() {
   return formatCzechTime(new Date());
 }
 
+/** Timestamp z ISO / Date / ms (nebo s). */
+export function toTimestamp(value) {
+  if (value == null || value === "") return null;
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value < 1e12 ? value * 1000 : value;
+  }
+  if (value instanceof Date) {
+    const t = value.getTime();
+    return Number.isNaN(t) ? null : t;
+  }
+  const n = Date.parse(String(value));
+  return Number.isFinite(n) ? n : null;
+}
+
+function czechDayPhrase(days) {
+  if (days === 1) return "před 1 dnem";
+  if (days >= 2 && days <= 4) return `před ${days} dny`;
+  return `před ${days} dní`;
+}
+
+/**
+ * Relativní stáří pro feed / hlášení — ať sousedé poznají aktuálnost.
+ * např. právě teď · před 12 min · před 3 h · včera 14:30 · před 5 dní · 12. 8. · 09:15
+ */
+export function formatRelativeTimeCs(value, now = Date.now()) {
+  const t = toTimestamp(value);
+  if (t == null) return null;
+  const diffMs = now - t;
+  if (diffMs < -60_000) {
+    return formatCzechDateTime(t);
+  }
+  const sec = Math.floor(Math.max(0, diffMs) / 1000);
+  if (sec < 45) return "právě teď";
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `před ${min} min`;
+  const hours = Math.floor(min / 60);
+  if (hours < 24) return hours === 1 ? "před 1 h" : `před ${hours} h`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return `včera ${formatCzechTime(t)}`;
+  if (days < 7) return czechDayPhrase(days);
+  return `${formatCzechDate(t, { year: false })} · ${formatCzechTime(t)}`;
+}
+
+/** Vezme createdAt z položky; jinak statický time/meta fallback. */
+export function formatContentAge(item, now = Date.now()) {
+  if (!item) return null;
+  const t =
+    toTimestamp(item.createdAt) ??
+    toTimestamp(item.created_at) ??
+    toTimestamp(item.postedAt) ??
+    null;
+  if (t != null) return formatRelativeTimeCs(t, now);
+  const fallback = item.time || item.postedAtLabel || null;
+  if (fallback && /před|právě|včera/i.test(String(fallback))) {
+    return String(fallback).trim();
+  }
+  return null;
+}
+
 export function minDateInputValue(date = new Date()) {
   const d = new Date(date);
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset());

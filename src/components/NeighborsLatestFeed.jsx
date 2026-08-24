@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import FeedCard from "./FeedCard.jsx";
 import LiveFeedCard, { getListingBadge, getNeighborSectionBadge } from "./LiveFeedCard.jsx";
@@ -9,6 +9,7 @@ import { isThingsModuleListing } from "../utils/thingsModule.js";
 import { getRecentGroupPosts, getGroup } from "../data/groups.js";
 import { displayCreatorLabel } from "../data/accountTypes.js";
 import { feedItemNeedsExpand } from "./feed/feedExpand.js";
+import { formatContentAge } from "../data/czechDateTime.js";
 
 const SECTION_LABELS = {
   veci: "Věci",
@@ -50,6 +51,12 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
     reportPost,
     deleteOwnPost,
   } = useApp();
+
+  const [nowTick, setNowTick] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowTick(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const items = useMemo(() => {
     const veci = [...userPostsForLocation, ...feedPostsForLocation]
@@ -191,6 +198,7 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
                 badgeClassName={item.badgeClassName}
                 title={item.title}
                 authorLabel={item.authorLabel}
+                timeLabel={formatContentAge(item.post || item.help || item.event || item, nowTick)}
                 preview={
                   item.preview &&
                   String(item.preview).trim() !== String(item.title ?? "").trim()
@@ -229,6 +237,7 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
                 title={item.title}
                 authorLabel={item.authorLabel}
                 preview={item.preview}
+                timeLabel={formatContentAge(item.help || item, nowTick)}
                 expandable={helpNeedsExpand}
                 mine={Boolean(item.mine)}
                 onDelete={
@@ -264,6 +273,7 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
                 title={item.title}
                 authorLabel={item.authorLabel}
                 preview={item.preview || item.meta}
+                timeLabel={formatContentAge(item.post || item, nowTick)}
                 editedItem={item.post}
                 priceLabel={item.price}
                 mine={Boolean(item.post?.mine || item.mine)}
@@ -290,6 +300,7 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
                 title={item.title}
                 authorLabel={item.authorLabel}
                 preview={item.preview}
+                timeLabel={formatContentAge(item.event || item, nowTick)}
                 ctaLabel="Detail akce"
                 mine={Boolean(item.mine)}
                 onDelete={

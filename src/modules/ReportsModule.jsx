@@ -24,6 +24,7 @@ import ReportLifecycleChip from "../components/ReportLifecycleChip.jsx";
 import { displayCreatorLabel } from "../data/accountTypes.js";
 import { SECURITY_REPORTS } from "../data/mockData.js";
 import { isReportActive } from "../data/reportExpiry.js";
+import { formatContentAge } from "../data/czechDateTime.js";
 
 function OfficeStatusBadge({ report }) {
   if (!report?.officeStatus || report.officeStatus === "new") return null;
@@ -39,10 +40,11 @@ function OfficeStatusBadge({ report }) {
 function ReportListRow({ report, onOpen }) {
   const publicNote = (report.publicOfficeNotes ?? []).at(-1);
   const creator = displayCreatorLabel(report.author, report.accountType, { mine: report.mine });
+  const age = formatContentAge(report);
   const meta = [
     creator,
     report.distance,
-    report.time,
+    age || report.time,
     report.urgent && getUrgentReachLabel(report) ? getUrgentReachLabel(report) : null,
     report.body,
   ]

@@ -6,6 +6,7 @@ import HelpFeedActions from "./HelpFeedActions.jsx";
 import DoodleEmptyState from "./doodle/DoodleEmptyState.jsx";
 import FeedSkeleton from "./FeedSkeleton.jsx";
 import { extractDistanceFromMeta, extractListingPrice } from "./CompactListingRow.jsx";
+import { formatContentAge } from "../data/czechDateTime.js";
 import {
   isThingsModuleListing,
   isCommunityAnnouncementPost,
@@ -90,12 +91,19 @@ export default function LiveNeighborFeed() {
   } = useApp();
 
   const [showSkeleton, setShowSkeleton] = useState(true);
+  const [nowTick, setNowTick] = useState(() => Date.now());
   useEffect(() => {
     const t = window.setTimeout(() => setShowSkeleton(false), 420);
     return () => window.clearTimeout(t);
   }, []);
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowTick(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const reportGeneric = () => showToast("Děkujeme za nahlášení.", "info");
+
+  const ageFor = (source) => formatContentAge(source, nowTick);
 
   const items = useMemo(() => {
     const reportById = new Map();
@@ -356,6 +364,7 @@ export default function LiveNeighborFeed() {
                 badgeClassName="pp-badge--akce"
                 title={item.title}
                 preview={item.subtitle || null}
+                timeLabel={ageFor(item)}
                 onReport={reportGeneric}
                 expandable={false}
                 onSummaryClick={() => openEventGalleryFromFeed(item.activityId, item.eventId)}
@@ -377,6 +386,7 @@ export default function LiveNeighborFeed() {
                   mine: item.mine,
                 })}
                 preview={item.subtitle || null}
+                timeLabel={ageFor(ev || item)}
                 mine={Boolean(item.mine)}
                 onDelete={
                   item.mine
@@ -433,6 +443,7 @@ export default function LiveNeighborFeed() {
                 badgeClassName="pp-badge--hlaseni"
                 title={item.title}
                 preview={item.body}
+                timeLabel={ageFor(item.newsItem || item)}
                 editedItem={item.newsItem}
                 onReport={reportGeneric}
                 expandable={newsNeedsExpand}
@@ -460,6 +471,7 @@ export default function LiveNeighborFeed() {
                   mine: item.mine,
                 })}
                 preview={item.body}
+                timeLabel={ageFor(item)}
                 onReport={item.mine ? undefined : reportGeneric}
                 onDelete={
                   item.mine ? () => deleteOwnPost(item.helpId, { kind: "help" }) : undefined
@@ -519,6 +531,7 @@ export default function LiveNeighborFeed() {
                   mine: post.mine,
                 })}
                 distanceLabel={[distance, placeLabel].filter(Boolean).join(" · ") || null}
+                timeLabel={ageFor(post)}
                 preview={post.body}
                 editedItem={post}
                 onReport={
@@ -552,6 +565,7 @@ export default function LiveNeighborFeed() {
                   mine: item.post?.mine,
                 })}
                 preview={listingPreview(item.post, item.title)}
+                timeLabel={ageFor(item.post || item)}
                 priceLabel={item.price}
                 editedItem={item.post}
                 onReport={
@@ -584,6 +598,7 @@ export default function LiveNeighborFeed() {
                 mine: item.post?.mine,
               })}
               preview={listingPreview(item.post, item.title)}
+              timeLabel={ageFor(item.post || item)}
               statusLabel={item.reserved ? "V rezervaci" : null}
               priceLabel={item.reserved ? null : item.price}
               editedItem={item.post}

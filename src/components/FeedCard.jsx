@@ -23,11 +23,20 @@ import { ACTION_BTN } from "./PostInteractions.jsx";
 import { topicFromPost, topicFromGroupPost } from "../data/chatTopics.js";
 import GroupPostComments from "./GroupPostComments.jsx";
 import { isGroupBoardDiscussionPost } from "../data/groups.js";
+import { formatContentAge } from "../data/czechDateTime.js";
 
 function extractDistance(meta) {
   if (!meta) return null;
   const m = meta.match(/^(\d+\s*m|celá obec)/);
   return m ? m[1] : null;
+}
+
+function stripTimeFromMeta(meta) {
+  if (!meta) return null;
+  return String(meta)
+    .replace(/\s*·\s*(právě teď|před\s+\d+\s*(min|h|dny?|dní)|včera(?:\s+\d{1,2}:\d{2})?)/gi, "")
+    .replace(/^(právě teď|před\s+\d+\s*(min|h|dny?|dní)|včera(?:\s+\d{1,2}:\d{2})?)\s*·\s*/gi, "")
+    .trim() || null;
 }
 
 function useListingSaleState(post) {
@@ -159,6 +168,14 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
   const isGroupDiscussion = isGroupBoardDiscussionPost(post);
   const messageTopic = isGroupDiscussion ? topicFromGroupPost(post) : topicFromPost(post);
   const distance = extractDistance(post.meta);
+  const ageLabel = formatContentAge(post);
+  const metaRest = stripTimeFromMeta(
+    post.mine ? post.meta : post.meta?.replace(/^\d+\s*m\s*·\s*/, "") ?? post.meta
+  );
+  const metaLine = [!post.mine ? distance : null, ageLabel, metaRest]
+    .filter(Boolean)
+    .filter((part, idx, arr) => arr.indexOf(part) === idx)
+    .join(" · ");
   const searchHighlight = isSearchHighlighted(post.id);
   const isListingEdit =
     post.mine &&
@@ -371,7 +388,7 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
               {!compact && !acc && <RoleBadge roleId={post.role} />}
             </div>
             <p className="pp-text-meta">
-              {post.mine ? post.meta : post.meta?.replace(/^\d+\s*m\s*·\s*/, "") ?? post.meta}
+              {metaLine || post.meta || null}
             </p>
           </div>
           <div className="flex items-start gap-1 shrink-0">

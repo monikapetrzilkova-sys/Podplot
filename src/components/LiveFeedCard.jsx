@@ -40,9 +40,10 @@ export default function LiveFeedCard({
   mine = false,
   metaLine = null,
   ctaLabel = null,
+  timeLabel = null,
 }) {
   const [prefOpen, , togglePref] = useUiPref(accordionKey("liveFeed", itemId), false);
-  const authorParts = [authorLabel, distanceLabel].filter(Boolean);
+  const authorParts = [authorLabel, distanceLabel, timeLabel].filter(Boolean);
   const authorText = authorParts.length ? authorParts.join(" · ") : null;
   const footerLabel = ctaLabel || metaLine || null;
   const previewText = String(preview ?? "").trim();

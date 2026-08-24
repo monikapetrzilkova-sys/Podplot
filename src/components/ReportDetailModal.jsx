@@ -5,6 +5,7 @@ import ReportMenu from "./ReportMenu.jsx";
 import { PostPhotos } from "./PhotoUpload.jsx";
 import ReportListIcon from "./module/ReportListIcon.jsx";
 import { formatReportExpiryLabel, isReportActive, isReportResolved } from "../data/reportExpiry.js";
+import { formatContentAge } from "../data/czechDateTime.js";
 import { getUrgentReachLabel } from "../data/reportUrgency.js";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
 import AppPanelPortal from "./AppPanelPortal.jsx";
@@ -222,7 +223,13 @@ export default function ReportDetailModal({ report, onClose, onReport }) {
             <div className="min-w-0">
               <p className="font-medium text-stone-700 truncate">{authorLabel}</p>
               <p className="truncate">
-                {[report.distance, report.time, formatReportExpiryLabel(report)].filter(Boolean).join(" · ")}
+                {[
+                  report.distance,
+                  formatContentAge(report) || report.time,
+                  formatReportExpiryLabel(report),
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </p>
             </div>
             {acc && <RoleBadge roleId={acc.role} />}
