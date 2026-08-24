@@ -261,6 +261,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
     userGroupPosts,
     reportSecurityReport,
     closeProfile,
+    openMessages,
     selectMainTab,
     setPendingNeighborsSection,
     setPendingThingsItemId,
@@ -770,8 +771,20 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
               <p className="text-[11px] text-[#3D7A68] mt-1 leading-snug">
                 {user.isVerified || isCommunityVerified
                   ? "Ověřený soused — ostatní vám snáz důvěřují."
-                  : "Získejte ověření od 3 sousedů — vyšší důvěra v okolí."}
+                  : "Ověření od 3 sousedů zvyšuje důvěru. Přichází od lidí, kteří vás znají z okolí — nejde o přátelství."}
               </p>
+              {!(user.isVerified || isCommunityVerified) ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeProfile?.();
+                    openMessages?.();
+                  }}
+                  className="mt-1 text-[10px] font-semibold text-[#3D7A68] hover:underline"
+                >
+                  Znáte někoho z okolí? Napsat zprávu
+                </button>
+              ) : null}
               <div className="flex flex-wrap items-center gap-2 mt-1.5">
                 <button
                   type="button"
@@ -1034,7 +1047,10 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
       {showNeighborProfile && (
         <>
       <section id="profile-trust-network" className="pp-card p-4 mb-4 scroll-mt-4">
-        <ProfileSectionTitle icon={PROFILE_DOODLE_ICONS.trust}>Síť důvěry</ProfileSectionTitle>
+        <ProfileSectionTitle icon={PROFILE_DOODLE_ICONS.trust}>Potvrzení sousedů</ProfileSectionTitle>
+        <p className="text-[10px] text-stone-500 mb-2 leading-snug">
+          Potvrďte lidi, které znáte z okolí. Není to seznam přátel ani počet známostí — jen důvěra v lokalitě.
+        </p>
         {(() => {
           const dismissed = trustDismissedIds ?? [];
           const pending = neighbors.filter(
@@ -1049,6 +1065,18 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
             return (
               <p className="text-xs text-stone-500 leading-relaxed">
                 Teď nemáte nikoho nového k potvrzení. Až se v lokalitě objeví nový soused, ukáže se tady.
+                Znáte někoho jménem?{" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeProfile?.();
+                    openMessages?.();
+                  }}
+                  className="font-semibold text-[#3D7A68] hover:underline"
+                >
+                  Napište mu ve Zprávách
+                </button>
+                .
               </p>
             );
           }

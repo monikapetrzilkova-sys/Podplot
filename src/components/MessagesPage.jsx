@@ -32,7 +32,7 @@ export default function MessagesPage({ embedded = false }) {
 
       {visible.length === 0 ? (
         <p className="text-sm text-stone-500 bg-stone-50 rounded-2xl p-4">
-          Zatím žádné konverzace. Vyhledejte souseda výše nebo napište z inzerátu či akce.
+          Zatím žádné konverzace. Napište sousedovi podle jména výše, nebo z inzerátu či akce.
         </p>
       ) : (
         <div className="space-y-2">

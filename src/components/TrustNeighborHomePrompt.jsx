@@ -51,7 +51,7 @@ export default function TrustNeighborHomePrompt() {
           </span>
         </span>
         <span className="flex-1 min-w-0">
-          <span className="block text-sm font-semibold text-stone-900">Síť důvěry</span>
+          <span className="block text-sm font-semibold text-stone-900">Potvrzení sousedů</span>
           <span className="block text-[11px] text-stone-500 mt-0.5">{countLabel} k potvrzení</span>
         </span>
         <span className="text-[11px] font-semibold text-[#3D7A68] shrink-0">

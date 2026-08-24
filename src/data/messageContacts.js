@@ -474,43 +474,7 @@ export function getSuggestedMessageContacts({
 
 
 
-  confirmationsGiven.forEach((neighborId) => {
-
-    const n = neighbors.find((x) => x.id === neighborId);
-
-    if (n) {
-
-      push(
-
-        {
-
-          id: n.id,
-
-          name: n.name,
-
-          initials: n.initials,
-
-          allowPublicAreaLabel: n.allowPublicAreaLabel,
-
-          publicAreaLabel: n.publicAreaLabel,
-
-          municipality: n.municipality,
-
-          location: n.location,
-
-        },
-
-        "Potvrdili jste sousedství",
-
-        70
-
-      );
-
-    }
-
-  });
-
-
+  // Potvrzení sousedství záměrně není v návrzích kontaktů (nechceme přátelský seznam).
 
   return Array.from(scored.values())
 
@@ -523,37 +487,35 @@ export function getSuggestedMessageContacts({
 
 
 export function searchMessageContacts(query, directory, { excludeIds = [], excludeName = "" } = {}) {
-
   const q = query.trim().toLowerCase();
-
   if (!q) return [];
 
-
-
   const blocked = new Set(excludeIds);
+  const isNeighbor = (c) => (c.sources ?? []).some((s) => /soused/i.test(String(s)));
 
   return directory
-
     .filter((c) => {
-
       if (blocked.has(c.id) || c.name === excludeName) return false;
-
-      const haystack = [c.name, c.publicAreaLabel, c.displayName].filter(Boolean).join(" ").toLowerCase();
-
+      const haystack = [c.name, c.publicAreaLabel, c.displayName]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
       return haystack.includes(q);
-
     })
-
+    .sort((a, b) => {
+      const aN = isNeighbor(a) ? 0 : 1;
+      const bN = isNeighbor(b) ? 0 : 1;
+      if (aN !== bN) return aN - bN;
+      return String(a.displayName || a.name || "").localeCompare(
+        String(b.displayName || b.name || ""),
+        "cs"
+      );
+    })
     .slice(0, 12);
-
 }
 
-
-
 export function formatContactReasons(reasons = []) {
-
   return reasons[0] ?? "";
-
 }
 
 
