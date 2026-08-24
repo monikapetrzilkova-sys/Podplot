@@ -118,6 +118,17 @@ export default function LiveFeedCard({
                   </p>
                 ) : null}
                 <div className="pp-feed-card__footer flex items-center gap-1.5 mt-0.5 min-w-0">
+                  {footerLabel ? (
+                    <p
+                      className={`pp-feed-card__cta text-[10px] truncate min-w-0 flex-1 ${
+                        ctaLabel ? "font-semibold text-[#3D7A68]" : "text-stone-500"
+                      }`}
+                    >
+                      {footerLabel}
+                    </p>
+                  ) : (
+                    <span className="flex-1 min-w-0" aria-hidden />
+                  )}
                   {onMapClick ? (
                     <span
                       role="button"
@@ -133,25 +144,12 @@ export default function LiveFeedCard({
                           onMapClick();
                         }
                       }}
-                      className="shrink-0 w-[1.15rem] h-[1.15rem] inline-flex items-center justify-center rounded-[0.35rem] border border-[#C5DDD4] bg-white text-[#3D7A68] hover:bg-[#E8F3EF] hover:border-[#3D7A68] transition-colors"
+                      className="pp-feed-card__map-btn shrink-0 ml-auto"
                       aria-label="Zobrazit na mapě"
                       title="Zobrazit na mapě"
                     >
                       <IconMapPin className="w-3 h-3" aria-hidden />
                     </span>
-                  ) : null}
-                  {footerLabel ? (
-                    <p
-                      className={`pp-feed-card__cta text-[10px] truncate min-w-0 flex-1 ${
-                        ctaLabel ? "font-semibold text-[#3D7A68]" : "text-stone-500"
-                      }`}
-                    >
-                      {footerLabel}
-                    </p>
-                  ) : onMapClick ? (
-                    <p className="pp-feed-card__cta text-[10px] truncate min-w-0 flex-1 font-semibold text-[#3D7A68]">
-                      Na mapě
-                    </p>
                   ) : null}
                 </div>
               </>
@@ -164,6 +162,17 @@ export default function LiveFeedCard({
                   {showPreview ? preview : "\u00A0"}
                 </p>
                 <div className="pp-feed-card__footer flex items-center gap-1.5 mt-0 min-w-0">
+                  <p
+                    className={`pp-feed-card__cta text-[10px] truncate min-w-0 flex-1 ${
+                      footerLabel
+                        ? ctaLabel
+                          ? "font-semibold text-[#3D7A68]"
+                          : "text-stone-500"
+                        : "invisible"
+                    }`}
+                  >
+                    {footerLabel || "\u00A0"}
+                  </p>
                   {onMapClick ? (
                     <span
                       role="button"
@@ -179,26 +188,13 @@ export default function LiveFeedCard({
                           onMapClick();
                         }
                       }}
-                      className="shrink-0 w-[1.15rem] h-[1.15rem] inline-flex items-center justify-center rounded-[0.35rem] border border-[#C5DDD4] bg-white text-[#3D7A68] hover:bg-[#E8F3EF] hover:border-[#3D7A68] transition-colors"
+                      className="pp-feed-card__map-btn shrink-0 ml-auto"
                       aria-label="Zobrazit na mapě"
                       title="Zobrazit na mapě"
                     >
                       <IconMapPin className="w-3 h-3" aria-hidden />
                     </span>
                   ) : null}
-                  <p
-                    className={`pp-feed-card__cta text-[10px] truncate min-w-0 flex-1 ${
-                      footerLabel
-                        ? ctaLabel
-                          ? "font-semibold text-[#3D7A68]"
-                          : "text-stone-500"
-                        : onMapClick
-                          ? "font-semibold text-[#3D7A68]"
-                          : "invisible"
-                    }`}
-                  >
-                    {footerLabel || (onMapClick ? "Na mapě" : "\u00A0")}
-                  </p>
                 </div>
               </>
             )}
