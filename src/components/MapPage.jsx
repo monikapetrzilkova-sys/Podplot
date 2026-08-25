@@ -98,10 +98,15 @@ export default function MapPage({ lockedSection = null, officeOverview = false }
         )}
         <div className="pp-map-toolbar shrink-0 min-w-0">
           {activeSection === "places" ? (
-            <MapGuideToolbar
-              provozovnaType={provozovnaType}
-              onProvozovnaTypeChange={setProvozovnaType}
-            />
+            <>
+              <MapGuideToolbar
+                provozovnaType={provozovnaType}
+                onProvozovnaTypeChange={setProvozovnaType}
+              />
+              <p className="px-1 pt-1 pb-0.5 text-[10px] text-stone-500 leading-snug">
+                Mapa a místa se načítají z okolí — první špendlíky mohou přijít se zpožděním.
+              </p>
+            </>
           ) : (
             <MapReportsToolbar
               activeCategory={reportsCategoryFilter}

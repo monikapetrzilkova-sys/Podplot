@@ -157,10 +157,16 @@ export default function MapModule({ provozovnaType = null }) {
     if (!selectedId) setPreviewPlace(null);
   }, [selectedId]);
 
-  const emptyMapMessage =
-    isProvozovny && provozovnaType
+  const emptyMapMessage = placesLoading
+    ? "Načítám místa v okolí…"
+    : isProvozovny && provozovnaType
       ? `V typu „${getProvozovnaType(provozovnaType)?.label ?? ""}“ nic nenalezeno.`
       : "Nic nenalezeno.";
+
+  const placesLoadingLabel =
+    filtered.length === 0
+      ? "Načítám mapu a místa v okolí… chvilku strpení, špendlíky se brzy objeví."
+      : "Doplňuji další místa na mapu…";
 
   return (
     <>
@@ -174,11 +180,19 @@ export default function MapModule({ provozovnaType = null }) {
                 restartujte SPUSTIT.bat.
               </p>
             )}
-            {placesLoading && filtered.length === 0 && (
-              <p className="shrink-0 mx-0.5 mb-1 px-2 py-1.5 text-[10px] leading-snug rounded-lg border border-stone-200 bg-white/90 text-stone-600">
-                Načítám místa v okolí…
-              </p>
-            )}
+            {placesLoading ? (
+              <div
+                className="shrink-0 mx-0.5 mb-1 px-2.5 py-2 rounded-lg border border-[#C5DDD4] bg-[#F1F6F5] text-[#1B4D3E] flex items-start gap-2"
+                role="status"
+                aria-live="polite"
+              >
+                <span
+                  className="mt-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#C5DDD4] border-t-[#3D7A68] animate-spin shrink-0"
+                  aria-hidden
+                />
+                <p className="text-[11px] font-medium leading-snug">{placesLoadingLabel}</p>
+              </div>
+            ) : null}
             {viewMode === "map" ? (
               <>
                 <MapComponent
@@ -194,6 +208,7 @@ export default function MapModule({ provozovnaType = null }) {
                   fluid
                   hideStats
                   hideLegend
+                  loadingMessage="Načítám mapu míst… Google Maps chvíli startuje, strpení."
                   className="flex flex-col flex-1 min-h-0 mb-0"
                 />
                 {sheetPlace && !detailPlace && (
@@ -213,6 +228,7 @@ export default function MapModule({ provozovnaType = null }) {
                 className="flex-1 min-h-0 overflow-y-auto"
                 items={filtered}
                 emptyMessage={emptyMapMessage}
+                emptyIllustration={placesLoading ? "chat" : "box"}
                 renderItem={(place) => (
                   <PlaceListRow
                     key={place.id}

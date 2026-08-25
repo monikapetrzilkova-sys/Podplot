@@ -35,6 +35,12 @@ export default function MapComponent(props) {
     .join(" ")
     .trim();
 
+  const loadingMessage =
+    props.loadingMessage ||
+    (props.mapMode === "institutions"
+      ? "Načítám mapu míst… chvilku strpení, špendlíky se brzy objeví."
+      : "Načítám mapu…");
+
   if (loading) {
     return (
       <div className={wrapClass}>
@@ -43,9 +49,15 @@ export default function MapComponent(props) {
             props.fluid ? "flex-1 min-h-[220px] h-full" : "h-72"
           }`}
         >
-          <p className="absolute inset-0 flex items-center justify-center text-xs text-stone-500 px-4 text-center">
-            Načítám mapu…
-          </p>
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center bg-[#F7FAF9]/90">
+            <span
+              className="w-6 h-6 rounded-full border-2 border-[#C5DDD4] border-t-[#3D7A68] animate-spin"
+              aria-hidden
+            />
+            <p className="text-xs font-medium text-stone-600 leading-snug max-w-[16rem]">
+              {loadingMessage}
+            </p>
+          </div>
         </div>
       </div>
     );
