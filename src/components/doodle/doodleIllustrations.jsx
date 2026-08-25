@@ -69,6 +69,54 @@ export function DoodleCatalogIntro({ className = "w-28 h-14" }) {
   );
 }
 
+/**
+ * Služby / katalog — decentní scéna dole na úvodní obrazovce.
+ * Provozovna, řemeslník a nápis „otevřeno“.
+ */
+export function DoodleSluzbyScene({ className = "w-full max-w-[240px] h-auto" }) {
+  return (
+    <svg
+      viewBox="0 0 240 120"
+      fill="none"
+      className={`pp-doodle-characters text-[#3D7A68] ${className}`}
+      aria-hidden
+    >
+      <path
+        {...s}
+        stroke={DOODLE_OLIVE}
+        strokeWidth={1.5}
+        d="M10 102c22-6 44-4 66 2 24 6 42 4 62-2 22-6 42-4 62 4 12 5 22 3 30 0"
+        opacity={0.6}
+      />
+
+      {/* Provozovna */}
+      <path {...s} d="M28 96V48l36-16 36 16v48" />
+      <path {...s} d="M52 96V72h24v24" />
+      <path {...s} stroke={DOODLE_OLIVE} d="M44 58h16M44 66h12" strokeWidth={1.35} opacity={0.5} />
+      <path {...s} stroke={DOODLE_OLIVE} d="M58 42h28" strokeWidth={1.4} opacity={0.55} />
+      <path
+        {...s}
+        stroke={DOODLE_OLIVE}
+        d="M62 34c2-1.5 8-1.5 10 1.2s-1 5-4.2 5.4c-1 .15-1.8 1-1.8 1l-1.8-1s-2.4-.4-3.2-2.4 1.2-4.5 3-4.2z"
+        opacity={0.7}
+      />
+
+      {/* Řemeslník */}
+      <circle cx="156" cy="52" r="7" {...s} />
+      <path {...s} d="M156 59v22M156 68l-9 7M156 68l8 5" />
+      <path {...s} d="M156 81l-5 14M156 81l5 14" />
+      <path {...s} d="M164 66l12-6M164 66l-1 10M176 60v10" stroke={DOODLE_OLIVE} opacity={0.85} />
+      <path {...s} stroke={DOODLE_OLIVE} d="M168 72h5" strokeWidth={1.25} opacity={0.55} />
+
+      {/* Malý vozík / balík */}
+      <path {...s} d="M188 88h22v8H188z" opacity={0.75} />
+      <circle cx="194" cy="98" r="3" {...s} opacity={0.7} />
+      <circle cx="206" cy="98" r="3" {...s} opacity={0.7} />
+      <path {...s} stroke={DOODLE_OLIVE} d="M192 82h14v6H192z" opacity={0.55} />
+    </svg>
+  );
+}
+
 /** Mapa se špendlíkem — úvod Mapa */
 export function DoodleMapIntro({ className = "w-28 h-14" }) {
   return (

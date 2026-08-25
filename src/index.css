@@ -919,6 +919,23 @@ body,
   color: var(--pp-doodle-ink);
 }
 
+/* Decentní doodle dole na úvodu Sousedé / Služby */
+.pp-hub-doodle-footer {
+  margin-top: auto;
+  padding-top: 2.25rem;
+  padding-bottom: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  pointer-events: none;
+  user-select: none;
+}
+
+.pp-hub-doodle-footer svg {
+  opacity: 0.26;
+}
+
 .pp-doodle-empty-art {
   width: 96px;
   height: 80px;

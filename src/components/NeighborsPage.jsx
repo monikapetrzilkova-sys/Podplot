@@ -11,6 +11,7 @@ import { VECI_TYPE_FILTERS } from "../utils/thingsModule.js";
 import { getSkupinySubfilters } from "../data/worldNavigation.js";
 import { getMyMemberGroups } from "../data/locations.js";
 import { NEIGHBOR_DOODLE_ICONS, VECI_TYPE_DOODLE_ICONS, VYPOMOC_FILTER_DOODLE_ICONS, SKUPINY_FILTER_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
+import { DoodleSousedstviScene } from "./doodle/doodleIllustrations.jsx";
 import { loadNavSession, saveNavSession } from "../data/navSession.js";
 
 const NEIGHBORS_MAIN = NEIGHBORS_TILES.map((tile) => ({
@@ -76,8 +77,11 @@ function NeighborsContent({ section, helpFilter, onHelpFilterChange, eventsSearc
 
 function NeighborsHub({ onSelectSection }) {
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-6">
+    <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-6 flex flex-col">
       <NeighborsGrid activeId={null} onSelect={onSelectSection} large />
+      <div className="pp-hub-doodle-footer" aria-hidden>
+        <DoodleSousedstviScene className="w-full max-w-[200px] h-auto text-[#3D7A68]" />
+      </div>
     </div>
   );
 }

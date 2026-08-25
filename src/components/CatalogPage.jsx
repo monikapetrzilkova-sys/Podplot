@@ -5,6 +5,7 @@ import ServicesList from "../modules/ServicesList.jsx";
 import CompactSearchToggle from "./CompactSearchToggle.jsx";
 import SectionBackButton from "./SectionBackButton.jsx";
 import { CATALOG_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
+import { DoodleSluzbyScene } from "./doodle/doodleIllustrations.jsx";
 import { useKeepSearchAboveKeyboard } from "../hooks/useKeepSearchAboveKeyboard.js";
 
 /** Zpět + aktivní kategorie + malé ikony ostatních — celá šířka lišty */
@@ -136,7 +137,7 @@ export default function CatalogPage() {
 
   return (
     <div className="pp-page pp-page--doodle pp-catalog-page flex flex-col min-h-full bg-abstract-organic has-deco">
-      <div className="flex-1 min-h-0 px-4 pt-4 pb-6">
+      <div className="flex-1 min-h-0 px-4 pt-4 pb-6 overflow-y-auto flex flex-col">
         {searchActive ? (
           <div className="flex flex-col gap-3">
             <div ref={searchAnchorRef} className="pp-catalog-search-anchor shrink-0">
@@ -153,6 +154,9 @@ export default function CatalogPage() {
               <div ref={searchAnchorRef} className="pp-catalog-search-anchor shrink-0">
                 {searchToggle}
               </div>
+            </div>
+            <div className="pp-hub-doodle-footer" aria-hidden>
+              <DoodleSluzbyScene className="w-full max-w-[190px] h-auto text-[#3D7A68]" />
             </div>
           </>
         )}
