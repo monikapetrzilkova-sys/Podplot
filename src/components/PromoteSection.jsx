@@ -4,6 +4,7 @@ import {
   TOP_BAZAR_PLANS,
   CATALOG_PREMIUM_PLANS,
   SPONSORED_STRIP_PLANS,
+  PROMO_RULES,
 } from "../data/monetization.js";
 import PaymentModal from "./PaymentModal.jsx";
 import { PROFILE_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
@@ -35,8 +36,9 @@ export default function PromoteSection() {
         Boost a propagace
       </h3>
       <p className="text-xs text-stone-500 mb-3 leading-relaxed">
-        Boost posune váš profil na přední místa v katalogu. Proužek je krátká viditelnost na domovské zdi
-        sousedů — ne reklamní inzerát ve feedu.
+        Boost posune váš profil na přední místa v katalogu. Proužek Promo je krátká viditelnost na
+        domovské zdi (max {PROMO_RULES.maxActiveBannersPerLocation} živých). Při plnu jde rezervovat
+        další termín — sousedy nezahlcujeme.
       </p>
       <div className="flex gap-2 mb-3 flex-wrap">
         {[

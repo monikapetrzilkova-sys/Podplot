@@ -30,7 +30,7 @@ export default function Dashboard() {
       <NeighborOnboardingChecklist />
       <OpenReportsReminder />
       <TrustNeighborHomePrompt />
-      {/* Placená propagace nahoře — viditelná hodnota za Partner */}
+      {/* Placená propagace nahoře — štítek Promo, max 5 v lokalitě */}
       <SponsoredStrip />
       <LunchMenuWidget />
       <LiveNeighborFeed />

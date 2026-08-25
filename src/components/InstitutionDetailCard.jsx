@@ -313,9 +313,10 @@ export default function InstitutionDetailCard({ place, onClose }) {
                     Zprávy budou dostupné, až provozovatel převezme správu tohoto profilu.
                   </p>
                 )}
-                {canClaim && place.isGooglePlace && (
+                {canClaim && (
                   <p className="text-[10px] text-stone-500 w-full">
-                    Toto místo pochází z Google Maps. Po ověření IČO můžete spravovat komunitní akce a nabídky.
+                    Převzetí profilu: ověříte se kódem na oficiální telefon nebo e-mail místa (např. z
+                    Google Maps) — ne přes IČO.
                   </p>
                 )}
                 {isOwner && (

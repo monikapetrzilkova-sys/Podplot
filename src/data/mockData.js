@@ -112,7 +112,7 @@ export const FEED_POSTS = [
     sponsored: true,
     feedType: "sluzby",
     feedSubtype: "gastro",
-    /** Jen Partner banner / katalog — ne sousedský feed Domů */
+    /** Jen Promo banner / katalog — ne sousedský feed Domů */
     homeFeedHidden: true,
   },
   {

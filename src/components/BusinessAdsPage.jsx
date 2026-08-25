@@ -1,7 +1,15 @@
 import { useMemo, useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import { TEST_PERSONAS } from "../data/businessProfiles.js";
-import { CATALOG_PREMIUM_PLANS, SPONSORED_STRIP_PLANS } from "../data/monetization.js";
+import {
+  CATALOG_PREMIUM_PLANS,
+  SPONSORED_STRIP_PLANS,
+  PROMO_RULES,
+  resolveBannerPurchaseOffer,
+  isSponsoredBannerLive,
+  isSponsoredBannerUpcoming,
+} from "../data/monetization.js";
+import { formatCzechDate } from "../data/czechDateTime.js";
 import { MOBILNI_PUSH_SUBSCRIPTION } from "../data/notificationPlans.js";
 import PaymentModal from "./PaymentModal.jsx";
 import { PlaceIcon } from "./module/placeIcons.jsx";
@@ -53,7 +61,7 @@ function PromoTypeRow({ id, title, summary, status, statusActive, open, onToggle
 }
 
 /**
- * Záložka Propagace — banner Partner, u řemeslníka navíc topování katalogu a push poptávek.
+ * Záložka Propagace — banner Promo, u řemeslníka navíc topování katalogu a push poptávek.
  */
 export default function BusinessAdsPage() {
   const {
@@ -62,6 +70,7 @@ export default function BusinessAdsPage() {
     addCredits,
     promoteProfile,
     sponsoredBanners,
+    locationPromoBanners,
     businessHours,
     isMobilniWorkMode,
     ownedService,
@@ -95,15 +104,26 @@ export default function BusinessAdsPage() {
   const selectedCatalogPlan =
     CATALOG_PREMIUM_PLANS.find((p) => p.id === catalogPlanId) ?? CATALOG_PREMIUM_PLANS[0];
 
+  const promoBanners = locationPromoBanners ?? sponsoredBanners ?? [];
+
   const myBanners = useMemo(() => {
     const uid = user?.id ?? "me";
-    const today = new Date().toISOString().slice(0, 10);
-    return (sponsoredBanners ?? []).filter(
-      (b) =>
-        (b.ownerUserId === uid || b.name === businessName) &&
-        (!b.activeUntil || b.activeUntil >= today)
+    return promoBanners.filter(
+      (b) => b.ownerUserId === uid || b.name === businessName
     );
-  }, [sponsoredBanners, user?.id, businessName]);
+  }, [promoBanners, user?.id, businessName]);
+
+  const bannerOffer = useMemo(() => {
+    const uid = user?.id ?? "me";
+    return resolveBannerPurchaseOffer(promoBanners, uid, selectedBannerPlan);
+  }, [promoBanners, user?.id, selectedBannerPlan]);
+
+  const locationBannerSlots = useMemo(() => {
+    const max = PROMO_RULES.maxActiveBannersPerLocation;
+    const used = promoBanners.filter((b) => isSponsoredBannerLive(b)).length;
+    const scheduled = promoBanners.filter((b) => isSponsoredBannerUpcoming(b)).length;
+    return { used: Math.min(used, max), max, scheduled };
+  }, [promoBanners]);
 
   const preview = {
     name: headline.trim() || businessName,
@@ -127,7 +147,16 @@ export default function BusinessAdsPage() {
   };
 
   const pushActive = businessNotificationPrefs?.serviceRequestPushEnabled;
-  const hasActiveBanner = myBanners.length > 0;
+  const hasActiveBanner = myBanners.some((b) => isSponsoredBannerLive(b));
+  const hasScheduledBanner = myBanners.some((b) => isSponsoredBannerUpcoming(b));
+  const badge = PROMO_RULES.bannerBadgeLabel;
+  const isScheduledOffer = bannerOffer?.ok && bannerOffer.mode === "scheduled";
+  const offerFromLabel = bannerOffer?.ok
+    ? formatCzechDate(bannerOffer.activeFrom, { year: false })
+    : "";
+  const offerUntilLabel = bannerOffer?.ok
+    ? formatCzechDate(bannerOffer.activeUntil, { year: false })
+    : "";
 
   const togglePromo = (id) => {
     setOpenPromo((prev) => (prev === id ? null : id));
@@ -136,14 +165,36 @@ export default function BusinessAdsPage() {
   const bannerDetail = (
     <>
       <p className="text-[11px] text-stone-500 pt-3">
-        Proužek Partner nahoře na Domů u sousedů v okolí — označený Partner. Platba z kreditů (1 kredit = 1 Kč).
+        Proužek nahoře na Domů — označený {badge}. U sousedů se točí max.{" "}
+        {PROMO_RULES.maxActiveBannersPerLocation} najednou (bez zahlcení). Když je plno, rezervujete
+        další volný termín. Platba z kreditů (1 kredit = 1 Kč).
       </p>
+      <p className="text-[11px] text-[#1B4D3E] bg-[#F1F6F5] border border-[#C5DDD4] rounded-xl px-3 py-2">
+        Živé sloty: {locationBannerSlots.used}/{locationBannerSlots.max}
+        {locationBannerSlots.scheduled > 0
+          ? ` · rezervace ve frontě: ${locationBannerSlots.scheduled}`
+          : ""}
+        {hasActiveBanner ? " · váš banner běží" : ""}
+        {hasScheduledBanner ? " · máte rezervaci" : ""}
+      </p>
+      {isScheduledOffer && (
+        <p className="text-[11px] text-amber-900 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
+          Teď je plno. Další volný slot: <strong>{offerFromLabel}</strong>
+          {offerUntilLabel ? ` – ${offerUntilLabel}` : ""}. Po zaplacení se Promo spustí automaticky —
+          do té doby se sousedům nezobrazí.
+        </p>
+      )}
+      {!bannerOffer?.ok && (
+        <p className="text-[11px] text-stone-600 bg-stone-50 border border-stone-200 rounded-xl px-3 py-2">
+          {bannerOffer?.message ?? "Promo termíny jsou dočasně vyprodané."}
+        </p>
+      )}
 
       <div className="space-y-2">
         <p className="text-[11px] font-semibold text-stone-600">Náhled</p>
         <article className="rounded-2xl border border-[#C5DDD4] bg-[#F7FAF9] p-3 relative">
           <span className="absolute top-2 left-2 text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-[#E8F0ED] text-[#3D7A68]">
-            Partner
+            {badge}
           </span>
           <div className="flex items-center gap-2 pt-5">
             <PlaceIcon place={preview} className="w-4 h-4 shrink-0" />
@@ -221,9 +272,12 @@ export default function BusinessAdsPage() {
       <button
         type="button"
         onClick={() => setBannerPayOpen(true)}
-        className="w-full py-3 bg-[#3D7A68] text-white rounded-xl text-sm font-semibold"
+        disabled={!bannerOffer?.ok}
+        className="w-full py-3 bg-[#3D7A68] text-white rounded-xl text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Aktivovat banner · {selectedBannerPlan.price} Kč
+        {isScheduledOffer
+          ? `Rezervovat od ${offerFromLabel} · ${selectedBannerPlan.price} Kč`
+          : `Aktivovat banner · ${selectedBannerPlan.price} Kč`}
       </button>
     </>
   );
@@ -248,18 +302,35 @@ export default function BusinessAdsPage() {
     myBanners.length > 0 ? (
       <section className="space-y-2">
         <h2 className="text-xs font-bold uppercase tracking-wide text-stone-500 px-0.5">
-          Aktivní bannery
+          Vaše Promo
         </h2>
-        {myBanners.map((b) => (
-          <article key={b.id} className="pp-card p-3.5">
-            <p className="text-sm font-semibold text-stone-900">{b.name}</p>
-            <p className="text-xs text-stone-600 mt-0.5 line-clamp-2">{b.tagline}</p>
-            <p className="text-[10px] text-stone-400 mt-1.5">
-              {b.planLabel ? `${b.planLabel} · ` : ""}
-              do {b.activeUntil}
-            </p>
-          </article>
-        ))}
+        {myBanners.map((b) => {
+          const upcoming = isSponsoredBannerUpcoming(b);
+          const fromLabel = b.activeFrom ? formatCzechDate(b.activeFrom, { year: false }) : "";
+          const untilLabel = b.activeUntil ? formatCzechDate(b.activeUntil, { year: false }) : b.activeUntil;
+          return (
+            <article key={b.id} className="pp-card p-3.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-sm font-semibold text-stone-900">{b.name}</p>
+                <span
+                  className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${
+                    upcoming
+                      ? "bg-amber-50 text-amber-900"
+                      : "bg-[#E8F0ED] text-[#1B4D3E]"
+                  }`}
+                >
+                  {upcoming ? "Rezervace" : "Živé"}
+                </span>
+              </div>
+              <p className="text-xs text-stone-600 mt-0.5 line-clamp-2">{b.tagline}</p>
+              <p className="text-[10px] text-stone-400 mt-1.5">
+                {b.planLabel ? `${b.planLabel} · ` : ""}
+                {upcoming && fromLabel ? `od ${fromLabel} ` : ""}
+                {untilLabel ? `do ${untilLabel}` : ""}
+              </p>
+            </article>
+          );
+        })}
       </section>
     ) : null;
 
@@ -268,7 +339,11 @@ export default function BusinessAdsPage() {
       <PaymentModal
         open={bannerPayOpen}
         onClose={() => setBannerPayOpen(false)}
-        title={`Banner Partner — ${selectedBannerPlan.label}`}
+        title={
+          isScheduledOffer
+            ? `Rezervace Promo od ${offerFromLabel} — ${selectedBannerPlan.label}`
+            : `Banner Promo — ${selectedBannerPlan.label}`
+        }
         amount={selectedBannerPlan.price}
         walletBalance={credits}
         onConfirm={activateBanner}
@@ -342,10 +417,10 @@ export default function BusinessAdsPage() {
 
           <PromoTypeRow
             id="banner"
-            title="Banner Partner"
-            summary={`Proužek nahoře na Domů · od ${SPONSORED_STRIP_PLANS[0].price} Kč`}
-            status={hasActiveBanner ? "Aktivní" : null}
-            statusActive={hasActiveBanner}
+            title="Banner Promo"
+            summary={`Proužek nahoře na Domů · max ${PROMO_RULES.maxActiveBannersPerLocation} v lokalitě · od ${SPONSORED_STRIP_PLANS[0].price} Kč`}
+            status={hasActiveBanner ? "Aktivní" : hasScheduledBanner ? "Rezervace" : null}
+            statusActive={hasActiveBanner || hasScheduledBanner}
             open={openPromo === "banner"}
             onToggle={togglePromo}
             Icon={PROMO_DOODLE_ICONS.banner}
@@ -412,7 +487,7 @@ export default function BusinessAdsPage() {
   return (
     <div className="pp-page flex flex-col min-h-full px-4 pt-4 pb-8 gap-4">
       <p className="text-xs text-stone-500">
-        Banner Partner nahoře na Domů u sousedů v okolí
+        Banner Promo nahoře na Domů u sousedů v okolí
       </p>
 
       {creditsBar}

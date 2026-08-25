@@ -49,6 +49,6 @@ if ("serviceWorker" in navigator) {
     } catch {
       /* ignore */
     }
-    navigator.serviceWorker.register("/sw.js?v=4").catch(() => {});
+    navigator.serviceWorker.register("/sw.js?v=5").catch(() => {});
   });
 }

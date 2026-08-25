@@ -2,8 +2,9 @@ import { useApp } from "../context/AppContext.jsx";
 import { IconTabChat } from "../data/icons.jsx";
 import LocationSwitcher from "./LocationSwitcher.jsx";
 import CrisisAlertBar from "./CrisisAlertBar.jsx";
-import { LOGO_PODPLOT_SRC } from "../data/logoAsset.js";
 import { DoodleHomeIntro } from "./doodle/doodleIllustrations.jsx";
+/** Přímo import — nové logo F (dům + plot + ruce), Vite cache-bust */
+import logoPodplot from "../assets/logo-podplot.png";
 
 export default function TopBar() {
   const {
@@ -35,7 +36,6 @@ export default function TopBar() {
 
   return (
     <header className="pp-header shrink-0 sticky top-0 z-40">
-      {/* Smaragdová brand lišta */}
       <div className="pp-header-brand-bar">
         <button
           type="button"
@@ -43,7 +43,14 @@ export default function TopBar() {
           className="pp-brand-home"
           aria-label="Domů — Podplot"
         >
-          <img src={LOGO_PODPLOT_SRC} alt="" className="pp-brand-logo" width={56} height={56} />
+          <img
+            src={logoPodplot}
+            alt="Podplot"
+            className="pp-brand-logo"
+            width={40}
+            height={40}
+            decoding="async"
+          />
           <span className="pp-brand-name">Podplot</span>
         </button>
 
@@ -82,7 +89,6 @@ export default function TopBar() {
         </div>
       </div>
 
-      {/* Vyhledávání a lokalita na světlém pozadí */}
       <div className="pp-header-sub">
         <div className="flex items-center gap-2">
           <input

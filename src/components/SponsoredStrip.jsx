@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 
 import { useApp } from "../context/AppContext.jsx";
+import { PROMO_RULES } from "../data/monetization.js";
 
 import BusinessProfileModal from "./BusinessProfileModal.jsx";
 import { PlaceIcon } from "./module/placeIcons.jsx";
@@ -14,6 +15,7 @@ export default function SponsoredStrip() {
   const [paused, setPaused] = useState(false);
 
   const banners = sponsoredBanners.length > 0 ? sponsoredBanners : [];
+  const badge = PROMO_RULES.bannerBadgeLabel;
 
   useEffect(() => {
     if (banners.length <= 1 || paused) return;
@@ -35,7 +37,7 @@ export default function SponsoredStrip() {
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
         >
-          <span className="pp-badge pp-partner-badge">Partner</span>
+          <span className="pp-badge pp-partner-badge">{badge}</span>
           <button
             type="button"
             onClick={() => setSelected(b)}
@@ -61,7 +63,7 @@ export default function SponsoredStrip() {
                 style={{
                   background: i === index % banners.length ? "#3D7A68" : "#D8E8E2",
                 }}
-                aria-label={`Partner ${i + 1}`}
+                aria-label={`${badge} ${i + 1}`}
               />
             ))}
           </div>

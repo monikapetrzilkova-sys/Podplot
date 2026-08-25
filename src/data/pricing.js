@@ -3,6 +3,7 @@
 import {
   TOP_PLANS as MONETIZATION_TOP_PLANS,
   calculateTopCost as calcTopCost,
+  isTopPostActive,
 } from "./monetization.js";
 
 export const TOP_PLANS = MONETIZATION_TOP_PLANS;
@@ -28,10 +29,18 @@ export function calculateTopCost(planId, _listingPriceKc = 0) {
   return calcTopCost(planId);
 }
 
+/** TOP nahoře (podle topRank / zbývající doby), pak organické. */
 export function sortPostsByTop(posts) {
   return [...posts].sort((a, b) => {
-    if (a.topped && !b.topped) return -1;
-    if (!a.topped && b.topped) return 1;
+    const aTop = isTopPostActive(a);
+    const bTop = isTopPostActive(b);
+    if (aTop && !bTop) return -1;
+    if (!aTop && bTop) return 1;
+    if (aTop && bTop) {
+      const rankDiff = (b.topRank ?? 0) - (a.topRank ?? 0);
+      if (rankDiff !== 0) return rankDiff;
+      return String(b.toppedUntil ?? "").localeCompare(String(a.toppedUntil ?? ""));
+    }
     return 0;
   });
 }

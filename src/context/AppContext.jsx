@@ -17,7 +17,25 @@ import { FEED_POSTS, LENDING_ITEMS } from "../data/mockData.js";
 import { AREA_NEWS, getAreaNewsForLocation, getActiveCrisis } from "../data/areaNews.js";
 import { LUNCH_MENUS, sortLunchMenus } from "../data/lunchMenus.js";
 import { getTestRole } from "../data/testRoles.js";
-import { calcEscrowFee, ESCROW_STATUSES, LISTING_SALE_STATUSES } from "../data/monetization.js";
+import {
+  calcEscrowFee,
+  ESCROW_STATUSES,
+  LISTING_SALE_STATUSES,
+  canPurchaseTopSlot,
+  isTopPostActive,
+  isSponsoredBannerRelevant,
+  pickBannersForStrip,
+  PROMO_RULES,
+  resolveBannerPurchaseOffer,
+} from "../data/monetization.js";
+import {
+  CLAIM_OTP_TTL_MS,
+  generateClaimOtp,
+  getOfficialClaimContacts,
+  isClaimOtpValid,
+  maskClaimEmail,
+  maskClaimPhone,
+} from "../data/placeClaimVerification.js";
 import {
   applyListingSaleVisibility,
   getActiveListingSale,
@@ -255,6 +273,7 @@ function applyTop(post, planId) {
     topPlanId: planId,
     topDays: plan.days,
     toppedUntil: until.toISOString(),
+    topRank: Date.now(),
   };
 }
 
@@ -852,8 +871,7 @@ export function AppProvider({ children }) {
   const [localGuideSearchQuery, setLocalGuideSearchQuery] = useState("");
 
   const activeSponsoredBanners = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    return sponsoredBanners.filter((b) => !b.activeUntil || b.activeUntil >= today);
+    return sponsoredBanners.filter((b) => isSponsoredBannerRelevant(b));
   }, [sponsoredBanners]);
 
   const activeLocation = locations.find((l) => l.id === activeLocationId) ?? locations[0];
@@ -4785,12 +4803,27 @@ export function AppProvider({ children }) {
     (postId, planId = "3d", method = "wallet") => {
       const post = userPosts.find((p) => p.id === postId) ?? userGroupPosts.find((p) => p.id === postId);
       if (!post) return false;
-      if (post.topped) {
-        showToast("Tento inzerát je už TOPovaný.", "info");
-        return false;
-      }
       if (!canTopCategory(post.categoryId)) {
         showToast("Tuto kategorii nelze TOPovat.", "info");
+        return false;
+      }
+      const locationPosts = filterByActiveLocation(
+        [...userPosts, ...userGroupPosts],
+        activeLocationId,
+        activeLocation
+      );
+      const locationToppedCount = locationPosts.filter((p) => isTopPostActive(p)).length;
+      const ownerKey = user?.id ?? "me";
+      const userToppedCount = locationPosts.filter(
+        (p) => isTopPostActive(p) && (p.ownerUserId === ownerKey || p.mine)
+      ).length;
+      const slot = canPurchaseTopSlot({
+        locationToppedCount,
+        userToppedCount,
+        alreadyTopped: isTopPostActive(post),
+      });
+      if (!slot.ok) {
+        showToast(slot.message, "info");
         return false;
       }
       const cost = calculateTopCost(planId);
@@ -4802,7 +4835,7 @@ export function AppProvider({ children }) {
       showToast(`TOP boost ${plan.days} dní za ${cost} Kč — inzerát je nahoře.`);
       return true;
     },
-    [userPosts, userGroupPosts, showToast, payAmount]
+    [userPosts, userGroupPosts, showToast, payAmount, activeLocationId, activeLocation, user?.id]
   );
 
   const requestTopPayment = useCallback((postId, planId) => {
@@ -4814,7 +4847,21 @@ export function AppProvider({ children }) {
     (promoType, planId, method, options = {}) => {
       const plan = getMonetizationPlan(promoType === "top" ? "top" : promoType, planId);
       const cost = plan?.price ?? 0;
-      if (!payAmount(cost, method)) return;
+      let bannerOffer = null;
+      if (promoType === "sponsored") {
+        const ownerId = user?.id ?? "me";
+        const inLocation = filterByActiveLocation(
+          sponsoredBanners.filter((b) => isSponsoredBannerRelevant(b)),
+          activeLocationId,
+          activeLocation
+        );
+        bannerOffer = resolveBannerPurchaseOffer(inLocation, ownerId, plan);
+        if (!bannerOffer.ok) {
+          showToast(bannerOffer.message, "info");
+          return false;
+        }
+      }
+      if (!payAmount(cost, method)) return false;
       if (promoType === "catalog") {
         const until = new Date();
         until.setDate(until.getDate() + (plan.days ?? 7));
@@ -4842,10 +4889,7 @@ export function AppProvider({ children }) {
         showToast(
           `Boost katalogu aktivní (${plan.label}) — váš profil je na předních pozicích u sousedů.`
         );
-      } else if (promoType === "sponsored") {
-        const until = new Date();
-        if (plan.hours) until.setHours(until.getHours() + plan.hours);
-        else until.setDate(until.getDate() + (plan.days ?? 1));
+      } else if (promoType === "sponsored" && bannerOffer) {
         const banner = {
           id: `sp-user-${Date.now()}`,
           name: (options.name ?? user?.name ?? "Váš podnik").trim() || "Váš podnik",
@@ -4858,18 +4902,37 @@ export function AppProvider({ children }) {
           phone: user?.phone ?? "",
           hours: businessHours || user?.hours || "Dle domluvy",
           mapPos: user?.mapPos ?? { x: 50, y: 50 },
-          activeUntil: until.toISOString().slice(0, 10),
+          activeFrom: bannerOffer.activeFrom,
+          activeUntil: bannerOffer.activeUntil,
+          scheduled: bannerOffer.mode === "scheduled",
           accountType: user?.accountType ?? "podnik",
           locationId: activeLocationId,
           ownerUserId: user?.id ?? "me",
           planId: plan.id,
           planLabel: plan.label,
+          promoRank: Date.now(),
         };
         setSponsoredBanners((prev) => [banner, ...prev.filter((b) => b.ownerUserId !== (user?.id ?? "me"))]);
-        showToast(`Reklamní banner aktivní (${plan.label}). Uvidíte ho na domovské zdi sousedů.`);
+        if (bannerOffer.mode === "scheduled") {
+          showToast(
+            `Promo rezervováno (${plan.label}) — běží od ${bannerOffer.activeFrom} do ${bannerOffer.activeUntil}.`
+          );
+        } else {
+          showToast(`Promo banner aktivní (${plan.label}). Uvidíte ho na domovské zdi sousedů.`);
+        }
       }
+      return true;
     },
-    [payAmount, showToast, user, activeLocation, activeLocationId, testRoleId, businessHours]
+    [
+      payAmount,
+      showToast,
+      user,
+      activeLocation,
+      activeLocationId,
+      testRoleId,
+      businessHours,
+      sponsoredBanners,
+    ]
   );
 
   const promoteProfile = useCallback(
@@ -4885,7 +4948,27 @@ export function AppProvider({ children }) {
       const { type, postId, planId, amount } = pendingPayment;
       if (type === "top") {
         const post = userPosts.find((p) => p.id === postId) ?? userGroupPosts.find((p) => p.id === postId);
-        if (!post || post.topped) {
+        if (!post) {
+          setPendingPayment(null);
+          return;
+        }
+        const locationPosts = filterByActiveLocation(
+          [...userPosts, ...userGroupPosts],
+          activeLocationId,
+          activeLocation
+        );
+        const locationToppedCount = locationPosts.filter((p) => isTopPostActive(p)).length;
+        const ownerKey = user?.id ?? "me";
+        const userToppedCount = locationPosts.filter(
+          (p) => isTopPostActive(p) && (p.ownerUserId === ownerKey || p.mine)
+        ).length;
+        const slot = canPurchaseTopSlot({
+          locationToppedCount,
+          userToppedCount,
+          alreadyTopped: isTopPostActive(post),
+        });
+        if (!slot.ok) {
+          showToast(slot.message, "info");
           setPendingPayment(null);
           return;
         }
@@ -4898,7 +4981,7 @@ export function AppProvider({ children }) {
       }
       setPendingPayment(null);
     },
-    [pendingPayment, payAmount, userPosts, userGroupPosts, showToast]
+    [pendingPayment, payAmount, userPosts, userGroupPosts, showToast, activeLocationId, activeLocation, user?.id]
   );
 
   const publishListing = useCallback(
@@ -4950,6 +5033,25 @@ export function AppProvider({ children }) {
 
       let topCost = 0;
       if (topPlanId && canTopCategory(categoryId)) {
+        const locationPosts = filterByActiveLocation(
+          [...userPosts, ...userGroupPosts],
+          activeLocationId,
+          activeLocation
+        );
+        const locationToppedCount = locationPosts.filter((p) => isTopPostActive(p)).length;
+        const ownerKey = user?.id ?? "me";
+        const userToppedCount = locationPosts.filter(
+          (p) => isTopPostActive(p) && (p.ownerUserId === ownerKey || p.authorId === ownerKey || p.mine)
+        ).length;
+        const slot = canPurchaseTopSlot({
+          locationToppedCount,
+          userToppedCount,
+          alreadyTopped: false,
+        });
+        if (!slot.ok) {
+          showToast(slot.message, "info");
+          return;
+        }
         topCost = calculateTopCost(topPlanId);
         if (!payAmount(topCost, topPaymentMethod)) {
           showToast(`Na TOP chybí prostředků. Potřebujete ${topCost} Kč.`, "error");
@@ -5083,6 +5185,8 @@ export function AppProvider({ children }) {
       isB2BWorkMode,
       setPendingNeighborsSection,
       communityGroups,
+      userPosts,
+      userGroupPosts,
     ]
   );
 
@@ -5452,43 +5556,124 @@ export function AppProvider({ children }) {
     [showToast]
   );
 
-  const submitInstitutionClaim = useCallback(
-    ({ placeId, googlePlaceId, ico, note = "" }) => {
-      if (!user || !ico?.trim()) return;
+  const placeClaimOtpRef = useRef(null);
+
+  const requestPlaceClaimCode = useCallback(
+    async ({ placeId, googlePlaceId, channel, place }) => {
+      if (!user) return false;
       const effectivePlaceId = placeId ?? (googlePlaceId ? `google-${googlePlaceId}` : null);
-      if (!effectivePlaceId) return;
+      if (!effectivePlaceId) return false;
+      const contacts = getOfficialClaimContacts(place);
+      if (channel === "phone" && !contacts.hasPhone) {
+        showToast("U místa nemáme oficiální telefon z mapových údajů.", "error");
+        return false;
+      }
+      if (channel === "email" && !contacts.hasEmail) {
+        showToast("U místa nemáme oficiální e-mail z mapových údajů.", "error");
+        return false;
+      }
+      if (!contacts.canVerify) {
+        showToast("Bez oficiálního telefonu nebo e-mailu nelze profil ověřit.", "error");
+        return false;
+      }
+      const code = generateClaimOtp();
+      const target = channel === "phone" ? contacts.phone : contacts.email;
+      const masked =
+        channel === "phone" ? maskClaimPhone(contacts.phone) : maskClaimEmail(contacts.email);
+      placeClaimOtpRef.current = {
+        placeId: effectivePlaceId,
+        googlePlaceId: googlePlaceId ?? null,
+        channel,
+        target,
+        code,
+        expiresAt: Date.now() + CLAIM_OTP_TTL_MS,
+        userId: user.id ?? "me",
+      };
+      // MVP: skutečné SMS/e-mail API napojíme později — zatím kód v toastu (ověření běží v appce).
+      showToast(
+        `Kód odeslán na ${masked}. Demo kód: ${code}`,
+        "info"
+      );
+      return true;
+    },
+    [user, showToast]
+  );
+
+  const confirmPlaceClaimWithCode = useCallback(
+    async ({ placeId, googlePlaceId, channel, code, place }) => {
+      if (!user) return false;
+      const effectivePlaceId = placeId ?? (googlePlaceId ? `google-${googlePlaceId}` : null);
+      if (!effectivePlaceId) return false;
+      const pending = placeClaimOtpRef.current;
+      if (
+        !pending ||
+        pending.placeId !== effectivePlaceId ||
+        pending.userId !== (user.id ?? "me") ||
+        pending.channel !== channel
+      ) {
+        showToast("Nejdřív si nechte poslat ověřovací kód.", "error");
+        return false;
+      }
+      const contacts = getOfficialClaimContacts(place);
+      const expectedTarget = channel === "phone" ? contacts.phone : contacts.email;
+      if (!expectedTarget || pending.target !== expectedTarget) {
+        showToast(
+          "Kontakt místa se změnil. Zvolte oficiální telefon/e-mail a pošlete kód znovu.",
+          "error"
+        );
+        return false;
+      }
+      if (!isClaimOtpValid(code, pending.code, pending.expiresAt)) {
+        showToast("Neplatný nebo expirovaný kód. Zkuste znovu.", "error");
+        return false;
+      }
+
       const claimId = `cl-${Date.now()}`;
-      const autoApprove = ico.trim() === TEST_PERSONAS.podnik.ico || ico.trim() === "12345678";
       setInstitutionClaims((prev) => [
-        ...prev,
+        ...prev.filter(
+          (c) =>
+            !(
+              c.placeId === effectivePlaceId &&
+              c.userId === (user.id ?? "me") &&
+              c.status === SUGGESTION_STATUS.PENDING
+            )
+        ),
         {
           id: claimId,
           placeId: effectivePlaceId,
           googlePlaceId: googlePlaceId ?? null,
           userId: user.id ?? "me",
-          ico: ico.trim(),
-          note,
-          status: autoApprove ? SUGGESTION_STATUS.APPROVED : SUGGESTION_STATUS.PENDING,
+          channel,
+          verifiedContact: pending.target,
+          note: "",
+          status: SUGGESTION_STATUS.APPROVED,
           createdAt: new Date().toISOString(),
         },
       ]);
-      if (autoApprove) {
-        setInstitutionPlaceOverrides((prev) => ({
-          ...prev,
-          [effectivePlaceId]: {
-            ...(prev[effectivePlaceId] ?? {}),
-            claimedByUserId: user.id ?? "me",
-            googlePlaceId: googlePlaceId ?? prev[effectivePlaceId]?.googlePlaceId ?? null,
-            isVerified: true,
-            claimStatus: CLAIM_STATUS.CLAIMED,
-          },
-        }));
-        showToast("Profil přiřazen k vašemu účtu.", "success");
-      } else {
-        showToast("Žádost o převzetí profilu odeslána ke schválení.", "info");
-      }
+      setInstitutionPlaceOverrides((prev) => ({
+        ...prev,
+        [effectivePlaceId]: {
+          ...(prev[effectivePlaceId] ?? {}),
+          claimedByUserId: user.id ?? "me",
+          googlePlaceId: googlePlaceId ?? prev[effectivePlaceId]?.googlePlaceId ?? null,
+          isVerified: true,
+          claimStatus: CLAIM_STATUS.CLAIMED,
+          claimVerifiedVia: channel,
+        },
+      }));
+      placeClaimOtpRef.current = null;
+      showToast("Profil ověřen a přiřazen k vašemu účtu.", "success");
+      return true;
     },
     [user, showToast]
+  );
+
+  /** @deprecated IČO ověření nahrazeno kódem na oficiální telefon/e-mail */
+  const submitInstitutionClaim = useCallback(
+    ({ placeId, googlePlaceId, channel = "phone", place }) => {
+      return requestPlaceClaimCode({ placeId, googlePlaceId, channel, place });
+    },
+    [requestPlaceClaimCode]
   );
 
   const updateOwnedInstitution = useCallback(
@@ -7062,9 +7247,14 @@ export function AppProvider({ children }) {
     [userLendingItems, activeLocationId, activeLocation, applyOwnerAvailability]
   );
 
-  const sponsoredBannersForLocation = useMemo(
+  const locationPromoBanners = useMemo(
     () => filterByActiveLocation(activeSponsoredBanners, activeLocationId, activeLocation),
     [activeSponsoredBanners, activeLocationId, activeLocation]
+  );
+
+  const sponsoredBannersForLocation = useMemo(
+    () => pickBannersForStrip(locationPromoBanners, PROMO_RULES.maxActiveBannersPerLocation),
+    [locationPromoBanners]
   );
 
   const locationEvents = useMemo(
@@ -7715,6 +7905,8 @@ export function AppProvider({ children }) {
         submitPlaceSuggestion,
         approvePlaceSuggestion,
         submitInstitutionClaim,
+        requestPlaceClaimCode,
+        confirmPlaceClaimWithCode,
         institutionClaims,
         updateOwnedInstitution,
         updatePlaceCommunityDetails,
@@ -7792,6 +7984,7 @@ export function AppProvider({ children }) {
         clearProfileScrollTarget,
         promoteProfile,
         sponsoredBanners: sponsoredBannersForLocation,
+        locationPromoBanners,
         craftsmanRadius,
         setCraftsmanRadius,
         reportsMapRadiusKm,

@@ -34,7 +34,7 @@ export function getAgendaKindAccent(kind) {
   return AGENDA_KIND_ACCENTS[kind] ?? "#3D7A68";
 }
 
-/** Reklama služby / sponzorovaný podnik — nepatří do sousedského feedu Domů (jen Partner banner / katalog) */
+/** Reklama služby / sponzorovaný podnik — nepatří do sousedského feedu Domů (jen Promo banner / katalog) */
 export function isServiceOrSponsoredAdPost(post) {
   if (!post) return false;
   if (post.sponsored) return true;

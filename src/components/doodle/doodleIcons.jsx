@@ -330,7 +330,7 @@ export function DoodlePushIcon({ className }) {
   );
 }
 
-/** Banner Partner — proužek / štítek */
+/** Banner Promo — proužek / štítek */
 export function DoodleBannerIcon({ className }) {
   return (
     <DoodleIcon className={className}>
