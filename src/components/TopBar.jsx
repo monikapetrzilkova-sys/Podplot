@@ -47,8 +47,8 @@ export default function TopBar() {
             src={logoPodplot}
             alt="Podplot"
             className="pp-brand-logo"
-            width={40}
-            height={40}
+            width={58}
+            height={58}
             decoding="async"
           />
           <span className="pp-brand-name">Podplot</span>
