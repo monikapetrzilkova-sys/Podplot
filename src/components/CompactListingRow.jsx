@@ -5,6 +5,7 @@ import EditedBadge from "./EditedBadge.jsx";
 import { useApp } from "../context/AppContext.jsx";
 import { getActiveListingSale } from "../data/listingSales.js";
 import { displayCreatorLabel } from "../data/accountTypes.js";
+import { formatListingPriceLabel } from "../data/listingPriceUnits.js";
 
 export function extractListingPrice(post) {
   if (!post) return null;
@@ -20,7 +21,8 @@ export function extractListingPrice(post) {
       return `${perDay} Kč/den`;
     }
   }
-  if (post.listingPrice) return `${post.listingPrice} Kč`;
+  const unitLabel = formatListingPriceLabel(post);
+  if (unitLabel) return unitLabel;
   const day = post.meta?.match(/(\d+)\s*(?:Kč\/den|kredit)/i);
   if (day) return `${day[1]} Kč/den`;
   const kc = post.meta?.match(/(\d+)\s*Kč/);

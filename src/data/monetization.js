@@ -114,7 +114,9 @@ export const ESCROW_STATUSES = {
 /** Prodej inzerátu (bazar) — platba držená do „Převzato a zaplaceno“ */
 export const LISTING_SALE_STATUSES = {
   held: "V rezervaci — platba v úschově Podplotu",
+  adjust_pending: "Prodejce navrhl jiné množství — čeká se na vás",
   released: "Převzato · platba uvolněna prodejci",
+  cancelled: "Nákup zrušen · platba vrácena",
 };
 
 function todayIsoDate(d = new Date()) {

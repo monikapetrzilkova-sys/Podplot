@@ -16,7 +16,7 @@ import {
 import { isServiceOrSponsoredAdPost } from "../utils/categoryAccents.js";
 import { REPORTS_TIP_CATEGORY_ID, resolveReportCategoryId } from "../data/reportCategories.js";
 import { getPostInteractionType, INTERACTION_TYPES } from "../data/postInteractions.js";
-import { getActiveListingSale } from "../data/listingSales.js";
+import { getActiveListingSale, isActiveListingSaleStatus } from "../data/listingSales.js";
 import { displayCreatorLabel } from "../data/accountTypes.js";
 import { lendingDisplayTitle } from "../data/lendingItemTypes.js";
 import { reportSnapshotFromFeedPost } from "../utils/reportPinUtils.js";
@@ -224,7 +224,7 @@ export default function LiveNeighborFeed() {
     const listings = [...communityPosts.filter(isThingsModuleListing), ...lendingPosts]
       .map((p) => {
         const reserved =
-          p.saleStatus === "held" || Boolean(getActiveListingSale(listingSaleOrders, p.id));
+          isActiveListingSaleStatus(p.saleStatus) || Boolean(getActiveListingSale(listingSaleOrders, p.id));
         return {
           id: `post-${p.id}`,
           kind: "listing",
