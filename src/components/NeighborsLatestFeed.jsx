@@ -10,6 +10,7 @@ import { getRecentGroupPosts, getGroup } from "../data/groups.js";
 import { displayCreatorLabel } from "../data/accountTypes.js";
 import { feedItemNeedsExpand } from "./feed/feedExpand.js";
 import { formatContentAge } from "../data/czechDateTime.js";
+import { getActiveListingSale, isActiveListingSaleStatus } from "../data/listingSales.js";
 
 const SECTION_LABELS = {
   veci: "Věci",
@@ -65,8 +66,8 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
       .slice(0, PER_CATEGORY)
       .map((post) => {
         const reserved =
-          post.saleStatus === "held" ||
-          Boolean(listingSaleOrders?.some((o) => o.listingId === post.id && o.status === "held"));
+          isActiveListingSaleStatus(post.saleStatus) ||
+          Boolean(getActiveListingSale(listingSaleOrders, post.id));
         const listingBadge = getListingBadge(post.type);
         return {
           id: `veci-${post.id}`,

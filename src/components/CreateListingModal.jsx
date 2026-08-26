@@ -14,6 +14,15 @@ import { normalizeThingItemCategory } from "../data/thingItemCategories.js";
 import { GroupNavIcon, GROUP_ICON_CLASS } from "./communityNavIcons.jsx";
 import LendingItemTypeField from "./LendingItemTypeField.jsx";
 import { resolveLendingItemTypeLabel } from "../data/lendingItemTypes.js";
+import {
+  DEFAULT_LISTING_PRICE_UNIT,
+  LISTING_PRICE_UNITS,
+  listingPriceInputLabel,
+  listingUsesVariablePrice,
+  normalizeListingPriceUnit,
+  parseListingQuantity,
+} from "../data/listingPriceUnits.js";
+import { DoodlePackageIcon, DoodleScalesIcon, DoodleSellIcon } from "./doodle/doodleIcons.jsx";
 
 function resolvePresetCategory(createCategory, feedMainMode, feedSubFilter) {
   if (createCategory) return createCategory;
@@ -54,6 +63,8 @@ export default function CreateListingModal() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [price, setPrice] = useState("");
+  const [priceUnit, setPriceUnit] = useState(DEFAULT_LISTING_PRICE_UNIT);
+  const [availableQty, setAvailableQty] = useState("");
   const [photos, setPhotos] = useState([]);
   const [topPlanId, setTopPlanId] = useState("");
   const [topPayOpen, setTopPayOpen] = useState(false);
@@ -87,6 +98,16 @@ export default function CreateListingModal() {
             ? String(editingPost.credits)
             : ""
       );
+      setPriceUnit(
+        editingPost.categoryId === "prodam"
+          ? normalizeListingPriceUnit(editingPost.listingPriceUnit)
+          : DEFAULT_LISTING_PRICE_UNIT
+      );
+      setAvailableQty(
+        editingPost.listingQuantity != null && editingPost.listingQuantity > 0
+          ? String(editingPost.listingQuantity).replace(".", ",")
+          : ""
+      );
       setPhotos((editingPost.photos ?? []).map((url) => (typeof url === "string" ? { url } : url)));
       setTopPlanId("");
       setTopPayOpen(false);
@@ -116,6 +137,8 @@ export default function CreateListingModal() {
     setTitle("");
     setBody("");
     setPrice("");
+    setPriceUnit(DEFAULT_LISTING_PRICE_UNIT);
+    setAvailableQty("");
     setPhotos([]);
     setTopPlanId("");
     setTopPayOpen(false);
@@ -146,13 +169,19 @@ export default function CreateListingModal() {
   const titleHint = getTitleHint(categoryId);
   const needsItemCategory = isZboziListingType(categoryId);
   const categoryDetailReady = !needsItemCategory || itemCategoryId;
+  const showUnitPicker = categoryId === "prodam";
+  const variablePrice = showUnitPicker && listingUsesVariablePrice(priceUnit);
+  const parsedAvailable = variablePrice && availableQty.trim()
+    ? parseListingQuantity(availableQty, priceUnit)
+    : null;
 
   const canSubmit =
     categoryId &&
     title.trim().length >= 3 &&
     body.trim().length >= 5 &&
     categoryDetailReady &&
-    (!cat?.priceField || Number(price) > 0);
+    (!cat?.priceField || Number(price) > 0) &&
+    (!variablePrice || !availableQty.trim() || parsedAvailable > 0);
 
   const buildListingPayload = (topPaymentMethod = "wallet") => {
     const isLending = categoryId === "pujcovna";
@@ -172,6 +201,8 @@ export default function CreateListingModal() {
       photos,
       topPlanId: topPlanId || null,
       topPaymentMethod,
+      listingPriceUnit: showUnitPicker ? priceUnit : DEFAULT_LISTING_PRICE_UNIT,
+      listingQuantity: variablePrice && parsedAvailable > 0 ? parsedAvailable : null,
     };
   };
   const handleSubmit = (e) => {
@@ -186,6 +217,8 @@ export default function CreateListingModal() {
         title: resolvedTitle,
         body: body.trim(),
         listingPrice: cat?.priceField ? Number(price) || 0 : editingPost.listingPrice,
+        listingPriceUnit: showUnitPicker ? priceUnit : editingPost.listingPriceUnit,
+        listingQuantity: variablePrice && parsedAvailable > 0 ? parsedAvailable : null,
         marketCategory: needsItemCategory ? itemCategoryId : editingPost.marketCategory,
         lendingCategory: isLending ? itemCategoryId : editingPost.lendingCategory,
         photos: photos.map((p) => p.url ?? p),
@@ -287,6 +320,10 @@ export default function CreateListingModal() {
                   onClick={() => {
                     setCategoryId(c.id);
                     if (!canTopCategory(c.id)) setTopPlanId("");
+                    if (c.id !== "prodam") {
+                      setPriceUnit(DEFAULT_LISTING_PRICE_UNIT);
+                      setAvailableQty("");
+                    }
                     if (!isZboziListingType(c.id)) {
                       setItemCategoryId("");
                     } else if (thingsLendingSubCategory) {
@@ -371,18 +408,81 @@ export default function CreateListingModal() {
           </div>
 
           {cat?.priceField && (
-            <div>
-              <label htmlFor="listing-price" className="block text-sm font-semibold text-stone-800 mb-1.5">
-                {cat.priceLabel}
-              </label>
-              <input
-                id="listing-price"
-                type="number"
-                min="1"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                className="w-full px-4 py-3 rounded-2xl border border-stone-200 text-sm focus:outline-none focus:border-[#1B4332]"
-              />
+            <div className="space-y-3">
+              {showUnitPicker && (
+                <fieldset>
+                  <legend className="block text-sm font-semibold text-stone-800 mb-1.5">
+                    Jak chcete cenu zadat?
+                  </legend>
+                  <div className="grid grid-cols-3 gap-2">
+                    {LISTING_PRICE_UNITS.map((unit) => {
+                      const selected = priceUnit === unit.id;
+                      const UnitIcon =
+                        unit.id === "kg"
+                          ? DoodleScalesIcon
+                          : unit.id === "ks"
+                            ? DoodlePackageIcon
+                            : DoodleSellIcon;
+                      return (
+                        <button
+                          key={unit.id}
+                          type="button"
+                          onClick={() => {
+                            setPriceUnit(unit.id);
+                            if (unit.id === DEFAULT_LISTING_PRICE_UNIT) setAvailableQty("");
+                          }}
+                          aria-pressed={selected}
+                          className={`flex flex-col items-center gap-1 p-2.5 rounded-2xl border-2 text-center transition-colors ${
+                            selected
+                              ? "border-[#1B4332] bg-[#D8F3DC] text-[#1B4332]"
+                              : "border-stone-200 bg-[#FAF9F6] text-stone-700"
+                          }`}
+                        >
+                          <UnitIcon className="w-5 h-5" />
+                          <span className="text-xs font-semibold leading-tight">{unit.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[11px] text-stone-500 mt-2 leading-snug">
+                    {LISTING_PRICE_UNITS.find((u) => u.id === priceUnit)?.hint}
+                  </p>
+                </fieldset>
+              )}
+              <div>
+                <label htmlFor="listing-price" className="block text-sm font-semibold text-stone-800 mb-1.5">
+                  {showUnitPicker ? listingPriceInputLabel(priceUnit) : cat.priceLabel}
+                </label>
+                <input
+                  id="listing-price"
+                  type="number"
+                  min="1"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  className="w-full px-4 py-3 rounded-2xl border border-stone-200 text-sm focus:outline-none focus:border-[#1B4332]"
+                />
+              </div>
+              {variablePrice && (
+                <div>
+                  <label htmlFor="listing-qty" className="block text-sm font-semibold text-stone-800 mb-1.5">
+                    {LISTING_PRICE_UNITS.find((u) => u.id === priceUnit)?.availableLabel}{" "}
+                    <span className="font-normal text-stone-400">(volitelné)</span>
+                  </label>
+                  <input
+                    id="listing-qty"
+                    type="text"
+                    inputMode="decimal"
+                    value={availableQty}
+                    onChange={(e) => setAvailableQty(e.target.value)}
+                    placeholder={priceUnit === "kg" ? "např. 3,5" : "např. 24"}
+                    className="w-full px-4 py-3 rounded-2xl border border-stone-200 text-sm focus:outline-none focus:border-[#1B4332]"
+                  />
+                  <p className="text-[11px] text-stone-500 mt-1.5 leading-snug">
+                    Kupující si zvolí množství a cenu spočítáme. Když už tolik nemáte, můžete
+                    navrhnout méně — kupující to musí znovu potvrdit.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 

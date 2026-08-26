@@ -18,6 +18,7 @@ import { IconNavSearch } from "../components/communityNavIcons.jsx";
 import PrimaryAddButton from "../components/PrimaryAddButton.jsx";
 import { displayCreatorLabel } from "../data/accountTypes.js";
 import { topicFromLending, topicFromPost } from "../data/chatTopics.js";
+import { getActiveListingSale, isActiveListingSaleStatus } from "../data/listingSales.js";
 
 function addListingLabel(categoryId) {
   if (categoryId === "daruji") return "Přidat darování";
@@ -71,8 +72,8 @@ function ThingLendingDetail({ item, onReserve }) {
 function ThingListRow({ item, expanded, onToggle }) {
   const { listingSaleOrders } = useApp();
   const reserved =
-    item.saleStatus === "held" ||
-    Boolean(listingSaleOrders?.some((o) => o.listingId === item.id && o.status === "held"));
+    isActiveListingSaleStatus(item.saleStatus) ||
+    Boolean(getActiveListingSale(listingSaleOrders, item.id));
   const price = reserved ? null : extractListingPrice(item);
   const statusLabel = reserved ? "V rezervaci" : item.onVacation ? "Dovolená" : null;
   const title =

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import PersonLabel from "./PersonLabel.jsx";
 import { useApp } from "../context/AppContext.jsx";
-import { isSameAppUser, isCurrentUserRef, isSelfNeighborCandidate } from "../data/listingSales.js";
+import { isSameAppUser, isCurrentUserRef, isSelfNeighborCandidate, LISTING_SALE_STATUS } from "../data/listingSales.js";
+import { formatListingQuantity, listingUsesVariablePrice } from "../data/listingPriceUnits.js";
 import { getAccountType, ADDRESS_PRIVACY_NOTE, getPodnikatelSubtypeLabel, isBusinessAccount, getRegistrationFields, resolveBusinessSubtype } from "../data/accountTypes.js";
 import { isInjectedDemoPersona } from "../data/businessProfiles.js";
 import { getVerifiedLabel } from "../data/domainVerification.js";
@@ -254,6 +255,8 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
     reservations,
     listingSaleOrders,
     confirmListingHandover,
+    confirmListingSaleAdjustment,
+    rejectListingSaleAdjustment,
     userReports,
     extraReports,
     myMunicipalityPrompts,
@@ -1208,18 +1211,56 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
           <div className="space-y-2">
             {listingSaleOrders
               .filter((o) => isSameAppUser(o.buyerId, user?.id ?? "me"))
-              .map((order) => (
+              .filter((o) => o.status !== LISTING_SALE_STATUS.cancelled)
+              .map((order) => {
+                const qtyHint =
+                  listingUsesVariablePrice({ listingPriceUnit: order.priceUnit }) && order.quantity
+                    ? ` · ${formatListingQuantity(order.quantity, order.priceUnit)}`
+                    : "";
+                const pending = order.status === LISTING_SALE_STATUS.adjust_pending;
+                const proposedLabel = pending
+                  ? formatListingQuantity(order.adjustProposedQuantity, order.priceUnit)
+                  : null;
+                return (
                 <div key={order.id} className="rounded-xl border border-stone-200 bg-[#FAFCFB] p-3">
                   <p className="text-xs font-semibold text-amber-800 mb-0.5">
-                    {order.status === "held" ? "Nákup v rezervaci" : "Nákup uzavřen"}
+                    {order.status === LISTING_SALE_STATUS.held
+                      ? "Nákup v rezervaci"
+                      : pending
+                        ? "Čeká na vaše potvrzení množství"
+                        : "Nákup uzavřen"}
                   </p>
                   <p className="text-sm font-medium text-stone-800 leading-snug">{order.title}</p>
                   <p className="text-xs text-stone-500 mt-1">
-                    {order.amount} Kč · úschova Podplotu
+                    {order.amount} Kč{qtyHint} · úschova Podplotu
                     {order.fee != null ? ` · poplatek ${order.fee} Kč` : ""}
                     {order.sellerName ? ` · ${order.sellerName}` : ""}
                   </p>
-                  {order.status === "held" ? (
+                  {pending ? (
+                    <div className="mt-2 space-y-2">
+                      <p className="text-xs text-amber-900 leading-snug">
+                        Prodejce nabízí {proposedLabel}
+                        {order.adjustProposedAmount != null
+                          ? ` za ${order.adjustProposedAmount} Kč`
+                          : ""}
+                        {order.adjustMessage ? ` — ${order.adjustMessage}` : "."}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => confirmListingSaleAdjustment(order.id)}
+                        className="w-full py-2 rounded-xl text-xs font-semibold text-white pp-btn-primary"
+                      >
+                        Souhlasím · {proposedLabel}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => rejectListingSaleAdjustment(order.id)}
+                        className="w-full py-2 rounded-xl text-xs font-semibold border border-stone-200 text-stone-700"
+                      >
+                        Ne, zrušit nákup
+                      </button>
+                    </div>
+                  ) : order.status === LISTING_SALE_STATUS.held ? (
                     <button
                       type="button"
                       onClick={() => confirmListingHandover(order.id)}
@@ -1229,11 +1270,12 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                     </button>
                   ) : (
                     <p className="text-xs font-semibold text-[#3D7A68] mt-2">
-                      ✓ Převzato · prodejci uvolněno {order.sellerGets} Kč
+                      Převzato · prodejci uvolněno {order.sellerGets} Kč
                     </p>
                   )}
                 </div>
-              ))}
+                );
+              })}
             {myOffers.length > 0 && <LendingAvailabilityPanel offerCount={myOffers.length} />}
             {myOffers.map((item) => (
               <button
@@ -1312,7 +1354,9 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
               .filter((p) => !myOffers.some((o) => o.id === p.id))
               .map((post) => {
                 const sale = listingSaleOrders.find(
-                  (o) => o.listingId === post.id && o.status === "held"
+                  (o) =>
+                    o.listingId === post.id &&
+                    (o.status === "held" || o.status === "adjust_pending")
                 );
                 return (
                   <button

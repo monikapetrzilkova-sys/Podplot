@@ -5,7 +5,7 @@ export const BASE_CATEGORIES = [
   {
     id: "prodam",
     label: "Prodám",
-    hint: "Prodej za pevnou cenu",
+    hint: "Prodej za kus, kilo nebo celkem",
     type: "Prodám",
     priceField: true,
     priceLabel: "Cena (Kč)",

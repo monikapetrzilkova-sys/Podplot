@@ -39,6 +39,7 @@ import {
 import {
   applyListingSaleVisibility,
   getActiveListingSale,
+  isActiveListingSaleStatus,
   isSameAppUser,
   isCurrentUserRef,
   isSelfNeighborCandidate,
@@ -134,6 +135,14 @@ import {
 import { EVENT_REPORT_DELETE_THRESHOLD } from "../data/eventFormatting.js";
 import { calcServiceFee, getMonetizationPlan } from "../data/monetization.js";
 import {
+  calcListingSaleAmount,
+  clampListingQuantity,
+  formatListingPriceLabel,
+  formatListingQuantity,
+  listingUsesVariablePrice,
+  normalizeListingPriceUnit,
+} from "../data/listingPriceUnits.js";
+import {
   INTEREST_OPTIONS,
   EVENTS as INITIAL_EVENTS,
   INITIAL_CHATS,
@@ -193,6 +202,7 @@ import {
   normalizeChatTopic,
   topicToMessageMeta,
   topicFromMessageMeta,
+  topicFromPost,
 } from "../data/chatTopics.js";
 import {
   showMessageNotification,
@@ -4998,6 +5008,8 @@ export function AppProvider({ children }) {
       topPlanId = null,
       topPaymentMethod = "wallet",
       boardPost = false,
+      listingPriceUnit = "total",
+      listingQuantity = null,
     }) => {
       if (!user) return;
       if (isB2BWorkMode) {
@@ -5027,8 +5039,24 @@ export function AppProvider({ children }) {
       else if (groupNames.length > 1) metaParts.push(`${groupNames.length} skupiny`);
 
       const listingPrice = cat?.priceField ? Number(price) || 0 : 0;
+      const resolvedPriceUnit =
+        categoryId === "prodam" ? normalizeListingPriceUnit(listingPriceUnit) : "total";
+      const resolvedQuantity =
+        categoryId === "prodam" && listingUsesVariablePrice(resolvedPriceUnit)
+          ? Number(listingQuantity) > 0
+            ? listingQuantity
+            : null
+          : null;
       if (cat?.priceField && price) {
-        metaParts.unshift(cat?.isLending ? `${price} Kč/den` : `${price} Kč`);
+        metaParts.unshift(
+          cat?.isLending
+            ? `${price} Kč/den`
+            : formatListingPriceLabel({
+                listingPrice,
+                listingPriceUnit: resolvedPriceUnit,
+                listingQuantity: resolvedQuantity,
+              }) || `${price} Kč`
+        );
       }
 
       let topCost = 0;
@@ -5091,6 +5119,8 @@ export function AppProvider({ children }) {
         feedType,
         feedSubtype,
         listingPrice,
+        listingPriceUnit: categoryId === "prodam" ? resolvedPriceUnit : null,
+        listingQuantity: resolvedQuantity,
         groupId: primaryGroupId,
         groupIds: resolvedGroupIds,
         groupName: primaryGroup?.name ?? groupNames[0],
@@ -5233,16 +5263,27 @@ export function AppProvider({ children }) {
   );
 
   const buyListing = useCallback(
-    (post, method = "card") => {
+    (post, method = "card", opts = {}) => {
       if (post.mine) {
         showToast("Toto je váš inzerát.", "info");
         return false;
       }
-      if (post.saleStatus === LISTING_SALE_STATUS.held || getActiveListingSale(listingSaleOrders, post.id)) {
+      if (
+        isActiveListingSaleStatus(post.saleStatus) ||
+        getActiveListingSale(listingSaleOrders, post.id)
+      ) {
         showToast("Tento inzerát je už v rezervaci.", "info");
         return false;
       }
-      const amount = Number(post.listingPrice) || 0;
+      const unit = normalizeListingPriceUnit(post.listingPriceUnit);
+      const quantity = listingUsesVariablePrice(post)
+        ? clampListingQuantity(opts.quantity ?? 1, unit, post.listingQuantity)
+        : 1;
+      if (listingUsesVariablePrice(post) && !quantity) {
+        showToast("Zvolte množství, které chcete koupit.", "info");
+        return false;
+      }
+      const amount = calcListingSaleAmount(post.listingPrice, quantity, unit);
       if (amount <= 0) {
         showToast("Kontaktujte prodejce — cena není uvedena.", "info");
         return false;
@@ -5260,28 +5301,44 @@ export function AppProvider({ children }) {
         status: LISTING_SALE_STATUS.held,
         statusLabel: LISTING_SALE_STATUSES.held,
         buyerId,
+        buyerName: user?.name ?? "Já",
         sellerId: post.authorId ?? post.id,
         sellerName: post.author,
         paymentMethod: method,
         reservedAt: new Date().toISOString(),
         photos: post.photos ?? [],
+        quantity,
+        priceUnit: unit,
+        unitPrice: Number(post.listingPrice) || 0,
+        listingQuantity: post.listingQuantity ?? null,
+        originalQuantity: quantity,
+        originalAmount: amount,
+        adjustProposedQuantity: null,
+        adjustMessage: null,
       };
       setListingSaleOrders((prev) => [order, ...prev]);
+      const qtyHint = listingUsesVariablePrice(post)
+        ? ` · ${formatListingQuantity(quantity, unit)}`
+        : "";
       showToast(
-        `Platba ${amount} Kč je v úschově Podplotu. Inzerát je „V rezervaci“. Po osobní kontrole klepněte na „Převzato a zaplaceno“.`,
+        `Platba ${amount} Kč${qtyHint} je v úschově Podplotu. Inzerát je „V rezervaci“. Po osobní kontrole klepněte na „Převzato a zaplaceno“.`,
         "success"
       );
       return true;
     },
-    [payAmount, showToast, listingSaleOrders, user?.id]
+    [payAmount, showToast, listingSaleOrders, user?.id, user?.name]
   );
 
   /** Kupující potvrdí osobní převzetí → uvolnění platby, inzerát zmizí. Prodávající nic nepotvrzuje. */
   const confirmListingHandover = useCallback(
     (orderId) => {
       const order = listingSaleOrders.find((o) => o.id === orderId);
-      if (!order || order.status !== LISTING_SALE_STATUS.held) {
+      if (!order || !isActiveListingSaleStatus(order.status)) {
         showToast("Rezervaci nelze potvrdit.", "error");
+        return false;
+      }
+      if (order.status === LISTING_SALE_STATUS.adjust_pending) {
+        showToast("Nejdřív potvrďte nebo odmítněte navržené množství.", "info");
         return false;
       }
       if (!isSameAppUser(order.buyerId, user?.id ?? "me")) {
@@ -6362,6 +6419,207 @@ export function AppProvider({ children }) {
       });
     },
     [sendMessage, markChatRead, messagesOpen]
+  );
+
+  const listingSaleTopic = (order) =>
+    topicFromPost({
+      id: order.listingId,
+      title: order.title,
+      type: "Prodám",
+      categoryId: "prodam",
+    });
+
+  const refundListingBuyer = useCallback((order, amount) => {
+    const add = Math.max(0, Math.round(Number(amount) || 0));
+    if (add <= 0) return 0;
+    if (order.paymentMethod === "wallet") {
+      creditsRef.current += add;
+      setCredits(creditsRef.current);
+    }
+    return add;
+  }, []);
+
+  const proposeListingSaleAdjustment = useCallback(
+    (orderId, { quantity, message }) => {
+      const order = listingSaleOrders.find((o) => o.id === orderId);
+      if (!order || !isActiveListingSaleStatus(order.status)) {
+        showToast("Rezervaci nelze upravit.", "error");
+        return false;
+      }
+      if (!isSameAppUser(order.sellerId, user?.id ?? "me")) {
+        showToast("Množství může navrhnout jen prodávající.", "info");
+        return false;
+      }
+      if (!listingUsesVariablePrice({ listingPriceUnit: order.priceUnit })) {
+        showToast("U této nabídky se množství nevybírá.", "info");
+        return false;
+      }
+      const currentQty = Number(order.quantity) || 0;
+      const proposed = clampListingQuantity(quantity, order.priceUnit, currentQty);
+      if (!proposed || proposed >= currentQty) {
+        showToast("Navrhněte menší množství, než kupující objednal.", "info");
+        return false;
+      }
+      const note = String(message ?? "").trim();
+      if (note.length < 4) {
+        showToast("Napište krátkou zprávu, proč nabízíte méně.", "info");
+        return false;
+      }
+      const newAmount = calcListingSaleAmount(order.unitPrice, proposed, order.priceUnit);
+      setListingSaleOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId
+            ? {
+                ...o,
+                status: LISTING_SALE_STATUS.adjust_pending,
+                statusLabel: LISTING_SALE_STATUSES.adjust_pending,
+                adjustProposedQuantity: proposed,
+                adjustProposedAmount: newAmount,
+                adjustMessage: note,
+              }
+            : o
+        )
+      );
+      const qtyLabel = formatListingQuantity(proposed, order.priceUnit);
+      sendMessage(
+        order.buyerId,
+        order.buyerName || "Kupující",
+        `U „${order.title}“ mám teď jen ${qtyLabel} (místo ${formatListingQuantity(currentQty, order.priceUnit)}). Stačilo by vám to? ${note}`,
+        listingSaleTopic(order)
+      );
+      showToast(`Návrh ${qtyLabel} je u kupujícího — čeká se na potvrzení.`, "success");
+      return true;
+    },
+    [listingSaleOrders, sendMessage, showToast, user?.id]
+  );
+
+  const withdrawListingSaleAdjustment = useCallback(
+    (orderId) => {
+      const order = listingSaleOrders.find((o) => o.id === orderId);
+      if (!order || order.status !== LISTING_SALE_STATUS.adjust_pending) {
+        showToast("Návrh nelze vzít zpět.", "error");
+        return false;
+      }
+      if (!isSameAppUser(order.sellerId, user?.id ?? "me")) {
+        showToast("Návrh bere zpět jen prodávající.", "info");
+        return false;
+      }
+      setListingSaleOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId
+            ? {
+                ...o,
+                status: LISTING_SALE_STATUS.held,
+                statusLabel: LISTING_SALE_STATUSES.held,
+                adjustProposedQuantity: null,
+                adjustProposedAmount: null,
+                adjustMessage: null,
+              }
+            : o
+        )
+      );
+      showToast("Návrh množství je stažený — platí původní objednávka.", "success");
+      return true;
+    },
+    [listingSaleOrders, showToast, user?.id]
+  );
+
+  const confirmListingSaleAdjustment = useCallback(
+    (orderId) => {
+      const order = listingSaleOrders.find((o) => o.id === orderId);
+      if (!order || order.status !== LISTING_SALE_STATUS.adjust_pending) {
+        showToast("Není tu žádný návrh množství k potvrzení.", "error");
+        return false;
+      }
+      if (!isSameAppUser(order.buyerId, user?.id ?? "me")) {
+        showToast("Nové množství potvrzuje jen kupující.", "info");
+        return false;
+      }
+      const proposed = order.adjustProposedQuantity;
+      const newAmount =
+        order.adjustProposedAmount ??
+        calcListingSaleAmount(order.unitPrice, proposed, order.priceUnit);
+      const refund = Math.max(0, (order.amount || 0) - newAmount);
+      const { fee, sellerGets } = calcServiceFee(newAmount);
+      refundListingBuyer(order, refund);
+      setListingSaleOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId
+            ? {
+                ...o,
+                quantity: proposed,
+                amount: newAmount,
+                fee,
+                sellerGets,
+                status: LISTING_SALE_STATUS.held,
+                statusLabel: LISTING_SALE_STATUSES.held,
+                adjustProposedQuantity: null,
+                adjustProposedAmount: null,
+                adjustMessage: null,
+                adjustedAt: new Date().toISOString(),
+              }
+            : o
+        )
+      );
+      sendMessage(
+        order.sellerId,
+        order.sellerName || "Prodávající",
+        `Beru ${formatListingQuantity(proposed, order.priceUnit)} u „${order.title}“.`,
+        listingSaleTopic(order)
+      );
+      const refundHint =
+        refund > 0
+          ? order.paymentMethod === "wallet"
+            ? ` Do peněženky se vrací ${refund} Kč.`
+            : ` Rozdíl ${refund} Kč se vrací na kartu.`
+          : "";
+      showToast(
+        `Potvrzeno: ${formatListingQuantity(proposed, order.priceUnit)} za ${newAmount} Kč.${refundHint}`,
+        "success"
+      );
+      return true;
+    },
+    [listingSaleOrders, refundListingBuyer, sendMessage, showToast, user?.id]
+  );
+
+  const rejectListingSaleAdjustment = useCallback(
+    (orderId) => {
+      const order = listingSaleOrders.find((o) => o.id === orderId);
+      if (!order || order.status !== LISTING_SALE_STATUS.adjust_pending) {
+        showToast("Není tu žádný návrh k odmítnutí.", "error");
+        return false;
+      }
+      if (!isSameAppUser(order.buyerId, user?.id ?? "me")) {
+        showToast("Nákup ruší jen kupující.", "info");
+        return false;
+      }
+      refundListingBuyer(order, order.amount);
+      setListingSaleOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId
+            ? {
+                ...o,
+                status: LISTING_SALE_STATUS.cancelled,
+                statusLabel: LISTING_SALE_STATUSES.cancelled,
+                cancelledAt: new Date().toISOString(),
+              }
+            : o
+        )
+      );
+      sendMessage(
+        order.sellerId,
+        order.sellerName || "Prodávající",
+        `Na ${formatListingQuantity(order.adjustProposedQuantity, order.priceUnit)} u „${order.title}“ nepřistupuji — nákup ruším.`,
+        listingSaleTopic(order)
+      );
+      const back =
+        order.paymentMethod === "wallet"
+          ? ` ${order.amount} Kč je zpět v peněžence.`
+          : ` ${order.amount} Kč se vrací na kartu.`;
+      showToast(`Nákup zrušen.${back} Inzerát je znovu k dispozici.`, "success");
+      return true;
+    },
+    [listingSaleOrders, refundListingBuyer, sendMessage, showToast, user?.id]
   );
 
   const setChatActiveTopic = useCallback((topic) => {
@@ -7719,6 +7977,10 @@ export function AppProvider({ children }) {
         rentItem,
         buyListing,
         confirmListingHandover,
+        proposeListingSaleAdjustment,
+        withdrawListingSaleAdjustment,
+        confirmListingSaleAdjustment,
+        rejectListingSaleAdjustment,
         listingSaleOrders,
         addCredits,
         payAmount,

@@ -2,13 +2,21 @@
 
 export const LISTING_SALE_STATUS = {
   held: "held",
+  adjust_pending: "adjust_pending",
   released: "released",
+  cancelled: "cancelled",
 };
 
 export const LISTING_SALE_STATUS_LABEL = {
   held: "V rezervaci",
+  adjust_pending: "Čeká na potvrzení množství",
   released: "Uzavřeno · vyplaceno",
+  cancelled: "Zrušeno",
 };
+
+export function isActiveListingSaleStatus(status) {
+  return status === LISTING_SALE_STATUS.held || status === LISTING_SALE_STATUS.adjust_pending;
+}
 
 /** Stejný uživatel i při legacy id „me“ vs. konkrétní účet (např. monika). */
 export function isSameAppUser(a, b) {
@@ -67,7 +75,7 @@ export function isSelfNeighborCandidate(neighborOrId, user) {
 /** Aktivní (neuzavřená) objednávka pro inzerát. */
 export function getActiveListingSale(orders, listingId) {
   return (orders ?? []).find(
-    (o) => o.listingId === listingId && o.status === LISTING_SALE_STATUS.held
+    (o) => o.listingId === listingId && isActiveListingSaleStatus(o.status)
   );
 }
 
@@ -84,7 +92,7 @@ export function applyListingSaleVisibility(posts, saleOrders, viewerId = "me") {
       closedIds.add(o.listingId);
       continue;
     }
-    if (o.status === LISTING_SALE_STATUS.held) {
+    if (isActiveListingSaleStatus(o.status)) {
       activeByListing.set(o.listingId, o);
     }
   }
@@ -106,8 +114,9 @@ export function applyListingSaleVisibility(posts, saleOrders, viewerId = "me") {
 
       return {
         ...post,
-        saleStatus: LISTING_SALE_STATUS.held,
-        saleStatusLabel: LISTING_SALE_STATUS_LABEL.held,
+        saleStatus: order.status,
+        saleStatusLabel:
+          LISTING_SALE_STATUS_LABEL[order.status] ?? LISTING_SALE_STATUS_LABEL.held,
         saleOrderId: order.id,
         saleReservedByMe: isBuyer,
         saleIsSellerView: isSeller && !isBuyer,
