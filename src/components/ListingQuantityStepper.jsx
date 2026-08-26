@@ -1,6 +1,5 @@
 import {
   clampListingQuantity,
-  formatListingQuantity,
   getListingPriceUnit,
   listingQuantityStep,
   parseListingQuantity,
@@ -28,6 +27,7 @@ export default function ListingQuantityStepper({
       <button
         type="button"
         disabled={disabled || qty <= unit.min}
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => setQty(qty - step)}
         className="w-11 h-11 rounded-xl border border-stone-200 text-lg font-semibold text-[#1B4D3E] disabled:opacity-30 disabled:text-stone-400"
         aria-label="Méně"
@@ -55,6 +55,7 @@ export default function ListingQuantityStepper({
       <button
         type="button"
         disabled={disabled || (max != null && qty >= max)}
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => setQty(qty + step)}
         className="w-11 h-11 rounded-xl border border-stone-200 text-lg font-semibold text-[#1B4D3E] disabled:opacity-30 disabled:text-stone-400"
         aria-label="Více"
