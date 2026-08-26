@@ -143,6 +143,10 @@ import {
   normalizeListingPriceUnit,
 } from "../data/listingPriceUnits.js";
 import {
+  listingPaysInPerson,
+  normalizeListingPaymentMethod,
+} from "../data/listingPayment.js";
+import {
   INTEREST_OPTIONS,
   EVENTS as INITIAL_EVENTS,
   INITIAL_CHATS,
@@ -5010,6 +5014,7 @@ export function AppProvider({ children }) {
       boardPost = false,
       listingPriceUnit = "total",
       listingQuantity = null,
+      listingPaymentMethod = "podplot",
     }) => {
       if (!user) return;
       if (isB2BWorkMode) {
@@ -5121,6 +5126,8 @@ export function AppProvider({ children }) {
         listingPrice,
         listingPriceUnit: categoryId === "prodam" ? resolvedPriceUnit : null,
         listingQuantity: resolvedQuantity,
+        listingPaymentMethod:
+          categoryId === "prodam" ? normalizeListingPaymentMethod(listingPaymentMethod) : null,
         groupId: primaryGroupId,
         groupIds: resolvedGroupIds,
         groupName: primaryGroup?.name ?? groupNames[0],
@@ -5266,6 +5273,10 @@ export function AppProvider({ children }) {
     (post, method = "card", opts = {}) => {
       if (post.mine) {
         showToast("Toto je váš inzerát.", "info");
+        return false;
+      }
+      if (listingPaysInPerson(post)) {
+        showToast("Prodávající bere platbu jen osobně — napište mu zprávu a domluvte předání.", "info");
         return false;
       }
       if (

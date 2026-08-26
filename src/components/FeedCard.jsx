@@ -28,6 +28,8 @@ import {
   getListingPriceUnit,
   listingUsesVariablePrice,
 } from "../data/listingPriceUnits.js";
+import { listingPaysInPerson } from "../data/listingPayment.js";
+import { DoodleHandIcon } from "./doodle/doodleIcons.jsx";
 import { ACTION_BTN } from "./PostInteractions.jsx";
 import { topicFromPost, topicFromGroupPost } from "../data/chatTopics.js";
 import GroupPostComments from "./GroupPostComments.jsx";
@@ -226,6 +228,15 @@ function ListingSaleBuyButton({ post }) {
 
   if (isReserved || !isProdam || post.mine) return null;
 
+  if (listingPaysInPerson(post)) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-stone-600 bg-stone-100 border border-stone-200 px-2 py-1.5 rounded-xl whitespace-nowrap">
+        <DoodleHandIcon className="w-3.5 h-3.5" />
+        Platba osobně
+      </span>
+    );
+  }
+
   const priceLabel = variable
     ? formatListingUnitPrice(post.listingPrice, post.listingPriceUnit)
     : `${post.listingPrice} Kč`;
@@ -370,7 +381,13 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
                   participantName={post.author}
                   topic={messageTopic}
                   compact
-                  label={isGroupDiscussion ? "Soukromě" : undefined}
+                  label={
+                    isGroupDiscussion
+                      ? "Soukromě"
+                      : listingPaysInPerson(post)
+                        ? "Domluvit předání"
+                        : undefined
+                  }
                 />
                 {!isGroupDiscussion && <ListingSaleBuyButton post={post} />}
               </>
@@ -551,7 +568,13 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
                 participantName={post.author}
                 topic={messageTopic}
                 compact
-                label={isGroupDiscussion ? "Soukromě" : undefined}
+                label={
+                  isGroupDiscussion
+                    ? "Soukromě"
+                    : listingPaysInPerson(post)
+                      ? "Domluvit předání"
+                      : undefined
+                }
               />
               {!isGroupDiscussion && <ListingSaleBuyButton post={post} />}
             </>
