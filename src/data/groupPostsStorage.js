@@ -10,7 +10,15 @@ export function loadGroupBoardPosts(userId) {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((p) => p && typeof p === "object" && p.id);
+    return parsed
+      .filter((p) => p && typeof p === "object" && p.id)
+      .map((p) => ({
+        ...p,
+        createdAt:
+          typeof p.createdAt === "number"
+            ? p.createdAt
+            : Date.parse(p.createdAt) || 0,
+      }));
   } catch {
     return [];
   }

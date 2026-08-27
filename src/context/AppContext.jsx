@@ -574,17 +574,14 @@ export function AppProvider({ children }) {
   const skipNextGroupPostsPersist = useRef(true);
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setUserGroupPosts([]);
+      skipNextGroupPostsPersist.current = true;
+      return;
+    }
     const deleted = loadDeletedContent(user.id);
     const stored = loadGroupBoardPosts(user.id).filter((p) => !isDeletedPost(p, deleted));
-    if (stored.length) {
-      setUserGroupPosts((prev) =>
-        mergePostsById(
-          prev.filter((p) => !isDeletedPost(p, deleted)),
-          stored
-        )
-      );
-    }
+    setUserGroupPosts(stored);
     skipNextGroupPostsPersist.current = true;
   }, [user?.id]);
 
@@ -2332,6 +2329,8 @@ export function AppProvider({ children }) {
     workUserBackupRef.current = null;
     setExtraReports([]);
     setUserReports([]);
+    setUserGroupPosts([]);
+    setUserPosts([]);
     setActiveTab("home");
     showToast("Odhlášeno. Pro vstup se znovu přihlaste nebo zaregistrujte.", "info");
   }, [showToast]);
@@ -2370,6 +2369,10 @@ export function AppProvider({ children }) {
       setShowDiscoveryWall(true);
       setViewAsNeighbor(false);
       workUserBackupRef.current = null;
+      setExtraReports([]);
+      setUserReports([]);
+      setUserGroupPosts([]);
+      setUserPosts([]);
       setActiveTab("home");
       showToast(
         accountType === "urad"
@@ -5200,7 +5203,11 @@ export function AppProvider({ children }) {
       setUserPosts((prev) => [post, ...prev]);
       void publishRemotePost(post, user);
       if (isBoard && isGroupBoardDiscussionPost(post)) {
-        setUserGroupPosts((prev) => [post, ...prev]);
+        setUserGroupPosts((prev) => {
+          const next = [post, ...prev];
+          if (user.id) persistGroupBoardPosts(user.id, next);
+          return next;
+        });
       }
 
       if (cat?.isLending) {
@@ -5489,7 +5496,11 @@ export function AppProvider({ children }) {
         photos: photoUrls.map((p) => (typeof p === "string" ? p : p?.url)).filter(Boolean),
         isVerified: user.isVerified ?? false,
       };
-      setUserGroupPosts((prev) => [post, ...prev]);
+      setUserGroupPosts((prev) => {
+        const next = [post, ...prev];
+        if (user.id) persistGroupBoardPosts(user.id, next);
+        return next;
+      });
       setUserPosts((prev) => [post, ...prev]);
       void publishRemotePost(post, user);
       showToast(`Příspěvek je na nástěnce ${groupName}.`);
