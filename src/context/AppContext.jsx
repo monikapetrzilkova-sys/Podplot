@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { CURRENT_USER } from "../data/mockData.js";
 import { getCategory } from "../data/listingCategories.js";
-import { getGroup, isGroupBoardDiscussionPost } from "../data/groups.js";
+import { getGroup, isGroupBoardDiscussionPost, mergePostsById } from "../data/groups.js";
 import {
   SEED_GROUP_POST_COMMENTS,
   commentsForPost,
@@ -1427,16 +1427,22 @@ export function AppProvider({ children }) {
       const feedRemote = remote
         .filter((p) => !isGroupProposalPost(p) && !isGroupProposalVotePost(p))
         .filter((p) => !isDeletedPost(p, deletedContentRef.current));
-      setUserPosts((prev) => {
-        const deleted = deletedContentRef.current;
-        const byId = new Map(
-          prev.filter((p) => !isDeletedPost(p, deleted)).map((p) => [p.id, p])
+      const deleted = deletedContentRef.current;
+      setUserPosts((prev) =>
+        mergePostsById(
+          prev.filter((p) => !isDeletedPost(p, deleted)),
+          feedRemote
+        )
+      );
+      const groupRemote = feedRemote.filter(isGroupBoardDiscussionPost);
+      if (groupRemote.length) {
+        setUserGroupPosts((prev) =>
+          mergePostsById(
+            prev.filter((p) => !isDeletedPost(p, deleted)),
+            groupRemote
+          )
         );
-        for (const p of feedRemote) {
-          if (!byId.has(p.id)) byId.set(p.id, p);
-        }
-        return [...byId.values()].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
-      });
+      }
 
       const revivedReports = feedRemote
         .filter(
@@ -1520,6 +1526,12 @@ export function AppProvider({ children }) {
           if (prev.some((p) => p.id === post.id)) return prev;
           return [post, ...prev];
         });
+        if (isGroupBoardDiscussionPost(post)) {
+          setUserGroupPosts((prev) => {
+            if (prev.some((p) => p.id === post.id)) return prev;
+            return [post, ...prev];
+          });
+        }
         const revived = reportFromFeedPost(post);
         if (revived && !isDeletedReport(revived, deletedContentRef.current)) {
           setExtraReports((prev) => mergeReportsById(prev, [revived]));
@@ -5412,6 +5424,7 @@ export function AppProvider({ children }) {
       const groupName = group?.name ?? "Skupina";
       const id = `gp-user-${Date.now()}`;
       const photoUrls = (photos ?? []).map((p) => p?.url ?? p).filter(Boolean);
+      const { feedType, feedSubtype } = inferFeedClassification("diskuse", user.accountType);
       const post = {
         id,
         groupId,
@@ -5422,22 +5435,27 @@ export function AppProvider({ children }) {
         role: getAccountType(user.accountType)?.role ?? "soused",
         accountType: user.accountType,
         author: user.name,
-        authorId: "me",
+        authorId: user.id ?? "me",
         initials: user.initials,
         title: title.trim(),
         body: body.trim(),
         meta: `Právě teď · ${groupName}`,
         type: "Příspěvek",
+        feedType,
+        feedSubtype,
         mine: true,
         createdAt: Date.now(),
         locationId: activeLocationId,
+        municipality: activeLocation?.municipality,
         photos: photoUrls.map((p) => (typeof p === "string" ? p : p?.url)).filter(Boolean),
+        isVerified: user.isVerified ?? false,
       };
       setUserGroupPosts((prev) => [post, ...prev]);
       setUserPosts((prev) => [post, ...prev]);
+      void publishRemotePost(post, user);
       showToast(`Příspěvek je na nástěnce ${groupName}.`);
     },
-    [user, showToast, activeLocationId, communityGroups]
+    [user, showToast, activeLocationId, activeLocation, communityGroups]
   );
 
   const getGroupPostComments = useCallback(
