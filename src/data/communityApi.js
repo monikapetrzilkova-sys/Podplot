@@ -63,6 +63,12 @@ function rowToFeedPost(row, currentUserId) {
     listingQuantity: payload.listingQuantity ?? null,
     listingPaymentMethod: payload.listingPaymentMethod ?? null,
     groupId: payload.groupId ?? null,
+    groupIds: Array.isArray(payload.groupIds)
+      ? payload.groupIds.filter(Boolean)
+      : payload.groupId
+        ? [payload.groupId]
+        : [],
+    groupName: payload.groupName ?? null,
     sharedRemote: true,
     isGroupProposal: Boolean(payload.groupProposal),
     isGroupProposalVote: Boolean(payload.groupProposalVote),
@@ -73,6 +79,14 @@ function rowToFeedPost(row, currentUserId) {
     proposalVotes: payload.votes ?? null,
     ...payload.extra,
   };
+  if (payload.boardPost === true) base.boardPost = true;
+  else if (payload.boardPost === false) base.boardPost = false;
+  if (Array.isArray(payload.groupIds) && payload.groupIds.length) {
+    base.groupIds = payload.groupIds.filter(Boolean);
+  } else if (base.groupId && !Array.isArray(base.groupIds)) {
+    base.groupIds = [base.groupId];
+  }
+  if (payload.groupName) base.groupName = payload.groupName;
   // Fotky vždy z řádku DB (ne z payload.extra) a jako čisté URL řetězce
   base.photos = normalizePhotoList(row.photos ?? base.photos);
   if (!base.initials || base.initials === "??") {
@@ -474,6 +488,13 @@ export async function publishRemotePost(post, user) {
     listingQuantity: post.listingQuantity ?? null,
     listingPaymentMethod: post.listingPaymentMethod ?? null,
     groupId: post.groupId ?? null,
+    groupIds: Array.isArray(post.groupIds)
+      ? post.groupIds.filter(Boolean)
+      : post.groupId
+        ? [post.groupId]
+        : [],
+    groupName: post.groupName ?? null,
+    boardPost: post.boardPost === true ? true : post.boardPost === false ? false : undefined,
     interactionType: post.interactionType ?? null,
     placeLabel: post.placeLabel ?? null,
     groupProposal: Boolean(post.isGroupProposal),
@@ -485,6 +506,7 @@ export async function publishRemotePost(post, user) {
     votes: post.proposalVotes ?? post.votes ?? null,
     updatedAt: post.updatedAt ?? null,
   };
+  if (payload.boardPost === undefined) delete payload.boardPost;
 
   const row = {
     id: post.id,

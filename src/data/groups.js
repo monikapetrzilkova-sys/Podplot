@@ -197,3 +197,15 @@ export function getRecentGroupPosts(userGroupPosts = [], limit = 5) {
   );
   return all.slice(0, limit);
 }
+
+/** Spojí existující a nové příspěvky bez duplicit (novější první). */
+export function mergePostsById(existing = [], incoming = []) {
+  const byId = new Map();
+  for (const p of existing) {
+    if (p?.id) byId.set(p.id, p);
+  }
+  for (const p of incoming) {
+    if (p?.id && !byId.has(p.id)) byId.set(p.id, p);
+  }
+  return [...byId.values()].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+}

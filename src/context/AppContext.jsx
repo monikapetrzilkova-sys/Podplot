@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { CURRENT_USER } from "../data/mockData.js";
 import { getCategory } from "../data/listingCategories.js";
-import { getGroup, isGroupBoardDiscussionPost } from "../data/groups.js";
+import { getGroup, isGroupBoardDiscussionPost, mergePostsById } from "../data/groups.js";
 import {
   SEED_GROUP_POST_COMMENTS,
   commentsForPost,
@@ -97,6 +97,7 @@ import {
   isDeletedPost,
   isDeletedReport,
 } from "../data/deletedContentStorage.js";
+import { loadGroupBoardPosts, persistGroupBoardPosts } from "../data/groupPostsStorage.js";
 import { reportFromFeedPost } from "../utils/reportPinUtils.js";
 import { URGENT_SCOPE, URGENT_LOCAL_RADIUS_M, resolveReportDistance, describeUrgentAudience } from "../data/reportUrgency.js";
 import {
@@ -357,7 +358,16 @@ export function AppProvider({ children }) {
   /** Prodeje bazaru: platba v úschově (held) → po „Převzato a zaplaceno“ released */
   const [listingSaleOrders, setListingSaleOrders] = useState([]);
   const [userPosts, setUserPosts] = useState([]);
-  const [userGroupPosts, setUserGroupPosts] = useState([]);
+  const [userGroupPosts, setUserGroupPosts] = useState(() => {
+    try {
+      const uid = SKIP_REGISTRATION ? getDevTestUser().id : loadUserSession()?.user?.id;
+      if (!uid) return [];
+      const deleted = loadDeletedContent(uid);
+      return loadGroupBoardPosts(uid).filter((p) => !isDeletedPost(p, deleted));
+    } catch {
+      return [];
+    }
+  });
   const [groupPostComments, setGroupPostComments] = useState(SEED_GROUP_POST_COMMENTS);
   const [userLendingItems, setUserLendingItems] = useState([]);
   const [lendingAvailability, setLendingAvailability] = useState({
@@ -560,6 +570,32 @@ export function AppProvider({ children }) {
       (extraReports ?? []).filter((r) => !isDeletedReport(r, deleted))
     );
   }, [user?.id, extraReports]);
+
+  const skipNextGroupPostsPersist = useRef(true);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setUserGroupPosts([]);
+      skipNextGroupPostsPersist.current = true;
+      return;
+    }
+    const deleted = loadDeletedContent(user.id);
+    const stored = loadGroupBoardPosts(user.id).filter((p) => !isDeletedPost(p, deleted));
+    setUserGroupPosts(stored);
+    skipNextGroupPostsPersist.current = true;
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    if (skipNextGroupPostsPersist.current) {
+      skipNextGroupPostsPersist.current = false;
+      return;
+    }
+    persistGroupBoardPosts(
+      user.id,
+      (userGroupPosts ?? []).filter((p) => !isDeletedPost(p, deletedContentRef.current))
+    );
+  }, [user?.id, userGroupPosts]);
   const [communityGroups, setCommunityGroups] = useState(() => {
     const locId = SKIP_REGISTRATION
       ? "domov"
@@ -1427,16 +1463,22 @@ export function AppProvider({ children }) {
       const feedRemote = remote
         .filter((p) => !isGroupProposalPost(p) && !isGroupProposalVotePost(p))
         .filter((p) => !isDeletedPost(p, deletedContentRef.current));
-      setUserPosts((prev) => {
-        const deleted = deletedContentRef.current;
-        const byId = new Map(
-          prev.filter((p) => !isDeletedPost(p, deleted)).map((p) => [p.id, p])
+      const deleted = deletedContentRef.current;
+      setUserPosts((prev) =>
+        mergePostsById(
+          prev.filter((p) => !isDeletedPost(p, deleted)),
+          feedRemote
+        )
+      );
+      const groupRemote = feedRemote.filter(isGroupBoardDiscussionPost);
+      if (groupRemote.length) {
+        setUserGroupPosts((prev) =>
+          mergePostsById(
+            prev.filter((p) => !isDeletedPost(p, deleted)),
+            groupRemote
+          )
         );
-        for (const p of feedRemote) {
-          if (!byId.has(p.id)) byId.set(p.id, p);
-        }
-        return [...byId.values()].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
-      });
+      }
 
       const revivedReports = feedRemote
         .filter(
@@ -1520,6 +1562,12 @@ export function AppProvider({ children }) {
           if (prev.some((p) => p.id === post.id)) return prev;
           return [post, ...prev];
         });
+        if (isGroupBoardDiscussionPost(post)) {
+          setUserGroupPosts((prev) => {
+            if (prev.some((p) => p.id === post.id)) return prev;
+            return [post, ...prev];
+          });
+        }
         const revived = reportFromFeedPost(post);
         if (revived && !isDeletedReport(revived, deletedContentRef.current)) {
           setExtraReports((prev) => mergeReportsById(prev, [revived]));
@@ -2281,6 +2329,8 @@ export function AppProvider({ children }) {
     workUserBackupRef.current = null;
     setExtraReports([]);
     setUserReports([]);
+    setUserGroupPosts([]);
+    setUserPosts([]);
     setActiveTab("home");
     showToast("Odhlášeno. Pro vstup se znovu přihlaste nebo zaregistrujte.", "info");
   }, [showToast]);
@@ -2319,6 +2369,10 @@ export function AppProvider({ children }) {
       setShowDiscoveryWall(true);
       setViewAsNeighbor(false);
       workUserBackupRef.current = null;
+      setExtraReports([]);
+      setUserReports([]);
+      setUserGroupPosts([]);
+      setUserPosts([]);
       setActiveTab("home");
       showToast(
         accountType === "urad"
@@ -5149,7 +5203,11 @@ export function AppProvider({ children }) {
       setUserPosts((prev) => [post, ...prev]);
       void publishRemotePost(post, user);
       if (isBoard && isGroupBoardDiscussionPost(post)) {
-        setUserGroupPosts((prev) => [post, ...prev]);
+        setUserGroupPosts((prev) => {
+          const next = [post, ...prev];
+          if (user.id) persistGroupBoardPosts(user.id, next);
+          return next;
+        });
       }
 
       if (cat?.isLending) {
@@ -5412,6 +5470,7 @@ export function AppProvider({ children }) {
       const groupName = group?.name ?? "Skupina";
       const id = `gp-user-${Date.now()}`;
       const photoUrls = (photos ?? []).map((p) => p?.url ?? p).filter(Boolean);
+      const { feedType, feedSubtype } = inferFeedClassification("diskuse", user.accountType);
       const post = {
         id,
         groupId,
@@ -5422,22 +5481,31 @@ export function AppProvider({ children }) {
         role: getAccountType(user.accountType)?.role ?? "soused",
         accountType: user.accountType,
         author: user.name,
-        authorId: "me",
+        authorId: user.id ?? "me",
         initials: user.initials,
         title: title.trim(),
         body: body.trim(),
         meta: `Právě teď · ${groupName}`,
         type: "Příspěvek",
+        feedType,
+        feedSubtype,
         mine: true,
         createdAt: Date.now(),
         locationId: activeLocationId,
+        municipality: activeLocation?.municipality,
         photos: photoUrls.map((p) => (typeof p === "string" ? p : p?.url)).filter(Boolean),
+        isVerified: user.isVerified ?? false,
       };
-      setUserGroupPosts((prev) => [post, ...prev]);
+      setUserGroupPosts((prev) => {
+        const next = [post, ...prev];
+        if (user.id) persistGroupBoardPosts(user.id, next);
+        return next;
+      });
       setUserPosts((prev) => [post, ...prev]);
+      void publishRemotePost(post, user);
       showToast(`Příspěvek je na nástěnce ${groupName}.`);
     },
-    [user, showToast, activeLocationId, communityGroups]
+    [user, showToast, activeLocationId, activeLocation, communityGroups]
   );
 
   const getGroupPostComments = useCallback(
