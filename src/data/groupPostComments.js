@@ -42,6 +42,25 @@ export function formatCommentTime(createdAt) {
   return days === 1 ? "včera" : `před ${days} dny`;
 }
 
+export const SEED_GROUP_POST_COMMENT_IDS = new Set(
+  SEED_GROUP_POST_COMMENTS.map((c) => c.id)
+);
+
+export function mergeCommentsById(...lists) {
+  const byId = new Map();
+  for (const list of lists) {
+    for (const comment of list ?? []) {
+      if (!comment?.id || !comment?.postId) continue;
+      const createdAt =
+        typeof comment.createdAt === "number"
+          ? comment.createdAt
+          : Date.parse(comment.createdAt) || Date.now();
+      byId.set(comment.id, { ...comment, createdAt });
+    }
+  }
+  return [...byId.values()].sort((a, b) => Number(a.createdAt) - Number(b.createdAt));
+}
+
 export function commentsForPost(comments, postId) {
   return (comments ?? [])
     .filter((c) => c.postId === postId)

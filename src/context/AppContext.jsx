@@ -4,7 +4,9 @@ import { getCategory } from "../data/listingCategories.js";
 import { getGroup, isGroupBoardDiscussionPost, mergePostsById } from "../data/groups.js";
 import {
   SEED_GROUP_POST_COMMENTS,
+  SEED_GROUP_POST_COMMENT_IDS,
   commentsForPost,
+  mergeCommentsById,
 } from "../data/groupPostComments.js";
 import { prefetchNearbyPlaces } from "../data/placesApi.js";
 import { calculateTopCost, getTopPlan, canTopCategory } from "../data/pricing.js";
@@ -107,13 +109,40 @@ import {
   persistUserEvents,
 } from "../data/userContentStorage.js";
 import {
+  loadUserActivity,
+  persistUserActivity,
+  persistActivityMerge,
+  defaultUserActivity,
+  DEFAULT_JOINED_EVENT_IDS,
+  DEFAULT_MY_USEFUL_POSTS,
+  DEFAULT_USEFUL_COUNTS,
+  DEFAULT_MY_SEARCH_HELP_POSTS,
+  DEFAULT_SEARCH_HELP_COUNTS,
+  DEFAULT_SEARCH_HIGHLIGHTED_POSTS,
+  mergeIdLists,
+  mergeCountMaps,
+  mergeHelpOffersByPost,
+  userOwnedHelpOffers,
+  applyEventPatches,
+  applyCollectedActivityToEvents,
+  buildEventPatches,
+  attendeeFromUser,
+} from "../data/userActivityStorage.js";
+import {
   isHelpFeedPost,
   isEventFeedPost,
+  isActivityFeedPost,
   helpItemToFeedPost,
   feedPostToHelpItem,
   eventToFeedPost,
   feedPostToEvent,
   lendingItemFromPost,
+  commentToFeedPost,
+  eventJoinToFeedPost,
+  eventChatToFeedPost,
+  eventGalleryToFeedPost,
+  helpOfferToFeedPost,
+  collectActivityFromPosts,
 } from "../data/persistedFeedItems.js";
 import { reportFromFeedPost } from "../utils/reportPinUtils.js";
 import { URGENT_SCOPE, URGENT_LOCAL_RADIUS_M, resolveReportDistance, describeUrgentAudience } from "../data/reportUrgency.js";
@@ -327,6 +356,46 @@ function nowTime() {
   return nowCzechTime();
 }
 
+function currentSessionUserId() {
+  try {
+    return SKIP_REGISTRATION ? getDevTestUser().id : loadUserSession()?.user?.id;
+  } catch {
+    return null;
+  }
+}
+
+function seedHelpOffersByPost() {
+  return {
+    nh1: [
+      {
+        helperId: "petr-d",
+        helperName: "Petr Dvořák",
+        time: "před 1 h",
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 47 * 60 * 60 * 1000).toISOString(),
+        authorId: "nh1",
+        authorName: "Jana Svobodová",
+        postTitle: "Hlídání kočky o víkendu",
+      },
+      {
+        helperId: "alena-v",
+        helperName: "Alena Vítová",
+        time: "před 40 min",
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 47 * 60 * 60 * 1000).toISOString(),
+        authorId: "nh1",
+        authorName: "Jana Svobodová",
+        postTitle: "Hlídání kočky o víkendu",
+      },
+    ],
+  };
+}
+
+function loadActivityForSession() {
+  const uid = currentSessionUserId();
+  return uid ? loadUserActivity(uid) : defaultUserActivity();
+}
+
 const DEFAULT_LOCATIONS = USER_LOCATIONS;
 
 const INITIAL_SERVICE_ORDERS = [
@@ -394,7 +463,13 @@ export function AppProvider({ children }) {
       return [];
     }
   });
-  const [groupPostComments, setGroupPostComments] = useState(SEED_GROUP_POST_COMMENTS);
+  const [groupPostComments, setGroupPostComments] = useState(() => {
+    try {
+      return mergeCommentsById(SEED_GROUP_POST_COMMENTS, loadActivityForSession().comments);
+    } catch {
+      return SEED_GROUP_POST_COMMENTS;
+    }
+  });
   const [userLendingItems, setUserLendingItems] = useState(() => {
     try {
       const uid = SKIP_REGISTRATION ? getDevTestUser().id : loadUserSession()?.user?.id;
@@ -465,35 +540,51 @@ export function AppProvider({ children }) {
   const workUserBackupRef = useRef(null);
   /** Po [+] u úřadu: otevřít formulář výzvy / krizovou stránku */
   const [pendingOfficeAction, setPendingOfficeAction] = useState(null);
-  const [usefulCounts, setUsefulCounts] = useState({ f2: 3, f4: 1, f12: 5 });
-  const [myUsefulPosts, setMyUsefulPosts] = useState(["f2"]);
-  const [helpOffersByPost, setHelpOffersByPost] = useState({
-    nh1: [
-      {
-        helperId: "petr-d",
-        helperName: "Petr Dvořák",
-        time: "před 1 h",
-        createdAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 47 * 60 * 60 * 1000).toISOString(),
-        authorId: "nh1",
-        authorName: "Jana Svobodová",
-        postTitle: "Hlídání kočky o víkendu",
-      },
-      {
-        helperId: "alena-v",
-        helperName: "Alena Vítová",
-        time: "před 40 min",
-        createdAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 47 * 60 * 60 * 1000).toISOString(),
-        authorId: "nh1",
-        authorName: "Jana Svobodová",
-        postTitle: "Hlídání kočky o víkendu",
-      },
-    ],
+  const [usefulCounts, setUsefulCounts] = useState(() => {
+    try {
+      return mergeCountMaps(DEFAULT_USEFUL_COUNTS, loadActivityForSession().usefulCounts);
+    } catch {
+      return { ...DEFAULT_USEFUL_COUNTS };
+    }
   });
-  const [searchHelpCounts, setSearchHelpCounts] = useState({ f11: 4 });
-  const [mySearchHelpPosts, setMySearchHelpPosts] = useState(["f11"]);
-  const [searchHighlightedPosts, setSearchHighlightedPosts] = useState(["f11"]);
+  const [myUsefulPosts, setMyUsefulPosts] = useState(() => {
+    try {
+      return mergeIdLists(DEFAULT_MY_USEFUL_POSTS, loadActivityForSession().myUsefulPosts);
+    } catch {
+      return [...DEFAULT_MY_USEFUL_POSTS];
+    }
+  });
+  const [helpOffersByPost, setHelpOffersByPost] = useState(() => {
+    try {
+      return mergeHelpOffersByPost(seedHelpOffersByPost(), loadActivityForSession().helpOffersByPost);
+    } catch {
+      return seedHelpOffersByPost();
+    }
+  });
+  const [searchHelpCounts, setSearchHelpCounts] = useState(() => {
+    try {
+      return mergeCountMaps(DEFAULT_SEARCH_HELP_COUNTS, loadActivityForSession().searchHelpCounts);
+    } catch {
+      return { ...DEFAULT_SEARCH_HELP_COUNTS };
+    }
+  });
+  const [mySearchHelpPosts, setMySearchHelpPosts] = useState(() => {
+    try {
+      return mergeIdLists(DEFAULT_MY_SEARCH_HELP_POSTS, loadActivityForSession().mySearchHelpPosts);
+    } catch {
+      return [...DEFAULT_MY_SEARCH_HELP_POSTS];
+    }
+  });
+  const [searchHighlightedPosts, setSearchHighlightedPosts] = useState(() => {
+    try {
+      return mergeIdLists(
+        DEFAULT_SEARCH_HIGHLIGHTED_POSTS,
+        loadActivityForSession().searchHighlightedPosts
+      );
+    } catch {
+      return [...DEFAULT_SEARCH_HIGHLIGHTED_POSTS];
+    }
+  });
   const [areaNewsList, setAreaNewsList] = useState(AREA_NEWS);
   const [acknowledgedNewsIds, setAcknowledgedNewsIds] = useState([]);
   const [lunchMenus, setLunchMenus] = useState(LUNCH_MENUS);
@@ -681,14 +772,25 @@ export function AppProvider({ children }) {
   const [chats, setChats] = useState(INITIAL_CHATS);
   const [events, setEvents] = useState(() => {
     try {
-      const uid = SKIP_REGISTRATION ? getDevTestUser().id : loadUserSession()?.user?.id;
+      const uid = currentSessionUserId();
       const stored = uid ? loadUserEvents(uid) : [];
-      return mergePostsById(stored, INITIAL_EVENTS);
+      const activity = uid ? loadUserActivity(uid) : defaultUserActivity();
+      return applyEventPatches(
+        mergePostsById(stored, INITIAL_EVENTS),
+        activity.eventPatches,
+        activity.joinedEventIds
+      );
     } catch {
       return INITIAL_EVENTS;
     }
   });
-  const [joinedEventIds, setJoinedEventIds] = useState(["ev-past2"]);
+  const [joinedEventIds, setJoinedEventIds] = useState(() => {
+    try {
+      return loadActivityForSession().joinedEventIds;
+    } catch {
+      return [...DEFAULT_JOINED_EVENT_IDS];
+    }
+  });
   const [eventGalleryActivity, setEventGalleryActivity] = useState(() => {
     if (!SKIP_REGISTRATION) return [];
     return buildInitialGalleryActivities(INITIAL_EVENTS, getDevTestUser(), ["ev-past2"]);
@@ -747,6 +849,14 @@ export function AppProvider({ children }) {
       setUserLendingItems([]);
       setNeighborHelp(NEIGHBOR_HELP);
       setEvents(INITIAL_EVENTS);
+      setGroupPostComments(SEED_GROUP_POST_COMMENTS);
+      setJoinedEventIds([...DEFAULT_JOINED_EVENT_IDS]);
+      setHelpOffersByPost(seedHelpOffersByPost());
+      setMyUsefulPosts([...DEFAULT_MY_USEFUL_POSTS]);
+      setUsefulCounts({ ...DEFAULT_USEFUL_COUNTS });
+      setMySearchHelpPosts([...DEFAULT_MY_SEARCH_HELP_POSTS]);
+      setSearchHelpCounts({ ...DEFAULT_SEARCH_HELP_COUNTS });
+      setSearchHighlightedPosts([...DEFAULT_SEARCH_HIGHLIGHTED_POSTS]);
       skipNextUserContentPersist.current = true;
       return;
     }
@@ -755,7 +865,25 @@ export function AppProvider({ children }) {
     setUserPosts(posts);
     setUserLendingItems(posts.map(lendingItemFromPost).filter(Boolean));
     setNeighborHelp(mergePostsById(loadHelpPosts(user.id), NEIGHBOR_HELP));
-    setEvents(mergePostsById(loadUserEvents(user.id), INITIAL_EVENTS));
+    const activity = loadUserActivity(user.id);
+    setEvents(
+      applyEventPatches(
+        mergePostsById(loadUserEvents(user.id), INITIAL_EVENTS),
+        activity.eventPatches,
+        activity.joinedEventIds,
+        attendeeFromUser(user)
+      )
+    );
+    setJoinedEventIds(activity.joinedEventIds);
+    setGroupPostComments(mergeCommentsById(SEED_GROUP_POST_COMMENTS, activity.comments));
+    setHelpOffersByPost(mergeHelpOffersByPost(seedHelpOffersByPost(), activity.helpOffersByPost));
+    setMyUsefulPosts(mergeIdLists(DEFAULT_MY_USEFUL_POSTS, activity.myUsefulPosts));
+    setUsefulCounts(mergeCountMaps(DEFAULT_USEFUL_COUNTS, activity.usefulCounts));
+    setMySearchHelpPosts(mergeIdLists(DEFAULT_MY_SEARCH_HELP_POSTS, activity.mySearchHelpPosts));
+    setSearchHelpCounts(mergeCountMaps(DEFAULT_SEARCH_HELP_COUNTS, activity.searchHelpCounts));
+    setSearchHighlightedPosts(
+      mergeIdLists(DEFAULT_SEARCH_HIGHLIGHTED_POSTS, activity.searchHighlightedPosts)
+    );
     skipNextUserContentPersist.current = true;
   }, [user?.id]);
 
@@ -771,7 +899,31 @@ export function AppProvider({ children }) {
     );
     persistHelpPosts(user.id, neighborHelp);
     persistUserEvents(user.id, events);
-  }, [user?.id, userPosts, neighborHelp, events]);
+    persistUserActivity(user.id, {
+      joinedEventIds,
+      comments: (groupPostComments ?? []).filter((c) => !SEED_GROUP_POST_COMMENT_IDS.has(c.id)),
+      helpOffersByPost: userOwnedHelpOffers(helpOffersByPost, user.id),
+      myUsefulPosts,
+      usefulCounts,
+      mySearchHelpPosts,
+      searchHelpCounts,
+      searchHighlightedPosts,
+      eventPatches: buildEventPatches(events),
+    });
+  }, [
+    user?.id,
+    userPosts,
+    neighborHelp,
+    events,
+    joinedEventIds,
+    groupPostComments,
+    helpOffersByPost,
+    myUsefulPosts,
+    usefulCounts,
+    mySearchHelpPosts,
+    searchHelpCounts,
+    searchHighlightedPosts,
+  ]);
   const [neighborHelpFilter, setNeighborHelpFilter] = useState("vse");
   const [sosAlert, setSosAlert] = useState(null);
   const [chatModal, setChatModal] = useState(null);
@@ -1504,6 +1656,26 @@ export function AppProvider({ children }) {
     );
   }, [user?.id]);
 
+  const ingestActivityPosts = useCallback((posts) => {
+    const collected = collectActivityFromPosts(posts);
+    if (collected.comments.length) {
+      setGroupPostComments((prev) => mergeCommentsById(prev, collected.comments));
+    }
+    if (collected.myJoinedEventIds.length) {
+      setJoinedEventIds((prev) => mergeIdLists(prev, collected.myJoinedEventIds));
+    }
+    if (
+      Object.keys(collected.attendeesByEvent).length ||
+      Object.keys(collected.chatsByEvent).length ||
+      Object.keys(collected.photosByEvent).length
+    ) {
+      setEvents((prev) => applyCollectedActivityToEvents(prev, collected));
+    }
+    if (Object.keys(collected.helpOffersByPost).length) {
+      setHelpOffersByPost((prev) => mergeHelpOffersByPost(prev, collected.helpOffersByPost));
+    }
+  }, []);
+
   // Sdílené příspěvky ze Supabase (kamarádi na Vercelu)
   useEffect(() => {
     if (!user?.id) {
@@ -1551,7 +1723,11 @@ export function AppProvider({ children }) {
         .filter((p) => !isGroupProposalPost(p) && !isGroupProposalVotePost(p))
         .filter((p) => !isDeletedPost(p, deletedContentRef.current));
       const deleted = deletedContentRef.current;
-      const listingRemote = feedRemote.filter((p) => !isHelpFeedPost(p) && !isEventFeedPost(p));
+      const activityRemote = feedRemote.filter(isActivityFeedPost);
+      if (activityRemote.length) ingestActivityPosts(activityRemote);
+      const listingRemote = feedRemote.filter(
+        (p) => !isHelpFeedPost(p) && !isEventFeedPost(p) && !isActivityFeedPost(p)
+      );
       setUserPosts((prev) =>
         mergePostsById(
           prev.filter((p) => !isDeletedPost(p, deleted)),
@@ -1658,8 +1834,12 @@ export function AppProvider({ children }) {
           }
           return;
         }
+        if (isActivityFeedPost(post)) {
+          ingestActivityPosts([post]);
+          return;
+        }
         setUserPosts((prev) => {
-          if (isHelpFeedPost(post) || isEventFeedPost(post)) return prev;
+          if (isHelpFeedPost(post) || isEventFeedPost(post) || isActivityFeedPost(post)) return prev;
           if (prev.some((p) => p.id === post.id)) return prev;
           return [post, ...prev];
         });
@@ -1703,6 +1883,7 @@ export function AppProvider({ children }) {
     loadGroupSupportSeen,
     applyGroupProposalSupports,
     notifyGroupProposalSupport,
+    ingestActivityPosts,
   ]);
 
   // Sdílené zprávy mezi testery (odpověď na inzerát / hlášení)
@@ -2447,6 +2628,14 @@ export function AppProvider({ children }) {
     setUserLendingItems([]);
     setNeighborHelp(NEIGHBOR_HELP);
     setEvents(INITIAL_EVENTS);
+    setGroupPostComments(SEED_GROUP_POST_COMMENTS);
+    setJoinedEventIds([...DEFAULT_JOINED_EVENT_IDS]);
+    setHelpOffersByPost(seedHelpOffersByPost());
+    setMyUsefulPosts([...DEFAULT_MY_USEFUL_POSTS]);
+    setUsefulCounts({ ...DEFAULT_USEFUL_COUNTS });
+    setMySearchHelpPosts([...DEFAULT_MY_SEARCH_HELP_POSTS]);
+    setSearchHelpCounts({ ...DEFAULT_SEARCH_HELP_COUNTS });
+    setSearchHighlightedPosts([...DEFAULT_SEARCH_HIGHLIGHTED_POSTS]);
     setActiveTab("home");
     showToast("Odhlášeno. Pro vstup se znovu přihlaste nebo zaregistrujte.", "info");
   }, [showToast]);
@@ -2492,6 +2681,14 @@ export function AppProvider({ children }) {
       setUserLendingItems([]);
       setNeighborHelp(NEIGHBOR_HELP);
       setEvents(INITIAL_EVENTS);
+      setGroupPostComments(SEED_GROUP_POST_COMMENTS);
+      setJoinedEventIds([...DEFAULT_JOINED_EVENT_IDS]);
+      setHelpOffersByPost(seedHelpOffersByPost());
+      setMyUsefulPosts([...DEFAULT_MY_USEFUL_POSTS]);
+      setUsefulCounts({ ...DEFAULT_USEFUL_COUNTS });
+      setMySearchHelpPosts([...DEFAULT_MY_SEARCH_HELP_POSTS]);
+      setSearchHelpCounts({ ...DEFAULT_SEARCH_HELP_COUNTS });
+      setSearchHighlightedPosts([...DEFAULT_SEARCH_HIGHLIGHTED_POSTS]);
       setActiveTab("home");
       showToast(
         accountType === "urad"
@@ -4005,11 +4202,14 @@ export function AppProvider({ children }) {
   const markPostUseful = useCallback(
     (postId) => {
       if (myUsefulPosts.includes(postId)) return;
-      setMyUsefulPosts((prev) => [...prev, postId]);
-      setUsefulCounts((prev) => ({ ...prev, [postId]: (prev[postId] ?? 0) + 1 }));
+      const nextMine = [...myUsefulPosts, postId];
+      const nextCounts = { ...usefulCounts, [postId]: (usefulCounts[postId] ?? 0) + 1 };
+      setMyUsefulPosts(nextMine);
+      setUsefulCounts(nextCounts);
+      if (user?.id) persistActivityMerge(user.id, { myUsefulPosts: nextMine, usefulCounts: nextCounts });
       showToast("Označeno jako užitečné — díky za zpětnou vazbu!", "success");
     },
-    [myUsefulPosts, showToast]
+    [myUsefulPosts, usefulCounts, user?.id, showToast]
   );
 
   const getUsefulCount = useCallback((postId) => usefulCounts[postId] ?? 0, [usefulCounts]);
@@ -4068,6 +4268,32 @@ export function AppProvider({ children }) {
         return;
       }
 
+      const newOffer = {
+        helperId,
+        helperName,
+        time: nowTime(),
+        createdAt,
+        expiresAt,
+        authorId: participantId,
+        authorName: participantName,
+        postTitle: resolvedTitle,
+      };
+      if (user?.id) {
+        persistActivityMerge(user.id, {
+          helpOffersByPost: {
+            ...userOwnedHelpOffers(helpOffersByPost, user.id),
+            [postId]: [...(userOwnedHelpOffers(helpOffersByPost, user.id)[postId] ?? []), newOffer],
+          },
+        });
+        void publishRemotePost(
+          helpOfferToFeedPost(postId, newOffer, user, {
+            locationId: activeLocationId,
+            municipality: activeLocation?.municipality,
+          }),
+          user
+        );
+      }
+
       const offerMessage = `Nabízím pomoc u „${resolvedTitle}“. Domluvíme detaily?`;
       setHelpOfferChatKickoff({
         participantId,
@@ -4097,7 +4323,7 @@ export function AppProvider({ children }) {
       ]);
       showToast("Nabídka odeslána ve zprávách — můžete domluvit detaily.", "success");
     },
-    [user, showToast, neighborHelp, userPosts, userGroupPosts, isHelpOfferActive]
+    [user, showToast, neighborHelp, userPosts, userGroupPosts, isHelpOfferActive, helpOffersByPost, activeLocationId, activeLocation]
   );
 
   const getHelpOffers = useCallback(
@@ -4132,12 +4358,24 @@ export function AppProvider({ children }) {
   const helpSearchOnPost = useCallback(
     (postId) => {
       if (mySearchHelpPosts.includes(postId)) return;
-      setMySearchHelpPosts((prev) => [...prev, postId]);
-      setSearchHelpCounts((prev) => ({ ...prev, [postId]: (prev[postId] ?? 0) + 1 }));
-      setSearchHighlightedPosts((prev) => (prev.includes(postId) ? prev : [...prev, postId]));
+      const nextMine = [...mySearchHelpPosts, postId];
+      const nextCounts = { ...searchHelpCounts, [postId]: (searchHelpCounts[postId] ?? 0) + 1 };
+      const nextHighlighted = searchHighlightedPosts.includes(postId)
+        ? searchHighlightedPosts
+        : [...searchHighlightedPosts, postId];
+      setMySearchHelpPosts(nextMine);
+      setSearchHelpCounts(nextCounts);
+      setSearchHighlightedPosts(nextHighlighted);
+      if (user?.id) {
+        persistActivityMerge(user.id, {
+          mySearchHelpPosts: nextMine,
+          searchHelpCounts: nextCounts,
+          searchHighlightedPosts: nextHighlighted,
+        });
+      }
       showToast("Pomáháte hledat — příspěvek zůstane zvýrazněný v okolí.", "success");
     },
-    [mySearchHelpPosts, showToast]
+    [mySearchHelpPosts, searchHelpCounts, searchHighlightedPosts, user?.id, showToast]
   );
 
   const getSearchHelpCount = useCallback((postId) => searchHelpCounts[postId] ?? 0, [searchHelpCounts]);
@@ -5657,9 +5895,24 @@ export function AppProvider({ children }) {
         text: String(text).trim(),
         createdAt: Date.now(),
       };
-      setGroupPostComments((prev) => [...prev, comment]);
+      setGroupPostComments((prev) => {
+        const next = [...prev, comment];
+        if (user.id) {
+          persistActivityMerge(user.id, {
+            comments: next.filter((c) => !SEED_GROUP_POST_COMMENT_IDS.has(c.id)),
+          });
+        }
+        return next;
+      });
+      void publishRemotePost(
+        commentToFeedPost(comment, user, {
+          locationId: activeLocationId,
+          municipality: activeLocation?.municipality,
+        }),
+        user
+      );
     },
-    [user]
+    [user, activeLocationId, activeLocation]
   );
 
   const addServiceRequest = useCallback(
@@ -6885,35 +7138,48 @@ export function AppProvider({ children }) {
   }, []);
 
   const joinEvent = useCallback((eventId) => {
-    if (!user) return;
-    const userEntry = {
-      id: user.id ?? "me",
-      name: user.name,
-      initials: user.initials,
-      allowPublicAreaLabel: Boolean(user.allowPublicAreaLabel),
-      publicAreaLabel: user.publicAreaLabel ?? "",
-    };
-    setJoinedEventIds((prev) => {
-      const joining = !prev.includes(eventId);
-      setEvents((evts) =>
-        evts.map((e) => {
-          if (e.id !== eventId) return e;
-          const attendees = e.attendees ?? [];
-          const nextAttendees = joining
-            ? attendees.some((a) => a.id === userEntry.id)
-              ? attendees
-              : [...attendees, userEntry]
-            : attendees.filter((a) => a.id !== userEntry.id);
-          return {
-            ...e,
-            attendees: nextAttendees,
-            participants: nextAttendees.length,
-          };
-        })
-      );
-      return joining ? [...prev, eventId] : prev.filter((id) => id !== eventId);
+    if (!user || !eventId) return;
+    const userEntry = attendeeFromUser(user);
+    const joining = !joinedEventIds.includes(eventId);
+    const nextIds = joining
+      ? [...joinedEventIds, eventId]
+      : joinedEventIds.filter((id) => id !== eventId);
+    setJoinedEventIds(nextIds);
+    setEvents((evts) => {
+      const next = evts.map((e) => {
+        if (e.id !== eventId) return e;
+        const attendees = e.attendees ?? [];
+        const nextAttendees = joining
+          ? attendees.some((a) => a.id === userEntry.id || a.id === "me")
+            ? attendees
+            : [...attendees, userEntry]
+          : attendees.filter((a) => a.id !== userEntry.id && a.id !== "me");
+        return {
+          ...e,
+          attendees: nextAttendees,
+          participants: nextAttendees.length,
+        };
+      });
+      if (user.id) persistActivityMerge(user.id, {
+        joinedEventIds: nextIds,
+        eventPatches: buildEventPatches(next),
+      });
+      return next;
     });
-  }, [user]);
+    const eventTitle = events.find((e) => e.id === eventId)?.title;
+    if (joining) {
+      void publishRemotePost(
+        eventJoinToFeedPost(eventId, eventTitle, user, {
+          attendee: userEntry,
+          locationId: activeLocationId,
+          municipality: activeLocation?.municipality,
+        }),
+        user
+      );
+    } else if (user.id) {
+      void deleteRemotePost(`join-${user.id}-${eventId}`, user.id);
+    }
+  }, [user, joinedEventIds, events, activeLocationId, activeLocation]);
 
   const isJoinedEvent = useCallback((eventId) => joinedEventIds.includes(eventId), [joinedEventIds]);
 
@@ -6948,8 +7214,8 @@ export function AppProvider({ children }) {
       if (!user || !url) return;
       let addedPhoto = null;
       let addedEvent = null;
-      setEvents((prev) =>
-        prev.map((e) => {
+      setEvents((prev) => {
+        const next = prev.map((e) => {
           if (e.id !== eventId) return e;
           if (!canUploadEventPhotos(e)) return e;
           const photo = {
@@ -6963,14 +7229,25 @@ export function AppProvider({ children }) {
           addedPhoto = photo;
           addedEvent = e;
           return { ...e, galleryPhotos: [...(e.galleryPhotos ?? []), photo] };
-        })
-      );
+        });
+        if (addedPhoto && user.id) {
+          persistActivityMerge(user.id, { eventPatches: buildEventPatches(next) });
+        }
+        return next;
+      });
       if (addedPhoto && addedEvent) {
         registerGalleryPhotoActivity(addedEvent, addedPhoto);
+        void publishRemotePost(
+          eventGalleryToFeedPost(eventId, addedPhoto, user, {
+            locationId: activeLocationId,
+            municipality: activeLocation?.municipality,
+          }),
+          user
+        );
         showToast("Fotka nahrána do galerie akce.", "success");
       }
     },
-    [user, canUploadEventPhotos, showToast, registerGalleryPhotoActivity]
+    [user, canUploadEventPhotos, showToast, registerGalleryPhotoActivity, activeLocationId, activeLocation]
   );
 
   const dismissGalleryFeedActivity = useCallback((activityId) => {
@@ -7417,18 +7694,28 @@ export function AppProvider({ children }) {
 
   const postEventChat = useCallback(
     (eventId, text) => {
-      if (!user) return;
-      setEvents((prev) =>
-        prev.map((e) => {
+      if (!user || !String(text ?? "").trim()) return;
+      const message = { sender: user.name, text: String(text).trim(), time: nowTime() };
+      setEvents((prev) => {
+        const next = prev.map((e) => {
           if (e.id !== eventId) return e;
           return {
             ...e,
-            chat: [...(e.chat ?? []), { sender: user.name, text, time: nowTime() }],
+            chat: [...(e.chat ?? []), message],
           };
-        })
+        });
+        if (user.id) persistActivityMerge(user.id, { eventPatches: buildEventPatches(next) });
+        return next;
+      });
+      void publishRemotePost(
+        eventChatToFeedPost(eventId, message, user, {
+          locationId: activeLocationId,
+          municipality: activeLocation?.municipality,
+        }),
+        user
       );
     },
-    [user]
+    [user, activeLocationId, activeLocation]
   );
 
   const createEvent = useCallback(
@@ -7534,7 +7821,9 @@ export function AppProvider({ children }) {
         return next;
       });
       void publishRemotePost(eventToFeedPost(newEv, user), user);
-      setJoinedEventIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+      const nextJoined = joinedEventIds.includes(id) ? joinedEventIds : [...joinedEventIds, id];
+      setJoinedEventIds(nextJoined);
+      if (user.id) persistActivityMerge(user.id, { joinedEventIds: nextJoined });
       setPendingNeighborsSection("akce");
       setActiveTab("neighbors");
       setSelectedEventId(id);
@@ -7556,7 +7845,7 @@ export function AppProvider({ children }) {
       }
       return id;
     },
-    [user, activeLocation, activeLocationId, showToast]
+    [user, activeLocation, activeLocationId, showToast, joinedEventIds]
   );
 
   const toggleInterest = useCallback((interestId) => {

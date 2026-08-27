@@ -2,9 +2,30 @@
 
 export const HELP_FEED_SUBTYPE = "vypomoc";
 export const EVENT_FEED_SUBTYPE = "akce";
+export const COMMENT_FEED_SUBTYPE = "komentar";
+export const EVENT_JOIN_FEED_SUBTYPE = "event-join";
+export const EVENT_CHAT_FEED_SUBTYPE = "event-chat";
+export const EVENT_GALLERY_FEED_SUBTYPE = "event-gallery";
+export const HELP_OFFER_FEED_SUBTYPE = "nabidka-pomoci";
+
+export const ACTIVITY_FEED_SUBTYPES = new Set([
+  COMMENT_FEED_SUBTYPE,
+  EVENT_JOIN_FEED_SUBTYPE,
+  EVENT_CHAT_FEED_SUBTYPE,
+  EVENT_GALLERY_FEED_SUBTYPE,
+  HELP_OFFER_FEED_SUBTYPE,
+]);
+
+export function isActivityFeedPost(post) {
+  if (!post) return false;
+  if (ACTIVITY_FEED_SUBTYPES.has(post.feedSubtype)) return true;
+  const kind = post.activityPayload?.kind;
+  return Boolean(kind && ACTIVITY_FEED_SUBTYPES.has(kind));
+}
 
 export function isHelpFeedPost(post) {
   if (!post) return false;
+  if (isActivityFeedPost(post)) return false;
   if (post.feedSubtype === HELP_FEED_SUBTYPE) return true;
   if (post.helpType === "hledam" || post.helpType === "nabizim") return true;
   const type = String(post.type ?? "").toLowerCase();
@@ -13,8 +34,254 @@ export function isHelpFeedPost(post) {
 
 export function isEventFeedPost(post) {
   if (!post) return false;
+  if (isActivityFeedPost(post)) return false;
   if (post.feedSubtype === EVENT_FEED_SUBTYPE || post.feedType === "akce") return true;
   return Boolean(post.eventPayload && typeof post.eventPayload === "object");
+}
+
+function activityAuthorFields(user, extras = {}) {
+  return {
+    author: extras.author ?? user?.name ?? "Soused",
+    authorId: extras.authorId ?? user?.id ?? "me",
+    initials: extras.initials ?? user?.initials,
+    accountType: extras.accountType ?? user?.accountType ?? "soused",
+    locationId: extras.locationId ?? null,
+    municipality: extras.municipality ?? null,
+    createdAt: extras.createdAt ?? Date.now(),
+    mine: extras.mine ?? true,
+  };
+}
+
+export function commentToFeedPost(comment, user, extras = {}) {
+  const text = String(comment?.text ?? "").trim();
+  return {
+    id: comment.id,
+    title: `Komentář: ${text.slice(0, 80)}`,
+    body: text,
+    type: "Komentář",
+    feedType: "komunita",
+    feedSubtype: COMMENT_FEED_SUBTYPE,
+    boardPost: false,
+    activityPayload: {
+      kind: COMMENT_FEED_SUBTYPE,
+      targetPostId: comment.postId,
+      comment,
+    },
+    meta: extras.meta ?? "Právě teď",
+    ...activityAuthorFields(user, {
+      ...extras,
+      author: comment.authorName,
+      authorId: comment.authorId,
+      initials: comment.authorInitials,
+      accountType: comment.accountType,
+      createdAt: comment.createdAt,
+    }),
+  };
+}
+
+export function feedPostToComment(post) {
+  const stored = post?.activityPayload?.comment;
+  const postId = stored?.postId || post?.activityPayload?.targetPostId;
+  if (!postId) return null;
+  return {
+    id: stored?.id || post.id,
+    postId,
+    authorId: stored?.authorId || post.authorId,
+    authorName: stored?.authorName || post.author,
+    authorInitials: stored?.authorInitials || post.initials,
+    accountType: stored?.accountType || post.accountType,
+    mine: Boolean(stored?.mine || post.mine),
+    text: String(stored?.text ?? post.body ?? "").trim(),
+    createdAt: stored?.createdAt ?? post.createdAt ?? Date.now(),
+  };
+}
+
+export function eventJoinToFeedPost(eventId, eventTitle, user, extras = {}) {
+  const attendee = extras.attendee ?? {
+    id: user?.id ?? "me",
+    name: user?.name,
+    initials: user?.initials,
+  };
+  return {
+    id: extras.id ?? `join-${user?.id ?? "me"}-${eventId}`,
+    title: `Jdu na akci: ${eventTitle || "Akce"}`,
+    body: "",
+    type: "Účast na akci",
+    feedType: "komunita",
+    feedSubtype: EVENT_JOIN_FEED_SUBTYPE,
+    boardPost: false,
+    activityPayload: {
+      kind: EVENT_JOIN_FEED_SUBTYPE,
+      eventId,
+      joining: extras.joining !== false,
+      attendee,
+    },
+    meta: extras.meta ?? "Právě teď",
+    ...activityAuthorFields(user, extras),
+  };
+}
+
+export function feedPostToEventJoin(post) {
+  const payload = post?.activityPayload && typeof post.activityPayload === "object" ? post.activityPayload : {};
+  const eventId = payload.eventId;
+  if (!eventId) return null;
+  return {
+    eventId,
+    joining: payload.joining !== false,
+    attendee: payload.attendee && typeof payload.attendee === "object"
+      ? payload.attendee
+      : {
+          id: post.authorId,
+          name: post.author,
+          initials: post.initials,
+        },
+    mine: Boolean(post.mine),
+  };
+}
+
+export function eventChatToFeedPost(eventId, message, user, extras = {}) {
+  const text = String(message?.text ?? "").trim();
+  return {
+    id: extras.id ?? `evchat-${eventId}-${message?.time ?? Date.now()}`,
+    title: `Chat u akce`,
+    body: text,
+    type: "Chat akce",
+    feedType: "komunita",
+    feedSubtype: EVENT_CHAT_FEED_SUBTYPE,
+    boardPost: false,
+    activityPayload: {
+      kind: EVENT_CHAT_FEED_SUBTYPE,
+      eventId,
+      message,
+    },
+    meta: message?.time ?? "Právě teď",
+    ...activityAuthorFields(user, extras),
+  };
+}
+
+export function feedPostToEventChat(post) {
+  const payload = post?.activityPayload && typeof post.activityPayload === "object" ? post.activityPayload : {};
+  if (!payload.eventId) return null;
+  const message =
+    payload.message && typeof payload.message === "object"
+      ? payload.message
+      : { sender: post.author, text: post.body, time: post.meta };
+  return { eventId: payload.eventId, message };
+}
+
+export function eventGalleryToFeedPost(eventId, photo, user, extras = {}) {
+  return {
+    id: photo?.id ?? `evgal-${Date.now()}`,
+    title: "Fotka z akce",
+    body: "",
+    type: "Galerie akce",
+    feedType: "komunita",
+    feedSubtype: EVENT_GALLERY_FEED_SUBTYPE,
+    boardPost: false,
+    photos: photo?.url ? [photo.url] : [],
+    activityPayload: {
+      kind: EVENT_GALLERY_FEED_SUBTYPE,
+      eventId,
+      photo,
+    },
+    meta: photo?.time ?? "Právě teď",
+    ...activityAuthorFields(user, extras),
+  };
+}
+
+export function feedPostToEventGallery(post) {
+  const payload = post?.activityPayload && typeof post.activityPayload === "object" ? post.activityPayload : {};
+  if (!payload.eventId) return null;
+  const photo =
+    payload.photo && typeof payload.photo === "object"
+      ? payload.photo
+      : post.photos?.[0]
+        ? { id: post.id, url: post.photos[0], authorId: post.authorId, authorName: post.author }
+        : null;
+  if (!photo) return null;
+  return { eventId: payload.eventId, photo };
+}
+
+export function helpOfferToFeedPost(postId, offer, user, extras = {}) {
+  return {
+    id: extras.id ?? `offer-${offer?.helperId ?? user?.id ?? "me"}-${postId}`,
+    title: `Nabízím pomoc: ${offer?.postTitle || "Výpomoc"}`,
+    body: extras.body ?? "",
+    type: "Nabídka pomoci",
+    feedType: "komunita",
+    feedSubtype: HELP_OFFER_FEED_SUBTYPE,
+    boardPost: false,
+    activityPayload: {
+      kind: HELP_OFFER_FEED_SUBTYPE,
+      targetPostId: postId,
+      offer,
+    },
+    meta: offer?.time ?? "Právě teď",
+    ...activityAuthorFields(user, extras),
+  };
+}
+
+export function feedPostToHelpOffer(post) {
+  const payload = post?.activityPayload && typeof post.activityPayload === "object" ? post.activityPayload : {};
+  const postId = payload.targetPostId;
+  const offer = payload.offer && typeof payload.offer === "object" ? payload.offer : null;
+  if (!postId || !offer) return null;
+  return { postId, offer };
+}
+
+export function collectActivityFromPosts(posts) {
+  const comments = [];
+  const myJoinedEventIds = [];
+  const attendeesByEvent = {};
+  const chatsByEvent = {};
+  const photosByEvent = {};
+  const helpOffersByPost = {};
+  for (const post of posts ?? []) {
+    if (!isActivityFeedPost(post)) continue;
+    const kind = post.feedSubtype || post.activityPayload?.kind;
+    if (kind === COMMENT_FEED_SUBTYPE) {
+      const comment = feedPostToComment(post);
+      if (comment) comments.push(comment);
+      continue;
+    }
+    if (kind === EVENT_JOIN_FEED_SUBTYPE) {
+      const join = feedPostToEventJoin(post);
+      if (!join?.eventId || join.joining === false) continue;
+      if (post.mine) myJoinedEventIds.push(join.eventId);
+      if (join.attendee) {
+        attendeesByEvent[join.eventId] = [...(attendeesByEvent[join.eventId] ?? []), join.attendee];
+      }
+      continue;
+    }
+    if (kind === EVENT_CHAT_FEED_SUBTYPE) {
+      const chat = feedPostToEventChat(post);
+      if (chat?.eventId && chat.message) {
+        chatsByEvent[chat.eventId] = [...(chatsByEvent[chat.eventId] ?? []), chat.message];
+      }
+      continue;
+    }
+    if (kind === EVENT_GALLERY_FEED_SUBTYPE) {
+      const gallery = feedPostToEventGallery(post);
+      if (gallery?.eventId && gallery.photo) {
+        photosByEvent[gallery.eventId] = [...(photosByEvent[gallery.eventId] ?? []), gallery.photo];
+      }
+      continue;
+    }
+    if (kind === HELP_OFFER_FEED_SUBTYPE) {
+      const offer = feedPostToHelpOffer(post);
+      if (offer?.postId && offer.offer) {
+        helpOffersByPost[offer.postId] = [...(helpOffersByPost[offer.postId] ?? []), offer.offer];
+      }
+    }
+  }
+  return {
+    comments,
+    myJoinedEventIds,
+    attendeesByEvent,
+    chatsByEvent,
+    photosByEvent,
+    helpOffersByPost,
+  };
 }
 
 export function helpItemToFeedPost(item, user) {
