@@ -634,40 +634,6 @@ export function AppProvider({ children }) {
       (userGroupPosts ?? []).filter((p) => !isDeletedPost(p, deletedContentRef.current))
     );
   }, [user?.id, userGroupPosts]);
-
-  const skipNextUserContentPersist = useRef(true);
-
-  useEffect(() => {
-    if (!user?.id) {
-      setUserPosts([]);
-      setUserLendingItems([]);
-      setNeighborHelp(NEIGHBOR_HELP);
-      setEvents(INITIAL_EVENTS);
-      skipNextUserContentPersist.current = true;
-      return;
-    }
-    const deleted = loadDeletedContent(user.id);
-    const posts = loadUserPosts(user.id).filter((p) => !isDeletedPost(p, deleted));
-    setUserPosts(posts);
-    setUserLendingItems(posts.map(lendingItemFromPost).filter(Boolean));
-    setNeighborHelp(mergePostsById(loadHelpPosts(user.id), NEIGHBOR_HELP));
-    setEvents(mergePostsById(loadUserEvents(user.id), INITIAL_EVENTS));
-    skipNextUserContentPersist.current = true;
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (!user?.id) return;
-    if (skipNextUserContentPersist.current) {
-      skipNextUserContentPersist.current = false;
-      return;
-    }
-    persistUserPosts(
-      user.id,
-      (userPosts ?? []).filter((p) => !isDeletedPost(p, deletedContentRef.current))
-    );
-    persistHelpPosts(user.id, neighborHelp);
-    persistUserEvents(user.id, events);
-  }, [user?.id, userPosts, neighborHelp, events]);
   const [communityGroups, setCommunityGroups] = useState(() => {
     const locId = SKIP_REGISTRATION
       ? "domov"
@@ -773,6 +739,39 @@ export function AppProvider({ children }) {
     }
   });
   const [serviceRequests, setServiceRequests] = useState([]);
+  const skipNextUserContentPersist = useRef(true);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setUserPosts([]);
+      setUserLendingItems([]);
+      setNeighborHelp(NEIGHBOR_HELP);
+      setEvents(INITIAL_EVENTS);
+      skipNextUserContentPersist.current = true;
+      return;
+    }
+    const deleted = loadDeletedContent(user.id);
+    const posts = loadUserPosts(user.id).filter((p) => !isDeletedPost(p, deleted));
+    setUserPosts(posts);
+    setUserLendingItems(posts.map(lendingItemFromPost).filter(Boolean));
+    setNeighborHelp(mergePostsById(loadHelpPosts(user.id), NEIGHBOR_HELP));
+    setEvents(mergePostsById(loadUserEvents(user.id), INITIAL_EVENTS));
+    skipNextUserContentPersist.current = true;
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    if (skipNextUserContentPersist.current) {
+      skipNextUserContentPersist.current = false;
+      return;
+    }
+    persistUserPosts(
+      user.id,
+      (userPosts ?? []).filter((p) => !isDeletedPost(p, deletedContentRef.current))
+    );
+    persistHelpPosts(user.id, neighborHelp);
+    persistUserEvents(user.id, events);
+  }, [user?.id, userPosts, neighborHelp, events]);
   const [neighborHelpFilter, setNeighborHelpFilter] = useState("vse");
   const [sosAlert, setSosAlert] = useState(null);
   const [chatModal, setChatModal] = useState(null);
