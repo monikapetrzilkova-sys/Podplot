@@ -6,6 +6,7 @@ import {
   mergePostsById,
 } from "./groups.js";
 import { rowToFeedPost } from "./communityApi.js";
+import { loadGroupBoardPosts, persistGroupBoardPosts } from "./groupPostsStorage.js";
 
 describe("group board posts", () => {
   it("keeps explicit board posts on the group wall", () => {
@@ -96,5 +97,22 @@ describe("group board posts", () => {
     assert.deepEqual(post.groupIds, ["tenis"]);
     assert.equal(post.groupName, "Tenis");
     assert.equal(isGroupBoardDiscussionPost(post), true);
+  });
+
+  it("roundtrips board posts through local storage", () => {
+    const store = new Map();
+    globalThis.localStorage = {
+      getItem: (key) => (store.has(key) ? store.get(key) : null),
+      setItem: (key, value) => {
+        store.set(key, String(value));
+      },
+    };
+    persistGroupBoardPosts("u1", [
+      { id: "gp-1", title: "Tenis v sobotu", boardPost: true, groupId: "tenis" },
+    ]);
+    const loaded = loadGroupBoardPosts("u1");
+    assert.equal(loaded.length, 1);
+    assert.equal(loaded[0].id, "gp-1");
+    assert.equal(loaded[0].groupId, "tenis");
   });
 });

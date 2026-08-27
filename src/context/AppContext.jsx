@@ -97,6 +97,7 @@ import {
   isDeletedPost,
   isDeletedReport,
 } from "../data/deletedContentStorage.js";
+import { loadGroupBoardPosts, persistGroupBoardPosts } from "../data/groupPostsStorage.js";
 import { reportFromFeedPost } from "../utils/reportPinUtils.js";
 import { URGENT_SCOPE, URGENT_LOCAL_RADIUS_M, resolveReportDistance, describeUrgentAudience } from "../data/reportUrgency.js";
 import {
@@ -357,7 +358,16 @@ export function AppProvider({ children }) {
   /** Prodeje bazaru: platba v úschově (held) → po „Převzato a zaplaceno“ released */
   const [listingSaleOrders, setListingSaleOrders] = useState([]);
   const [userPosts, setUserPosts] = useState([]);
-  const [userGroupPosts, setUserGroupPosts] = useState([]);
+  const [userGroupPosts, setUserGroupPosts] = useState(() => {
+    try {
+      const uid = SKIP_REGISTRATION ? getDevTestUser().id : loadUserSession()?.user?.id;
+      if (!uid) return [];
+      const deleted = loadDeletedContent(uid);
+      return loadGroupBoardPosts(uid).filter((p) => !isDeletedPost(p, deleted));
+    } catch {
+      return [];
+    }
+  });
   const [groupPostComments, setGroupPostComments] = useState(SEED_GROUP_POST_COMMENTS);
   const [userLendingItems, setUserLendingItems] = useState([]);
   const [lendingAvailability, setLendingAvailability] = useState({
@@ -560,6 +570,35 @@ export function AppProvider({ children }) {
       (extraReports ?? []).filter((r) => !isDeletedReport(r, deleted))
     );
   }, [user?.id, extraReports]);
+
+  const skipNextGroupPostsPersist = useRef(true);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const deleted = loadDeletedContent(user.id);
+    const stored = loadGroupBoardPosts(user.id).filter((p) => !isDeletedPost(p, deleted));
+    if (stored.length) {
+      setUserGroupPosts((prev) =>
+        mergePostsById(
+          prev.filter((p) => !isDeletedPost(p, deleted)),
+          stored
+        )
+      );
+    }
+    skipNextGroupPostsPersist.current = true;
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    if (skipNextGroupPostsPersist.current) {
+      skipNextGroupPostsPersist.current = false;
+      return;
+    }
+    persistGroupBoardPosts(
+      user.id,
+      (userGroupPosts ?? []).filter((p) => !isDeletedPost(p, deletedContentRef.current))
+    );
+  }, [user?.id, userGroupPosts]);
   const [communityGroups, setCommunityGroups] = useState(() => {
     const locId = SKIP_REGISTRATION
       ? "domov"
