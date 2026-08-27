@@ -77,6 +77,8 @@ function rowToFeedPost(row, currentUserId) {
     clubCategory: payload.clubCategory ?? null,
     proposalRequired: payload.required ?? null,
     proposalVotes: payload.votes ?? null,
+    helpType: payload.helpType ?? null,
+    eventPayload: payload.eventPayload && typeof payload.eventPayload === "object" ? payload.eventPayload : null,
     ...payload.extra,
   };
   if (payload.boardPost === true) base.boardPost = true;
@@ -505,8 +507,12 @@ export async function publishRemotePost(post, user) {
     required: post.proposalRequired ?? post.required ?? null,
     votes: post.proposalVotes ?? post.votes ?? null,
     updatedAt: post.updatedAt ?? null,
+    helpType: post.helpType ?? null,
+    eventPayload: post.eventPayload ?? null,
   };
   if (payload.boardPost === undefined) delete payload.boardPost;
+  if (!payload.helpType) delete payload.helpType;
+  if (!payload.eventPayload) delete payload.eventPayload;
 
   const row = {
     id: post.id,

@@ -98,6 +98,23 @@ import {
   isDeletedReport,
 } from "../data/deletedContentStorage.js";
 import { loadGroupBoardPosts, persistGroupBoardPosts } from "../data/groupPostsStorage.js";
+import {
+  loadUserPosts,
+  persistUserPosts,
+  loadHelpPosts,
+  persistHelpPosts,
+  loadUserEvents,
+  persistUserEvents,
+} from "../data/userContentStorage.js";
+import {
+  isHelpFeedPost,
+  isEventFeedPost,
+  helpItemToFeedPost,
+  feedPostToHelpItem,
+  eventToFeedPost,
+  feedPostToEvent,
+  lendingItemFromPost,
+} from "../data/persistedFeedItems.js";
 import { reportFromFeedPost } from "../utils/reportPinUtils.js";
 import { URGENT_SCOPE, URGENT_LOCAL_RADIUS_M, resolveReportDistance, describeUrgentAudience } from "../data/reportUrgency.js";
 import {
@@ -357,7 +374,16 @@ export function AppProvider({ children }) {
   const [reservations, setReservations] = useState([]);
   /** Prodeje bazaru: platba v úschově (held) → po „Převzato a zaplaceno“ released */
   const [listingSaleOrders, setListingSaleOrders] = useState([]);
-  const [userPosts, setUserPosts] = useState([]);
+  const [userPosts, setUserPosts] = useState(() => {
+    try {
+      const uid = SKIP_REGISTRATION ? getDevTestUser().id : loadUserSession()?.user?.id;
+      if (!uid) return [];
+      const deleted = loadDeletedContent(uid);
+      return loadUserPosts(uid).filter((p) => !isDeletedPost(p, deleted));
+    } catch {
+      return [];
+    }
+  });
   const [userGroupPosts, setUserGroupPosts] = useState(() => {
     try {
       const uid = SKIP_REGISTRATION ? getDevTestUser().id : loadUserSession()?.user?.id;
@@ -369,7 +395,19 @@ export function AppProvider({ children }) {
     }
   });
   const [groupPostComments, setGroupPostComments] = useState(SEED_GROUP_POST_COMMENTS);
-  const [userLendingItems, setUserLendingItems] = useState([]);
+  const [userLendingItems, setUserLendingItems] = useState(() => {
+    try {
+      const uid = SKIP_REGISTRATION ? getDevTestUser().id : loadUserSession()?.user?.id;
+      if (!uid) return [];
+      const deleted = loadDeletedContent(uid);
+      return loadUserPosts(uid)
+        .filter((p) => !isDeletedPost(p, deleted))
+        .map(lendingItemFromPost)
+        .filter(Boolean);
+    } catch {
+      return [];
+    }
+  });
   const [lendingAvailability, setLendingAvailability] = useState({
     onVacation: false,
     availabilityMessage: "",
@@ -596,6 +634,40 @@ export function AppProvider({ children }) {
       (userGroupPosts ?? []).filter((p) => !isDeletedPost(p, deletedContentRef.current))
     );
   }, [user?.id, userGroupPosts]);
+
+  const skipNextUserContentPersist = useRef(true);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setUserPosts([]);
+      setUserLendingItems([]);
+      setNeighborHelp(NEIGHBOR_HELP);
+      setEvents(INITIAL_EVENTS);
+      skipNextUserContentPersist.current = true;
+      return;
+    }
+    const deleted = loadDeletedContent(user.id);
+    const posts = loadUserPosts(user.id).filter((p) => !isDeletedPost(p, deleted));
+    setUserPosts(posts);
+    setUserLendingItems(posts.map(lendingItemFromPost).filter(Boolean));
+    setNeighborHelp(mergePostsById(loadHelpPosts(user.id), NEIGHBOR_HELP));
+    setEvents(mergePostsById(loadUserEvents(user.id), INITIAL_EVENTS));
+    skipNextUserContentPersist.current = true;
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    if (skipNextUserContentPersist.current) {
+      skipNextUserContentPersist.current = false;
+      return;
+    }
+    persistUserPosts(
+      user.id,
+      (userPosts ?? []).filter((p) => !isDeletedPost(p, deletedContentRef.current))
+    );
+    persistHelpPosts(user.id, neighborHelp);
+    persistUserEvents(user.id, events);
+  }, [user?.id, userPosts, neighborHelp, events]);
   const [communityGroups, setCommunityGroups] = useState(() => {
     const locId = SKIP_REGISTRATION
       ? "domov"
@@ -641,7 +713,15 @@ export function AppProvider({ children }) {
 
   // Ecosystem state
   const [chats, setChats] = useState(INITIAL_CHATS);
-  const [events, setEvents] = useState(INITIAL_EVENTS);
+  const [events, setEvents] = useState(() => {
+    try {
+      const uid = SKIP_REGISTRATION ? getDevTestUser().id : loadUserSession()?.user?.id;
+      const stored = uid ? loadUserEvents(uid) : [];
+      return mergePostsById(stored, INITIAL_EVENTS);
+    } catch {
+      return INITIAL_EVENTS;
+    }
+  });
   const [joinedEventIds, setJoinedEventIds] = useState(["ev-past2"]);
   const [eventGalleryActivity, setEventGalleryActivity] = useState(() => {
     if (!SKIP_REGISTRATION) return [];
@@ -683,7 +763,15 @@ export function AppProvider({ children }) {
   const [institutionClaims, setInstitutionClaims] = useState([]);
   const [b2bInquiries, setB2bInquiries] = useState([]);
   const [workDashboardTab, setWorkDashboardTab] = useState("poptavky");
-  const [neighborHelp, setNeighborHelp] = useState(NEIGHBOR_HELP);
+  const [neighborHelp, setNeighborHelp] = useState(() => {
+    try {
+      const uid = SKIP_REGISTRATION ? getDevTestUser().id : loadUserSession()?.user?.id;
+      const stored = uid ? loadHelpPosts(uid) : [];
+      return mergePostsById(stored, NEIGHBOR_HELP);
+    } catch {
+      return NEIGHBOR_HELP;
+    }
+  });
   const [serviceRequests, setServiceRequests] = useState([]);
   const [neighborHelpFilter, setNeighborHelpFilter] = useState("vse");
   const [sosAlert, setSosAlert] = useState(null);
@@ -1464,13 +1552,14 @@ export function AppProvider({ children }) {
         .filter((p) => !isGroupProposalPost(p) && !isGroupProposalVotePost(p))
         .filter((p) => !isDeletedPost(p, deletedContentRef.current));
       const deleted = deletedContentRef.current;
+      const listingRemote = feedRemote.filter((p) => !isHelpFeedPost(p) && !isEventFeedPost(p));
       setUserPosts((prev) =>
         mergePostsById(
           prev.filter((p) => !isDeletedPost(p, deleted)),
-          feedRemote
+          listingRemote
         )
       );
-      const groupRemote = feedRemote.filter(isGroupBoardDiscussionPost);
+      const groupRemote = listingRemote.filter(isGroupBoardDiscussionPost);
       if (groupRemote.length) {
         setUserGroupPosts((prev) =>
           mergePostsById(
@@ -1478,6 +1567,18 @@ export function AppProvider({ children }) {
             groupRemote
           )
         );
+      }
+      const helpRemote = feedRemote.filter(isHelpFeedPost).map(feedPostToHelpItem);
+      if (helpRemote.length) {
+        setNeighborHelp((prev) => mergePostsById(prev, helpRemote));
+      }
+      const eventRemote = feedRemote.filter(isEventFeedPost).map(feedPostToEvent);
+      if (eventRemote.length) {
+        setEvents((prev) => mergePostsById(prev, eventRemote));
+      }
+      const lendingRemote = listingRemote.map(lendingItemFromPost).filter(Boolean);
+      if (lendingRemote.length) {
+        setUserLendingItems((prev) => mergePostsById(prev, lendingRemote));
       }
 
       const revivedReports = feedRemote
@@ -1559,9 +1660,22 @@ export function AppProvider({ children }) {
           return;
         }
         setUserPosts((prev) => {
+          if (isHelpFeedPost(post) || isEventFeedPost(post)) return prev;
           if (prev.some((p) => p.id === post.id)) return prev;
           return [post, ...prev];
         });
+        if (isHelpFeedPost(post)) {
+          const help = feedPostToHelpItem(post);
+          setNeighborHelp((prev) => (prev.some((h) => h.id === help.id) ? prev : [help, ...prev]));
+        }
+        if (isEventFeedPost(post)) {
+          const event = feedPostToEvent(post);
+          setEvents((prev) => (prev.some((e) => e.id === event.id) ? prev : [event, ...prev]));
+        }
+        const lending = lendingItemFromPost(post);
+        if (lending) {
+          setUserLendingItems((prev) => (prev.some((i) => i.id === lending.id) ? prev : [lending, ...prev]));
+        }
         if (isGroupBoardDiscussionPost(post)) {
           setUserGroupPosts((prev) => {
             if (prev.some((p) => p.id === post.id)) return prev;
@@ -2331,6 +2445,9 @@ export function AppProvider({ children }) {
     setUserReports([]);
     setUserGroupPosts([]);
     setUserPosts([]);
+    setUserLendingItems([]);
+    setNeighborHelp(NEIGHBOR_HELP);
+    setEvents(INITIAL_EVENTS);
     setActiveTab("home");
     showToast("Odhlášeno. Pro vstup se znovu přihlaste nebo zaregistrujte.", "info");
   }, [showToast]);
@@ -2373,6 +2490,9 @@ export function AppProvider({ children }) {
       setUserReports([]);
       setUserGroupPosts([]);
       setUserPosts([]);
+      setUserLendingItems([]);
+      setNeighborHelp(NEIGHBOR_HELP);
+      setEvents(INITIAL_EVENTS);
       setActiveTab("home");
       showToast(
         accountType === "urad"
@@ -5200,7 +5320,11 @@ export function AppProvider({ children }) {
       }
 
       // Věci (prodej/dar/půjčovna) patří do Sousedé → Věci, ne na nástěnku skupiny
-      setUserPosts((prev) => [post, ...prev]);
+      setUserPosts((prev) => {
+        const next = [post, ...prev];
+        if (user.id) persistUserPosts(user.id, next);
+        return next;
+      });
       void publishRemotePost(post, user);
       if (isBoard && isGroupBoardDiscussionPost(post)) {
         setUserGroupPosts((prev) => {
@@ -5440,26 +5564,33 @@ export function AppProvider({ children }) {
   const addNeighborHelpPost = useCallback(
     ({ type, title, body }) => {
       if (!user || !title.trim() || !body.trim()) return;
-      setNeighborHelp((prev) => [
-        {
-          id: `nh-${Date.now()}`,
-          type,
-          title: title.trim(),
-          body: body.trim(),
-          author: user.name,
-          initials: user.initials,
-          distance: "Právě teď · 0 m",
-          time: "Právě teď",
-          locationId: activeLocationId,
-          mine: true,
-          createdAt: Date.now(),
-        },
-        ...prev,
-      ]);
+      const helpType = type === "nabizim" ? "nabizim" : "hledam";
+      const item = {
+        id: `nh-${Date.now()}`,
+        type: helpType,
+        title: title.trim(),
+        body: body.trim(),
+        author: user.name,
+        authorId: user.id ?? "me",
+        initials: user.initials,
+        accountType: user.accountType,
+        distance: "Právě teď · 0 m",
+        time: "Právě teď",
+        locationId: activeLocationId,
+        municipality: activeLocation?.municipality ?? null,
+        mine: true,
+        createdAt: Date.now(),
+      };
+      setNeighborHelp((prev) => {
+        const next = [item, ...prev];
+        if (user.id) persistHelpPosts(user.id, next);
+        return next;
+      });
+      void publishRemotePost(helpItemToFeedPost(item, user), user);
       showToast("Příspěvek zveřejněn ve sousedské výpomoci.");
       setActiveTab("home");
     },
-    [user, showToast, activeLocationId]
+    [user, showToast, activeLocationId, activeLocation]
   );
 
   const addGroupBoardPost = useCallback(
@@ -7398,7 +7529,12 @@ export function AppProvider({ children }) {
         mine: true,
         createdAt: Date.now(),
       };
-      setEvents((prev) => [newEv, ...prev]);
+      setEvents((prev) => {
+        const next = [newEv, ...prev];
+        if (user.id) persistUserEvents(user.id, next);
+        return next;
+      });
+      void publishRemotePost(eventToFeedPost(newEv, user), user);
       setJoinedEventIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
       setPendingNeighborsSection("akce");
       setActiveTab("neighbors");
