@@ -2,19 +2,15 @@ import { useApp } from "../context/AppContext.jsx";
 import { UI_KEYS } from "../data/uiPreferences.js";
 import { useUiPref } from "../hooks/useUiPref.js";
 
-/** 3 kroky pro nového souseda — fotka, adresa, zájem o okolí */
+/** 2 kroky pro nového souseda — fotka a mapa okolí (adresa je už při registraci) */
 export default function NeighborOnboardingChecklist() {
-  const { user, openProfile, setActiveTab, setProfileScrollTarget } = useApp();
+  const { user, openProfile, setActiveTab } = useApp();
   const [dismissed, setDismissed] = useUiPref(UI_KEYS.ONBOARDING_CHECKLIST_DISMISSED, false);
   const [mapVisited, setMapVisited] = useUiPref(UI_KEYS.ONBOARDING_MAP_VISITED, false);
 
   if (dismissed || !user) return null;
 
   const hasPhoto = Boolean(user.profilePhoto);
-  const hasAddress = Boolean(
-    (user.address && String(user.address).trim()) ||
-      (user.geo?.city && String(user.geo.city).trim())
-  );
 
   const steps = [
     {
@@ -23,16 +19,6 @@ export default function NeighborOnboardingChecklist() {
       hint: "Sousedé vás snáz poznají",
       done: hasPhoto,
       onClick: () => openProfile?.(),
-    },
-    {
-      id: "address",
-      label: "Doplňte adresu",
-      hint: "Kvůli okruhu a mapě",
-      done: hasAddress,
-      onClick: () => {
-        setProfileScrollTarget?.("profile-home-address");
-        openProfile?.();
-      },
     },
     {
       id: "map",
@@ -61,10 +47,10 @@ export default function NeighborOnboardingChecklist() {
           ×
         </button>
         <p className="text-[10px] font-bold uppercase tracking-wider text-[#3D7A68] mb-0.5">
-          Začněte tu
+          Začněte tady
         </p>
         <h2 className="text-sm font-bold text-stone-900 pr-6">
-          3 kroky k plnému Podplotu
+          2 kroky k plnému Podplotu
         </h2>
         <p className="text-[11px] text-stone-500 mt-0.5 mb-3">
           Hotovo {doneCount} z {steps.length}
