@@ -20,7 +20,6 @@ import {
   isSameAppUser,
 } from "../data/listingSales.js";
 import {
-  formatListingQuantity,
   formatListingUnitPrice,
   listingUsesVariablePrice,
 } from "../data/listingPriceUnits.js";
