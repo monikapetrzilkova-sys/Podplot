@@ -581,10 +581,6 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
           )}
         </ProfileCollapsible>
 
-        <div className="mt-2 mb-4">
-          <LegalLinksSection onOpen={setLegalPage} />
-        </div>
-
         <ProfileCollapsible title="Heslo a odhlášení" summary="Změna hesla · odhlásit se" defaultOpen>
           <PasswordChangeFields />
           <button
@@ -1527,6 +1523,10 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
       )}
         </>
       )}
+
+      <div className="mt-4 mb-2">
+        <LegalLinksSection onOpen={setLegalPage} />
+      </div>
 
       {ENABLE_DEV_ROLE_SWITCH && showWorkRoleViews && testRoleId !== "soused" && testRoleId !== "urad" && (
         <section className="bg-stone-50 border border-stone-200 rounded-2xl p-4 mb-4 mt-4">
