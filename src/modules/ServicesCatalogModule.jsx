@@ -108,8 +108,6 @@ export default function ServicesCatalogModule({ showRequestForm = false, hideToo
 
     addServiceRequest,
 
-    createEscrowOrder,
-
     serviceOrders,
 
     releaseEscrowOrder,
@@ -128,11 +126,7 @@ export default function ServicesCatalogModule({ showRequestForm = false, hideToo
 
   const [requestText, setRequestText] = useState("");
 
-  const [useEscrow, setUseEscrow] = useState(false);
-
-  const [escrowAmount, setEscrowAmount] = useState(1000);
-
-
+  
 
   const filtered = servicesCatalogReachable
 
@@ -162,25 +156,17 @@ export default function ServicesCatalogModule({ showRequestForm = false, hideToo
 
       categoryId: servicesParentCategory,
 
-      useEscrow,
+      useEscrow: false,
 
-      amount: escrowAmount,
+      amount: 0,
 
     });
-
-    if (useEscrow && escrowAmount > 0) {
-
-      createEscrowOrder({ title: requestText.trim().slice(0, 50), amount: escrowAmount });
-
-    }
 
     setRequestText("");
 
   };
 
 
-
-  const escrowPreview = calcEscrowFee(escrowAmount);
 
 
 
@@ -252,37 +238,7 @@ export default function ServicesCatalogModule({ showRequestForm = false, hideToo
 
           />
 
-          <label className="flex items-center gap-2 text-xs text-stone-600">
-
-            <input type="checkbox" checked={useEscrow} onChange={(e) => setUseEscrow(e.target.checked)} />
-
-            Escrow platba (bezpeÄŤnĂˇ rezervace)
-
-          </label>
-
-          {useEscrow && (
-
-            <div className="text-xs text-stone-500">
-
-              <input
-
-                type="number"
-
-                min={100}
-
-                value={escrowAmount}
-
-                onChange={(e) => setEscrowAmount(Number(e.target.value))}
-
-                className="w-24 px-2 py-1 border rounded-lg mr-2"
-
-              />
-
-              KÄŤ Â· poplatek {escrowPreview.fee} KÄŤ
-
-            </div>
-
-          )}
+          <p className="text-[11px] text-stone-500">Domluva a platba osobně — Podplot peníze nedrží.</p>
 
           <button
 

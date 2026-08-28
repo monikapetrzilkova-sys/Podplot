@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
-import { PAYMENT_METHODS, calcServiceFee, SERVICE_FEE_PERCENT } from "../data/monetization.js";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
 import AppPanelPortal from "./AppPanelPortal.jsx";
 import LendingOwnerStatus from "./LendingOwnerStatus.jsx";
@@ -68,7 +67,6 @@ export default function LendingBookingModal({ open, item, onClose }) {
   const [endKey, setEndKey] = useState(todayKey);
   const [pickingEnd, setPickingEnd] = useState(false);
   const [note, setNote] = useState("");
-  const [method, setMethod] = useState("card");
   const [paidReservation, setPaidReservation] = useState(null);
 
   useEffect(() => {
@@ -80,7 +78,6 @@ export default function LendingBookingModal({ open, item, onClose }) {
     setEndKey(t);
     setPickingEnd(false);
     setNote("");
-    setMethod("card");
     setPaidReservation(null);
     setViewYear(n.getFullYear());
     setViewMonth(n.getMonth());
@@ -89,7 +86,6 @@ export default function LendingBookingModal({ open, item, onClose }) {
   const days = daysBetween(startKey, endKey);
   const perDay = item?.credits ?? 0;
   const total = perDay * days;
-  const { fee, sellerGets } = calcServiceFee(total);
   const ownerId = item?.authorId ?? item?.id;
   const ownerName = item?.author ?? "Majitel";
   const itemLabel = item?.item ?? item?.label ?? item?.title ?? "věc";
@@ -104,7 +100,6 @@ export default function LendingBookingModal({ open, item, onClose }) {
     setEndKey(todayKey);
     setPickingEnd(false);
     setNote("");
-    setMethod("card");
     setPaidReservation(null);
     onClose();
   };
@@ -132,8 +127,8 @@ export default function LendingBookingModal({ open, item, onClose }) {
     return key >= startKey && key <= endKey;
   };
 
-  const handlePay = () => {
-    const ok = rentItem(item, method, {
+  const handleReserve = () => {
+    const ok = rentItem(item, "card", {
       startDate: startKey,
       endDate: endKey,
       days,
@@ -144,7 +139,7 @@ export default function LendingBookingModal({ open, item, onClose }) {
     const summary = [
       `Ahoj, rezervuji si „${itemLabel}“ od ${formatCs(startKey)} do ${formatCs(endKey)} (${days} ${days === 1 ? "den" : days < 5 ? "dny" : "dní"}).`,
       note.trim() || null,
-      "Domluvíme ještě předání?",
+      `Cena cca ${total} Kč — domluvíme předání a platbu osobně?`,
     ]
       .filter(Boolean)
       .join("\n\n");
@@ -297,75 +292,12 @@ export default function LendingBookingModal({ open, item, onClose }) {
 
               <button
                 type="button"
-                onClick={() => setStep("pay")}
+                onClick={handleReserve}
                 className="w-full py-2.5 rounded-xl text-sm font-semibold text-white"
                 style={{ background: "#1B4332" }}
               >
-                Pokračovat k platbě · {total} Kč
+                Rezervovat · {total} Kč (platba osobně)
               </button>
-            </>
-          )}
-
-          {!item.onVacation && step === "pay" && (
-            <>
-              <div className="flex items-start justify-between gap-2 mb-3">
-                <div>
-                  <h2 className="text-lg font-bold text-stone-900">Platba rezervace</h2>
-                  <p className="text-sm text-stone-600 mt-0.5">{itemLabel}</p>
-                  <p className="text-xs text-stone-500">
-                    {formatCs(startKey)}
-                    {endKey !== startKey ? ` – ${formatCs(endKey)}` : ""} · {days}{" "}
-                    {days === 1 ? "den" : days < 5 ? "dny" : "dní"}
-                  </p>
-                </div>
-                <button type="button" onClick={() => setStep("schedule")} className="text-xs text-stone-500 underline">
-                  Změnit termín
-                </button>
-              </div>
-
-              <p className="text-2xl font-bold text-emerald-700 mb-1">{total} Kč</p>
-              <p className="text-xs text-stone-500 mb-4 leading-snug">
-                {perDay} Kč / den × {days}. Majitel dostane {sellerGets} Kč · poplatek Podplot {fee}{" "}
-                Kč ({SERVICE_FEE_PERCENT} %). Po platbě můžete rovnou domluvit detaily ve zprávách.
-              </p>
-
-              <div className="space-y-2 mb-4">
-                {PAYMENT_METHODS.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => setMethod(m.id)}
-                    className={`w-full text-left p-3 rounded-2xl border text-sm ${
-                      method === m.id
-                        ? "border-emerald-600 bg-emerald-50 ring-1 ring-emerald-600"
-                        : "border-stone-200"
-                    }`}
-                  >
-                    <span className="font-medium text-stone-900">
-                      {m.icon} {m.label}
-                    </span>
-                    {m.hint && <span className="block text-xs text-stone-500 mt-0.5">{m.hint}</span>}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="flex-1 py-2.5 text-sm border border-stone-200 rounded-xl"
-                >
-                  Zrušit
-                </button>
-                <button
-                  type="button"
-                  onClick={handlePay}
-                  className="flex-1 py-2.5 text-sm font-semibold text-white rounded-xl disabled:opacity-40"
-                  style={{ background: "#1B4332" }}
-                >
-                  Zaplatit {total} Kč
-                </button>
-              </div>
             </>
           )}
 
@@ -380,7 +312,8 @@ export default function LendingBookingModal({ open, item, onClose }) {
                 · {paidReservation.total} Kč
               </p>
               <p className="text-xs text-stone-500 mb-4">
-                Majiteli jsme poslali zprávu s termínem. Domluvte si předání a další detaily v konverzaci.
+                Majiteli jsme poslali zprávu s termínem. Cenu {paidReservation.total} Kč zaplatíte
+                osobně při předání — Podplot peníze nedrží.
               </p>
               <div className="flex flex-col gap-2">
                 <button

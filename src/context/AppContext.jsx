@@ -4952,25 +4952,13 @@ export function AppProvider({ children }) {
   );
 
   const createEscrowOrder = useCallback(
-    ({ title, amount, method = "card" }) => {
-      if (!payAmount(amount, method)) return;
-      const { providerGets } = calcEscrowFee(amount);
-      setServiceOrders((prev) => [
-        {
-          id: `so-${Date.now()}`,
-          title,
-          amount,
-          escrow: true,
-          status: "held",
-          providerRole: "remeslnik",
-          escrowStatusLabel: ESCROW_STATUSES.held,
-          providerGets,
-        },
-        ...prev,
-      ]);
-      showToast(`Platba ${amount} Kč v bezpečné úschově Podplotu (poplatek 3 %).`, "success");
+    ({ title: _title, amount: _amount }) => {
+      showToast(
+        "Chráněná platba přes Podplot už není. Domluvte se s řemeslníkem osobně.",
+        "info"
+      );
     },
-    [payAmount, showToast]
+    [showToast]
   );
 
   const releaseEscrowOrder = useCallback(
@@ -4978,12 +4966,10 @@ export function AppProvider({ children }) {
       setServiceOrders((prev) =>
         prev.map((o) => {
           if (o.id !== orderId) return o;
-          const payout = o.providerGets ?? calcEscrowFee(o.amount).providerGets;
-          setCraftsmanWallet((w) => w + payout);
           return { ...o, status: "released", escrowStatusLabel: ESCROW_STATUSES.released };
         })
       );
-      showToast("Práce potvrzena — řemeslníkovi připsáno do peněženky.", "success");
+      showToast("Zakázka označena jako dokončená.", "success");
     },
     [showToast]
   );
@@ -5642,7 +5628,7 @@ export function AppProvider({ children }) {
   );
 
   const rentItem = useCallback(
-    (item, method = "card", booking = {}) => {
+    (item, _method = "card", booking = {}) => {
       if (item.mine) {
         showToast("Toto je vaše vlastní nabídka.", "info");
         return false;
@@ -5653,21 +5639,20 @@ export function AppProvider({ children }) {
       }
       const days = Math.max(1, Number(booking.days) || 1);
       const amount = (item.credits ?? 0) * days;
-      if (!payAmount(amount, method)) return false;
-      const { fee, sellerGets } = calcServiceFee(amount);
       setReservations((r) => [
         ...r,
         {
           ...item,
           reservedAt: new Date().toISOString(),
-          fee,
-          sellerGets,
+          fee: 0,
+          sellerGets: amount,
           startDate: booking.startDate ?? null,
           endDate: booking.endDate ?? null,
           days,
           totalPaid: amount,
           ownerId: item.authorId ?? item.id,
           bookingNote: booking.note?.trim() || "",
+          payInPerson: true,
         },
       ]);
       const dateHint =
@@ -5675,83 +5660,27 @@ export function AppProvider({ children }) {
           ? ` (${booking.startDate === booking.endDate ? booking.startDate : `${booking.startDate} – ${booking.endDate}`})`
           : "";
       showToast(
-        `Rezervováno: ${item.item ?? item.label ?? item.title} za ${amount} Kč${dateHint}. Prodejci ${sellerGets} Kč, servisní poplatek ${fee} Kč (10 %).`
+        `Rezervováno: ${item.item ?? item.label ?? item.title}${dateHint}. Cena ${amount} Kč — platba osobně při předání.`
       );
       showProfileHint("reservation");
       return true;
     },
-    [payAmount, showToast, showProfileHint]
+    [showToast, showProfileHint]
   );
 
   const buyListing = useCallback(
-    (post, method = "card", opts = {}) => {
+    (post) => {
       if (post.mine) {
         showToast("Toto je váš inzerát.", "info");
         return false;
       }
-      if (listingPaysInPerson(post)) {
-        showToast("Prodávající bere platbu jen osobně — napište mu zprávu a domluvte předání.", "info");
-        return false;
-      }
-      if (
-        isActiveListingSaleStatus(post.saleStatus) ||
-        getActiveListingSale(listingSaleOrders, post.id)
-      ) {
-        showToast("Tento inzerát je už v rezervaci.", "info");
-        return false;
-      }
-      const unit = normalizeListingPriceUnit(post.listingPriceUnit);
-      const quantity = listingUsesVariablePrice(post)
-        ? clampListingQuantity(opts.quantity ?? 1, unit, post.listingQuantity)
-        : 1;
-      if (listingUsesVariablePrice(post) && !quantity) {
-        showToast("Zvolte množství, které chcete koupit.", "info");
-        return false;
-      }
-      const amount = calcListingSaleAmount(post.listingPrice, quantity, unit);
-      if (amount <= 0) {
-        showToast("Kontaktujte prodejce — cena není uvedena.", "info");
-        return false;
-      }
-      if (!payAmount(amount, method, { silent: true })) return false;
-      const { fee, sellerGets } = calcServiceFee(amount);
-      const buyerId = user?.id ?? "me";
-      const order = {
-        id: `ls-${Date.now()}`,
-        listingId: post.id,
-        title: post.title,
-        amount,
-        fee,
-        sellerGets,
-        status: LISTING_SALE_STATUS.held,
-        statusLabel: LISTING_SALE_STATUSES.held,
-        buyerId,
-        buyerName: user?.name ?? "Já",
-        sellerId: post.authorId ?? post.id,
-        sellerName: post.author,
-        paymentMethod: method,
-        reservedAt: new Date().toISOString(),
-        photos: post.photos ?? [],
-        quantity,
-        priceUnit: unit,
-        unitPrice: Number(post.listingPrice) || 0,
-        listingQuantity: post.listingQuantity ?? null,
-        originalQuantity: quantity,
-        originalAmount: amount,
-        adjustProposedQuantity: null,
-        adjustMessage: null,
-      };
-      setListingSaleOrders((prev) => [order, ...prev]);
-      const qtyHint = listingUsesVariablePrice(post)
-        ? ` · ${formatListingQuantity(quantity, unit)}`
-        : "";
       showToast(
-        `Platba ${amount} Kč${qtyHint} je v úschově Podplotu. Inzerát je „V rezervaci“. Po osobní kontrole klepněte na „Převzato a zaplaceno“.`,
-        "success"
+        "Platba zboží přes Podplot už není. Napište prodejci a domluvte předání osobně.",
+        "info"
       );
-      return true;
+      return false;
     },
-    [payAmount, showToast, listingSaleOrders, user?.id, user?.name]
+    [showToast]
   );
 
   /** Kupující potvrdí osobní převzetí → uvolnění platby, inzerát zmizí. Prodávající nic nepotvrzuje. */

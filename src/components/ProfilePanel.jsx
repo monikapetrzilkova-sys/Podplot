@@ -50,10 +50,10 @@ export default function ProfilePanel() {
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           <section className="bg-white border border-stone-200 rounded-2xl p-4">
-            <h3 className="text-sm font-semibold text-stone-800 mb-1">Platby</h3>
+            <h3 className="text-sm font-semibold text-stone-800 mb-1">Platby v Podplotu</h3>
             <p className="text-xs text-stone-500 leading-relaxed">
-              Nákupy přes Podplot držíme v úschově do předání. Platíte kartou — bez dobíjení
-              kreditů. Detail najdete v Profilu → Platby a úschova.
+              Kartou platíte jen propagaci (TOP, Promo banner, push poptávek). Nákup zboží a služby
+              si sousedé domluví osobně — Podplot peníze nedrží.
             </p>
           </section>
 

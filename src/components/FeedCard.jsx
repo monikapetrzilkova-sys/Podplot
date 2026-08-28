@@ -10,8 +10,6 @@ import { canTopCategory, TOP_PLANS, calculateTopCost } from "../data/pricing.js"
 import { MessageButton } from "./MessagesPage.jsx";
 import ReportUserButton from "./ReportUserButton.jsx";
 import PaymentModal from "./PaymentModal.jsx";
-import ListingBuySheet from "./ListingBuySheet.jsx";
-import ListingSaleAdjustSheet from "./ListingSaleAdjustSheet.jsx";
 import PostInteractions from "./PostInteractions.jsx";
 import EditedBadge from "./EditedBadge.jsx";
 import AccountTypeIcon from "./AccountTypeIcon.jsx";
@@ -20,16 +18,12 @@ import {
   getActiveListingSale,
   isActiveListingSaleStatus,
   isSameAppUser,
-  LISTING_SALE_STATUS,
 } from "../data/listingSales.js";
 import {
   formatListingQuantity,
   formatListingUnitPrice,
-  getListingPriceUnit,
   listingUsesVariablePrice,
 } from "../data/listingPriceUnits.js";
-import { listingPaysInPerson } from "../data/listingPayment.js";
-import { formatListingEscrowFeeNote } from "../data/monetization.js";
 import { DoodleHandIcon } from "./doodle/doodleIcons.jsx";
 import { ACTION_BTN } from "./PostInteractions.jsx";
 import { topicFromPost, topicFromGroupPost } from "../data/chatTopics.js";
@@ -74,202 +68,19 @@ function useListingSaleState(post) {
   };
 }
 
-function ListingSaleStatusPanel({ post }) {
-  const {
-    confirmListingHandover,
-    withdrawListingSaleAdjustment,
-    confirmListingSaleAdjustment,
-    rejectListingSaleAdjustment,
-  } = useApp();
-  const [adjustOpen, setAdjustOpen] = useState(false);
-  const { isReserved, reservedByMe, sellerView, saleOrderId, saleAmount, saleOrder } =
-    useListingSaleState(post);
-  const variable = listingUsesVariablePrice(saleOrder || post);
-  const qtyLabel = variable
-    ? formatListingQuantity(saleOrder?.quantity ?? 1, saleOrder?.priceUnit || post.listingPriceUnit)
-    : null;
-  const pending = saleOrder?.status === LISTING_SALE_STATUS.adjust_pending;
-  const proposedLabel = pending
-    ? formatListingQuantity(saleOrder.adjustProposedQuantity, saleOrder.priceUnit)
-    : null;
-  const proposedAmount = pending ? saleOrder.adjustProposedAmount : null;
-
-  if (!isReserved) return null;
-
-  if (reservedByMe && pending) {
-    return (
-      <div className="w-full space-y-2">
-        <div className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900">
-            Prodejce nabízí méně
-          </p>
-          <p className="text-xs text-amber-800 mt-0.5">
-            Místo {qtyLabel} nabízí {proposedLabel}
-            {proposedAmount != null ? ` za ${proposedAmount} Kč` : ""}.
-            {saleOrder.amount > (proposedAmount ?? 0)
-              ? ` Rozdíl ${saleOrder.amount - proposedAmount} Kč se vám vrátí.`
-              : ""}
-          </p>
-          {saleOrder.adjustMessage ? (
-            <p className="text-xs text-stone-700 mt-1.5 leading-snug">„{saleOrder.adjustMessage}“</p>
-          ) : null}
-        </div>
-        <button
-          type="button"
-          onClick={() => confirmListingSaleAdjustment(saleOrderId)}
-          className="w-full text-xs font-semibold text-white px-3 py-2.5 rounded-xl pp-btn-primary"
-        >
-          Souhlasím · {proposedLabel}
-          {proposedAmount != null ? ` · ${proposedAmount} Kč` : ""}
-        </button>
-        <button
-          type="button"
-          onClick={() => rejectListingSaleAdjustment(saleOrderId)}
-          className="w-full text-xs font-semibold px-3 py-2.5 rounded-xl border border-stone-200 text-stone-700"
-        >
-          Ne, zrušit nákup
-        </button>
-      </div>
-    );
-  }
-
-  if (reservedByMe) {
-    return (
-      <div className="w-full space-y-2">
-        <div className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900">V rezervaci</p>
-          <p className="text-xs text-amber-800 mt-0.5">
-            Platba {saleAmount} Kč{qtyLabel ? ` · ${qtyLabel}` : ""} je v úschově Podplotu. Po
-            kontrole zboží naživo potvrďte převzetí — prodejce nic potvrzovat nemusí.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => confirmListingHandover(saleOrderId)}
-          className="w-full text-xs font-semibold text-white px-3 py-2.5 rounded-xl pp-btn-primary"
-        >
-          Převzato a zaplaceno
-        </button>
-      </div>
-    );
-  }
-
-  if (sellerView && pending) {
-    return (
-      <div className="w-full space-y-2">
-        <div className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900">
-            Čeká na kupujícího
-          </p>
-          <p className="text-xs text-amber-800 mt-0.5">
-            Navrhli jste {proposedLabel} místo {qtyLabel}. Kupující to musí potvrdit, nebo nákup
-            zruší.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => withdrawListingSaleAdjustment(saleOrderId)}
-          className="w-full text-xs font-semibold px-3 py-2.5 rounded-xl border border-stone-200 text-stone-700"
-        >
-          Vzít návrh zpět
-        </button>
-      </div>
-    );
-  }
-
-  if (sellerView) {
-    return (
-      <div className="w-full space-y-2">
-        <div className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900">V rezervaci</p>
-          <p className="text-xs text-amber-800 mt-0.5">
-            {saleOrder?.buyerName ? `${saleOrder.buyerName} zaplatil` : "Kupující zaplatil"}{" "}
-            {saleAmount} Kč
-            {qtyLabel ? ` za ${qtyLabel}` : ""} přes Podplot. Po osobním předání potvrdí převzetí
-            v aplikaci — vy nic potvrzovat nemusíte.
-          </p>
-        </div>
-        {variable &&
-        (Number(saleOrder?.quantity) || 0) > (getListingPriceUnit(saleOrder?.priceUnit).min ?? 1) ? (
-          <>
-            <button
-              type="button"
-              onClick={() => setAdjustOpen(true)}
-              className="w-full text-xs font-semibold px-3 py-2.5 rounded-xl border border-amber-300 bg-amber-50 text-amber-950"
-            >
-              Nemám tolik — navrhnout méně
-            </button>
-            <ListingSaleAdjustSheet
-              open={adjustOpen}
-              order={saleOrder}
-              onClose={() => setAdjustOpen(false)}
-            />
-          </>
-        ) : null}
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 w-full">
-      <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900">V rezervaci</p>
-      <p className="text-xs text-amber-800 mt-0.5">
-        Zboží je rezervované — platba je v úschově Podplotu do osobního převzetí.
-      </p>
-    </div>
-  );
+function ListingSaleStatusPanel() {
+  return null;
 }
 
 function ListingSaleBuyButton({ post }) {
-  const { buyListing } = useApp();
-  const [buyOpen, setBuyOpen] = useState(false);
-  const { isReserved } = useListingSaleState(post);
   const isProdam = post.categoryId === "prodam" && Number(post.listingPrice) > 0;
-  const variable = listingUsesVariablePrice(post);
-
-  if (isReserved || !isProdam || post.mine) return null;
-
-  if (listingPaysInPerson(post)) {
-    return (
-      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-stone-600 bg-stone-100 border border-stone-200 px-2 py-1.5 rounded-xl whitespace-nowrap">
-        <DoodleHandIcon className="w-3.5 h-3.5" />
-        Platba osobně
-      </span>
-    );
-  }
-
-  const priceLabel = variable
-    ? formatListingUnitPrice(post.listingPrice, post.listingPriceUnit)
-    : `${post.listingPrice} Kč`;
+  if (!isProdam || post.mine) return null;
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setBuyOpen(true)}
-        className="text-xs font-semibold text-white px-3 py-1.5 rounded-xl pp-btn-primary"
-      >
-        {variable
-          ? `Koupit / Zaplatit přes Podplot · od ${priceLabel}`
-          : `Koupit / Zaplatit přes Podplot · ${priceLabel}`}
-      </button>
-      {variable ? (
-        <ListingBuySheet open={buyOpen} post={post} onClose={() => setBuyOpen(false)} />
-      ) : (
-        <PaymentModal
-          open={buyOpen}
-          onClose={() => setBuyOpen(false)}
-          title={`Koupit: ${post.title}`}
-          amount={post.listingPrice}
-          note={formatListingEscrowFeeNote(post.listingPrice)}
-          confirmLabel={`Zaplatit a rezervovat · ${post.listingPrice} Kč`}
-          onConfirm={(method) => {
-            buyListing(post, method);
-            setBuyOpen(false);
-          }}
-        />
-      )}
-    </>
+    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-stone-600 bg-stone-100 border border-stone-200 px-2 py-1.5 rounded-xl whitespace-nowrap">
+      <DoodleHandIcon className="w-3.5 h-3.5" />
+      Platba osobně
+    </span>
   );
 }
 
@@ -380,13 +191,7 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
                   participantName={post.author}
                   topic={messageTopic}
                   compact
-                  label={
-                    isGroupDiscussion
-                      ? "Soukromě"
-                      : listingPaysInPerson(post)
-                        ? "Domluvit předání"
-                        : undefined
-                  }
+                  label={isGroupDiscussion ? "Soukromě" : "Domluvit předání"}
                 />
                 {!isGroupDiscussion && <ListingSaleBuyButton post={post} />}
               </>
@@ -567,13 +372,7 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
                 participantName={post.author}
                 topic={messageTopic}
                 compact
-                label={
-                  isGroupDiscussion
-                    ? "Soukromě"
-                    : listingPaysInPerson(post)
-                      ? "Domluvit předání"
-                      : undefined
-                }
+                label={isGroupDiscussion ? "Soukromě" : "Domluvit předání"}
               />
               {!isGroupDiscussion && <ListingSaleBuyButton post={post} />}
             </>

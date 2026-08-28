@@ -1,6 +1,6 @@
-/** Hybridní monetizace Podplot — ceník, limity kapacity a servisní poplatek */
+/** Hybridní monetizace Podplot — ceník a limity kapacity (promo). Úschova C2C je vypnutá. */
 
-export const SERVICE_FEE_PERCENT = 10;
+export const SERVICE_FEE_PERCENT = 0;
 
 /**
  * Kapacitní pravidla (lokalita = scope).
@@ -70,29 +70,24 @@ export const PAYMENT_METHODS = [
     id: "card",
     label: "Kartou / Apple Pay / Google Pay",
     icon: "💳",
-    hint: "Platba přes bránu Podplotu",
+    hint: "Platba přes bránu Podplotu (TOP, Promo, push)",
   },
 ];
 
+/** @deprecated Úschova C2C vypnuta — ponecháno kvůli starým voláním */
 export function calcServiceFee(amount) {
   const safe = Math.max(0, Math.round(Number(amount) || 0));
-  const fee = Math.round(safe * (SERVICE_FEE_PERCENT / 100));
-  return { fee, sellerGets: safe - fee, buyerPays: safe };
+  return { fee: 0, sellerGets: safe, buyerPays: safe };
 }
 
-/** Text před nákupem / u výběru „Přes Podplot“. */
-export function formatListingEscrowFeeNote(amount) {
-  const { fee, sellerGets, buyerPays } = calcServiceFee(amount);
-  if (buyerPays <= 0) {
-    return "Platba zůstane v úschově Podplotu do osobního předání.";
-  }
-  return `Zaplatíte ${buyerPays} Kč kartou. Prodejce dostane ${sellerGets} Kč po předání. Poplatek za úschovu Podplot ${fee} Kč (${SERVICE_FEE_PERCENT} %).`;
+/** @deprecated */
+export function formatListingEscrowFeeNote() {
+  return "Platba zboží přes Podplot není k dispozici — domluvte se osobně při předání.";
 }
 
-export function formatListingEscrowFeeShort(amount) {
-  const { fee, sellerGets, buyerPays } = calcServiceFee(amount);
-  if (buyerPays <= 0) return "";
-  return `Poplatek ${fee} Kč (${SERVICE_FEE_PERCENT} %) · prodejce ${sellerGets} Kč`;
+/** @deprecated */
+export function formatListingEscrowFeeShort() {
+  return "";
 }
 
 export function getMonetizationPlan(type, planId) {
@@ -118,26 +113,26 @@ export function calculateTopCost(planId) {
   return getMonetizationPlan("top", planId)?.price ?? 29;
 }
 
-/** Chráněná transakce služeb — 3 % (2 % brána + 1 % provize) */
-export const ESCROW_FEE_PERCENT = 3;
+/** @deprecated Úschova služeb vypnuta */
+export const ESCROW_FEE_PERCENT = 0;
 
 export function calcEscrowFee(amount) {
-  const fee = Math.round(amount * (ESCROW_FEE_PERCENT / 100));
-  return { fee, providerGets: amount - fee };
+  const safe = Math.max(0, Math.round(Number(amount) || 0));
+  return { fee: 0, providerGets: safe };
 }
 
 export const ESCROW_STATUSES = {
   pending: "Čeká na zaplacení",
-  held: "Peníze v bezpečné úschově",
-  released: "Vyplaceno řemeslníkovi / Dokončeno",
+  held: "Čeká na dokončení",
+  released: "Dokončeno",
 };
 
-/** Prodej inzerátu (bazar) — platba držená do „Převzato a zaplaceno“ */
+/** @deprecated */
 export const LISTING_SALE_STATUSES = {
-  held: "V rezervaci — platba v úschově Podplotu",
-  adjust_pending: "Prodejce navrhl jiné množství — čeká se na vás",
-  released: "Převzato · platba uvolněna prodejci",
-  cancelled: "Nákup zrušen · platba vrácena",
+  held: "V rezervaci",
+  adjust_pending: "Čeká na potvrzení",
+  released: "Uzavřeno",
+  cancelled: "Zrušeno",
 };
 
 function todayIsoDate(d = new Date()) {

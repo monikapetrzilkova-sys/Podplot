@@ -24,11 +24,8 @@ import {
 } from "../data/listingPriceUnits.js";
 import {
   DEFAULT_LISTING_PAYMENT_METHOD,
-  LISTING_PAYMENT_METHODS,
-  listingPaysInPerson,
-  normalizeListingPaymentMethod,
 } from "../data/listingPayment.js";
-import { DoodleHandIcon, DoodlePackageIcon, DoodleScalesIcon, DoodleSellIcon, DoodleWalletIcon } from "./doodle/doodleIcons.jsx";
+import { DoodlePackageIcon, DoodleScalesIcon, DoodleSellIcon } from "./doodle/doodleIcons.jsx";
 
 function resolvePresetCategory(createCategory, feedMainMode, feedSubFilter) {
   if (createCategory) return createCategory;
@@ -70,7 +67,6 @@ export default function CreateListingModal() {
   const [price, setPrice] = useState("");
   const [priceUnit, setPriceUnit] = useState(DEFAULT_LISTING_PRICE_UNIT);
   const [availableQty, setAvailableQty] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState(DEFAULT_LISTING_PAYMENT_METHOD);
   const [photos, setPhotos] = useState([]);
   const [topPlanId, setTopPlanId] = useState("");
   const [topPayOpen, setTopPayOpen] = useState(false);
@@ -114,11 +110,6 @@ export default function CreateListingModal() {
           ? String(editingPost.listingQuantity).replace(".", ",")
           : ""
       );
-      setPaymentMethod(
-        editingPost.categoryId === "prodam"
-          ? normalizeListingPaymentMethod(editingPost.listingPaymentMethod)
-          : DEFAULT_LISTING_PAYMENT_METHOD
-      );
       setPhotos((editingPost.photos ?? []).map((url) => (typeof url === "string" ? { url } : url)));
       setTopPlanId("");
       setTopPayOpen(false);
@@ -150,7 +141,6 @@ export default function CreateListingModal() {
     setPrice("");
     setPriceUnit(DEFAULT_LISTING_PRICE_UNIT);
     setAvailableQty("");
-    setPaymentMethod(DEFAULT_LISTING_PAYMENT_METHOD);
     setPhotos([]);
     setTopPlanId("");
     setTopPayOpen(false);
@@ -215,7 +205,7 @@ export default function CreateListingModal() {
       topPaymentMethod,
       listingPriceUnit: showUnitPicker ? priceUnit : DEFAULT_LISTING_PRICE_UNIT,
       listingQuantity: variablePrice && parsedAvailable > 0 ? parsedAvailable : null,
-      listingPaymentMethod: showUnitPicker ? paymentMethod : DEFAULT_LISTING_PAYMENT_METHOD,
+      listingPaymentMethod: DEFAULT_LISTING_PAYMENT_METHOD,
     };
   };
   const handleSubmit = (e) => {
@@ -232,7 +222,7 @@ export default function CreateListingModal() {
         listingPrice: cat?.priceField ? Number(price) || 0 : editingPost.listingPrice,
         listingPriceUnit: showUnitPicker ? priceUnit : editingPost.listingPriceUnit,
         listingQuantity: variablePrice && parsedAvailable > 0 ? parsedAvailable : null,
-        listingPaymentMethod: showUnitPicker ? paymentMethod : editingPost.listingPaymentMethod,
+        listingPaymentMethod: DEFAULT_LISTING_PAYMENT_METHOD,
         marketCategory: needsItemCategory ? itemCategoryId : editingPost.marketCategory,
         lendingCategory: isLending ? itemCategoryId : editingPost.lendingCategory,
         photos: photos.map((p) => p.url ?? p),
@@ -337,7 +327,6 @@ export default function CreateListingModal() {
                     if (c.id !== "prodam") {
                       setPriceUnit(DEFAULT_LISTING_PRICE_UNIT);
                       setAvailableQty("");
-                      setPaymentMethod(DEFAULT_LISTING_PAYMENT_METHOD);
                     }
                     if (!isZboziListingType(c.id)) {
                       setItemCategoryId("");
@@ -493,43 +482,11 @@ export default function CreateListingModal() {
                     className="w-full px-4 py-3 rounded-2xl border border-stone-200 text-sm focus:outline-none focus:border-[#1B4332]"
                   />
                   <p className="text-[11px] text-stone-500 mt-1.5 leading-snug">
-                    {listingPaysInPerson(paymentMethod)
-                      ? "Kupující uvidí cenu za jednotku a množství si s vámi domluví ve zprávě."
-                      : "Kupující si zvolí množství a cenu spočítáme. Když už tolik nemáte, můžete navrhnout méně — kupující to musí znovu potvrdit."}
+                    Kupující uvidí cenu
+                    {showUnitPicker ? " za jednotku" : ""} a domluví se s vámi ve zprávě. Platba
+                    probíhá osobně při předání — Podplot peníze nedrží.
                   </p>
                 </div>
-              )}
-              {showUnitPicker && (
-                <fieldset>
-                  <legend className="block text-sm font-semibold text-stone-800 mb-1.5">
-                    Jak chcete platbu?
-                  </legend>
-                  <div className="grid grid-cols-2 gap-2">
-                    {LISTING_PAYMENT_METHODS.map((method) => {
-                      const selected = paymentMethod === method.id;
-                      const MethodIcon = method.id === "in_person" ? DoodleHandIcon : DoodleWalletIcon;
-                      return (
-                        <button
-                          key={method.id}
-                          type="button"
-                          onClick={() => setPaymentMethod(method.id)}
-                          aria-pressed={selected}
-                          className={`flex flex-col items-start gap-1 p-3 rounded-2xl border-2 text-left transition-colors ${
-                            selected
-                              ? "border-[#1B4332] bg-[#D8F3DC] text-[#1B4332]"
-                              : "border-stone-200 bg-[#FAF9F6] text-stone-700"
-                          }`}
-                        >
-                          <MethodIcon className="w-5 h-5" />
-                          <span className="text-xs font-semibold leading-tight">{method.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <p className="text-[11px] text-stone-500 mt-2 leading-snug">
-                    {LISTING_PAYMENT_METHODS.find((m) => m.id === paymentMethod)?.hint}
-                  </p>
-                </fieldset>
               )}
             </div>
           )}

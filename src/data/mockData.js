@@ -193,7 +193,7 @@ export const FEED_POSTS = [
     listingPrice: 5,
     listingPriceUnit: "ks",
     listingQuantity: 24,
-    listingPaymentMethod: "podplot",
+    listingPaymentMethod: "in_person",
     photos: ["https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=400&h=300&fit=crop"],
     feedType: "zbozi",
     feedSubtype: "prodam",

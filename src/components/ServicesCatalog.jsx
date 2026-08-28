@@ -6,7 +6,6 @@ import {
   serviceMatchesParentCategory,
   serviceMatchesSearch,
 } from "../data/serviceCategories.js";
-import { calcEscrowFee } from "../data/monetization.js";
 import SearchField from "./SearchField.jsx";
 import CategoryPills from "./CategoryPills.jsx";
 import CompactAccordion from "./CompactAccordion.jsx";
@@ -74,7 +73,6 @@ export default function ServicesCatalog({ showRequestForm = false, hideToolbar =
     servicesCatalog,
     serviceRequests,
     addServiceRequest,
-    createEscrowOrder,
     serviceOrders,
     releaseEscrowOrder,
     servicesSearchQuery,
@@ -83,8 +81,6 @@ export default function ServicesCatalog({ showRequestForm = false, hideToolbar =
     setServicesParentCategory,
   } = useApp();
   const [requestText, setRequestText] = useState("");
-  const [useEscrow, setUseEscrow] = useState(false);
-  const [escrowAmount, setEscrowAmount] = useState(1000);
 
   const sorted = [...servicesCatalog].sort((a, b) => {
     if (a.isPremium && !b.isPremium) return -1;
@@ -105,16 +101,11 @@ export default function ServicesCatalog({ showRequestForm = false, hideToolbar =
     addServiceRequest({
       text: requestText.trim(),
       categoryLabel: SERVICE_PARENT_CATEGORIES.find((c) => c.id === servicesParentCategory)?.label ?? "Katalog",
-      useEscrow,
-      amount: escrowAmount,
+      useEscrow: false,
+      amount: 0,
     });
-    if (useEscrow && escrowAmount > 0) {
-      createEscrowOrder({ title: requestText.trim().slice(0, 50), amount: escrowAmount });
-    }
     setRequestText("");
   };
-
-  const escrowPreview = calcEscrowFee(escrowAmount);
 
   return (
     <div className="space-y-3">
@@ -144,23 +135,9 @@ export default function ServicesCatalog({ showRequestForm = false, hideToolbar =
               rows={2}
               className="w-full px-3 py-2 border border-emerald-200 rounded-xl text-sm resize-none"
             />
-            <label className="flex items-start gap-2 cursor-pointer">
-              <input type="checkbox" checked={useEscrow} onChange={(e) => setUseEscrow(e.target.checked)} className="mt-0.5" />
-              <span>Chráněná platba přes Podplot (3 %)</span>
-            </label>
-            {useEscrow && (
-              <div className="p-2 bg-white rounded-lg border border-emerald-100">
-                <input
-                  type="number"
-                  value={escrowAmount}
-                  onChange={(e) => setEscrowAmount(Number(e.target.value))}
-                  className="w-full border rounded-lg px-2 py-1 text-sm"
-                />
-                <p className="text-stone-500 mt-1">
-                  Poplatek {escrowPreview.fee} Kč · řemeslník {escrowPreview.providerGets} Kč
-                </p>
-              </div>
-            )}
+            <p className="text-[11px] text-stone-500 leading-snug">
+              Domluva a platba probíhá mezi vámi a řemeslníkem osobně — Podplot peníze nedrží.
+            </p>
             <button
               type="button"
               onClick={submitRequest}
