@@ -10,7 +10,7 @@ import PaymentModal from "./PaymentModal.jsx";
 import { PROFILE_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
 
 export default function PromoteSection() {
-  const { user, promoteProfile, credits } = useApp();
+  const { user, promoteProfile } = useApp();
   const [promoType, setPromoType] = useState("catalog");
   const [planId, setPlanId] = useState("7d");
   const [payOpen, setPayOpen] = useState(false);
@@ -88,7 +88,7 @@ export default function PromoteSection() {
         onClose={() => setPayOpen(false)}
         title={`Propagace — ${selectedPlan?.label}`}
         amount={amount}
-        walletBalance={credits}
+        note="Platba kartou za propagaci profilu."
         onConfirm={(method) => promoteProfile(promoType, planId, method)}
       />
     </section>

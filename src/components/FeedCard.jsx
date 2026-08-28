@@ -29,6 +29,7 @@ import {
   listingUsesVariablePrice,
 } from "../data/listingPriceUnits.js";
 import { listingPaysInPerson } from "../data/listingPayment.js";
+import { formatListingEscrowFeeNote } from "../data/monetization.js";
 import { DoodleHandIcon } from "./doodle/doodleIcons.jsx";
 import { ACTION_BTN } from "./PostInteractions.jsx";
 import { topicFromPost, topicFromGroupPost } from "../data/chatTopics.js";
@@ -220,7 +221,7 @@ function ListingSaleStatusPanel({ post }) {
 }
 
 function ListingSaleBuyButton({ post }) {
-  const { buyListing, credits } = useApp();
+  const { buyListing } = useApp();
   const [buyOpen, setBuyOpen] = useState(false);
   const { isReserved } = useListingSaleState(post);
   const isProdam = post.categoryId === "prodam" && Number(post.listingPrice) > 0;
@@ -260,8 +261,7 @@ function ListingSaleBuyButton({ post }) {
           onClose={() => setBuyOpen(false)}
           title={`Koupit: ${post.title}`}
           amount={post.listingPrice}
-          walletBalance={credits}
-          note="Platba přes bránu Podplotu. Inzerát se rezervuje a peníze zůstanou v úschově, dokud po osobní kontrole nepotvrdíte „Převzato a zaplaceno“."
+          note={formatListingEscrowFeeNote(post.listingPrice)}
           confirmLabel={`Zaplatit a rezervovat · ${post.listingPrice} Kč`}
           onConfirm={(method) => {
             buyListing(post, method);
@@ -279,7 +279,6 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
     reportedPosts,
     reportPost,
     deleteOwnPost,
-    credits,
     isSearchHighlighted,
     openEditListing,
     updateSecurityReport,
@@ -438,7 +437,7 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
           onClose={() => setTopTarget(null)}
           title={topTarget ? `TOP inzerát — ${topTarget.planLabel}` : "TOP boost"}
           amount={topTarget?.cost ?? 0}
-          walletBalance={credits}
+          note="Platba kartou — inzerát se posune nahoru ve feedu."
           onConfirm={(method) => {
             if (topTarget) topPost(topTarget.postId, topTarget.planId, method);
             setTopTarget(null);
@@ -635,7 +634,7 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
         onClose={() => setTopTarget(null)}
         title={topTarget ? `TOP inzerát — ${topTarget.planLabel}` : "TOP boost"}
         amount={topTarget?.cost ?? 0}
-        walletBalance={credits}
+        note="Platba kartou — inzerát se posune nahoru ve feedu."
         onConfirm={(method) => {
           if (topTarget) topPost(topTarget.postId, topTarget.planId, method);
           setTopTarget(null);

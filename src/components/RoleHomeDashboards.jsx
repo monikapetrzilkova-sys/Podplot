@@ -134,9 +134,9 @@ export function CraftsmanHomeDashboard() {
         onClose={() => setTopPay(false)}
         title="Topování v katalogu — 7 dní"
         amount={149}
-        walletBalance={999}
+        note="Platba kartou — přednostní výpis v katalogu."
         onConfirm={() => {
-          promoteProfile("catalog", "7d", "wallet");
+          promoteProfile("catalog", "7d", "card");
           setTopPay(false);
         }}
       />

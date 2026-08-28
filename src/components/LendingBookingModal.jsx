@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
-import { PAYMENT_METHODS } from "../data/monetization.js";
+import { PAYMENT_METHODS, calcServiceFee, SERVICE_FEE_PERCENT } from "../data/monetization.js";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
 import AppPanelPortal from "./AppPanelPortal.jsx";
 import LendingOwnerStatus from "./LendingOwnerStatus.jsx";
@@ -58,7 +58,7 @@ function buildMonthCells(year, month) {
 }
 
 export default function LendingBookingModal({ open, item, onClose }) {
-  const { credits, rentItem, sendMessage, openChat } = useApp();
+  const { rentItem, sendMessage, openChat } = useApp();
   const todayKey = toKey(new Date());
   const now = new Date();
   const [step, setStep] = useState("schedule");
@@ -89,7 +89,7 @@ export default function LendingBookingModal({ open, item, onClose }) {
   const days = daysBetween(startKey, endKey);
   const perDay = item?.credits ?? 0;
   const total = perDay * days;
-  const canWallet = credits >= total;
+  const { fee, sellerGets } = calcServiceFee(total);
   const ownerId = item?.authorId ?? item?.id;
   const ownerName = item?.author ?? "Majitel";
   const itemLabel = item?.item ?? item?.label ?? item?.title ?? "věc";
@@ -133,7 +133,6 @@ export default function LendingBookingModal({ open, item, onClose }) {
   };
 
   const handlePay = () => {
-    if (method === "wallet" && !canWallet) return;
     const ok = rentItem(item, method, {
       startDate: startKey,
       endDate: endKey,
@@ -325,38 +324,29 @@ export default function LendingBookingModal({ open, item, onClose }) {
               </div>
 
               <p className="text-2xl font-bold text-emerald-700 mb-1">{total} Kč</p>
-              <p className="text-xs text-stone-500 mb-4">
-                {perDay} Kč / den × {days}. Po platbě můžete rovnou domluvit detaily ve zprávách.
+              <p className="text-xs text-stone-500 mb-4 leading-snug">
+                {perDay} Kč / den × {days}. Majitel dostane {sellerGets} Kč · poplatek Podplot {fee}{" "}
+                Kč ({SERVICE_FEE_PERCENT} %). Po platbě můžete rovnou domluvit detaily ve zprávách.
               </p>
 
               <div className="space-y-2 mb-4">
-                {PAYMENT_METHODS.map((m) => {
-                  const disabled = m.id === "wallet" && !canWallet;
-                  return (
-                    <button
-                      key={m.id}
-                      type="button"
-                      disabled={disabled}
-                      onClick={() => setMethod(m.id)}
-                      className={`w-full text-left p-3 rounded-2xl border text-sm ${
-                        method === m.id
-                          ? "border-emerald-600 bg-emerald-50 ring-1 ring-emerald-600"
-                          : "border-stone-200"
-                      } ${disabled ? "opacity-50" : ""}`}
-                    >
-                      <span className="font-medium text-stone-900">
-                        {m.icon} {m.label}
-                      </span>
-                      {m.hint && <span className="block text-xs text-stone-500 mt-0.5">{m.hint}</span>}
-                      {m.id === "wallet" && (
-                        <span className="block text-xs text-stone-500 mt-0.5">
-                          Zůstatek: {credits} Kč
-                          {!canWallet && " — nestačí na tuto částku"}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+                {PAYMENT_METHODS.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setMethod(m.id)}
+                    className={`w-full text-left p-3 rounded-2xl border text-sm ${
+                      method === m.id
+                        ? "border-emerald-600 bg-emerald-50 ring-1 ring-emerald-600"
+                        : "border-stone-200"
+                    }`}
+                  >
+                    <span className="font-medium text-stone-900">
+                      {m.icon} {m.label}
+                    </span>
+                    {m.hint && <span className="block text-xs text-stone-500 mt-0.5">{m.hint}</span>}
+                  </button>
+                ))}
               </div>
 
               <div className="flex gap-2">
@@ -370,7 +360,6 @@ export default function LendingBookingModal({ open, item, onClose }) {
                 <button
                   type="button"
                   onClick={handlePay}
-                  disabled={method === "wallet" && !canWallet}
                   className="flex-1 py-2.5 text-sm font-semibold text-white rounded-xl disabled:opacity-40"
                   style={{ background: "#1B4332" }}
                 >

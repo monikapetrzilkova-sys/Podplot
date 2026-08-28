@@ -19,8 +19,6 @@ export default function BusinessOperationsDashboard() {
     setLunchMenuDraft,
     publishLunchMenu,
     lunchSubscribersCount,
-    credits,
-    addCredits,
     pendingBusinessAction,
     clearPendingBusinessAction,
   } = useApp();
@@ -33,7 +31,6 @@ export default function BusinessOperationsDashboard() {
   const [noteDraft, setNoteDraft] = useState(businessNeighborNote);
   const [highlightNote, setHighlightNote] = useState(false);
   const [highlightHours, setHighlightHours] = useState(false);
-  const [topUpOpen, setTopUpOpen] = useState(false);
   const [menuPayOpen, setMenuPayOpen] = useState(false);
 
   useEffect(() => {
@@ -198,45 +195,15 @@ export default function BusinessOperationsDashboard() {
         </div>
       </section>
 
-      <section className="pp-card p-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-bold text-stone-800">Podplot kredity</h2>
-            <p className="text-2xl font-bold text-[#1B4D3E] mt-1 tabular-nums">{credits} Kč</p>
-            <p className="text-[11px] text-stone-500 mt-0.5">Bannery a viditelnost · záložka Propagace</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setTopUpOpen(true)}
-            className="shrink-0 px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#E8F0ED] text-[#1B4D3E] border border-[#C5DDD4]"
-          >
-            Dobít
-          </button>
-        </div>
-      </section>
-
       <PaymentModal
         open={menuPayOpen}
         onClose={() => setMenuPayOpen(false)}
         title="Push notifikace odběratelům"
         amount={19}
-        walletBalance={credits}
+        note="Platba kartou za push dnešního menu odběratelům."
         onConfirm={() => {
           publishLunchMenu("push");
           setMenuPayOpen(false);
-        }}
-      />
-      <PaymentModal
-        open={topUpOpen}
-        onClose={() => setTopUpOpen(false)}
-        title="Dobít Podplot kredity"
-        amount={200}
-        amountEditable
-        walletBalance={credits}
-        allowWallet={false}
-        onConfirm={(_method, paid) => {
-          addCredits(paid ?? 200);
-          setTopUpOpen(false);
         }}
       />
     </div>

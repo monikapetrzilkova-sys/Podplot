@@ -249,7 +249,6 @@ function GlobalModals() {
     pendingPayment,
     setPendingPayment,
     confirmPendingPayment,
-    credits,
     profileHint,
     dismissProfileHint,
     goToProfileFromHint,
@@ -281,7 +280,7 @@ function GlobalModals() {
         onClose={() => setPendingPayment(null)}
         title={pendingPayment?.title ?? "Platba"}
         amount={pendingPayment?.amount ?? 0}
-        walletBalance={credits}
+        note="Platba kartou přes bránu Podplotu."
         onConfirm={confirmPendingPayment}
       />
       <SosOverlay />

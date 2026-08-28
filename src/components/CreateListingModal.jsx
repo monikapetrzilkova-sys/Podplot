@@ -57,7 +57,6 @@ export default function CreateListingModal() {
     closeCreate,
     publishListing,
     updateUserPost,
-    credits,
     zboziMarketCategory,
     thingsLendingSubCategory,
     communityGroups,
@@ -196,7 +195,7 @@ export default function CreateListingModal() {
     (!cat?.priceField || Number(price) > 0) &&
     (!variablePrice || !availableQty.trim() || parsedAvailable > 0);
 
-  const buildListingPayload = (topPaymentMethod = "wallet") => {
+  const buildListingPayload = (topPaymentMethod = "card") => {
     const isLending = categoryId === "pujcovna";
     const resolvedTitle = isLending
       ? resolveLendingItemTypeLabel(title, itemCategoryId) || title.trim()
@@ -541,7 +540,7 @@ export default function CreateListingModal() {
                 TOP boost (volitelné · jako na Vinted)
               </legend>
               <p className="text-[11px] text-stone-500 mb-2">
-                Levné posunutí nahoru ve feedu. Od {minTopCost} Kč · platba kartou nebo volitelně kredity ({credits} Kč v peněžence).
+                Levné posunutí nahoru ve feedu. Od {minTopCost} Kč · platba kartou.
               </p>
               <div className="space-y-2">
                 <button
@@ -609,7 +608,7 @@ export default function CreateListingModal() {
         onClose={() => setTopPayOpen(false)}
         title={`TOP boost — ${getTopPlan(topPlanId)?.label ?? ""}`}
         amount={selectedTopCost}
-        walletBalance={credits}
+        note="Platba kartou — inzerát se posune nahoru ve feedu."
         onConfirm={(method) => publishListing(buildListingPayload(method))}
       />
     </div>

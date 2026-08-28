@@ -64,14 +64,35 @@ export const SPONSORED_STRIP_PLANS = [
   },
 ];
 
+/** Jen karta — žádné dobíjení kreditů / peněženkový zůstatek. */
 export const PAYMENT_METHODS = [
-  { id: "card", label: "Kartou / Apple Pay / Google Pay", icon: "💳", hint: "Platební brána" },
-  { id: "wallet", label: "Podplot kredity", icon: "👛", hint: "Volitelně z peněženky (1 kredit = 1 Kč)" },
+  {
+    id: "card",
+    label: "Kartou / Apple Pay / Google Pay",
+    icon: "💳",
+    hint: "Platba přes bránu Podplotu",
+  },
 ];
 
 export function calcServiceFee(amount) {
-  const fee = Math.round(amount * (SERVICE_FEE_PERCENT / 100));
-  return { fee, sellerGets: amount - fee };
+  const safe = Math.max(0, Math.round(Number(amount) || 0));
+  const fee = Math.round(safe * (SERVICE_FEE_PERCENT / 100));
+  return { fee, sellerGets: safe - fee, buyerPays: safe };
+}
+
+/** Text před nákupem / u výběru „Přes Podplot“. */
+export function formatListingEscrowFeeNote(amount) {
+  const { fee, sellerGets, buyerPays } = calcServiceFee(amount);
+  if (buyerPays <= 0) {
+    return "Platba zůstane v úschově Podplotu do osobního předání.";
+  }
+  return `Zaplatíte ${buyerPays} Kč kartou. Prodejce dostane ${sellerGets} Kč po předání. Poplatek za úschovu Podplot ${fee} Kč (${SERVICE_FEE_PERCENT} %).`;
+}
+
+export function formatListingEscrowFeeShort(amount) {
+  const { fee, sellerGets, buyerPays } = calcServiceFee(amount);
+  if (buyerPays <= 0) return "";
+  return `Poplatek ${fee} Kč (${SERVICE_FEE_PERCENT} %) · prodejce ${sellerGets} Kč`;
 }
 
 export function getMonetizationPlan(type, planId) {

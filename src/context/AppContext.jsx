@@ -2157,17 +2157,12 @@ export function AppProvider({ children }) {
 
   const payAmount = useCallback(
     (amount, method, { silent = false } = {}) => {
+      // Kredity zrušeny — platby jdou kartou (demo vždy projde).
       if (method === "wallet") {
-        if (creditsRef.current < amount) {
-          showToast(
-            `V peněžence není dost kreditů. Potřebujete ${amount} Kč — nebo dobijte kredity u platby.`,
-            "error"
-          );
-          return false;
+        if (!silent) {
+          showToast("Platba kredity už není. Použijte kartu / Apple Pay.", "info");
         }
-        creditsRef.current -= amount;
-        setCredits(creditsRef.current);
-        return true;
+        return false;
       }
       if (!silent) showToast(`Platba ${amount} Kč kartou proběhla.`, "success");
       return true;
@@ -4725,7 +4720,7 @@ export function AppProvider({ children }) {
 
   const subscribeMobilniPush = useCallback(() => {
     const cost = MOBILNI_PUSH_SUBSCRIPTION.price;
-    if (!payAmount(cost, "wallet")) return false;
+    if (!payAmount(cost, "card")) return false;
     const until = new Date();
     until.setMonth(until.getMonth() + 1);
     setBusinessNotificationPrefs({
@@ -4800,7 +4795,7 @@ export function AppProvider({ children }) {
     (planId) => {
       const plans = { free: 0, push: LUNCH_MENU_PUSH_PRICE, top: 49 };
       const cost = plans[planId] ?? 0;
-      if (cost && !payAmount(cost, "wallet")) return;
+      if (cost && !payAmount(cost, "card")) return;
       const isTop = planId === "top";
       const withPush = planId === "push";
       const businessName = user?.name ?? "Restaurace U Ráje";
@@ -4957,7 +4952,7 @@ export function AppProvider({ children }) {
   );
 
   const createEscrowOrder = useCallback(
-    ({ title, amount, method = "wallet" }) => {
+    ({ title, amount, method = "card" }) => {
       if (!payAmount(amount, method)) return;
       const { providerGets } = calcEscrowFee(amount);
       setServiceOrders((prev) => [
@@ -5225,7 +5220,7 @@ export function AppProvider({ children }) {
   }, []);
 
   const topPost = useCallback(
-    (postId, planId = "3d", method = "wallet") => {
+    (postId, planId = "3d", method = "card") => {
       const post = userPosts.find((p) => p.id === postId) ?? userGroupPosts.find((p) => p.id === postId);
       if (!post) return false;
       if (!canTopCategory(post.categoryId)) {
@@ -5421,7 +5416,7 @@ export function AppProvider({ children }) {
       groupIds = null,
       photos = [],
       topPlanId = null,
-      topPaymentMethod = "wallet",
+      topPaymentMethod = "card",
       boardPost = false,
       listingPriceUnit = "total",
       listingQuantity = null,
@@ -5647,7 +5642,7 @@ export function AppProvider({ children }) {
   );
 
   const rentItem = useCallback(
-    (item, method = "wallet", booking = {}) => {
+    (item, method = "card", booking = {}) => {
       if (item.mine) {
         showToast("Toto je vaše vlastní nabídka.", "info");
         return false;

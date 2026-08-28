@@ -1,7 +1,14 @@
 import { useState, useEffect } from "react";
 import PersonLabel from "./PersonLabel.jsx";
 import { useApp } from "../context/AppContext.jsx";
-import { isSameAppUser, isCurrentUserRef, isSelfNeighborCandidate, LISTING_SALE_STATUS } from "../data/listingSales.js";
+import {
+  isSameAppUser,
+  isCurrentUserRef,
+  isSelfNeighborCandidate,
+  LISTING_SALE_STATUS,
+  isActiveListingSaleStatus,
+} from "../data/listingSales.js";
+import { calcServiceFee, SERVICE_FEE_PERCENT } from "../data/monetization.js";
 import { formatListingQuantity, listingUsesVariablePrice } from "../data/listingPriceUnits.js";
 import { getAccountType, ADDRESS_PRIVACY_NOTE, getPodnikatelSubtypeLabel, isBusinessAccount, getRegistrationFields, resolveBusinessSubtype } from "../data/accountTypes.js";
 import { isInjectedDemoPersona } from "../data/businessProfiles.js";
@@ -12,7 +19,6 @@ import AccountTypeIcon from "./AccountTypeIcon.jsx";
 import { INTEREST_OPTIONS } from "../data/ecosystemMock.js";
 import PromoteSection from "./PromoteSection.jsx";
 import ViewAsNeighborToggle from "./ViewAsNeighborToggle.jsx";
-import PaymentModal from "./PaymentModal.jsx";
 import { ENABLE_DEV_ROLE_SWITCH } from "../data/devConfig.js";
 import { PUBLIC_AREA_LABEL_HINT } from "../data/personDisplay.js";
 import { getPromptStatusStyle } from "../data/municipalityPrompts.js";
@@ -248,9 +254,8 @@ function PasswordChangeFields() {
 export default function MyProfile({ registerLegalBack, settingsOpen = false } = {}) {
   const {
     user,
-    credits,
-    addCredits,
     testRoleId,
+    setProfileScrollTarget,
     userLendingItems,
     reservations,
     listingSaleOrders,
@@ -325,7 +330,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
   const isOfficeProfile = testRoleId === "urad";
   const showNeighborProfile = testRoleId === "soused" || viewAsNeighbor;
   const showWorkRoleViews = !viewAsNeighbor;
-  /** Stejná horní karta (avatar, peněženka, místa, profily) i u mobilní služby / provozovny */
+  /** Stejná horní karta (avatar, platby, místa, profily) i u mobilní služby / provozovny */
   const showIdentityHeader =
     testRoleId === "soused" ||
     testRoleId === "remeslnik" ||
@@ -334,8 +339,6 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
   const isWorkProfileMode =
     showWorkRoleViews && (testRoleId === "remeslnik" || testRoleId === "podnik");
 
-  const [topUpOpen, setTopUpOpen] = useState(false);
-  const [topUpAmount, setTopUpAmount] = useState(100);
   const [photoEditorOpen, setPhotoEditorOpen] = useState(false);
   const [legalPage, setLegalPage] = useState(null);
   const [editingHomeAddress, setEditingHomeAddress] = useState(false);
@@ -607,6 +610,24 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
   const podnikatelSubtype = getPodnikatelSubtypeLabel(user);
   const registrationFields = getRegistrationFields(user.accountType, resolveBusinessSubtype(user));
   const myOffers = userLendingItems.filter((i) => i.mine);
+  const meId = user?.id ?? "me";
+  const paymentsSummary = (() => {
+    let buyerHeldKc = 0;
+    let sellerPendingKc = 0;
+    let openCount = 0;
+    for (const o of listingSaleOrders) {
+      if (!isActiveListingSaleStatus(o.status)) continue;
+      if (isSameAppUser(o.buyerId, meId)) {
+        buyerHeldKc += Number(o.amount) || 0;
+        openCount += 1;
+      }
+      if (isSameAppUser(o.sellerId, meId)) {
+        sellerPendingKc += Number(o.sellerGets ?? calcServiceFee(o.amount).sellerGets) || 0;
+        openCount += 1;
+      }
+    }
+    return { buyerHeldKc, sellerPendingKc, openCount };
+  })();
   // Jen skutečné inzeráty / půjčovna — hlášení z mapy sem nepatří
   const myListings = [...userPosts, ...userGroupPosts].filter(
     (p) => p.mine && isThingsModuleListing(p)
@@ -708,7 +729,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
         </p>
       ) : null}
 
-      {/* Identita nahoře: kompaktní řádek + adresy + peněženka + profily */}
+      {/* Identita nahoře: kompaktní řádek + adresy + platby + profily */}
       {showIdentityHeader && (
         <div id="profile-identity" className="pp-card p-3 mb-3 scroll-mt-4">
           <div className="flex items-start gap-3">
@@ -804,20 +825,33 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
               </div>
             </div>
 
-            <div className="shrink-0 rounded-xl bg-gradient-to-br from-[#40916C] to-[#1B4332] text-white px-2.5 py-2 min-w-[5.5rem] text-right">
+            <button
+              type="button"
+              onClick={() => setProfileScrollTarget?.("profile-payments")}
+              className="shrink-0 rounded-xl bg-gradient-to-br from-[#40916C] to-[#1B4332] text-white px-2.5 py-2 min-w-[5.5rem] text-right"
+            >
               <p className="text-[9px] font-semibold uppercase tracking-wide text-emerald-100/90 flex items-center justify-end gap-1">
                 <PROFILE_DOODLE_ICONS.wallet className="w-3 h-3" />
-                Peněženka
+                Platby
               </p>
-              <p className="text-base font-bold tabular-nums leading-tight mt-0.5">{credits} Kč</p>
-              <button
-                type="button"
-                onClick={() => setTopUpOpen(true)}
-                className="mt-1 text-[10px] font-semibold text-white/95 underline-offset-2 hover:underline"
-              >
-                Dobít
-              </button>
-            </div>
+              {paymentsSummary.sellerPendingKc > 0 ? (
+                <>
+                  <p className="text-base font-bold tabular-nums leading-tight mt-0.5">
+                    {paymentsSummary.sellerPendingKc} Kč
+                  </p>
+                  <p className="text-[9px] text-white/85 mt-0.5">k vyplacení</p>
+                </>
+              ) : paymentsSummary.buyerHeldKc > 0 ? (
+                <>
+                  <p className="text-base font-bold tabular-nums leading-tight mt-0.5">
+                    {paymentsSummary.buyerHeldKc} Kč
+                  </p>
+                  <p className="text-[9px] text-white/85 mt-0.5">v úschově</p>
+                </>
+              ) : (
+                <p className="text-[11px] font-semibold text-white/90 mt-1 leading-snug">Žádné otevřené</p>
+              )}
+            </button>
           </div>
 
           {trustInfoOpen ? (
@@ -1020,17 +1054,6 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
 
       {ENABLE_DEV_ROLE_SWITCH ? <ProfileTypeTestSwitcher /> : null}
 
-      <PaymentModal
-        open={topUpOpen}
-        onClose={() => setTopUpOpen(false)}
-        title="Dobití peněženky"
-        amount={topUpAmount}
-        amountEditable
-        walletBalance={credits}
-        allowWallet={false}
-        onConfirm={(_method, paid) => addCredits(paid ?? topUpAmount)}
-      />
-
       {isOfficeProfile && showWorkRoleViews ? (
         <>
           <MunicipalityRoleView />
@@ -1042,6 +1065,123 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
 
       {showWorkRoleViews && testRoleId === "remeslnik" && <CraftsmanRoleView />}
       {showWorkRoleViews && testRoleId === "podnik" && <BusinessRoleView />}
+
+      {!isOfficeProfile ? (
+      <section id="profile-payments" className="pp-card p-4 mb-4 scroll-mt-4">
+        <ProfileSectionTitle>Platby a úschova</ProfileSectionTitle>
+        <p className="text-[11px] text-stone-500 mb-3 leading-snug">
+          Nákupy přes Podplot držíme do předání. Poplatek {SERVICE_FEE_PERCENT} % z částky (brána +
+          Podplot) — bez dobíjení kreditů, platíte vždy kartou.
+        </p>
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <div className="rounded-xl border border-stone-200 bg-[#FAFCFB] p-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">
+              V úschově (nákupy)
+            </p>
+            <p className="text-lg font-bold tabular-nums text-stone-900 mt-0.5">
+              {paymentsSummary.buyerHeldKc} Kč
+            </p>
+          </div>
+          <div className="rounded-xl border border-stone-200 bg-[#FAFCFB] p-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">
+              K vyplacení vám
+            </p>
+            <p className="text-lg font-bold tabular-nums text-stone-900 mt-0.5">
+              {paymentsSummary.sellerPendingKc} Kč
+            </p>
+          </div>
+        </div>
+        {listingSaleOrders.filter(
+          (o) =>
+            isActiveListingSaleStatus(o.status) &&
+            (isSameAppUser(o.buyerId, meId) || isSameAppUser(o.sellerId, meId))
+        ).length === 0 ? (
+          <p className="text-sm text-stone-500 leading-relaxed">
+            Zatím žádné otevřené platby. U inzerátu „Přes Podplot“ se tu objeví úschova.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {listingSaleOrders
+              .filter(
+                (o) =>
+                  isActiveListingSaleStatus(o.status) &&
+                  (isSameAppUser(o.buyerId, meId) || isSameAppUser(o.sellerId, meId))
+              )
+              .map((order) => {
+                const asBuyer = isSameAppUser(order.buyerId, meId);
+                const qtyHint =
+                  listingUsesVariablePrice({ listingPriceUnit: order.priceUnit }) && order.quantity
+                    ? ` · ${formatListingQuantity(order.quantity, order.priceUnit)}`
+                    : "";
+                const pending = order.status === LISTING_SALE_STATUS.adjust_pending;
+                const proposedLabel = pending
+                  ? formatListingQuantity(order.adjustProposedQuantity, order.priceUnit)
+                  : null;
+                return (
+                  <div key={`pay-${order.id}`} className="rounded-xl border border-stone-200 bg-[#FAFCFB] p-3">
+                    <p className="text-xs font-semibold text-amber-800 mb-0.5">
+                      {asBuyer
+                        ? pending
+                          ? "Nákup · čeká na vaše potvrzení množství"
+                          : "Nákup · v úschově"
+                        : pending
+                          ? "Prodej · čeká na kupujícího"
+                          : "Prodej · čeká na předání"}
+                    </p>
+                    <p className="text-sm font-medium text-stone-800 leading-snug">{order.title}</p>
+                    <p className="text-xs text-stone-500 mt-1">
+                      {order.amount} Kč{qtyHint}
+                      {order.fee != null ? ` · poplatek ${order.fee} Kč` : ""}
+                      {!asBuyer && order.sellerGets != null
+                        ? ` · vám ${order.sellerGets} Kč`
+                        : ""}
+                    </p>
+                    {asBuyer && pending ? (
+                      <div className="mt-2 space-y-2">
+                        <p className="text-xs text-amber-900 leading-snug">
+                          Prodejce nabízí {proposedLabel}
+                          {order.adjustProposedAmount != null
+                            ? ` za ${order.adjustProposedAmount} Kč`
+                            : ""}
+                          {order.adjustMessage ? ` — ${order.adjustMessage}` : "."}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => confirmListingSaleAdjustment(order.id)}
+                          className="w-full py-2 rounded-xl text-xs font-semibold text-white pp-btn-primary"
+                        >
+                          Souhlasím · {proposedLabel}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => rejectListingSaleAdjustment(order.id)}
+                          className="w-full py-2 rounded-xl text-xs font-semibold border border-stone-200 text-stone-700"
+                        >
+                          Ne, zrušit nákup
+                        </button>
+                      </div>
+                    ) : null}
+                    {asBuyer && order.status === LISTING_SALE_STATUS.held ? (
+                      <button
+                        type="button"
+                        onClick={() => confirmListingHandover(order.id)}
+                        className="mt-2 w-full py-2 rounded-xl text-xs font-semibold text-white pp-btn-primary"
+                      >
+                        Převzato a zaplaceno
+                      </button>
+                    ) : null}
+                    {!asBuyer ? (
+                      <p className="text-[11px] text-stone-500 mt-2 leading-snug">
+                        Po osobním předání kupující potvrdí převzetí — pak se uvolní platba.
+                      </p>
+                    ) : null}
+                  </div>
+                );
+              })}
+          </div>
+        )}
+      </section>
+      ) : null}
 
       {showNeighborProfile && (
         <>
@@ -1198,80 +1338,12 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
         <ProfileSectionTitle>Moje výpůjčky a nabídky</ProfileSectionTitle>
         {myOffers.length === 0 &&
         reservations.length === 0 &&
-        myListings.length === 0 &&
-        listingSaleOrders.length === 0 ? (
+        myListings.length === 0 ? (
           <p className="text-sm text-stone-500 leading-relaxed">
             Zatím nic — zkuste přidat inzerát nebo půjčit věc na tržišti.
           </p>
         ) : (
           <div className="space-y-2">
-            {listingSaleOrders
-              .filter((o) => isSameAppUser(o.buyerId, user?.id ?? "me"))
-              .filter((o) => o.status !== LISTING_SALE_STATUS.cancelled)
-              .map((order) => {
-                const qtyHint =
-                  listingUsesVariablePrice({ listingPriceUnit: order.priceUnit }) && order.quantity
-                    ? ` · ${formatListingQuantity(order.quantity, order.priceUnit)}`
-                    : "";
-                const pending = order.status === LISTING_SALE_STATUS.adjust_pending;
-                const proposedLabel = pending
-                  ? formatListingQuantity(order.adjustProposedQuantity, order.priceUnit)
-                  : null;
-                return (
-                <div key={order.id} className="rounded-xl border border-stone-200 bg-[#FAFCFB] p-3">
-                  <p className="text-xs font-semibold text-amber-800 mb-0.5">
-                    {order.status === LISTING_SALE_STATUS.held
-                      ? "Nákup v rezervaci"
-                      : pending
-                        ? "Čeká na vaše potvrzení množství"
-                        : "Nákup uzavřen"}
-                  </p>
-                  <p className="text-sm font-medium text-stone-800 leading-snug">{order.title}</p>
-                  <p className="text-xs text-stone-500 mt-1">
-                    {order.amount} Kč{qtyHint} · úschova Podplotu
-                    {order.fee != null ? ` · poplatek ${order.fee} Kč` : ""}
-                    {order.sellerName ? ` · ${order.sellerName}` : ""}
-                  </p>
-                  {pending ? (
-                    <div className="mt-2 space-y-2">
-                      <p className="text-xs text-amber-900 leading-snug">
-                        Prodejce nabízí {proposedLabel}
-                        {order.adjustProposedAmount != null
-                          ? ` za ${order.adjustProposedAmount} Kč`
-                          : ""}
-                        {order.adjustMessage ? ` — ${order.adjustMessage}` : "."}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => confirmListingSaleAdjustment(order.id)}
-                        className="w-full py-2 rounded-xl text-xs font-semibold text-white pp-btn-primary"
-                      >
-                        Souhlasím · {proposedLabel}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => rejectListingSaleAdjustment(order.id)}
-                        className="w-full py-2 rounded-xl text-xs font-semibold border border-stone-200 text-stone-700"
-                      >
-                        Ne, zrušit nákup
-                      </button>
-                    </div>
-                  ) : order.status === LISTING_SALE_STATUS.held ? (
-                    <button
-                      type="button"
-                      onClick={() => confirmListingHandover(order.id)}
-                      className="mt-2 w-full py-2 rounded-xl text-xs font-semibold text-white pp-btn-primary"
-                    >
-                      Převzato a zaplaceno
-                    </button>
-                  ) : (
-                    <p className="text-xs font-semibold text-[#3D7A68] mt-2">
-                      Převzato · prodejci uvolněno {order.sellerGets} Kč
-                    </p>
-                  )}
-                </div>
-                );
-              })}
             {myOffers.length > 0 && <LendingAvailabilityPanel offerCount={myOffers.length} />}
             {myOffers.map((item) => (
               <button
@@ -1556,7 +1628,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
 
       {showWorkRoleViews && testRoleId === "urad" && (
         <section className="bg-stone-50 border border-stone-200 rounded-2xl p-4 mb-4">
-          <p className="text-xs text-stone-500">Obecní úřad nemá peněženku — všechny služby jsou zdarma.</p>
+          <p className="text-xs text-stone-500">Obecní úřad nemá placené služby — vše je zdarma.</p>
         </section>
       )}
 

@@ -12,10 +12,11 @@ import {
   getListingPriceUnit,
   listingUsesVariablePrice,
 } from "../data/listingPriceUnits.js";
+import { calcServiceFee, formatListingEscrowFeeNote, SERVICE_FEE_PERCENT } from "../data/monetization.js";
 import { DoodlePackageIcon, DoodleScalesIcon } from "./doodle/doodleIcons.jsx";
 
 export default function ListingBuySheet({ open, post, onClose }) {
-  const { buyListing, credits } = useApp();
+  const { buyListing } = useApp();
   const unitId = post?.listingPriceUnit;
   const unit = getListingPriceUnit(unitId);
   const variable = listingUsesVariablePrice(post);
@@ -37,6 +38,7 @@ export default function ListingBuySheet({ open, post, onClose }) {
 
   const quantity = clampListingQuantity(qty, unitId, post.listingQuantity) || unit.min || 1;
   const total = calcListingSaleAmount(post.listingPrice, quantity, unitId);
+  const { fee, sellerGets } = calcServiceFee(total);
   const UnitIcon = unitId === "kg" ? DoodleScalesIcon : DoodlePackageIcon;
 
   return (
@@ -74,19 +76,24 @@ export default function ListingBuySheet({ open, post, onClose }) {
               </div>
             ) : null}
 
-            <div className="rounded-2xl bg-[#E8F3EF] px-4 py-3 mb-4">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-[#1B4D3E]">Celkem</p>
+            <div className="rounded-2xl bg-[#E8F3EF] px-4 py-3 mb-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-[#1B4D3E]">Celkem zaplatíte</p>
               <p className="text-2xl font-bold text-[#1B4D3E] tabular-nums">{total} Kč</p>
               {variable ? (
                 <p className="text-xs text-stone-600 mt-0.5">
                   {formatListingQuantity(quantity, unitId)} × {formatListingUnitPrice(post.listingPrice, unitId)}
                 </p>
               ) : null}
+              {total > 0 ? (
+                <p className="text-xs text-[#1B4D3E]/90 mt-2 leading-snug">
+                  Prodejce dostane {sellerGets} Kč · poplatek Podplot {fee} Kč ({SERVICE_FEE_PERCENT} %)
+                </p>
+              ) : null}
             </div>
 
             <p className="text-[11px] text-stone-500 leading-snug mb-4">
-              Platba zůstane v úschově Podplotu. Prodávající může navrhnout méně, když už tolik
-              nemá — pak to znovu potvrdíte.
+              Platba kartou zůstane v úschově do osobního předání. Prodávající může navrhnout méně,
+              když už tolik nemá — pak to znovu potvrdíte.
             </p>
 
             <button
@@ -105,8 +112,7 @@ export default function ListingBuySheet({ open, post, onClose }) {
         onClose={() => setPayOpen(false)}
         title={`Koupit: ${post.title}`}
         amount={total}
-        walletBalance={credits}
-        note="Inzerát se rezervuje a peníze zůstanou v úschově, dokud po osobní kontrole nepotvrdíte „Převzato a zaplaceno“."
+        note={formatListingEscrowFeeNote(total)}
         confirmLabel={`Zaplatit a rezervovat · ${total} Kč`}
         onConfirm={(method) => {
           buyListing(post, method, { quantity });

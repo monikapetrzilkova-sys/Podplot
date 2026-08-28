@@ -66,8 +66,6 @@ function PromoTypeRow({ id, title, summary, status, statusActive, open, onToggle
 export default function BusinessAdsPage() {
   const {
     user,
-    credits,
-    addCredits,
     promoteProfile,
     sponsoredBanners,
     locationPromoBanners,
@@ -96,7 +94,6 @@ export default function BusinessAdsPage() {
   const [catalogPlanId, setCatalogPlanId] = useState("7d");
   const [bannerPayOpen, setBannerPayOpen] = useState(false);
   const [catalogPayOpen, setCatalogPayOpen] = useState(false);
-  const [topUpOpen, setTopUpOpen] = useState(false);
   const [openPromo, setOpenPromo] = useState(null);
 
   const selectedBannerPlan =
@@ -282,20 +279,29 @@ export default function BusinessAdsPage() {
     </>
   );
 
-  const creditsBar = (
-    <section className="pp-card p-4 flex items-center justify-between gap-3">
-      <div>
-        <p className="text-[11px] font-semibold text-stone-500">Podplot kredity</p>
-        <p className="text-xl font-bold text-[#1B4D3E] tabular-nums">{credits} Kč</p>
-      </div>
-      <button
-        type="button"
-        onClick={() => setTopUpOpen(true)}
-        className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-[#C5DDD4] bg-[#E8F0ED] text-[#1B4D3E]"
-      >
-        Dobít
-      </button>
-    </section>
+  const paymentModals = (
+    <>
+      <PaymentModal
+        open={bannerPayOpen}
+        onClose={() => setBannerPayOpen(false)}
+        title={
+          isScheduledOffer
+            ? `Rezervace Promo od ${offerFromLabel} — ${selectedBannerPlan.label}`
+            : `Banner Promo — ${selectedBannerPlan.label}`
+        }
+        amount={selectedBannerPlan.price}
+        note="Platba kartou za Promo proužek na Domů sousedů."
+        onConfirm={activateBanner}
+      />
+      <PaymentModal
+        open={catalogPayOpen}
+        onClose={() => setCatalogPayOpen(false)}
+        title={`Topování katalogu — ${selectedCatalogPlan.label}`}
+        amount={selectedCatalogPlan.price}
+        note="Platba kartou — přednostní výpis v katalogu služeb."
+        onConfirm={activateCatalog}
+      />
+    </>
   );
 
   const activeBannersList =
@@ -334,52 +340,12 @@ export default function BusinessAdsPage() {
       </section>
     ) : null;
 
-  const paymentModals = (
-    <>
-      <PaymentModal
-        open={bannerPayOpen}
-        onClose={() => setBannerPayOpen(false)}
-        title={
-          isScheduledOffer
-            ? `Rezervace Promo od ${offerFromLabel} — ${selectedBannerPlan.label}`
-            : `Banner Promo — ${selectedBannerPlan.label}`
-        }
-        amount={selectedBannerPlan.price}
-        walletBalance={credits}
-        onConfirm={activateBanner}
-      />
-      <PaymentModal
-        open={catalogPayOpen}
-        onClose={() => setCatalogPayOpen(false)}
-        title={`Topování katalogu — ${selectedCatalogPlan.label}`}
-        amount={selectedCatalogPlan.price}
-        walletBalance={credits}
-        onConfirm={activateCatalog}
-      />
-      <PaymentModal
-        open={topUpOpen}
-        onClose={() => setTopUpOpen(false)}
-        title="Dobít Podplot kredity"
-        amount={200}
-        amountEditable
-        walletBalance={credits}
-        allowWallet={false}
-        onConfirm={(_method, paid) => {
-          addCredits(paid ?? 200);
-          setTopUpOpen(false);
-        }}
-      />
-    </>
-  );
-
   if (isCraftsman) {
     return (
       <div className="pp-page flex flex-col min-h-full px-4 pt-4 pb-8 gap-3">
         <p className="text-xs text-stone-500">
           Vyberte typ — detail a aktivace se otevřou po kliknutí
         </p>
-
-        {creditsBar}
 
         <div className="space-y-2.5">
           <PromoTypeRow
@@ -489,8 +455,6 @@ export default function BusinessAdsPage() {
       <p className="text-xs text-stone-500">
         Banner Promo nahoře na Domů u sousedů v okolí
       </p>
-
-      {creditsBar}
 
       <section className="pp-card p-4 space-y-3">{bannerDetail}</section>
 

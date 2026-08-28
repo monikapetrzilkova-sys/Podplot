@@ -1,15 +1,17 @@
 /** Jak chce prodejce u inzerátu Prodám přijmout platbu. */
 
+import { SERVICE_FEE_PERCENT } from "./monetization.js";
+
 export const LISTING_PAYMENT_METHODS = [
   {
     id: "podplot",
     label: "Přes Podplot",
-    hint: "Kupující zaplatí v appce, peníze zůstanou v úschově do předání",
+    hint: `Kupující zaplatí kartou, peníze jdou do úschovy do předání. Poplatek ${SERVICE_FEE_PERCENT} % z částky (brána + Podplot) — vy dostanete zbytek po potvrzení převzetí.`,
   },
   {
     id: "in_person",
     label: "Jen osobně",
-    hint: "Domluvíte se ve zprávě a zaplatíte při předání — bez úschovy Podplotu",
+    hint: "Domluvíte se ve zprávě a zaplatíte při předání — bez úschovy a bez poplatku Podplotu",
   },
 ];
 

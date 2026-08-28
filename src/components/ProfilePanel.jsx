@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { CURRENT_USER, LEND_ASSETS, WANT_ASSETS, MY_GROUPS } from "../data/mockData.js";
 import { useApp } from "../context/AppContext.jsx";
-import { IconCredit } from "../data/icons.jsx";
 
 export default function ProfilePanel() {
-  const { profileOpen, setProfileOpen, credits, addCredits } = useApp();
+  const { profileOpen, setProfileOpen } = useApp();
   const [lend, setLend] = useState(new Set(["vrtacka", "vozik"]));
   const [want, setWant] = useState(new Set(["vrtacka"]));
 
@@ -51,26 +50,11 @@ export default function ProfilePanel() {
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           <section className="bg-white border border-stone-200 rounded-2xl p-4">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-stone-800">Podplot-Kredity</h3>
-              <span className="flex items-center gap-1 text-lg font-bold text-teal-700">
-                <IconCredit className="w-5 h-5" />
-                {credits} Kč
-              </span>
-            </div>
-            <p className="text-xs text-stone-500 mb-3">Platíte za půjčení věcí — bez hotovosti.</p>
-            <div className="flex gap-2">
-              {[100, 200, 500].map((amt) => (
-                <button
-                  key={amt}
-                  type="button"
-                  onClick={() => addCredits(amt)}
-                  className="flex-1 py-2.5 bg-teal-200 text-teal-800 text-sm font-semibold rounded-xl hover:bg-teal-300 transition-colors"
-                >
-                  +{amt}
-                </button>
-              ))}
-            </div>
+            <h3 className="text-sm font-semibold text-stone-800 mb-1">Platby</h3>
+            <p className="text-xs text-stone-500 leading-relaxed">
+              Nákupy přes Podplot držíme v úschově do předání. Platíte kartou — bez dobíjení
+              kreditů. Detail najdete v Profilu → Platby a úschova.
+            </p>
           </section>
 
           <section className="bg-white border border-stone-200 rounded-2xl p-4">
