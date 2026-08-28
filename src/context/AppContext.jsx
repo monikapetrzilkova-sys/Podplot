@@ -4718,29 +4718,32 @@ export function AppProvider({ children }) {
     [updateNotificationPrefs, showToast]
   );
 
-  const subscribeMobilniPush = useCallback(() => {
-    const cost = MOBILNI_PUSH_SUBSCRIPTION.price;
-    if (!payAmount(cost, "card")) return false;
-    const until = new Date();
-    until.setMonth(until.getMonth() + 1);
-    setBusinessNotificationPrefs({
-      serviceRequestPushEnabled: true,
-      serviceRequestPushUntil: until.toISOString().slice(0, 10),
-    });
-    setServicesCatalog((prev) =>
-      prev.map((s) => {
-        const mine =
-          (user?.id && s.ownerUserId === user.id) ||
-          (testRoleId === "remeslnik" && s.id === "svc1");
-        return mine ? { ...s, pushPoptavkyEnabled: true } : s;
-      })
-    );
-    showToast(
-      `Push poptávky aktivní do ${until.toLocaleDateString("cs-CZ")} — budete upozorněni jako první.`,
-      "success"
-    );
-    return true;
-  }, [payAmount, showToast, user?.id, testRoleId]);
+  const subscribeMobilniPush = useCallback(
+    (method = "card") => {
+      const cost = MOBILNI_PUSH_SUBSCRIPTION.price;
+      if (!payAmount(cost, method)) return false;
+      const until = new Date();
+      until.setMonth(until.getMonth() + 1);
+      setBusinessNotificationPrefs({
+        serviceRequestPushEnabled: true,
+        serviceRequestPushUntil: until.toISOString().slice(0, 10),
+      });
+      setServicesCatalog((prev) =>
+        prev.map((s) => {
+          const mine =
+            (user?.id && s.ownerUserId === user.id) ||
+            (testRoleId === "remeslnik" && s.id === "svc1");
+          return mine ? { ...s, pushPoptavkyEnabled: true } : s;
+        })
+      );
+      showToast(
+        `Push poptávky aktivní do ${until.toLocaleDateString("cs-CZ")} — budete upozorněni jako první.`,
+        "success"
+      );
+      return true;
+    },
+    [payAmount, showToast, user?.id, testRoleId]
+  );
 
   const toggleLunchSubscription = useCallback(
     (businessId, businessName) => {

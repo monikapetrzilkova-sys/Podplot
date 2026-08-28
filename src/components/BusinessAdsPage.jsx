@@ -94,6 +94,7 @@ export default function BusinessAdsPage() {
   const [catalogPlanId, setCatalogPlanId] = useState("7d");
   const [bannerPayOpen, setBannerPayOpen] = useState(false);
   const [catalogPayOpen, setCatalogPayOpen] = useState(false);
+  const [pushPayOpen, setPushPayOpen] = useState(false);
   const [openPromo, setOpenPromo] = useState(null);
 
   const selectedBannerPlan =
@@ -164,7 +165,7 @@ export default function BusinessAdsPage() {
       <p className="text-[11px] text-stone-500 pt-3">
         Proužek nahoře na Domů — označený {badge}. U sousedů se točí max.{" "}
         {PROMO_RULES.maxActiveBannersPerLocation} najednou (bez zahlcení). Když je plno, rezervujete
-        další volný termín. Platba z kreditů (1 kredit = 1 Kč).
+        další volný termín. Platba kartou.
       </p>
       <p className="text-[11px] text-[#1B4D3E] bg-[#F1F6F5] border border-[#C5DDD4] rounded-xl px-3 py-2">
         Živé sloty: {locationBannerSlots.used}/{locationBannerSlots.max}
@@ -282,6 +283,18 @@ export default function BusinessAdsPage() {
   const paymentModals = (
     <>
       <PaymentModal
+        open={pushPayOpen}
+        onClose={() => setPushPayOpen(false)}
+        title={`Push poptávek — ${MOBILNI_PUSH_SUBSCRIPTION.period}`}
+        amount={MOBILNI_PUSH_SUBSCRIPTION.price}
+        note="Platba kartou za okamžité upozornění na nové poptávky ve vašem okruhu."
+        confirmLabel={`Zaplatit ${MOBILNI_PUSH_SUBSCRIPTION.price} Kč`}
+        onConfirm={(method) => {
+          const ok = subscribeMobilniPush(method);
+          if (ok) setPushPayOpen(false);
+        }}
+      />
+      <PaymentModal
         open={bannerPayOpen}
         onClose={() => setBannerPayOpen(false)}
         title={
@@ -373,7 +386,7 @@ export default function BusinessAdsPage() {
             ) : (
               <button
                 type="button"
-                onClick={subscribeMobilniPush}
+                onClick={() => setPushPayOpen(true)}
                 className="w-full py-2.5 bg-[#3D7A68] text-white rounded-xl text-sm font-semibold"
               >
                 Aktivovat · {MOBILNI_PUSH_SUBSCRIPTION.price} Kč / {MOBILNI_PUSH_SUBSCRIPTION.period}
