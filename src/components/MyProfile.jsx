@@ -13,7 +13,6 @@ import { Avatar } from "./RoleBadge.jsx";
 import VerifiedBadge from "./VerifiedBadge.jsx";
 import AccountTypeIcon from "./AccountTypeIcon.jsx";
 import { INTEREST_OPTIONS } from "../data/ecosystemMock.js";
-import PromoteSection from "./PromoteSection.jsx";
 import ViewAsNeighborToggle from "./ViewAsNeighborToggle.jsx";
 import { ENABLE_DEV_ROLE_SWITCH } from "../data/devConfig.js";
 import { PUBLIC_AREA_LABEL_HINT } from "../data/personDisplay.js";
@@ -1343,8 +1342,6 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
           </div>
         )}
       </section>
-
-      <PromoteSection />
 
       {(isBusinessAccount(user) && resolveBusinessSubtype(user) === "mobilni") && (
         <ProfileCollapsible
