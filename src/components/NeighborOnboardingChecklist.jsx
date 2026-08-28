@@ -50,7 +50,7 @@ export default function NeighborOnboardingChecklist() {
           Začněte tady
         </p>
         <h2 className="text-sm font-bold text-stone-900 pr-6">
-          2 kroky k plnému Podplotu
+          Dvě drobnosti na začátek
         </h2>
         <p className="text-[11px] text-stone-500 mt-0.5 mb-3">
           Hotovo {doneCount} z {steps.length}
