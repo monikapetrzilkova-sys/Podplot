@@ -59,7 +59,7 @@ const NEIGHBOR_MORE = [
   {
     id: "hosted-activity",
     label: "Kroužek / lekce",
-    hint: "Rozvrh a termíny — budova nemusí být vaše",
+    hint: "Rozvrh a termíny — v sále, parku i venku",
     icon: IconPalette,
     action: "hosted-activity",
   },

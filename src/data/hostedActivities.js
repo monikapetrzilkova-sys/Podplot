@@ -13,7 +13,7 @@ export const VENUE_KINDS = [
   {
     id: "place",
     label: "Místo z Průvodce",
-    hint: "Budova, která vám nepatří — třeba MC nebo kulturní dům",
+    hint: "MC, kulturní dům, hřiště — místo z katalogu okolí",
   },
   {
     id: "address",

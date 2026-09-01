@@ -207,7 +207,7 @@ export default function CreateHostedActivityModal() {
               </button>
             </div>
             <p className="text-xs text-stone-500">
-              Zůstáváte Soused. Aktivita má své jméno a termíny — budova v Průvodci je jen místo konání.
+              Kroužek nebo lekce s vlastním rozvrhem. Místo konání může být z Průvodce, adresa, nebo venku.
             </p>
           </div>
 
