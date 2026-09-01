@@ -11,8 +11,8 @@ import {
 describe("hostedActivities", () => {
   it("labels venue by kind", () => {
     assert.equal(activityVenueLabel({ venueKind: "place", placeName: "MC Pohádka" }), "MC Pohádka");
-    assert.equal(activityVenueLabel({ venueKind: "outdoor", address: "Park Na Louce" }), "Park Na Louce");
-    assert.equal(activityVenueLabel({ venueKind: "outdoor" }), "Venku");
+    assert.equal(activityVenueLabel({ venueKind: "address", address: "Lípová 12" }), "Lípová 12");
+    assert.equal(activityVenueLabel({ venueKind: "address" }), "");
   });
 
   it("filters calendar by kind", () => {

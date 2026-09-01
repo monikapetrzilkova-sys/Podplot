@@ -145,11 +145,11 @@ export default function CreateHostedActivityModal() {
       return;
     }
     if (form.venueKind === "place" && !form.placeId) {
-      setFormError("Vyberte místo z Průvodce, nebo zvolte adresu / venku.");
+      setFormError("Vyberte místo z Průvodce, nebo zvolte adresu.");
       return;
     }
     if (form.venueKind !== "place" && !form.address.trim()) {
-      setFormError(form.venueKind === "outdoor" ? "Napište, kde venku se scházíte." : "Zadejte adresu.");
+      setFormError("Zadejte adresu.");
       return;
     }
     for (const slot of filledSlots) {
@@ -207,7 +207,7 @@ export default function CreateHostedActivityModal() {
               </button>
             </div>
             <p className="text-xs text-stone-500">
-              Kroužek nebo lekce s vlastním rozvrhem. Místo konání může být z Průvodce, adresa, nebo venku.
+              Kroužek nebo lekce s vlastním rozvrhem. Místo konání může být z Průvodce, nebo adresa.
             </p>
           </div>
 
@@ -216,7 +216,7 @@ export default function CreateHostedActivityModal() {
 
             <input
               type="text"
-              placeholder="Název — např. Smyslohranní *"
+              placeholder="Název — např. jóga, keramika *"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm"
@@ -288,7 +288,7 @@ export default function CreateHostedActivityModal() {
                 <input
                   id="activity-place-search"
                   type="search"
-                  placeholder="Hledat místo — např. Pohádka"
+                  placeholder="Hledat místo — např. knihovna, kulturní dům"
                   value={placeQuery}
                   onChange={(e) => setPlaceQuery(e.target.value)}
                   className="w-full px-3 py-2 border border-stone-200 rounded-xl text-sm mb-1.5"
@@ -311,14 +311,12 @@ export default function CreateHostedActivityModal() {
             ) : (
               <div>
                 <label htmlFor="activity-address" className="block text-xs font-semibold text-stone-600 mb-1">
-                  {form.venueKind === "outdoor" ? "Kde venku *" : "Adresa *"}
+                  Adresa *
                 </label>
                 <input
                   id="activity-address"
                   type="text"
-                  placeholder={
-                    form.venueKind === "outdoor" ? "např. Park Na Louce, Jesenice" : "např. Lípová 12, Jesenice"
-                  }
+                  placeholder="např. Lípová 12, Jesenice"
                   value={form.address}
                   onChange={(e) => {
                     manualPinRef.current = false;
