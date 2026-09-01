@@ -145,11 +145,11 @@ export default function CreateHostedActivityModal() {
       return;
     }
     if (form.venueKind === "place" && !form.placeId) {
-      setFormError("Vyberte místo z Průvodce, nebo zvolte adresu.");
+      setFormError("Vyberte místo z Průvodce, nebo zvolte adresu / venku.");
       return;
     }
     if (form.venueKind !== "place" && !form.address.trim()) {
-      setFormError("Zadejte adresu.");
+      setFormError(form.venueKind === "outdoor" ? "Napište, kde venku se scházíte." : "Zadejte adresu.");
       return;
     }
     for (const slot of filledSlots) {
@@ -207,7 +207,7 @@ export default function CreateHostedActivityModal() {
               </button>
             </div>
             <p className="text-xs text-stone-500">
-              Kroužek nebo lekce s vlastním rozvrhem. Místo konání může být z Průvodce, nebo adresa.
+              Kroužek nebo lekce s vlastním rozvrhem. Místo konání může být z Průvodce, adresa, nebo venku.
             </p>
           </div>
 
@@ -311,12 +311,14 @@ export default function CreateHostedActivityModal() {
             ) : (
               <div>
                 <label htmlFor="activity-address" className="block text-xs font-semibold text-stone-600 mb-1">
-                  Adresa *
+                  {form.venueKind === "outdoor" ? "Kde venku *" : "Adresa *"}
                 </label>
                 <input
                   id="activity-address"
                   type="text"
-                  placeholder="např. Lípová 12, Jesenice"
+                  placeholder={
+                    form.venueKind === "outdoor" ? "např. Park Na Louce, Jesenice" : "např. Lípová 12, Jesenice"
+                  }
                   value={form.address}
                   onChange={(e) => {
                     manualPinRef.current = false;

@@ -13,12 +13,17 @@ export const VENUE_KINDS = [
   {
     id: "place",
     label: "Místo z Průvodce",
-    hint: "Knihovna, kulturní dům — místo z katalogu okolí",
+    hint: "MC, kulturní dům, hřiště — místo z katalogu okolí",
   },
   {
     id: "address",
     label: "Adresa",
     hint: "Konkrétní adresa, která v Průvodci zatím není",
+  },
+  {
+    id: "outdoor",
+    label: "Venku / park",
+    hint: "Lekce bez budovy — park, hřiště, zahrada",
   },
 ];
 
@@ -34,6 +39,9 @@ export function isHostedActivityEvent(event) {
 
 export function activityVenueLabel(activity) {
   if (!activity) return "";
+  if (activity.venueKind === "outdoor") {
+    return activity.address || activity.placeName || "Venku";
+  }
   return activity.placeName || activity.address || "";
 }
 

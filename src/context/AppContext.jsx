@@ -7944,7 +7944,9 @@ export function AppProvider({ children }) {
       }
       const id = `act-${Date.now()}`;
       const venueLabel =
-        venueKind === "place" ? placeName || address : address?.trim() || "";
+        venueKind === "place"
+          ? placeName || address
+          : address?.trim() || (venueKind === "outdoor" ? "Venku" : "");
       const activity = {
         id,
         title: title.trim(),
