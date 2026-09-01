@@ -7,6 +7,7 @@ import {
   IconBulb,
   IconHammer,
   IconMapPin,
+  IconPalette,
   IconShop,
   IconTabCalendar,
   IconTabCatalog,
@@ -54,6 +55,13 @@ const NEIGHBOR_MORE = [
     hint: "Událost do kalendáře",
     icon: IconTabCalendar,
     action: "event",
+  },
+  {
+    id: "hosted-activity",
+    label: "Kroužek / lekce",
+    hint: "Rozvrh a termíny — budova nemusí být vaše",
+    icon: IconPalette,
+    action: "hosted-activity",
   },
   {
     id: "place",
@@ -168,6 +176,7 @@ export default function PlusActionMenu() {
     openMapReport,
     openPlaceSuggestion,
     openCreateEvent,
+    openCreateHostedActivity,
     openCreateHelp,
     openOfficePromptCall,
     openOfficeAnnouncementComposer,
@@ -209,6 +218,10 @@ export default function PlusActionMenu() {
     }
     if (item.action === "event") {
       openCreateEvent();
+      return;
+    }
+    if (item.action === "hosted-activity") {
+      openCreateHostedActivity?.();
       return;
     }
     if (item.action === "office-call") {

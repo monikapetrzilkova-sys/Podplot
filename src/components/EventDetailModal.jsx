@@ -29,6 +29,7 @@ export default function EventDetailModal() {
     reportEvent,
     deleteOwnPost,
     eventReporterIds,
+    openHostedActivityDetail,
   } = useApp();
   const [text, setText] = useState("");
 
@@ -131,6 +132,19 @@ export default function EventDetailModal() {
             mine: isOwnEvent,
           })}
         </p>
+        {ev.hostedActivityId ? (
+          <button
+            type="button"
+            onClick={() => {
+              const activityId = ev.hostedActivityId;
+              closeEventDetail();
+              openHostedActivityDetail?.(activityId);
+            }}
+            className="mt-2 text-xs font-semibold text-[#3D7A68]"
+          >
+            Součást kroužku ›
+          </button>
+        ) : null}
 
         {ev.description && (
           <p className="text-sm text-stone-700 leading-relaxed mt-4 whitespace-pre-wrap">{ev.description}</p>

@@ -116,6 +116,25 @@ function serviceMatches(svc, query) {
   );
 }
 
+function hostedActivityMatches(activity, query) {
+  return textMatches(
+    [
+      activity.title,
+      activity.description,
+      activity.hostName,
+      activity.placeName,
+      activity.address,
+      activity.ageRange,
+      "krouzek",
+      "lekce",
+      "aktivita",
+    ]
+      .filter(Boolean)
+      .join(" "),
+    query
+  );
+}
+
 function eventMatches(ev, query) {
   return textMatches(
     [
@@ -128,6 +147,7 @@ function eventMatches(ev, query) {
       ev.categoryLabel,
       ev.date,
       ...(ev.interestTags ?? []),
+      ev.hostedActivityId ? "krouzek lekce" : "",
     ]
       .filter(Boolean)
       .join(" "),
@@ -172,7 +192,7 @@ function neighborMatches(neighbor, query) {
 }
 
 /**
- * @returns {{ places, reports, listings, help, news, services, events, groupPosts, lending, groups, neighbors, total }}
+ * @returns {{ places, reports, listings, help, news, services, events, hostedActivities, groupPosts, lending, groups, neighbors, total }}
  */
 export function buildGlobalSearchResults({
   query,
@@ -183,6 +203,7 @@ export function buildGlobalSearchResults({
   news = [],
   services = [],
   events = [],
+  hostedActivities = [],
   groupPosts = [],
   lending = [],
   groups = [],
@@ -199,6 +220,7 @@ export function buildGlobalSearchResults({
       news: [],
       services: [],
       events: [],
+      hostedActivities: [],
       groupPosts: [],
       lending: [],
       groups: [],
@@ -214,6 +236,7 @@ export function buildGlobalSearchResults({
   const newsHits = news.filter((n) => newsMatches(n, q)).slice(0, limitPerGroup);
   const serviceHits = services.filter((s) => serviceMatches(s, q)).slice(0, limitPerGroup);
   const eventHits = events.filter((e) => eventMatches(e, q)).slice(0, limitPerGroup);
+  const hostedHits = hostedActivities.filter((a) => hostedActivityMatches(a, q)).slice(0, limitPerGroup);
   const groupPostHits = groupPosts.filter((p) => postMatches(p, q)).slice(0, limitPerGroup);
   const lendingHits = lending.filter((i) => lendingMatches(i, q)).slice(0, limitPerGroup);
   const groupHits = groups.filter((g) => groupMatches(g, q)).slice(0, limitPerGroup);
@@ -227,6 +250,7 @@ export function buildGlobalSearchResults({
     news: newsHits,
     services: serviceHits,
     events: eventHits,
+    hostedActivities: hostedHits,
     groupPosts: groupPostHits,
     lending: lendingHits,
     groups: groupHits,
@@ -239,6 +263,7 @@ export function buildGlobalSearchResults({
       newsHits.length +
       serviceHits.length +
       eventHits.length +
+      hostedHits.length +
       groupPostHits.length +
       lendingHits.length +
       groupHits.length +

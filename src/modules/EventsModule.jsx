@@ -15,6 +15,7 @@ import { filterEventsForMapView } from "../data/geoFilter.js";
 import ReportMenu, { EVENT_REPORT_REASONS } from "../components/ReportMenu.jsx";
 import CompactSearchToggle from "../components/CompactSearchToggle.jsx";
 import { displayCreatorLabel } from "../data/accountTypes.js";
+import { isHostedActivityEvent, filterEventsByKind } from "../data/hostedActivities.js";
 import { DoodleCheckIcon, DoodleJoinIcon } from "../components/doodle/doodleIcons.jsx";
 import { DoodleSousedskaAkceScene } from "../components/doodle/doodleIllustrations.jsx";
 
@@ -37,7 +38,7 @@ function EventsSparseDoodle({ count }) {
 function matchesEventSearch(event, query) {
   const q = String(query ?? "").trim().toLowerCase();
   if (!q) return true;
-  return [event.title, event.address, event.location, event.organizer, event.categoryLabel, event.date]
+  return [event.title, event.address, event.location, event.organizer, event.categoryLabel, event.date, event.hostedActivityId ? "krouzek lekce" : ""]
     .filter(Boolean)
     .some((v) => String(v).toLowerCase().includes(q));
 }
@@ -58,7 +59,14 @@ function EventListRow({ event, selected, onShowOnMap, onOpen, onJoin, joined, on
     >
       <div className="flex items-center gap-2">
         <button type="button" onClick={() => onOpen(event.id)} className="flex-1 min-w-0 text-left">
-          <p className="pp-text-title line-clamp-1 leading-snug">{event.title}</p>
+          <p className="pp-text-title line-clamp-1 leading-snug">
+            {isHostedActivityEvent(event) ? (
+              <span className="inline-block text-[9px] font-bold uppercase tracking-wide px-1 py-0.5 mr-1.5 rounded bg-emerald-50 text-emerald-800 align-middle">
+                Kroužek
+              </span>
+            ) : null}
+            {event.title}
+          </p>
           <p className="pp-text-meta line-clamp-1 mt-0.5 leading-snug">{meta}</p>
         </button>
         {canReport && onReport && (
@@ -123,6 +131,7 @@ export default function EventsModule({
     sendEventOutreach,
     reportEvent,
     testRoleId,
+    calendarFilter,
   } = useApp();
 
   const [outreachText, setOutreachText] = useState("");
@@ -152,8 +161,10 @@ export default function EventsModule({
   const baseUpcoming = listEvents ?? upcomingEvents;
 
   const sourceEvents = useMemo(() => {
-    return baseUpcoming.filter((e) => matchesEventSearch(e, effectiveSearch));
-  }, [baseUpcoming, effectiveSearch]);
+    return filterEventsByKind(baseUpcoming, calendarFilter).filter((e) =>
+      matchesEventSearch(e, effectiveSearch)
+    );
+  }, [baseUpcoming, effectiveSearch, calendarFilter]);
 
   const eventsInRadius = useMemo(
     () => filterEventsForMapView(sourceEvents, eventsMapRadiusKm, undefined, activeLocation),
@@ -257,7 +268,11 @@ export default function EventsModule({
           <ListView
             className={`flex-1 min-h-0 ${fillsViewport ? "" : "max-h-72"}`}
             items={eventsInRadius}
-            emptyMessage="V tomto okruhu zatím žádné nadcházející akce."
+            emptyMessage={
+              calendarFilter === "krouzky"
+                ? "V tomto okruhu zatím žádné vypsané termíny kroužků."
+                : "V tomto okruhu zatím žádné nadcházející akce."
+            }
             emptyIllustration="neighborEvent"
             renderItem={(event) => (
               <EventListRow

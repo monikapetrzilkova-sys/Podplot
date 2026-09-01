@@ -16,12 +16,14 @@ import InstitutionOfficePage from "./components/InstitutionOfficePage.jsx";
 import CreateListingModal from "./components/CreateListingModal.jsx";
 import CreateInvoiceModal from "./components/CreateInvoiceModal.jsx";
 import CreateEventModal from "./components/CreateEventModal.jsx";
+import CreateHostedActivityModal from "./components/CreateHostedActivityModal.jsx";
 import CreateHelpModal from "./components/CreateHelpModal.jsx";
 import CreateGroupModal from "./components/CreateGroupModal.jsx";
 import PlusActionMenu from "./components/PlusActionMenu.jsx";
 import RegisterScreen from "./components/RegisterScreen.jsx";
 import ChatModal from "./components/ChatModal.jsx";
 import EventDetailModal from "./components/EventDetailModal.jsx";
+import HostedActivityDetailModal from "./components/HostedActivityDetailModal.jsx";
 import PaymentModal from "./components/PaymentModal.jsx";
 import CraftsmanPublicProfileModal from "./components/CraftsmanPublicProfileModal.jsx";
 import SosOverlay from "./components/SosOverlay.jsx";
@@ -246,6 +248,7 @@ function GlobalModals() {
     chatModal,
     closeChat,
     selectedEventId,
+    selectedHostedActivityId,
     pendingPayment,
     setPendingPayment,
     confirmPendingPayment,
@@ -269,6 +272,7 @@ function GlobalModals() {
       )}
       <CraftsmanPublicProfileModal />
       {selectedEventId && <EventDetailModal />}
+      {selectedHostedActivityId && <HostedActivityDetailModal />}
       <HomeEventGalleryOverlay />
       <LocationAccessPrompt />
       <CreateGroupModal
@@ -351,6 +355,7 @@ export default function AppShell() {
           <CreateListingModal />
           <CreateInvoiceModal />
           <CreateEventModal />
+          <CreateHostedActivityModal />
           <CreateHelpModal />
           <PlaceSuggestionModal />
           <PlusActionMenu />

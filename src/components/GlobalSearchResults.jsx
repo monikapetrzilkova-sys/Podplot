@@ -16,6 +16,7 @@ import {
   DoodleMegaphoneIcon,
   DoodlePackageIcon,
   DoodleCalendarIcon,
+  DoodleFamilyIcon,
   DoodleGroupsIcon,
 } from "./doodle/doodleIcons.jsx";
 import { displayCreatorLabel } from "../data/accountTypes.js";
@@ -79,6 +80,7 @@ export default function GlobalSearchResults() {
     servicesCatalogReachable,
     upcomingEvents,
     pastEvents,
+    locationHostedActivities,
     lendingItemsForLocation,
     neighbors,
     user,
@@ -91,6 +93,7 @@ export default function GlobalSearchResults() {
     openCraftsmanPublicProfile,
     setLocalGuideSearchQuery,
     openEventDetail,
+    openHostedActivityDetail,
     openGroup,
     openLendingFromHome,
     offerHelpOnPost,
@@ -148,6 +151,7 @@ export default function GlobalSearchResults() {
         news: areaNews ?? [],
         services: servicesCatalogReachable ?? [],
         events,
+        hostedActivities: locationHostedActivities ?? [],
         groupPosts,
         lending: lendingItemsForLocation ?? [],
         groups: communityGroups,
@@ -162,6 +166,7 @@ export default function GlobalSearchResults() {
       areaNews,
       servicesCatalogReachable,
       events,
+      locationHostedActivities,
       groupPosts,
       lendingItemsForLocation,
       communityGroups,
@@ -222,6 +227,23 @@ export default function GlobalSearchResults() {
         </p>
       ) : (
         <>
+          <ResultSection title="Kroužky a lekce" count={results.hostedActivities.length}>
+            {results.hostedActivities.map((activity) => (
+              <ResultRow
+                key={activity.id}
+                badge="Kroužek"
+                title={activity.title}
+                subtitle={activity.description || activity.placeName}
+                meta={[activity.hostName, activity.placeName || activity.address].filter(Boolean).join(" · ")}
+                icon={<DoodleFamilyIcon className="w-4 h-4" />}
+                onClick={() => {
+                  openHostedActivityDetail?.(activity.id);
+                  clearSearch();
+                }}
+              />
+            ))}
+          </ResultSection>
+
           <ResultSection title="Akce" count={results.events.length}>
             {results.events.map((ev) => (
               <ResultRow

@@ -1,6 +1,8 @@
 import { useApp } from "../context/AppContext.jsx";
 import EventsModule from "../modules/EventsModule.jsx";
 import CompactAccordion from "./CompactAccordion.jsx";
+import EventsKindFilter from "./EventsKindFilter.jsx";
+import HostedActivityCard from "./HostedActivityCard.jsx";
 import { UI_KEYS } from "../data/uiPreferences.js";
 import { DoodleCalendarIcon, DoodleCameraIcon } from "./doodle/doodleIcons.jsx";
 
@@ -90,6 +92,11 @@ export default function CalendarPage({
     user,
     setCreateEventOpen,
     isJoinedEvent,
+    calendarFilter,
+    setCalendarFilter,
+    locationHostedActivities,
+    events,
+    openHostedActivityDetail,
   } = useApp();
 
   const isMine = (e) => {
@@ -159,6 +166,23 @@ export default function CalendarPage({
               ? "nové fotky"
               : "nových fotek"}
         </button>
+      ) : null}
+
+      <EventsKindFilter value={calendarFilter} onChange={setCalendarFilter} />
+
+      {calendarFilter === "krouzky" && (locationHostedActivities ?? []).length > 0 ? (
+        <div className="shrink-0 space-y-1.5 mt-1.5 mb-1">
+          {(locationHostedActivities ?? []).map((activity) => (
+            <HostedActivityCard
+              key={activity.id}
+              activity={activity}
+              events={events}
+              user={user}
+              onOpen={openHostedActivityDetail}
+              compact
+            />
+          ))}
+        </div>
       ) : null}
 
       <EventsModule

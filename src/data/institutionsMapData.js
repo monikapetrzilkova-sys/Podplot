@@ -129,6 +129,36 @@ export const INSTITUTIONS_MAP_PLACES = [
 
   {
 
+    id: "inst-mc-pohadka",
+
+    name: "MC Pohádka",
+
+    tagline: "Mateřské centrum · kroužky a setkání rodin",
+
+    emoji: "🏡",
+
+    category: "instituce",
+
+    address: "Budějovická 12, Jesenice",
+
+    phone: "+420 123 555 666",
+
+    hours: "Po–Pá podle programu kroužků",
+
+    mapPos: { x: 51, y: 47 },
+
+    locationId: "domov",
+
+    accountType: "instituce",
+
+    distance: "520 m",
+
+    extraInfo: "Budova patří centru — kroužky v ní vedou různí lektoři. Smyslohranní a další aktivity najdete v kalendáři.",
+
+  },
+
+  {
+
     id: "inst-ms1",
 
     name: "MŠ Na Louce",

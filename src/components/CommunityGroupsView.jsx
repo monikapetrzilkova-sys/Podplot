@@ -16,6 +16,8 @@ import { ClubCategoryIcon, GroupNavIcon } from "./communityNavIcons.jsx";
 import { displayCreatorLabel } from "../data/accountTypes.js";
 import SectionBackButton from "./SectionBackButton.jsx";
 import CompactSearchToggle from "./CompactSearchToggle.jsx";
+import HostedActivityCard from "./HostedActivityCard.jsx";
+import { HOSTED_ACTIVITY_GROUP_ID } from "../data/hostedActivities.js";
 
 function normalize(text) {
   return (text ?? "")
@@ -390,6 +392,9 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
     dismissGroupProposal,
     restoreGroupProposal,
     user,
+    locationHostedActivities,
+    events,
+    openHostedActivityDetail,
   } = useApp();
 
   const [search, setSearch] = useState("");
@@ -482,6 +487,21 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
           />
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto pb-14 space-y-2">
+          {activeGroup.id === HOSTED_ACTIVITY_GROUP_ID && (locationHostedActivities ?? []).length > 0 ? (
+            <div className="space-y-1.5">
+              <h3 className="text-[11px] font-semibold text-[#1B4D3E]">Kroužky a lekce v okolí</h3>
+              {(locationHostedActivities ?? []).map((activity) => (
+                <HostedActivityCard
+                  key={activity.id}
+                  activity={activity}
+                  events={events}
+                  user={user}
+                  onOpen={openHostedActivityDetail}
+                  compact
+                />
+              ))}
+            </div>
+          ) : null}
           <GroupPostComposer groupId={activeGroup.id} />
           {posts.length === 0 ? (
             <DoodleEmptyState illustration="chat" message="Zatím žádné příspěvky v této skupině." />

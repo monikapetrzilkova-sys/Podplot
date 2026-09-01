@@ -5,6 +5,7 @@ import { loadStoredList, persistStoredList } from "./listStorage.js";
 const POSTS_KEY = "podplot-user-posts-v1";
 const HELP_KEY = "podplot-help-posts-v1";
 const EVENTS_KEY = "podplot-user-events-v1";
+const HOSTED_ACTIVITIES_KEY = "podplot-hosted-activities-v1";
 
 export function loadUserPosts(userId) {
   return loadStoredList(POSTS_KEY, userId);
@@ -28,4 +29,12 @@ export function loadUserEvents(userId) {
 
 export function persistUserEvents(userId, events) {
   persistStoredList(EVENTS_KEY, userId, (events ?? []).filter((e) => e?.mine));
+}
+
+export function loadUserHostedActivities(userId) {
+  return loadStoredList(HOSTED_ACTIVITIES_KEY, userId);
+}
+
+export function persistUserHostedActivities(userId, activities) {
+  persistStoredList(HOSTED_ACTIVITIES_KEY, userId, (activities ?? []).filter((a) => a?.mine));
 }

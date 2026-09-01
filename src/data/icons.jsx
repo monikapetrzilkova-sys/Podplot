@@ -188,7 +188,18 @@ export function IconInfo({ className = "w-4 h-4" }) {
   );
 }
 
-/** Žárovka — tip / více informací */
+/** Paleta — kroužek / lekce */
+export function IconPalette({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 22a10 10 0 1 1 10-10c0 2.2-1.8 3-3 3h-1.5a2.5 2.5 0 0 0-2.5 2.5V18a2 2 0 0 1-2 2h-1" />
+      <circle cx="7.5" cy="10.5" r="1" fill="currentColor" />
+      <circle cx="12" cy="7.5" r="1" fill="currentColor" />
+      <circle cx="16.5" cy="10.5" r="1" fill="currentColor" />
+    </svg>
+  );
+}
+
 export function IconBulb({ className = "w-4 h-4" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

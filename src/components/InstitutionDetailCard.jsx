@@ -12,6 +12,8 @@ import { CLAIM_STATUS } from "../data/entityManagement.js";
 import PlaceReviewList from "./entity/PlaceReviewList.jsx";
 import { canWritePlaceReview } from "../data/placeReviews.js";
 import { formatGoogleHours } from "../data/placesApi.js";
+import { activitiesForPlace } from "../data/hostedActivities.js";
+import HostedActivityCard from "./HostedActivityCard.jsx";
 
 function PlaceCommunityEdit({ place, onSaved }) {
   const { updatePlaceCommunityDetails } = useApp();
@@ -148,6 +150,29 @@ function PlaceCommunityEdit({ place, onSaved }) {
 function formatWebsiteLabel(url) {
   if (!url) return "";
   return url.replace(/^https?:\/\//i, "").replace(/\/$/, "");
+}
+
+function PlaceActivitiesSection({ placeId }) {
+  const { locationHostedActivities, events, user, openHostedActivityDetail } = useApp();
+  const list = activitiesForPlace(locationHostedActivities, placeId);
+  if (list.length === 0) return null;
+  return (
+    <section className="mt-4">
+      <h3 className="text-sm font-bold text-stone-800 mb-2">Co se tu děje</h3>
+      <div className="space-y-1.5">
+        {list.map((activity) => (
+          <HostedActivityCard
+            key={activity.id}
+            activity={activity}
+            events={events}
+            user={user}
+            onOpen={openHostedActivityDetail}
+            compact
+          />
+        ))}
+      </div>
+    </section>
+  );
 }
 
 export default function InstitutionDetailCard({ place, onClose }) {
@@ -288,6 +313,8 @@ export default function InstitutionDetailCard({ place, onClose }) {
               {description ? (
                 <p className="mt-4 text-stone-600 bg-stone-50 rounded-xl p-3 text-xs leading-relaxed">{description}</p>
               ) : null}
+
+              <PlaceActivitiesSection placeId={place.id} />
 
               {canCommunityEdit && <PlaceCommunityEdit place={place} />}
 

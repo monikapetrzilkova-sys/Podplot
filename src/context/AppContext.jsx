@@ -107,6 +107,8 @@ import {
   persistHelpPosts,
   loadUserEvents,
   persistUserEvents,
+  loadUserHostedActivities,
+  persistUserHostedActivities,
 } from "../data/userContentStorage.js";
 import {
   loadUserActivity,
@@ -204,6 +206,13 @@ import {
   NEIGHBOR_HELP,
   SPONSORED_BUSINESSES,
 } from "../data/ecosystemMock.js";
+import {
+  INITIAL_HOSTED_ACTIVITIES,
+  HOSTED_ACTIVITY_SEED_EVENTS,
+  HOSTED_ACTIVITY_GROUP_ID,
+  activityVenueLabel,
+  isOwnHostedActivity,
+} from "../data/hostedActivities.js";
 import { inferLendingMeta } from "../data/lendingCategories.js";
 import { lendingCategoryToMarket } from "../data/marketCategories.js";
 import { SKIP_REGISTRATION, ENABLE_DEV_ROLE_SWITCH, getDevTestUser } from "../data/devConfig.js";
@@ -323,6 +332,8 @@ import {
 } from "../data/municipalityPrompts.js";
 
 const AppContext = createContext(null);
+
+const SEEDED_EVENTS = [...INITIAL_EVENTS, ...HOSTED_ACTIVITY_SEED_EVENTS];
 
 function applyTop(post, planId) {
   const plan = getTopPlan(planId);
@@ -510,6 +521,7 @@ export function AppProvider({ children }) {
   const [pendingThingsItemId, setPendingThingsItemId] = useState(null);
   const [homeEventGallery, setHomeEventGallery] = useState(null);
   const [createEventOpen, setCreateEventOpen] = useState(false);
+  const [createHostedActivityOpen, setCreateHostedActivityOpen] = useState(false);
   const [createHelpOpen, setCreateHelpOpen] = useState(false);
   const [createHelpPresetType, setCreateHelpPresetType] = useState(null);
   const [reportFormOpen, setReportFormOpen] = useState(false);
@@ -776,12 +788,21 @@ export function AppProvider({ children }) {
       const stored = uid ? loadUserEvents(uid) : [];
       const activity = uid ? loadUserActivity(uid) : defaultUserActivity();
       return applyEventPatches(
-        mergePostsById(stored, INITIAL_EVENTS),
+        mergePostsById(stored, SEEDED_EVENTS),
         activity.eventPatches,
         activity.joinedEventIds
       );
     } catch {
-      return INITIAL_EVENTS;
+      return SEEDED_EVENTS;
+    }
+  });
+  const [hostedActivities, setHostedActivities] = useState(() => {
+    try {
+      const uid = currentSessionUserId();
+      const stored = uid ? loadUserHostedActivities(uid) : [];
+      return mergePostsById(stored, INITIAL_HOSTED_ACTIVITIES);
+    } catch {
+      return INITIAL_HOSTED_ACTIVITIES;
     }
   });
   const [joinedEventIds, setJoinedEventIds] = useState(() => {
@@ -793,7 +814,7 @@ export function AppProvider({ children }) {
   });
   const [eventGalleryActivity, setEventGalleryActivity] = useState(() => {
     if (!SKIP_REGISTRATION) return [];
-    return buildInitialGalleryActivities(INITIAL_EVENTS, getDevTestUser(), ["ev-past2"]);
+    return buildInitialGalleryActivities(SEEDED_EVENTS, getDevTestUser(), ["ev-past2"]);
   });
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
   const [neighbors, setNeighbors] = useState(MOCK_NEIGHBORS);
@@ -848,7 +869,8 @@ export function AppProvider({ children }) {
       setUserPosts([]);
       setUserLendingItems([]);
       setNeighborHelp(NEIGHBOR_HELP);
-      setEvents(INITIAL_EVENTS);
+      setEvents(SEEDED_EVENTS);
+      setHostedActivities(INITIAL_HOSTED_ACTIVITIES);
       setGroupPostComments(SEED_GROUP_POST_COMMENTS);
       setJoinedEventIds([...DEFAULT_JOINED_EVENT_IDS]);
       setHelpOffersByPost(seedHelpOffersByPost());
@@ -868,12 +890,13 @@ export function AppProvider({ children }) {
     const activity = loadUserActivity(user.id);
     setEvents(
       applyEventPatches(
-        mergePostsById(loadUserEvents(user.id), INITIAL_EVENTS),
+        mergePostsById(loadUserEvents(user.id), SEEDED_EVENTS),
         activity.eventPatches,
         activity.joinedEventIds,
         attendeeFromUser(user)
       )
     );
+    setHostedActivities(mergePostsById(loadUserHostedActivities(user.id), INITIAL_HOSTED_ACTIVITIES));
     setJoinedEventIds(activity.joinedEventIds);
     setGroupPostComments(mergeCommentsById(SEED_GROUP_POST_COMMENTS, activity.comments));
     setHelpOffersByPost(mergeHelpOffersByPost(seedHelpOffersByPost(), activity.helpOffersByPost));
@@ -899,6 +922,7 @@ export function AppProvider({ children }) {
     );
     persistHelpPosts(user.id, neighborHelp);
     persistUserEvents(user.id, events);
+    persistUserHostedActivities(user.id, hostedActivities);
     persistUserActivity(user.id, {
       joinedEventIds,
       comments: (groupPostComments ?? []).filter((c) => !SEED_GROUP_POST_COMMENT_IDS.has(c.id)),
@@ -915,6 +939,7 @@ export function AppProvider({ children }) {
     userPosts,
     neighborHelp,
     events,
+    hostedActivities,
     joinedEventIds,
     groupPostComments,
     helpOffersByPost,
@@ -938,6 +963,7 @@ export function AppProvider({ children }) {
   const [helpOfferChatKickoff, setHelpOfferChatKickoff] = useState(null);
   const [galleryPreviewQueue, setGalleryPreviewQueue] = useState([]);
   const [selectedEventId, setSelectedEventId] = useState(null);
+  const [selectedHostedActivityId, setSelectedHostedActivityId] = useState(null);
   const [calendarFilter, setCalendarFilter] = useState("all");
   const [confirmationsGiven, setConfirmationsGiven] = useState([]);
   const confirmationsGivenRef = useRef(confirmationsGiven);
@@ -2099,6 +2125,9 @@ export function AppProvider({ children }) {
   const openCreateEvent = useCallback(() => {
     setCreateEventOpen(true);
   }, []);
+  const openCreateHostedActivity = useCallback(() => {
+    setCreateHostedActivityOpen(true);
+  }, []);
   const openCreateHelp = useCallback((presetType = null) => {
     setCreateHelpPresetType(presetType === "nabizim" || presetType === "hledam" ? presetType : null);
     setCreateHelpOpen(true);
@@ -2622,7 +2651,8 @@ export function AppProvider({ children }) {
     setUserPosts([]);
     setUserLendingItems([]);
     setNeighborHelp(NEIGHBOR_HELP);
-    setEvents(INITIAL_EVENTS);
+    setEvents(SEEDED_EVENTS);
+    setHostedActivities(INITIAL_HOSTED_ACTIVITIES);
     setGroupPostComments(SEED_GROUP_POST_COMMENTS);
     setJoinedEventIds([...DEFAULT_JOINED_EVENT_IDS]);
     setHelpOffersByPost(seedHelpOffersByPost());
@@ -2675,7 +2705,8 @@ export function AppProvider({ children }) {
       setUserPosts([]);
       setUserLendingItems([]);
       setNeighborHelp(NEIGHBOR_HELP);
-      setEvents(INITIAL_EVENTS);
+      setEvents(SEEDED_EVENTS);
+      setHostedActivities(INITIAL_HOSTED_ACTIVITIES);
       setGroupPostComments(SEED_GROUP_POST_COMMENTS);
       setJoinedEventIds([...DEFAULT_JOINED_EVENT_IDS]);
       setHelpOffersByPost(seedHelpOffersByPost());
@@ -7657,13 +7688,17 @@ export function AppProvider({ children }) {
       description,
       photo = null,
       notifyInterested,
+      hostedActivityId = null,
+      placeId = null,
+      silent = false,
+      skipNavigate = false,
     }) => {
       if (!user) {
-        showToast("Pro vytvoření akce se nejdřív přihlaste.", "error");
+        if (!silent) showToast("Pro vytvoření akce se nejdřív přihlaste.", "error");
         return null;
       }
       const cat = INTEREST_OPTIONS.find((i) => i.id === category);
-      const id = `ev-${Date.now()}`;
+      const id = `ev-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
       const startsAt = eventDate
         ? combineDateAndTime(eventDate, eventTime, timeTbd)
         : null;
@@ -7726,6 +7761,8 @@ export function AppProvider({ children }) {
           user.accountType === "urad" ||
           user.accountType === "instituce" ||
           user.role === "urad",
+        hostedActivityId: hostedActivityId || null,
+        placeId: placeId || null,
         participants: 1,
         participantIds: [],
         attendees: [{
@@ -7748,31 +7785,201 @@ export function AppProvider({ children }) {
         return next;
       });
       void publishRemotePost(eventToFeedPost(newEv, user), user);
-      const nextJoined = joinedEventIds.includes(id) ? joinedEventIds : [...joinedEventIds, id];
-      setJoinedEventIds(nextJoined);
-      if (user.id) persistActivityMerge(user.id, { joinedEventIds: nextJoined });
-      setPendingNeighborsSection("akce");
-      setActiveTab("neighbors");
-      setSelectedEventId(id);
-      if (notifyInterested) {
-        setNotifications((prev) => [
-          {
-            id: `n-${Date.now()}`,
-            type: "blue",
-            title: `Nová událost: ${title}`,
-            body: `${cat?.label} · ${locationLabel}`,
-            read: false,
-            time: "právě teď",
-          },
-          ...prev,
-        ]);
-        showToast("Událost vytvořena — zájemci byli upozorněni.", "success");
-      } else {
-        showToast("Událost vytvořena.", "success");
+      setJoinedEventIds((prev) => {
+        const nextJoined = prev.includes(id) ? prev : [...prev, id];
+        if (user.id) persistActivityMerge(user.id, { joinedEventIds: nextJoined });
+        return nextJoined;
+      });
+      if (!skipNavigate) {
+        setPendingNeighborsSection("akce");
+        setActiveTab("neighbors");
+        setSelectedEventId(id);
+      }
+      if (!silent) {
+        if (notifyInterested) {
+          setNotifications((prev) => [
+            {
+              id: `n-${Date.now()}`,
+              type: "blue",
+              title: `Nová událost: ${title}`,
+              body: `${cat?.label} · ${locationLabel}`,
+              read: false,
+              time: "právě teď",
+            },
+            ...prev,
+          ]);
+          showToast("Událost vytvořena — zájemci byli upozorněni.", "success");
+        } else {
+          showToast("Událost vytvořena.", "success");
+        }
       }
       return id;
     },
-    [user, activeLocation, activeLocationId, showToast, joinedEventIds]
+    [user, activeLocation, activeLocationId, showToast]
+  );
+
+  const openHostedActivityDetail = useCallback((activityId) => {
+    if (!activityId) return;
+    setSelectedHostedActivityId(activityId);
+  }, []);
+
+  const closeHostedActivityDetail = useCallback(() => {
+    setSelectedHostedActivityId(null);
+  }, []);
+
+  const publishHostedActivityDates = useCallback(
+    (activityId, dates = []) => {
+      const activity = hostedActivities.find((a) => a.id === activityId);
+      if (!activity) {
+        showToast("Kroužek se nepodařilo najít.", "error");
+        return false;
+      }
+      if (!isOwnHostedActivity(activity, user)) {
+        showToast("Termíny může vypsat jen vedoucí kroužku.", "error");
+        return false;
+      }
+      const slots = (dates ?? []).filter((s) => s?.eventDate);
+      if (slots.length === 0) {
+        showToast("Přidejte alespoň jeden termín.", "error");
+        return false;
+      }
+      for (const slot of slots) {
+        createEvent({
+          title: activity.title,
+          address: activity.address || activityVenueLabel(activity),
+          mapPos: activity.mapPos,
+          category: activity.category,
+          eventDate: slot.eventDate,
+          eventTime: slot.eventTime,
+          timeTbd: Boolean(slot.timeTbd),
+          description: activity.description,
+          photo: activity.photo,
+          hostedActivityId: activity.id,
+          placeId: activity.placeId,
+          silent: true,
+          skipNavigate: true,
+        });
+      }
+      setPendingNeighborsSection("akce");
+      setActiveTab("neighbors");
+      setSelectedHostedActivityId(activity.id);
+      showToast(
+        slots.length === 1
+          ? "Termín byl přidán do kalendáře."
+          : slots.length < 5
+            ? `${slots.length} termíny jsou v kalendáři.`
+            : `${slots.length} termínů je v kalendáři.`,
+        "success"
+      );
+      return true;
+    },
+    [hostedActivities, user, createEvent, showToast]
+  );
+
+  const createHostedActivity = useCallback(
+    ({
+      title,
+      description,
+      category,
+      ageRange,
+      venueKind,
+      placeId,
+      placeName,
+      address,
+      mapPos,
+      photo = null,
+      dates = [],
+    }) => {
+      if (!user) {
+        showToast("Pro vytvoření kroužku se nejdřív přihlaste.", "error");
+        return null;
+      }
+      const id = `act-${Date.now()}`;
+      const venueLabel =
+        venueKind === "place"
+          ? placeName || address
+          : address?.trim() || (venueKind === "outdoor" ? "Venku" : "");
+      const activity = {
+        id,
+        title: title.trim(),
+        description: description?.trim() || "",
+        category: category || "rodina",
+        ageRange: ageRange?.trim() || "",
+        hostUserId: user.id ?? "me",
+        hostName: user.name ?? "Vy",
+        accountType: user.accountType ?? "soused",
+        venueKind: venueKind || "address",
+        placeId: venueKind === "place" ? placeId || null : null,
+        placeName: venueKind === "place" ? placeName || venueLabel : "",
+        address: address?.trim() || venueLabel,
+        mapPos: mapPos ?? null,
+        lat: mapPos?.lat ?? activeLocation?.lat ?? null,
+        lng: mapPos?.lng ?? activeLocation?.lng ?? null,
+        photo,
+        locationId: activeLocationId,
+        municipality: activeLocation?.municipality ?? activeLocation?.shortLabel ?? null,
+        groupId: HOSTED_ACTIVITY_GROUP_ID,
+        createdAt: Date.now(),
+        mine: true,
+      };
+      setHostedActivities((prev) => {
+        const next = [activity, ...prev];
+        if (user.id) persistUserHostedActivities(user.id, next);
+        return next;
+      });
+      const slots = (dates ?? []).filter((s) => s?.eventDate);
+      if (slots.length > 0) {
+        for (const slot of slots) {
+          createEvent({
+            title: activity.title,
+            address: activity.address,
+            mapPos: activity.mapPos,
+            category: activity.category,
+            eventDate: slot.eventDate,
+            eventTime: slot.eventTime,
+            timeTbd: Boolean(slot.timeTbd),
+            description: activity.description,
+            photo: activity.photo,
+            hostedActivityId: activity.id,
+            placeId: activity.placeId,
+            silent: true,
+            skipNavigate: true,
+          });
+        }
+      }
+      setCalendarFilter("krouzky");
+      setPendingNeighborsSection("akce");
+      setActiveTab("neighbors");
+      setSelectedHostedActivityId(id);
+      showToast(
+        slots.length > 0
+          ? "Kroužek je zveřejněný a termíny jsou v kalendáři."
+          : "Kroužek je zveřejněný — termíny můžete vypsat kdykoli.",
+        "success"
+      );
+      return id;
+    },
+    [user, activeLocation, activeLocationId, createEvent, showToast]
+  );
+
+  const deleteHostedActivity = useCallback(
+    (activityId) => {
+      const activity = hostedActivities.find((a) => a.id === activityId);
+      if (!activity || !isOwnHostedActivity(activity, user)) {
+        return { ok: false, error: "Kroužek nelze zrušit." };
+      }
+      setHostedActivities((prev) => prev.filter((a) => a.id !== activityId));
+      setEvents((prev) =>
+        prev.filter((e) => {
+          if (e.hostedActivityId !== activityId) return true;
+          return isEventPast(e);
+        })
+      );
+      if (selectedHostedActivityId === activityId) setSelectedHostedActivityId(null);
+      showToast("Kroužek byl zrušen. Proběhlé termíny zůstávají v archivu.", "success");
+      return { ok: true };
+    },
+    [hostedActivities, user, selectedHostedActivityId, showToast]
   );
 
   const toggleInterest = useCallback((interestId) => {
@@ -7961,6 +8168,11 @@ export function AppProvider({ children }) {
   const pastEvents = useMemo(() => {
     return locationEvents.filter((e) => isEventPast(e)).sort((a, b) => sortEventsByDate(b, a));
   }, [locationEvents]);
+
+  const locationHostedActivities = useMemo(
+    () => filterByActiveLocation(hostedActivities, activeLocationId, activeLocation),
+    [hostedActivities, activeLocationId, activeLocation]
+  );
 
   const filteredServicesCatalog = useMemo(() => {
     const filtered = filterByActiveLocation(
@@ -8377,6 +8589,9 @@ export function AppProvider({ children }) {
         openCreateEvent,
         createEventOpen,
         setCreateEventOpen,
+        openCreateHostedActivity,
+        createHostedActivityOpen,
+        setCreateHostedActivityOpen,
         openCreateHelp,
         closeCreateHelp,
         createHelpOpen,
@@ -8514,6 +8729,8 @@ export function AppProvider({ children }) {
         events,
         upcomingEvents,
         pastEvents,
+        hostedActivities,
+        locationHostedActivities,
         joinEvent,
         isJoinedEvent,
         canUploadEventPhotos,
@@ -8543,8 +8760,14 @@ export function AppProvider({ children }) {
         openEventDetail,
         closeEventDetail,
         selectedEventId,
+        openHostedActivityDetail,
+        closeHostedActivityDetail,
+        selectedHostedActivityId,
         postEventChat,
         createEvent,
+        createHostedActivity,
+        publishHostedActivityDates,
+        deleteHostedActivity,
         calendarFilter,
         setCalendarFilter,
         notifications,
