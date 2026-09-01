@@ -8,6 +8,9 @@ import {
   feedPostToHelpItem,
   eventToFeedPost,
   feedPostToEvent,
+  hostedActivityToFeedPost,
+  feedPostToHostedActivity,
+  isHostedActivityFeedPost,
   lendingItemFromPost,
   commentToFeedPost,
   feedPostToComment,
@@ -18,7 +21,7 @@ import {
   COMMENT_FEED_SUBTYPE,
   EVENT_JOIN_FEED_SUBTYPE,
 } from "./persistedFeedItems.js";
-import { persistUserPosts, loadUserPosts, persistHelpPosts, loadHelpPosts, persistUserEvents, loadUserEvents } from "./userContentStorage.js";
+import { persistUserPosts, loadUserPosts, persistHelpPosts, loadHelpPosts, persistUserEvents, loadUserEvents, persistUserHostedActivities, loadUserHostedActivities } from "./userContentStorage.js";
 import { isGroupBoardDiscussionPost } from "./groups.js";
 import { isThingsModuleListing } from "../utils/thingsModule.js";
 
@@ -73,6 +76,7 @@ describe("all post types persist", () => {
       description: "Sobota 10:00",
       organizer: "Anna",
       locationId: "domov",
+      hostedActivityId: "act-1",
       mine: true,
       createdAt: 50,
     };
@@ -82,6 +86,7 @@ describe("all post types persist", () => {
     const back = feedPostToEvent(post);
     assert.equal(back.title, "Sraz na kurtech");
     assert.equal(back.mine, true);
+    assert.equal(back.hostedActivityId, "act-1");
   });
 
   it("rebuilds a půjčovna catalog item from a listing post", () => {
@@ -118,6 +123,43 @@ describe("all post types persist", () => {
       loadUserEvents("u1").map((e) => e.id),
       ["e1"]
     );
+  });
+
+  it("roundtrips a kroužek through a feed post and does not treat it as a listing or event", () => {
+    const activity = {
+      id: "act-1",
+      title: "Smyslohranní",
+      description: "Batolata",
+      hostName: "Marie K.",
+      placeName: "MC Pohádka",
+      locationId: "domov",
+      mine: true,
+      createdAt: 9,
+    };
+    const post = hostedActivityToFeedPost(activity, { id: "u1", name: "Marie K." });
+    assert.equal(isHostedActivityFeedPost(post), true);
+    assert.equal(isEventFeedPost(post), false);
+    assert.equal(isHelpFeedPost(post), false);
+    assert.equal(isActivityFeedPost(post), false);
+    assert.equal(isThingsModuleListing(post), false);
+    const back = feedPostToHostedActivity(post);
+    assert.equal(back.title, "Smyslohranní");
+    assert.equal(back.placeName, "MC Pohádka");
+    assert.equal(back.mine, true);
+  });
+
+  it("does not wipe stored kroužky or events when persist gets an empty list", () => {
+    mockLocalStorage();
+    persistUserHostedActivities("u1", [{ id: "act-1", title: "Smyslohranní", mine: true, createdAt: 1 }]);
+    persistUserEvents("u1", [{ id: "e1", title: "Termín", mine: true, hostedActivityId: "act-1", createdAt: 2 }]);
+    persistUserHostedActivities("u1", []);
+    persistUserEvents("u1", []);
+    assert.deepEqual(loadUserHostedActivities("u1").map((a) => a.id), ["act-1"]);
+    assert.deepEqual(loadUserEvents("u1").map((e) => e.id), ["e1"]);
+    persistUserHostedActivities("u1", [], { replaceEmpty: true });
+    persistUserEvents("u1", [], { replaceEmpty: true });
+    assert.deepEqual(loadUserHostedActivities("u1"), []);
+    assert.deepEqual(loadUserEvents("u1"), []);
   });
 
   it("roundtrips a group comment without treating it as a listing or event", () => {

@@ -5,7 +5,7 @@ import {
   filterEventsByKind,
   isHostedActivityEvent,
   activitiesForPlace,
-  upcomingWeekdayDates,
+  reconstructActivitiesFromEvents,
 } from "./hostedActivities.js";
 
 describe("hostedActivities", () => {
@@ -34,10 +34,21 @@ describe("hostedActivities", () => {
     );
   });
 
-  it("lists upcoming weekdays", () => {
-    const from = new Date(2026, 8, 1, 10, 0, 0);
-    const dates = upcomingWeekdayDates(3, 4, from);
-    assert.equal(dates[0], "2026-09-02");
-    assert.equal(dates.length, 4);
+  it("rebuilds a club card from leftover calendar dates", () => {
+    const rebuilt = reconstructActivitiesFromEvents(
+      [
+        {
+          hostedActivityId: "act-1",
+          title: "Smyslohranní",
+          address: "MC Pohádka",
+          organizer: "Marie K.",
+          mine: true,
+        },
+      ],
+      new Set()
+    );
+    assert.equal(rebuilt[0].id, "act-1");
+    assert.equal(rebuilt[0].title, "Smyslohranní");
+    assert.equal(rebuilt[0].hostName, "Marie K.");
   });
 });

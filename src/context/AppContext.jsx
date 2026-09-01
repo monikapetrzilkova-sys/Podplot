@@ -134,10 +134,13 @@ import {
   isHelpFeedPost,
   isEventFeedPost,
   isActivityFeedPost,
+  isHostedActivityFeedPost,
   helpItemToFeedPost,
   feedPostToHelpItem,
   eventToFeedPost,
   feedPostToEvent,
+  hostedActivityToFeedPost,
+  feedPostToHostedActivity,
   lendingItemFromPost,
   commentToFeedPost,
   eventJoinToFeedPost,
@@ -212,6 +215,7 @@ import {
   HOSTED_ACTIVITY_GROUP_ID,
   activityVenueLabel,
   isOwnHostedActivity,
+  reconstructActivitiesFromEvents,
 } from "../data/hostedActivities.js";
 import { inferLendingMeta } from "../data/lendingCategories.js";
 import { lendingCategoryToMarket } from "../data/marketCategories.js";
@@ -866,6 +870,7 @@ export function AppProvider({ children }) {
 
   useEffect(() => {
     if (!user?.id) {
+      skipNextUserContentPersist.current = true;
       setUserPosts([]);
       setUserLendingItems([]);
       setNeighborHelp(NEIGHBOR_HELP);
@@ -882,21 +887,30 @@ export function AppProvider({ children }) {
       skipNextUserContentPersist.current = true;
       return;
     }
+    skipNextUserContentPersist.current = true;
     const deleted = loadDeletedContent(user.id);
     const posts = loadUserPosts(user.id).filter((p) => !isDeletedPost(p, deleted));
     setUserPosts(posts);
     setUserLendingItems(posts.map(lendingItemFromPost).filter(Boolean));
     setNeighborHelp(mergePostsById(loadHelpPosts(user.id), NEIGHBOR_HELP));
     const activity = loadUserActivity(user.id);
-    setEvents(
-      applyEventPatches(
-        mergePostsById(loadUserEvents(user.id), SEEDED_EVENTS),
-        activity.eventPatches,
-        activity.joinedEventIds,
-        attendeeFromUser(user)
+    const loadedEvents = applyEventPatches(
+      mergePostsById(loadUserEvents(user.id), SEEDED_EVENTS),
+      activity.eventPatches,
+      activity.joinedEventIds,
+      attendeeFromUser(user)
+    );
+    setEvents(loadedEvents);
+    const storedActivities = mergePostsById(loadUserHostedActivities(user.id), INITIAL_HOSTED_ACTIVITIES);
+    setHostedActivities(
+      mergePostsById(
+        storedActivities,
+        reconstructActivitiesFromEvents(
+          loadedEvents,
+          new Set(storedActivities.map((a) => a.id))
+        )
       )
     );
-    setHostedActivities(mergePostsById(loadUserHostedActivities(user.id), INITIAL_HOSTED_ACTIVITIES));
     setJoinedEventIds(activity.joinedEventIds);
     setGroupPostComments(mergeCommentsById(SEED_GROUP_POST_COMMENTS, activity.comments));
     setHelpOffersByPost(mergeHelpOffersByPost(seedHelpOffersByPost(), activity.helpOffersByPost));
@@ -1752,7 +1766,11 @@ export function AppProvider({ children }) {
       const activityRemote = feedRemote.filter(isActivityFeedPost);
       if (activityRemote.length) ingestActivityPosts(activityRemote);
       const listingRemote = feedRemote.filter(
-        (p) => !isHelpFeedPost(p) && !isEventFeedPost(p) && !isActivityFeedPost(p)
+        (p) =>
+          !isHelpFeedPost(p) &&
+          !isEventFeedPost(p) &&
+          !isActivityFeedPost(p) &&
+          !isHostedActivityFeedPost(p)
       );
       setUserPosts((prev) =>
         mergePostsById(
@@ -1777,6 +1795,15 @@ export function AppProvider({ children }) {
       if (eventRemote.length) {
         setEvents((prev) => mergePostsById(prev, eventRemote));
       }
+      const hostedRemote = feedRemote.filter(isHostedActivityFeedPost).map(feedPostToHostedActivity);
+      setHostedActivities((prev) => {
+        const withRemote = hostedRemote.length ? mergePostsById(prev, hostedRemote) : prev;
+        const reconstructed = reconstructActivitiesFromEvents(
+          eventRemote,
+          new Set(withRemote.map((a) => a.id))
+        );
+        return reconstructed.length ? mergePostsById(withRemote, reconstructed) : withRemote;
+      });
       const lendingRemote = listingRemote.map(lendingItemFromPost).filter(Boolean);
       if (lendingRemote.length) {
         setUserLendingItems((prev) => mergePostsById(prev, lendingRemote));
@@ -1864,8 +1891,22 @@ export function AppProvider({ children }) {
           ingestActivityPosts([post]);
           return;
         }
+        if (isHostedActivityFeedPost(post)) {
+          const activity = feedPostToHostedActivity(post);
+          setHostedActivities((prev) =>
+            prev.some((a) => a.id === activity.id) ? prev : [activity, ...prev]
+          );
+          return;
+        }
         setUserPosts((prev) => {
-          if (isHelpFeedPost(post) || isEventFeedPost(post) || isActivityFeedPost(post)) return prev;
+          if (
+            isHelpFeedPost(post) ||
+            isEventFeedPost(post) ||
+            isActivityFeedPost(post) ||
+            isHostedActivityFeedPost(post)
+          ) {
+            return prev;
+          }
           if (prev.some((p) => p.id === post.id)) return prev;
           return [post, ...prev];
         });
@@ -1876,6 +1917,13 @@ export function AppProvider({ children }) {
         if (isEventFeedPost(post)) {
           const event = feedPostToEvent(post);
           setEvents((prev) => (prev.some((e) => e.id === event.id) ? prev : [event, ...prev]));
+          if (event.hostedActivityId) {
+            setHostedActivities((prev) => {
+              if (prev.some((a) => a.id === event.hostedActivityId)) return prev;
+              const reconstructed = reconstructActivitiesFromEvents([event], new Set(prev.map((a) => a.id)));
+              return reconstructed.length ? [...reconstructed, ...prev] : prev;
+            });
+          }
         }
         const lending = lendingItemFromPost(post);
         if (lending) {
@@ -7927,6 +7975,7 @@ export function AppProvider({ children }) {
         if (user.id) persistUserHostedActivities(user.id, next);
         return next;
       });
+      void publishRemotePost(hostedActivityToFeedPost(activity, user), user);
       const slots = (dates ?? []).filter((s) => s?.eventDate);
       if (slots.length > 0) {
         for (const slot of slots) {
@@ -7968,18 +8017,23 @@ export function AppProvider({ children }) {
       if (!activity || !isOwnHostedActivity(activity, user)) {
         return { ok: false, error: "Kroužek nelze zrušit." };
       }
-      setHostedActivities((prev) => prev.filter((a) => a.id !== activityId));
-      setEvents((prev) =>
-        prev.filter((e) => {
-          if (e.hostedActivityId !== activityId) return true;
-          return isEventPast(e);
-        })
-      );
+      const nextActivities = hostedActivities.filter((a) => a.id !== activityId);
+      const nextEvents = events.filter((e) => {
+        if (e.hostedActivityId !== activityId) return true;
+        return isEventPast(e);
+      });
+      setHostedActivities(nextActivities);
+      setEvents(nextEvents);
+      if (user.id) {
+        persistUserHostedActivities(user.id, nextActivities, { replaceEmpty: true });
+        persistUserEvents(user.id, nextEvents, { replaceEmpty: true });
+      }
+      void deleteRemotePost(activityId, user.id);
       if (selectedHostedActivityId === activityId) setSelectedHostedActivityId(null);
       showToast("Kroužek byl zrušen. Proběhlé termíny zůstávají v archivu.", "success");
       return { ok: true };
     },
-    [hostedActivities, user, selectedHostedActivityId, showToast]
+    [hostedActivities, events, user, selectedHostedActivityId, showToast]
   );
 
   const toggleInterest = useCallback((interestId) => {

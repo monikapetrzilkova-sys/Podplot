@@ -186,3 +186,36 @@ export function isOwnHostedActivity(activity, user) {
   }
   return false;
 }
+
+/** Když zůstanou termíny v kalendáři, ale karta kroužku zmizela, složíme ji z akcí. */
+export function reconstructActivitiesFromEvents(events, existingIds = new Set()) {
+  const byId = new Map();
+  for (const ev of events ?? []) {
+    const id = ev?.hostedActivityId;
+    if (!id || existingIds.has(id) || byId.has(id)) continue;
+    byId.set(id, {
+      id,
+      title: ev.title,
+      description: ev.description ?? "",
+      category: ev.category || "rodina",
+      ageRange: "",
+      hostUserId: ev.organizerId ?? null,
+      hostName: ev.organizer ?? "",
+      accountType: ev.accountType ?? "soused",
+      venueKind: ev.placeId ? "place" : "address",
+      placeId: ev.placeId ?? null,
+      placeName: ev.location || ev.address || "",
+      address: ev.address || ev.location || "",
+      mapPos: ev.mapPos ?? null,
+      lat: ev.lat ?? ev.mapPos?.lat ?? null,
+      lng: ev.lng ?? ev.mapPos?.lng ?? null,
+      photo: ev.photo ?? null,
+      locationId: ev.locationId ?? null,
+      municipality: ev.municipality ?? null,
+      groupId: HOSTED_ACTIVITY_GROUP_ID,
+      createdAt: ev.createdAt ?? Date.now(),
+      mine: Boolean(ev.mine),
+    });
+  }
+  return [...byId.values()];
+}

@@ -2,6 +2,7 @@
 
 export const HELP_FEED_SUBTYPE = "vypomoc";
 export const EVENT_FEED_SUBTYPE = "akce";
+export const HOSTED_ACTIVITY_FEED_SUBTYPE = "krouzek";
 export const COMMENT_FEED_SUBTYPE = "komentar";
 export const EVENT_JOIN_FEED_SUBTYPE = "event-join";
 export const EVENT_CHAT_FEED_SUBTYPE = "event-chat";
@@ -35,8 +36,16 @@ export function isHelpFeedPost(post) {
 export function isEventFeedPost(post) {
   if (!post) return false;
   if (isActivityFeedPost(post)) return false;
+  if (isHostedActivityFeedPost(post)) return false;
   if (post.feedSubtype === EVENT_FEED_SUBTYPE || post.feedType === "akce") return true;
   return Boolean(post.eventPayload && typeof post.eventPayload === "object");
+}
+
+export function isHostedActivityFeedPost(post) {
+  if (!post) return false;
+  if (isActivityFeedPost(post)) return false;
+  if (post.feedSubtype === HOSTED_ACTIVITY_FEED_SUBTYPE) return true;
+  return Boolean(post.hostedActivityPayload && typeof post.hostedActivityPayload === "object");
 }
 
 function activityAuthorFields(user, extras = {}) {
@@ -350,6 +359,8 @@ export function eventToFeedPost(event, user) {
     mapPos: event.mapPos ?? null,
     lat: event.lat ?? event.mapPos?.lat ?? null,
     lng: event.lng ?? event.mapPos?.lng ?? null,
+    hostedActivityId: event.hostedActivityId ?? null,
+    placeId: event.placeId ?? null,
   };
 }
 
@@ -367,7 +378,60 @@ export function feedPostToEvent(post) {
     mapPos: payload.mapPos ?? post.mapPos ?? null,
     lat: payload.lat ?? post.lat ?? null,
     lng: payload.lng ?? post.lng ?? null,
+    hostedActivityId: payload.hostedActivityId ?? post.hostedActivityId ?? null,
+    placeId: payload.placeId ?? post.placeId ?? null,
+    mine: Boolean(post.mine || payload.mine),
+    createdAt: payload.createdAt ?? post.createdAt ?? Date.now(),
+  };
+}
+
+export function hostedActivityToFeedPost(activity, user) {
+  return {
+    id: activity.id,
+    title: activity.title,
+    body: activity.description ?? "",
+    type: "Kroužek",
+    feedType: "akce",
+    feedSubtype: HOSTED_ACTIVITY_FEED_SUBTYPE,
+    hostedActivityPayload: activity,
+    author: activity.hostName ?? user?.name ?? "Soused",
+    authorId: user?.id ?? activity.hostUserId ?? "me",
+    initials: user?.initials,
+    accountType: activity.accountType ?? user?.accountType ?? "soused",
     mine: true,
+    locationId: activity.locationId ?? null,
+    municipality: activity.municipality ?? null,
+    groupId: activity.groupId ?? null,
+    createdAt: activity.createdAt ?? Date.now(),
+    meta: activity.placeName || activity.address || "Kroužek / lekce",
+    mapPos: activity.mapPos ?? null,
+    lat: activity.lat ?? activity.mapPos?.lat ?? null,
+    lng: activity.lng ?? activity.mapPos?.lng ?? null,
+    photos: activity.photo ? [activity.photo] : [],
+  };
+}
+
+export function feedPostToHostedActivity(post) {
+  const payload =
+    post.hostedActivityPayload && typeof post.hostedActivityPayload === "object"
+      ? post.hostedActivityPayload
+      : {};
+  return {
+    ...payload,
+    id: post.id,
+    title: payload.title || post.title,
+    description: payload.description ?? post.body ?? "",
+    hostName: payload.hostName || post.author,
+    hostUserId: payload.hostUserId || post.authorId,
+    accountType: payload.accountType || post.accountType,
+    locationId: payload.locationId ?? post.locationId ?? null,
+    municipality: payload.municipality ?? post.municipality ?? null,
+    mapPos: payload.mapPos ?? post.mapPos ?? null,
+    lat: payload.lat ?? post.lat ?? null,
+    lng: payload.lng ?? post.lng ?? null,
+    groupId: payload.groupId ?? post.groupId ?? null,
+    photo: payload.photo ?? post.photos?.[0] ?? null,
+    mine: Boolean(post.mine || payload.mine),
     createdAt: payload.createdAt ?? post.createdAt ?? Date.now(),
   };
 }

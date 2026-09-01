@@ -79,6 +79,10 @@ function rowToFeedPost(row, currentUserId) {
     proposalVotes: payload.votes ?? null,
     helpType: payload.helpType ?? null,
     eventPayload: payload.eventPayload && typeof payload.eventPayload === "object" ? payload.eventPayload : null,
+    hostedActivityPayload:
+      payload.hostedActivityPayload && typeof payload.hostedActivityPayload === "object"
+        ? payload.hostedActivityPayload
+        : null,
     activityPayload:
       payload.activityPayload && typeof payload.activityPayload === "object"
         ? payload.activityPayload
@@ -513,11 +517,13 @@ export async function publishRemotePost(post, user) {
     updatedAt: post.updatedAt ?? null,
     helpType: post.helpType ?? null,
     eventPayload: post.eventPayload ?? null,
+    hostedActivityPayload: post.hostedActivityPayload ?? null,
     activityPayload: post.activityPayload ?? null,
   };
   if (payload.boardPost === undefined) delete payload.boardPost;
   if (!payload.helpType) delete payload.helpType;
   if (!payload.eventPayload) delete payload.eventPayload;
+  if (!payload.hostedActivityPayload) delete payload.hostedActivityPayload;
   if (!payload.activityPayload) delete payload.activityPayload;
 
   const row = {

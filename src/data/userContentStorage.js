@@ -27,14 +27,27 @@ export function loadUserEvents(userId) {
   return loadStoredList(EVENTS_KEY, userId);
 }
 
-export function persistUserEvents(userId, events) {
-  persistStoredList(EVENTS_KEY, userId, (events ?? []).filter((e) => e?.mine));
+export function persistUserEvents(userId, events, options) {
+  persistMineList(EVENTS_KEY, userId, events, options);
 }
 
 export function loadUserHostedActivities(userId) {
   return loadStoredList(HOSTED_ACTIVITIES_KEY, userId);
 }
 
-export function persistUserHostedActivities(userId, activities) {
-  persistStoredList(HOSTED_ACTIVITIES_KEY, userId, (activities ?? []).filter((a) => a?.mine));
+export function persistUserHostedActivities(userId, activities, options) {
+  persistMineList(HOSTED_ACTIVITIES_KEY, userId, activities, options);
+}
+
+/**
+ * Ukládá jen vlastní položky. Prázdný seznam nesmí přepsat úložiště
+ * (to byl důvod, proč příspěvky po reloadu mizely), pokud to není záměrná smazání.
+ */
+function persistMineList(key, userId, items, { replaceEmpty = false } = {}) {
+  const mine = (items ?? []).filter((item) => item?.mine && item.id);
+  if (mine.length === 0 && !replaceEmpty) {
+    const existing = loadStoredList(key, userId);
+    if (existing.length > 0) return;
+  }
+  persistStoredList(key, userId, mine);
 }
