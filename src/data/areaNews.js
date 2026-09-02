@@ -1,6 +1,8 @@
 /** Plošná oznámení propojená s Hlášeními — modrý / červený majáček */
 
-export const AREA_NEWS = [
+import { markAsSample } from "./sampleContent.js";
+
+const AREA_NEWS_RAW = [
   {
     id: "an1",
     reportId: "r3",
@@ -75,6 +77,8 @@ export const AREA_NEWS = [
     role: "urad",
   },
 ];
+
+export const AREA_NEWS = markAsSample(AREA_NEWS_RAW);
 
 export function getAreaNewsForLocation(location, allNews = AREA_NEWS) {
   if (!location) return [];

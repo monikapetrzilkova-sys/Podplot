@@ -1,6 +1,7 @@
 /** Ukázková data pro všechny role a moduly */
 
 import { normalizeReportValidity } from "./reportExpiry.js";
+import { markAsSample } from "./sampleContent.js";
 
 export const CURRENT_USER = {
   name: "Monika Petržílková",
@@ -54,7 +55,7 @@ export const CLUBS = [
   },
 ];
 
-export const FEED_POSTS = [
+const FEED_POSTS_RAW = [
   {
     id: "f-jesenice",
     role: "instituce",
@@ -394,7 +395,9 @@ export const FEED_POSTS = [
   },
 ];
 
-export const LENDING_ITEMS = [
+export const FEED_POSTS = markAsSample(FEED_POSTS_RAW);
+
+const LENDING_ITEMS_RAW = [
   {
     id: "l1",
     role: "soused",
@@ -521,6 +524,8 @@ export const LENDING_ITEMS = [
   },
 ];
 
+export const LENDING_ITEMS = markAsSample(LENDING_ITEMS_RAW);
+
 function hoursAgo(h) {
   return new Date(Date.now() - h * 60 * 60 * 1000).toISOString();
 }
@@ -533,7 +538,7 @@ function minutesAgo(m) {
   return new Date(Date.now() - m * 60 * 1000).toISOString();
 }
 
-export const SECURITY_REPORTS = [
+const SECURITY_REPORTS_SEED = [
   {
     id: "r1",
     role: "soused",
@@ -737,6 +742,8 @@ export const SECURITY_REPORTS = [
     mapPos: { x: 50, y: 50 },
   },
 ].map((r) => normalizeReportValidity(r));
+
+export const SECURITY_REPORTS = markAsSample(SECURITY_REPORTS_SEED);
 
 export const MY_GROUPS = [
   { id: "maminky", name: "Maminky", emoji: "👶", members: 84 },

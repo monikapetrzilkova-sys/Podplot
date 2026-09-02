@@ -29,6 +29,7 @@ import { ReportPinIcon } from "./module/reportPinIcons.jsx";
 import MapPinPopover from "./module/MapPinPopover.jsx";
 import { PlaceIcon, ServicePlaceIcon } from "./module/placeIcons.jsx";
 import MapPickHint from "./map/MapPickHint.jsx";
+import { MAP_PIN_H, MAP_PIN_W, mapPinDisplaySize, mapPinTeardropPath } from "../utils/mapPinShape.js";
 
 /** Sleduje menší rozměr mapy — okruh radiusu zůstane kruh, ne elipsa. */
 function useMapMinDimension(mapRef) {
@@ -156,16 +157,31 @@ function MapPin({
           />
         )}
         <span
-          className={`relative flex items-center justify-center w-8 h-8 pp-map-pin transition-transform shrink-0 ${
-            selected ? "scale-125 ring-2 ring-offset-1" : emphasize ? "scale-110 ring-2 ring-white ring-offset-1 shadow-md" : ""
+          className={`relative shrink-0 overflow-visible transition-transform ${
+            selected ? "scale-110" : emphasize ? "scale-105" : ""
           }`}
           style={{
-            background: c.bg,
-            borderColor: c.border,
-            ringColor: c.border,
+            width: mapPinDisplaySize(selected).w,
+            height: mapPinDisplaySize(selected).h,
           }}
         >
-          <span className="pp-map-pin-inner flex items-center justify-center text-white">
+          <svg
+            viewBox={`0 0 ${MAP_PIN_W} ${MAP_PIN_H}`}
+            className="absolute inset-0 w-full h-full overflow-visible drop-shadow-md"
+            aria-hidden
+          >
+            <path
+              d={mapPinTeardropPath()}
+              fill={c.bg}
+              stroke={c.border}
+              strokeWidth="1.6"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span
+            className="absolute left-1/2 flex items-center justify-center text-white pointer-events-none"
+            style={{ top: "32%", transform: "translate(-50%, -50%)" }}
+          >
             {iconNode ?? (emoji ? (
               <span className="text-sm leading-none">{emoji}</span>
             ) : (

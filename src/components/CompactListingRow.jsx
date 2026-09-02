@@ -6,6 +6,8 @@ import { useApp } from "../context/AppContext.jsx";
 import { getActiveListingSale } from "../data/listingSales.js";
 import { displayCreatorLabel } from "../data/accountTypes.js";
 import { formatListingPriceLabel } from "../data/listingPriceUnits.js";
+import SampleBadge from "./SampleBadge.jsx";
+import { isSampleContent } from "../data/sampleContent.js";
 
 export function extractListingPrice(post) {
   if (!post) return null;
@@ -50,6 +52,7 @@ export default function CompactListingRow({ post }) {
         <div className="min-w-0 w-full text-sm">
           <div className="flex items-center gap-2 min-w-0">
             <span className="font-semibold text-stone-900 truncate flex-1">{post.title}</span>
+            {isSampleContent(post) ? <SampleBadge /> : null}
             {post.updatedAt && <EditedBadge item={post} className="shrink-0" />}
             {distance && <span className="shrink-0 text-stone-400 text-[11px]">{distance}</span>}
             {reserved ? (

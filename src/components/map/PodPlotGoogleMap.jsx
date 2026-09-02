@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { buildMapMarkers, markerIconSvg } from "../../utils/mapPinAdapter.js";
+import { buildMapMarkers, googleMapsPinIcon, markerIconSvg } from "../../utils/mapPinAdapter.js";
 import { buildMapPickResult, mapPosToLatLng } from "../../utils/geoCoordinates.js";
 import { loadMarkerClusterer, createPodPlotClusterRenderer } from "../../utils/markerClusterLoader.js";
 import {
@@ -305,8 +305,6 @@ export default function PodPlotGoogleMap({
     if (markers.length === 0) return () => { cancelled = true; };
 
     const gMarkers = markers.map((marker) => {
-      const w = marker.selected ? 36 : 32;
-      const h = marker.selected ? 46 : 40;
       const gMarker = new window.google.maps.Marker({
         map: null,
         position: { lat: marker.lat, lng: marker.lng },
@@ -314,12 +312,11 @@ export default function PodPlotGoogleMap({
         clickable: true,
         optimized: false,
         cursor: "pointer",
-        icon: {
-          url: marker.iconUrl ?? markerIconSvg(marker.variant, marker.emoji),
-          size: new window.google.maps.Size(w, h),
-          scaledSize: new window.google.maps.Size(w, h),
-          anchor: new window.google.maps.Point(w / 2, h),
-        },
+        icon: googleMapsPinIcon(
+          window.google.maps,
+          marker.iconUrl ?? markerIconSvg(marker.variant, marker.emoji),
+          marker.selected
+        ),
         zIndex: marker.selected ? 2000 : marker.showPinLabel ? 800 : 100,
       });
       gMarker.addListener("click", (e) => {
@@ -394,11 +391,7 @@ export default function PodPlotGoogleMap({
         map,
         position: center,
         title: homeLabel,
-        icon: {
-          url: markerIconSvg("home"),
-          scaledSize: new window.google.maps.Size(28, 36),
-          anchor: new window.google.maps.Point(14, 36),
-        },
+        icon: googleMapsPinIcon(window.google.maps, markerIconSvg("home")),
         zIndex: 3000,
         clickable: false,
       });
@@ -423,11 +416,7 @@ export default function PodPlotGoogleMap({
       map,
       position: pos,
       draggable: pickMode,
-      icon: {
-        url: markerIconSvg("draft"),
-        scaledSize: new window.google.maps.Size(28, 36),
-        anchor: new window.google.maps.Point(14, 36),
-      },
+      icon: googleMapsPinIcon(window.google.maps, markerIconSvg("draft")),
       zIndex: 4000,
     });
 

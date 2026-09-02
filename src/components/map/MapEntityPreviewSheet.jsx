@@ -1,6 +1,8 @@
 import { PlaceIcon } from "../module/placeIcons.jsx";
 import { formatGoogleHours } from "../../data/placesApi.js";
 import { displayCreatorLabel } from "../../data/accountTypes.js";
+import SampleBadge from "../SampleBadge.jsx";
+import { isSampleContent } from "../../data/sampleContent.js";
 
 function Stars({ rating }) {
   if (rating == null) return null;
@@ -102,7 +104,10 @@ export function MapEventPreviewSheet({ event, onDetail, onClose }) {
             📅
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-stone-900 leading-snug">{event.title}</p>
+            <p className="text-sm font-bold text-stone-900 leading-snug flex items-center gap-1.5 flex-wrap">
+              {event.title}
+              {isSampleContent(event) ? <SampleBadge /> : null}
+            </p>
             {meta && <p className="text-[10px] text-stone-400 mt-1">{meta}</p>}
           </div>
           <button

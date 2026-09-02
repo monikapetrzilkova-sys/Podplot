@@ -2435,24 +2435,27 @@ body,
   box-shadow: 0 3px 10px rgba(27, 77, 62, 0.18);
 }
 
-/* Spodní náhled hlášení na mapě */
+/* Okno hlášení nad mapou — karta, ne plný bílý list */
 .pp-map-preview-sheet {
   position: absolute;
-  left: 52px;
+  left: 10px;
   right: 10px;
-  bottom: 10px;
+  bottom: 12px;
   z-index: 40;
   pointer-events: auto;
   animation: pp-map-preview-in 0.22s ease-out;
+  max-height: min(58vh, 28rem);
 }
 
 .pp-map-preview-sheet-inner {
-  background: rgba(255, 255, 255, 0.98);
-  border: 1px solid rgba(183, 228, 199, 0.85);
-  border-radius: 16px;
-  box-shadow: 0 8px 28px rgba(27, 77, 62, 0.18);
-  padding: 10px 12px;
-  backdrop-filter: blur(6px);
+  background: #ffffff;
+  border: 1px solid rgba(183, 228, 199, 0.9);
+  border-radius: 22px;
+  box-shadow: 0 18px 48px rgba(27, 67, 50, 0.28);
+  padding: 14px 14px 12px;
+  backdrop-filter: blur(10px);
+  max-height: min(58vh, 28rem);
+  overflow-y: auto;
 }
 
 .pp-map-preview-sheet-icon {
@@ -2579,6 +2582,31 @@ body,
 .pp-app-sheet-overlay--center .pp-app-sheet {
   border-radius: 1.25rem;
   max-height: 90%;
+}
+
+/* Detail hlášení nad mapou — mapa zůstane vidět, okno jen povyskočí */
+.pp-app-sheet-overlay--over-map {
+  justify-content: flex-end;
+  padding: 0 10px 12px;
+}
+
+.pp-app-sheet-overlay--over-map .pp-modal-doodle-backdrop {
+  background: transparent;
+}
+
+.pp-app-sheet-overlay--over-map .pp-modal-doodle-pattern-wrap {
+  display: none;
+}
+
+.pp-app-sheet-overlay--over-map .pp-modal-doodle-veil {
+  background: rgba(27, 67, 50, 0.28);
+}
+
+.pp-app-sheet-overlay--over-map .pp-app-sheet {
+  width: 100%;
+  max-height: 64%;
+  border-radius: 1.35rem;
+  box-shadow: 0 18px 48px rgba(27, 67, 50, 0.3);
 }
 
 .pp-app-sheet--full {
@@ -2770,6 +2798,22 @@ body,
 }
 
 /* Feed */
+.pp-sample-badge {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #78716c;
+  background: #f5f5f4;
+  border: 1px solid #e7e5e4;
+  border-radius: 999px;
+  padding: 1px 6px;
+  line-height: 1.3;
+}
+
 .pp-feed-card {
   background: #ffffff;
   border-radius: var(--pp-radius-lg);
@@ -3194,16 +3238,13 @@ input[type="date"].pp-datetime-fields__control {
   transform: scale(0.95);
 }
 
-/* Mapa — organické markery */
+/* Mapa — organické markery (tvar je SVG kapka, ne otočený čtverec) */
 .pp-map-pin {
-  border-radius: 50% 50% 50% 0;
-  transform: rotate(-45deg);
-  border: 2px solid var(--pp-emerald);
-  box-shadow: var(--pp-shadow);
+  overflow: visible;
 }
 
 .pp-map-pin-inner {
-  transform: rotate(45deg);
+  overflow: visible;
 }
 
 .pp-map-container {
@@ -3215,6 +3256,12 @@ input[type="date"].pp-datetime-fields__control {
 
 .pp-map-container--google {
   border-color: rgba(66, 133, 244, 0.25);
+}
+
+/* Tailwind preflight (img { max-width: 100% }) zploští / ořeže špendlíky na Google Mapě */
+.pp-map-container--google .gm-style img {
+  max-width: none !important;
+  max-height: none !important;
 }
 
 .pp-map-container--pick {

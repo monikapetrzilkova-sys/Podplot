@@ -17,6 +17,7 @@ import { lendingDisplayTitle } from "../data/lendingItemTypes.js";
 import { IconNavSearch } from "../components/communityNavIcons.jsx";
 import PrimaryAddButton from "../components/PrimaryAddButton.jsx";
 import { displayCreatorLabel } from "../data/accountTypes.js";
+import { isSampleContent } from "../data/sampleContent.js";
 import { topicFromLending, topicFromPost } from "../data/chatTopics.js";
 import { getActiveListingSale, isActiveListingSaleStatus } from "../data/listingSales.js";
 
@@ -92,6 +93,7 @@ function ThingListRow({ item, expanded, onToggle }) {
     <LiveFeedCard
       itemId={`thing-${item.id}`}
       domId={`module-item-${item.id}`}
+      sample={isSampleContent(item)}
       badge={badgeInfo.label}
       badgeClassName={badgeInfo.className}
       title={title}

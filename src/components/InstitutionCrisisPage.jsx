@@ -3,6 +3,8 @@ import { useApp } from "../context/AppContext.jsx";
 import EditedBadge from "./EditedBadge.jsx";
 import ContentEditModal from "./ContentEditModal.jsx";
 import { IconAlert } from "../data/icons.jsx";
+import SampleBadge from "./SampleBadge.jsx";
+import { isSampleContent } from "../data/sampleContent.js";
 
 function ComposeRow({ id, title, summary, open, onToggle, children }) {
   return (
@@ -326,6 +328,7 @@ export default function InstitutionCrisisPage() {
               </p>
               <div className="flex items-center gap-2 flex-wrap mt-0.5">
                 <h3 className="text-sm font-semibold text-stone-900">{n.title}</h3>
+                {isSampleContent(n) ? <SampleBadge /> : null}
                 <EditedBadge item={n} />
               </div>
               <p className="text-xs text-stone-600 mt-1 leading-relaxed whitespace-pre-wrap">{n.body}</p>
@@ -378,6 +381,7 @@ export default function InstitutionCrisisPage() {
             <article key={n.id} className="pp-card px-3.5 py-3 opacity-80">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-sm font-semibold text-stone-800">{n.title}</h3>
+                {isSampleContent(n) ? <SampleBadge /> : null}
                 <EditedBadge item={n} />
               </div>
               <p className="text-xs text-stone-500 mt-1 line-clamp-2">{n.body}</p>

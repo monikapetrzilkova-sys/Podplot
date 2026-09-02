@@ -11,6 +11,7 @@ import { displayCreatorLabel } from "../data/accountTypes.js";
 import { feedItemNeedsExpand } from "./feed/feedExpand.js";
 import { formatContentAge } from "../data/czechDateTime.js";
 import { getActiveListingSale, isActiveListingSaleStatus } from "../data/listingSales.js";
+import { isSampleContent } from "../data/sampleContent.js";
 
 const SECTION_LABELS = {
   veci: "Věci",
@@ -195,6 +196,7 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
               <LiveFeedCard
                 key={item.id}
                 itemId={item.id}
+                sample={isSampleContent(item.post || item)}
                 badge={item.badge}
                 badgeClassName={item.badgeClassName}
                 title={item.title}
@@ -233,6 +235,7 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
               <LiveFeedCard
                 key={item.id}
                 itemId={item.id}
+                sample={isSampleContent(item.help || item)}
                 badge={item.badge}
                 badgeClassName={item.badgeClassName}
                 title={item.title}
@@ -269,6 +272,7 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
               <LiveFeedCard
                 key={item.id}
                 itemId={item.id}
+                sample={isSampleContent(item.post || item)}
                 badge={item.badge}
                 badgeClassName={item.badgeClassName}
                 title={item.title}
@@ -296,6 +300,7 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
               <LiveFeedCard
                 key={item.id}
                 itemId={item.id}
+                sample={isSampleContent(item.event || item)}
                 badge={item.badge}
                 badgeClassName={item.badgeClassName}
                 title={item.title}

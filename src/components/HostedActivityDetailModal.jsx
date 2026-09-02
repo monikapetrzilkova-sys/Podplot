@@ -12,6 +12,8 @@ import CzechTimeInput from "./CzechTimeInput.jsx";
 import EventLocationMap from "./EventLocationMap.jsx";
 import AppPanelPortal from "./AppPanelPortal.jsx";
 import { DoodleCheckIcon, DoodleJoinIcon } from "./doodle/doodleIcons.jsx";
+import SampleBadge from "./SampleBadge.jsx";
+import { isSampleContent } from "../data/sampleContent.js";
 
 const EMPTY_SLOT = () => ({ eventDate: "", eventTime: "16:00", timeTbd: false });
 
@@ -92,7 +94,12 @@ export default function HostedActivityDetailModal() {
               <span className="inline-block text-[10px] font-bold uppercase text-white/90 bg-white/20 px-2 py-0.5 rounded-md mb-1">
                 Kroužek / lekce
               </span>
-              <h2 className="font-bold text-white text-lg leading-snug">{activity.title}</h2>
+              <h2 className="font-bold text-white text-lg leading-snug flex items-center gap-2 flex-wrap">
+                {activity.title}
+                {isSampleContent(activity) ? (
+                  <SampleBadge className="bg-white/90 text-stone-600 border-white/40" />
+                ) : null}
+              </h2>
             </div>
           </div>
 

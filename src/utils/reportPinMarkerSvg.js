@@ -1,5 +1,12 @@
 import { classifyReportType, reportPinVariant } from "./reportPinUtils.js";
 import { doodlePawSvgInner } from "../components/doodle/doodleIcons.jsx";
+import {
+  MAP_PIN_H,
+  MAP_PIN_ICON_CX,
+  MAP_PIN_ICON_CY,
+  MAP_PIN_W,
+  mapPinTeardropPath,
+} from "./mapPinShape.js";
 
 const PIN_COLORS = {
   urgent: { bg: "#A85858", border: "#8F4545" },
@@ -70,12 +77,9 @@ export function reportMarkerIconSvg(report, selected = false) {
   const c = PIN_COLORS[variant] ?? PIN_COLORS.reportDefault;
   const iconKey = resolveIconKey(report);
   const paths = ICON_PATHS[iconKey] ?? ICON_PATHS.pin;
-  const w = selected ? 28 : 24;
-  const h = selected ? 36 : 32;
-
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 24 32">
-    <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z" fill="${c.bg}" stroke="${c.border}" stroke-width="1.5"/>
-    <g transform="translate(12 11) scale(0.42) translate(-12 -12)" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</g>
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${MAP_PIN_W}" height="${MAP_PIN_H}" viewBox="0 0 ${MAP_PIN_W} ${MAP_PIN_H}" preserveAspectRatio="xMidYMax meet">
+    <path d="${mapPinTeardropPath()}" fill="${c.bg}" stroke="${c.border}" stroke-width="1.6" stroke-linejoin="round"/>
+    <g transform="translate(${MAP_PIN_ICON_CX} ${MAP_PIN_ICON_CY}) scale(0.46) translate(-12 -12)" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</g>
   </svg>`;
 
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;

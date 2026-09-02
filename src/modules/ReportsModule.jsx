@@ -25,6 +25,8 @@ import { displayCreatorLabel } from "../data/accountTypes.js";
 import { SECURITY_REPORTS } from "../data/mockData.js";
 import { isReportActive } from "../data/reportExpiry.js";
 import { formatContentAge } from "../data/czechDateTime.js";
+import SampleBadge from "../components/SampleBadge.jsx";
+import { isSampleContent } from "../data/sampleContent.js";
 
 function OfficeStatusBadge({ report }) {
   if (!report?.officeStatus || report.officeStatus === "new") return null;
@@ -65,6 +67,7 @@ function ReportListRow({ report, onOpen }) {
               >
                 {report.type}
               </p>
+              {isSampleContent(report) ? <SampleBadge /> : null}
               <ReportLifecycleChip report={report} />
               <EditedBadge item={report} />
               {report.urgent && (
@@ -314,6 +317,7 @@ export default function ReportsModule({
 
       <ReportDetailModal
         report={liveDetailReport}
+        overMap={viewMode === "map"}
         onClose={closeReportDetail}
         onReport={(reason) => liveDetailReport && reportSecurityReport(liveDetailReport.id, reason)}
       />

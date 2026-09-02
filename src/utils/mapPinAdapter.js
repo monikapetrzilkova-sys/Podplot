@@ -9,6 +9,21 @@ import {
 } from "./reportPinUtils.js";
 import { reportMarkerIconSvg } from "./reportPinMarkerSvg.js";
 import { institutionMarkerIconSvg } from "./institutionPinMarkerSvg.js";
+import {
+  MAP_PIN_H,
+  MAP_PIN_ICON_CX,
+  MAP_PIN_ICON_CY,
+  MAP_PIN_W,
+  mapPinTeardropPath,
+} from "./mapPinShape.js";
+
+export {
+  MAP_PIN_H,
+  MAP_PIN_W,
+  googleMapsPinIcon,
+  mapPinDisplaySize,
+  mapPinTeardropPath,
+} from "./mapPinShape.js";
 
 /** Sestaví jednotné markery pro Google Map z entit modulu. */
 export function buildMapMarkers({
@@ -163,10 +178,10 @@ export const PIN_COLORS = {
 export function markerIconSvg(variant, emoji) {
   const c = PIN_COLORS[variant] ?? PIN_COLORS.default;
   const inner = emoji
-    ? `<text x="12" y="16" text-anchor="middle" font-size="11">${emoji}</text>`
-    : `<circle cx="12" cy="11" r="3" fill="white"/>`;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="32" viewBox="0 0 24 32">
-    <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z" fill="${c.bg}" stroke="${c.border}" stroke-width="1.5"/>
+    ? `<text x="${MAP_PIN_ICON_CX}" y="${MAP_PIN_ICON_CY + 4}" text-anchor="middle" font-size="12">${emoji}</text>`
+    : `<circle cx="${MAP_PIN_ICON_CX}" cy="${MAP_PIN_ICON_CY}" r="3.4" fill="white"/>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${MAP_PIN_W}" height="${MAP_PIN_H}" viewBox="0 0 ${MAP_PIN_W} ${MAP_PIN_H}" preserveAspectRatio="xMidYMax meet">
+    <path d="${mapPinTeardropPath()}" fill="${c.bg}" stroke="${c.border}" stroke-width="1.6" stroke-linejoin="round"/>
     ${inner}
   </svg>`;
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;

@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import EditedBadge from "./EditedBadge.jsx";
 import { DoodleMegaphoneIcon } from "./doodle/doodleIcons.jsx";
+import SampleBadge from "./SampleBadge.jsx";
+import { isSampleContent } from "../data/sampleContent.js";
 
 export default function AreaNewsWidget() {
   const { areaNews, acknowledgedNewsIds } = useApp();
@@ -42,6 +44,7 @@ export default function AreaNewsWidget() {
                   </p>
                   <h3 className="text-sm font-semibold text-stone-900 mt-0.5 flex items-center gap-2 flex-wrap">
                     {item.title}
+                    {isSampleContent(item) ? <SampleBadge /> : null}
                   </h3>
                   {!open && (
                     <p className="text-[10px] text-blue-700/80 mt-1 font-medium">

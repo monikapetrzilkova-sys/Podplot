@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { CS_LOCALE, parseDateInput } from "../data/czechDateTime.js";
 import { displayCreatorLabel } from "../data/accountTypes.js";
+import SampleBadge from "./SampleBadge.jsx";
+import { isSampleContent } from "../data/sampleContent.js";
 
 const WEEKDAYS = ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"];
 
@@ -213,7 +215,10 @@ export default function EventsCalendarMonth({
                     onClick={() => onOpenEvent?.(event.id)}
                     className="flex-1 min-w-0 text-left"
                   >
-                    <p className="pp-text-title line-clamp-1 leading-snug">{event.title}</p>
+                    <p className="pp-text-title line-clamp-1 leading-snug flex items-center gap-1.5">
+                      <span className="truncate">{event.title}</span>
+                      {isSampleContent(event) ? <SampleBadge /> : null}
+                    </p>
                     <p className="pp-text-meta line-clamp-1 mt-0.5 leading-snug">
                       {[
                         displayCreatorLabel(event.organizer, event.accountType, {

@@ -9,6 +9,8 @@ import {
 import { ReportPinIcon } from "./reportPinIcons.jsx";
 import { getPromptStatusStyle } from "../../data/municipalityPrompts.js";
 import { isTipReport, REPORT_TIP_ACCENT } from "../../data/reportCategories.js";
+import SampleBadge from "../SampleBadge.jsx";
+import { isSampleContent } from "../../data/sampleContent.js";
 
 export default function ReportMapPreviewSheet({ report, onDetail, onClose, expiredFromMap = false }) {
   if (!report) return null;
@@ -38,6 +40,7 @@ export default function ReportMapPreviewSheet({ report, onDetail, onClose, expir
               >
                 {reportPinShortLabel(report)}
               </p>
+              {isSampleContent(report) ? <SampleBadge /> : null}
               {report.urgent && (
                 <span className="text-[9px] font-bold uppercase text-red-700 bg-red-50 px-1.5 py-0.5 rounded-md border border-red-100">
                   Urgentní
@@ -51,7 +54,7 @@ export default function ReportMapPreviewSheet({ report, onDetail, onClose, expir
                 </span>
               )}
             </div>
-            <p className="text-xs text-stone-600 mt-0.5 line-clamp-2 leading-snug">{report.body}</p>
+            <p className="text-xs text-stone-600 mt-1 leading-snug whitespace-pre-wrap">{report.body}</p>
             {(report.placeLabel || report.distance) && (
               <p className="text-[11px] text-stone-500 mt-1 flex items-center gap-1">
                 <span aria-hidden>📍</span>

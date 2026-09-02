@@ -16,9 +16,11 @@ import EditedBadge from "./EditedBadge.jsx";
 import ReportLifecycleChip from "./ReportLifecycleChip.jsx";
 import ContentEditModal from "./ContentEditModal.jsx";
 import { useApp } from "../context/AppContext.jsx";
+import SampleBadge from "./SampleBadge.jsx";
+import { isSampleContent } from "../data/sampleContent.js";
 import MapComponent from "./module/MapComponent.jsx";
 
-export default function ReportDetailModal({ report, onClose, onReport }) {
+export default function ReportDetailModal({ report, onClose, onReport, overMap = false }) {
   const { updateSecurityReport, resolveSecurityReport, activeLocation, user, showToast } = useApp();
   const [editOpen, setEditOpen] = useState(false);
 
@@ -30,12 +32,12 @@ export default function ReportDetailModal({ report, onClose, onReport }) {
   const showOfficeStatus = report.officeStatus && report.officeStatus !== "new";
   const tip = isTipReport(report);
   const titleColor = tip ? REPORT_TIP_ACCENT : reportPinAccentColor(report);
-  const showMap = hasReportMapPosition(report);
+  const showMap = !overMap && hasReportMapPosition(report);
   const canResolve = Boolean(report.mine) && isReportActive(report) && !isReportResolved(report);
 
   return (
     <AppPanelPortal>
-    <div className="pp-app-sheet-overlay">
+    <div className={`pp-app-sheet-overlay${overMap ? " pp-app-sheet-overlay--over-map" : ""}`}>
       <div className="absolute inset-0 pointer-events-auto">
         <ModalDoodleBackdrop onClose={onClose} />
       </div>
@@ -88,6 +90,7 @@ export default function ReportDetailModal({ report, onClose, onReport }) {
                   <h3 className="text-base font-bold" style={{ color: titleColor }}>
                     {report.type}
                   </h3>
+                  {isSampleContent(report) ? <SampleBadge /> : null}
                   <ReportLifecycleChip report={report} />
                   <EditedBadge item={report} />
                   {report.urgent && (

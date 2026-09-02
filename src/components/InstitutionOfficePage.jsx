@@ -13,6 +13,7 @@ import { useInstitutionPresence } from "../hooks/useInstitutionPresence.js";
 import { AGENDA_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
 import { isOfficeOrganizedEvent } from "../utils/categoryAccents.js";
 import SectionBackButton from "./SectionBackButton.jsx";
+import { isSampleContent } from "../data/sampleContent.js";
 
 const AGENDA_MAIN = [
   { id: "prompts", label: "Hlášení občanů", shortLabel: "Hlášení", Icon: AGENDA_DOODLE_ICONS.prompts },
@@ -254,6 +255,7 @@ export default function InstitutionOfficePage() {
                       <LiveFeedCard
                         key={item.id}
                         itemId={item.id}
+                        sample={isSampleContent(item.prompt || item)}
                         badge={badge.label}
                         badgeClassName={badge.className}
                         title={item.title}
@@ -267,6 +269,7 @@ export default function InstitutionOfficePage() {
                     <LiveFeedCard
                       key={item.id}
                       itemId={item.id}
+                      sample={isSampleContent(item.event || item)}
                       badge={badge.label}
                       badgeClassName={badge.className}
                       title={item.title}
@@ -313,6 +316,7 @@ export default function InstitutionOfficePage() {
                     <LiveFeedCard
                       key={p.id}
                       itemId={`prompt-list-${p.id}`}
+                      sample={isSampleContent(p)}
                       badge={badge.label}
                       badgeClassName={badge.className}
                       title={p.title}
@@ -350,6 +354,7 @@ export default function InstitutionOfficePage() {
                     <LiveFeedCard
                       key={event.id}
                       itemId={`event-list-${event.id}`}
+                      sample={isSampleContent(event)}
                       badge={badge.label}
                       badgeClassName={badge.className}
                       title={event.title}

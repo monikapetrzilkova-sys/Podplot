@@ -1,6 +1,8 @@
 import { useApp } from "../context/AppContext.jsx";
 import { DoodleCalendarIcon, DoodleCheckIcon, DoodleJoinIcon } from "./doodle/doodleIcons.jsx";
 import { displayCreatorLabel } from "../data/accountTypes.js";
+import SampleBadge from "./SampleBadge.jsx";
+import { isSampleContent } from "../data/sampleContent.js";
 
 export default function EventsWidget() {
   const { upcomingEvents, joinEvent, isJoinedEvent, setActiveTab, openEventDetail } = useApp();
@@ -23,7 +25,10 @@ export default function EventsWidget() {
         {events.map((ev) => (
           <div key={ev.id} className="border border-stone-100 rounded-xl p-3">
             <button type="button" onClick={() => openEventDetail(ev.id)} className="text-left w-full">
-              <p className="text-sm font-semibold text-stone-900">{ev.title}</p>
+              <p className="text-sm font-semibold text-stone-900 flex items-center gap-1.5 flex-wrap">
+                {ev.title}
+                {isSampleContent(ev) ? <SampleBadge /> : null}
+              </p>
               <p className="text-xs text-stone-500 mt-0.5">
                 {displayCreatorLabel(ev.organizer, ev.accountType, {
                   mine: ev.organizer === "Vy",

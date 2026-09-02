@@ -4,6 +4,8 @@ import { formatAuthorName, getAccountType } from "../data/accountTypes.js";
 import RoleBadge, { Avatar } from "./RoleBadge.jsx";
 import { PostPhotos } from "./PhotoUpload.jsx";
 import ReportMenu from "./ReportMenu.jsx";
+import SampleBadge from "./SampleBadge.jsx";
+import { isSampleContent } from "../data/sampleContent.js";
 import VerifiedBadge from "./VerifiedBadge.jsx";
 import { useApp } from "../context/AppContext.jsx";
 import { canTopCategory, TOP_PLANS, calculateTopCost } from "../data/pricing.js";
@@ -268,6 +270,13 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
             : ""
       }`}
     >
+      {isSampleContent(post) && !compact && (
+        <div className="px-4 py-1.5 bg-stone-100 border-b border-stone-200 flex items-center gap-2">
+          <SampleBadge />
+          <span className="text-[10px] text-stone-500">Jen ukázka, jak Podplot vypadá</span>
+        </div>
+      )}
+
       {isReported && (
         <div className="px-4 py-1.5 bg-stone-200 border-b border-stone-300">
           <span className="text-[10px] font-bold uppercase text-stone-600">Nahlášeno · skryto pro vás</span>
@@ -334,6 +343,7 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
             </p>
           </div>
           <div className="flex items-start gap-1 shrink-0">
+            {isSampleContent(post) && compact ? <SampleBadge /> : null}
             {post.type && (
               <span className="pp-badge shrink-0">{post.type}</span>
             )}

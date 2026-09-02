@@ -1,5 +1,7 @@
 import { displayCreatorLabel } from "../data/accountTypes.js";
 import { activityVenueLabel, nextEventForActivity, isOwnHostedActivity } from "../data/hostedActivities.js";
+import SampleBadge from "./SampleBadge.jsx";
+import { isSampleContent } from "../data/sampleContent.js";
 
 export default function HostedActivityCard({
   activity,
@@ -31,7 +33,10 @@ export default function HostedActivityCard({
           Kroužek
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-stone-900 truncate">{activity.title}</p>
+          <p className="text-sm font-semibold text-stone-900 truncate flex items-center gap-1.5">
+            <span className="truncate">{activity.title}</span>
+            {isSampleContent(activity) ? <SampleBadge /> : null}
+          </p>
           <p className="text-[11px] text-stone-500 mt-0.5 line-clamp-2 leading-snug">{meta}</p>
           {activity.ageRange ? (
             <p className="text-[10px] text-stone-400 mt-0.5">{activity.ageRange}</p>

@@ -26,6 +26,8 @@ import HelpFeedActions from "./HelpFeedActions.jsx";
 import AppPanelPortal from "./AppPanelPortal.jsx";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
 import LiveFeedCard, { getNeighborSectionBadge } from "./LiveFeedCard.jsx";
+import SampleBadge from "./SampleBadge.jsx";
+import { isSampleContent } from "../data/sampleContent.js";
 
 function ResultSection({ title, children, count }) {
   if (!count) return null;
@@ -39,7 +41,7 @@ function ResultSection({ title, children, count }) {
   );
 }
 
-function ResultRow({ badge, title, subtitle, meta, icon, onClick }) {
+function ResultRow({ badge, title, subtitle, meta, icon, onClick, sample = false }) {
   return (
     <button
       type="button"
@@ -52,6 +54,7 @@ function ResultRow({ badge, title, subtitle, meta, icon, onClick }) {
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2 flex-wrap">
           <span className="text-[10px] font-bold uppercase tracking-wide text-[#3D7A68]">{badge}</span>
+          {sample ? <SampleBadge /> : null}
           {meta && <span className="text-[10px] text-stone-400">{meta}</span>}
         </span>
         <span className="block text-sm font-semibold text-stone-900 mt-0.5 leading-snug">{title}</span>
@@ -232,6 +235,7 @@ export default function GlobalSearchResults() {
               <ResultRow
                 key={activity.id}
                 badge="Kroužek"
+                sample={isSampleContent(activity)}
                 title={activity.title}
                 subtitle={activity.description || activity.placeName}
                 meta={[activity.hostName, activity.placeName || activity.address].filter(Boolean).join(" · ")}
@@ -249,6 +253,7 @@ export default function GlobalSearchResults() {
               <ResultRow
                 key={ev.id}
                 badge="Akce"
+                sample={isSampleContent(ev)}
                 title={ev.title}
                 subtitle={ev.description || ev.location}
                 meta={[ev.date, ev.categoryLabel].filter(Boolean).join(" · ")}
@@ -268,6 +273,7 @@ export default function GlobalSearchResults() {
                 <ResultRow
                   key={post.id}
                   badge={group?.name || "Skupina"}
+                  sample={isSampleContent(post)}
                   title={post.title}
                   subtitle={post.body}
                   meta={post.type || post.meta}
@@ -303,6 +309,7 @@ export default function GlobalSearchResults() {
               <ResultRow
                 key={post.id}
                 badge={post.type || post.feedSubtype || "Inzerát"}
+                sample={isSampleContent(post)}
                 title={post.title}
                 subtitle={post.body}
                 meta={post.meta}
@@ -317,6 +324,7 @@ export default function GlobalSearchResults() {
               <ResultRow
                 key={item.id}
                 badge="Půjčovna"
+                sample={isSampleContent(item)}
                 title={item.title || item.name}
                 subtitle={item.body}
                 meta={item.meta || item.categoryLabel}
@@ -357,6 +365,7 @@ export default function GlobalSearchResults() {
               <ResultRow
                 key={report.id}
                 badge="Hlášení"
+                sample={isSampleContent(report)}
                 title={report.type}
                 subtitle={report.body}
                 meta={[report.distance, report.time].filter(Boolean).join(" · ")}
@@ -371,6 +380,7 @@ export default function GlobalSearchResults() {
               <ResultRow
                 key={item.id}
                 badge="Výpomoc"
+                sample={isSampleContent(item)}
                 title={item.title}
                 subtitle={item.body}
                 meta={item.distance}
@@ -385,6 +395,7 @@ export default function GlobalSearchResults() {
               <ResultRow
                 key={item.id}
                 badge={item.type === "crisis" ? "Varování" : "Aktualita"}
+                sample={isSampleContent(item)}
                 title={item.title}
                 subtitle={item.body}
                 meta={item.time}
@@ -452,7 +463,10 @@ export default function GlobalSearchResults() {
                   <p className="text-[10px] font-bold uppercase tracking-wide text-[#3D7A68]">
                     {detailListing.type || detailListing.feedSubtype || "Inzerát"}
                   </p>
-                  <h2 className="text-base font-bold text-stone-900 truncate">{detailListing.title}</h2>
+                  <h2 className="text-base font-bold text-stone-900 truncate flex items-center gap-2">
+                    <span className="truncate">{detailListing.title}</span>
+                    {isSampleContent(detailListing) ? <SampleBadge /> : null}
+                  </h2>
                 </div>
                 <button
                   type="button"
@@ -517,6 +531,7 @@ export default function GlobalSearchResults() {
                   return (
                     <LiveFeedCard
                       itemId={`search-help-${detailHelp.id}`}
+                      sample={isSampleContent(detailHelp)}
                       badge={sectionBadge.label}
                       badgeClassName={sectionBadge.className}
                       title={detailHelp.title}

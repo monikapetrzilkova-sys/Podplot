@@ -7,6 +7,7 @@ import PillFilterRow from "./PillFilterRow.jsx";
 import PrimaryAddButton from "./PrimaryAddButton.jsx";
 import CompactSearchToggle from "./CompactSearchToggle.jsx";
 import { displayCreatorLabel } from "../data/accountTypes.js";
+import { isSampleContent } from "../data/sampleContent.js";
 
 function matchesHelpSearch(item, query) {
   const q = query.trim().toLowerCase();
@@ -137,6 +138,7 @@ export default function NeighborHelp({
               <LiveFeedCard
                 key={item.id}
                 itemId={`help-${item.id}`}
+                sample={isSampleContent(item)}
                 badge={sectionBadge.label}
                 badgeClassName={sectionBadge.className}
                 title={item.title}

@@ -27,6 +27,7 @@ import { feedItemNeedsExpand } from "./feed/feedExpand.js";
 import { isReportActive, normalizeReportValidity } from "../data/reportExpiry.js";
 import { SECURITY_REPORTS } from "../data/mockData.js";
 import { filterSecurityReportsByLocation } from "../data/geoFilter.js";
+import { isSampleContent } from "../data/sampleContent.js";
 
 function listingPreview(post, title) {
   const body = String(post?.body ?? "").trim();
@@ -311,6 +312,7 @@ export default function LiveNeighborFeed() {
           createdAt: r.createdAt,
           mine: Boolean(r.mine),
           photos: r.photos,
+          sample: Boolean(r.sample),
         })),
     ]
       .map((p) => ({
@@ -422,11 +424,13 @@ export default function LiveNeighborFeed() {
       </h2>
       <div className="space-y-1.5">
         {filteredItems.map((item) => {
+          const sample = isSampleContent(item.post || item.event || item.newsItem || item);
           if (item.kind === "eventGallery") {
             return (
               <LiveFeedCard
                 key={item.id}
                 itemId={item.id}
+                sample={sample}
                 badge="Akce"
                 badgeClassName="pp-badge--akce"
                 title={item.title}
@@ -446,6 +450,7 @@ export default function LiveNeighborFeed() {
               <LiveFeedCard
                 key={item.id}
                 itemId={item.id}
+                sample={sample}
                 badge="Akce"
                 badgeClassName="pp-badge--akce"
                 title={item.title}
@@ -506,6 +511,7 @@ export default function LiveNeighborFeed() {
               <LiveFeedCard
                 key={item.id}
                 itemId={item.id}
+                sample={sample}
                 badge="Aktualita"
                 badgeClassName="pp-badge--hlaseni"
                 title={item.title}
@@ -531,6 +537,7 @@ export default function LiveNeighborFeed() {
               <LiveFeedCard
                 key={item.id}
                 itemId={item.id}
+                sample={sample}
                 badge="Výpomoc"
                 badgeClassName="pp-badge--vypomoc"
                 title={item.title}
@@ -570,6 +577,7 @@ export default function LiveNeighborFeed() {
               <LiveFeedCard
                 key={item.id}
                 itemId={item.id}
+                sample={sample}
                 badge={badge.label}
                 badgeClassName={badge.className}
                 badgeTone={badge.tone}
@@ -632,6 +640,7 @@ export default function LiveNeighborFeed() {
               <LiveFeedCard
                 key={item.id}
                 itemId={item.id}
+                sample={sample}
                 badge={badge.label}
                 badgeClassName={badge.className || (isTip ? "pp-badge--tip" : "")}
                 reportCategoryId={reportCategoryId}
@@ -667,6 +676,7 @@ export default function LiveNeighborFeed() {
               <LiveFeedCard
                 key={item.id}
                 itemId={item.id}
+                sample={sample}
                 badge={badge.label}
                 badgeClassName={badge.className}
                 badgeTone={badge.tone}
@@ -700,6 +710,7 @@ export default function LiveNeighborFeed() {
             <LiveFeedCard
               key={item.id}
               itemId={item.id}
+              sample={sample}
               badge={badge.label}
               badgeClassName={badge.className}
               badgeTone={badge.tone}

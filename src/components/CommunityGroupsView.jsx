@@ -13,6 +13,7 @@ import PrimaryAddButton from "./PrimaryAddButton.jsx";
 import PhotoUpload from "./PhotoUpload.jsx";
 import DoodleEmptyState from "./doodle/DoodleEmptyState.jsx";
 import { ClubCategoryIcon, GroupNavIcon } from "./communityNavIcons.jsx";
+import { isSampleContent } from "../data/sampleContent.js";
 import { displayCreatorLabel } from "../data/accountTypes.js";
 import SectionBackButton from "./SectionBackButton.jsx";
 import CompactSearchToggle from "./CompactSearchToggle.jsx";
@@ -48,6 +49,7 @@ function GroupPostRow({ post, groupName, expanded, onToggle }) {
   return (
     <LiveFeedCard
       itemId={`group-post-${post.id}`}
+      sample={isSampleContent(post)}
       badge={resolvedGroupName}
       badgeClassName="pp-badge--skupina"
       title={post.title}

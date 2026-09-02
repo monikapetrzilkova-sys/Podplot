@@ -18,6 +18,8 @@ import { displayCreatorLabel } from "../data/accountTypes.js";
 import { isHostedActivityEvent, filterEventsByKind } from "../data/hostedActivities.js";
 import { DoodleCheckIcon, DoodleJoinIcon } from "../components/doodle/doodleIcons.jsx";
 import { DoodleSousedskaAkceScene } from "../components/doodle/doodleIllustrations.jsx";
+import SampleBadge from "../components/SampleBadge.jsx";
+import { isSampleContent } from "../data/sampleContent.js";
 
 /** Pod seznamem — větší doodle, hlavně když je málo akcí (1–3). Prázdný stav řeší ListView. */
 function EventsSparseDoodle({ count }) {
@@ -66,6 +68,7 @@ function EventListRow({ event, selected, onShowOnMap, onOpen, onJoin, joined, on
               </span>
             ) : null}
             {event.title}
+            {isSampleContent(event) ? <SampleBadge className="ml-1.5 align-middle" /> : null}
           </p>
           <p className="pp-text-meta line-clamp-1 mt-0.5 leading-snug">{meta}</p>
         </button>

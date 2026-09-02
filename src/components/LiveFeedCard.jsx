@@ -6,6 +6,8 @@ import FeedBadgePill from "./feed/FeedBadgePill.jsx";
 import { getListingBadge, getNeighborSectionBadge } from "./feed/feedBadgeMeta.js";
 import { bodyExceedsCollapsedPreview } from "./feed/feedExpand.js";
 import { IconMapPin } from "../data/icons.jsx";
+import SampleBadge from "./SampleBadge.jsx";
+import { isSampleContent } from "../data/sampleContent.js";
 
 export { getListingBadge, getNeighborSectionBadge };
 
@@ -41,7 +43,9 @@ export default function LiveFeedCard({
   metaLine = null,
   ctaLabel = null,
   timeLabel = null,
+  sample = false,
 }) {
+  const showSample = sample || isSampleContent(editedItem);
   const [prefOpen, , togglePref] = useUiPref(accordionKey("liveFeed", itemId), false);
   const authorParts = [authorLabel, distanceLabel, timeLabel].filter(Boolean);
   const authorText = authorParts.length ? authorParts.join(" · ") : null;
@@ -103,6 +107,7 @@ export default function LiveFeedCard({
               <h3 className="font-semibold text-[12px] leading-[1.3] text-stone-900 flex-1 min-w-0 self-center line-clamp-1">
                 {title}
               </h3>
+              {showSample ? <SampleBadge className="self-center" /> : null}
               {editedItem && <EditedBadge item={editedItem} className="shrink-0 self-center" />}
             </div>
             {/* Sbalené: vždy stejné 3 řádky (autor / náhled / CTA), ať mají karty jednotnou výšku */}

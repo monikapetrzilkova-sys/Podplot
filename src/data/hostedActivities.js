@@ -6,6 +6,7 @@ import {
   formatCzechEventScheduleFromParts,
   isEventPast,
 } from "./czechDateTime.js";
+import { markAsSample } from "./sampleContent.js";
 
 export const HOSTED_ACTIVITY_GROUP_ID = "krouzky";
 
@@ -98,7 +99,7 @@ const SMYSLOHRANNI_ID = "act-smyslohranni";
 const SEED_MAP_POS = { x: 51, y: 47, lat: 49.968, lng: 14.514 };
 const SEED_ADDRESS = "Budějovická 12, Jesenice";
 
-export const INITIAL_HOSTED_ACTIVITIES = [
+export const INITIAL_HOSTED_ACTIVITIES = markAsSample([
   {
     id: SMYSLOHRANNI_ID,
     title: "Smyslohranní",
@@ -123,7 +124,7 @@ export const INITIAL_HOSTED_ACTIVITIES = [
     createdAt: Date.parse("2026-08-20T10:00:00+02:00"),
     mine: false,
   },
-];
+]);
 
 function buildSeedSession(activity, eventDate, eventTime, index) {
   const startsAt = combineDateAndTime(eventDate, eventTime, false);
@@ -173,7 +174,7 @@ function buildSeedEvents() {
   );
 }
 
-export const HOSTED_ACTIVITY_SEED_EVENTS = buildSeedEvents();
+export const HOSTED_ACTIVITY_SEED_EVENTS = markAsSample(buildSeedEvents());
 
 export function isOwnHostedActivity(activity, user) {
   if (!activity || !user) return false;

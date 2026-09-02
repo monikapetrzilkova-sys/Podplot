@@ -1,5 +1,7 @@
 /** Mock data pro ekosystém Podplot */
 
+import { markAsSample } from "./sampleContent.js";
+
 export const INTEREST_OPTIONS = [
   { id: "rodina", label: "Rodina a děti", emoji: "👶" },
   { id: "sport", label: "Sport", emoji: "⚽" },
@@ -315,7 +317,7 @@ export const SERVICE_SUBCATEGORIES = [
   { id: "event", label: "Event & catering", placeholder: "Co hledáte? např. Catering na oslavu…" },
 ];
 
-export const NEIGHBOR_HELP = [
+const NEIGHBOR_HELP_RAW = [
   {
     id: "nh1",
     type: "hledam",
@@ -380,7 +382,9 @@ export const NEIGHBOR_HELP = [
   },
 ];
 
-export const EVENTS = [
+export const NEIGHBOR_HELP = markAsSample(NEIGHBOR_HELP_RAW);
+
+const EVENTS_RAW = [
   {
     id: "ev1",
     title: "Sousedská grilovačka v parku",
@@ -686,6 +690,8 @@ export const EVENTS = [
     ],
   },
 ];
+
+export const EVENTS = markAsSample(EVENTS_RAW);
 
 export const INITIAL_CHATS = [
   {

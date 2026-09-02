@@ -2,6 +2,7 @@
 
 import { MY_GROUP_IDS_BY_LOCATION } from "./locations.js";
 import { isThingsModuleListing } from "../utils/thingsModule.js";
+import { markAsSample } from "./sampleContent.js";
 
 export const GROUPS = [
   {
@@ -57,7 +58,7 @@ export const GROUP_EXTRA_CATEGORIES = {
 };
 
 /** Příspěvky na nástěnkách — tipy a seznámení, ne inzeráty Věcí */
-export const GROUP_POSTS = [
+const GROUP_POSTS_RAW = [
   {
     id: "gp1",
     groupId: "maminky",
@@ -137,6 +138,8 @@ export const GROUP_POSTS = [
     type: "Příspěvek",
   },
 ];
+
+export const GROUP_POSTS = markAsSample(GROUP_POSTS_RAW);
 
 /** Inzeráty Věcí nepatří na nástěnku skupiny */
 export function isGroupWallPost(post) {
