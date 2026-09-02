@@ -12,7 +12,7 @@ import {
   DoodleGiveIcon,
   DoodleWantIcon,
   DoodleSellIcon,
-  DoodleCartIcon,
+  DoodleToolsIcon,
   DoodleMegaphoneIcon,
   DoodleHandIcon,
   DoodleGroupsIcon,
@@ -33,7 +33,7 @@ const byClass = {
   "pp-badge--prodam": { tone: "things", Icon: DoodleSellIcon, label: "Prodám" },
   "pp-badge--daruji": { tone: "things", Icon: DoodleGiveIcon, label: "Daruji" },
   "pp-badge--shanim": { tone: "things", Icon: DoodleWantIcon, label: "Sháním" },
-  "pp-badge--pujcovna": { tone: "things", Icon: DoodleCartIcon, label: "Půjčovna" },
+  "pp-badge--pujcovna": { tone: "things", Icon: DoodleToolsIcon, label: "Půjčovna" },
   "pp-badge--tip": { tone: "report", Icon: DoodleBulbIcon, label: "Tip" },
   "pp-badge--patrani": { tone: "report", Icon: DoodleSearchIcon, label: "Pátrání" },
   "pp-badge--hlaseni": { tone: "report", Icon: DoodleReportIcon, label: "Hlášení" },
@@ -139,7 +139,7 @@ export function getListingBadge(type, { reportCategoryId } = {}) {
     return { label: "Prodám", className: "pp-badge--prodam", tone: "things", Icon: DoodleSellIcon };
   }
   if (t.includes("půjčovna") || t === "pujcovna") {
-    return { label: "Půjčovna", className: "pp-badge--pujcovna", tone: "things", Icon: DoodleCartIcon };
+    return { label: "Půjčovna", className: "pp-badge--pujcovna", tone: "things", Icon: DoodleToolsIcon };
   }
   if (t.includes("daruji") || t === "daruji") {
     return { label: "Daruji", className: "pp-badge--daruji", tone: "things", Icon: DoodleGiveIcon };

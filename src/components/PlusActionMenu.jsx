@@ -10,7 +10,7 @@ import {
   IconTabCalendar,
   IconTabCatalog,
 } from "../data/icons.jsx";
-import { DoodleCartIcon, DoodleLessonIcon, DoodlePairIcon, DoodleReportIcon } from "./doodle/doodleIcons.jsx";
+import { DoodleLessonIcon, DoodlePairIcon, DoodleReportIcon, DoodleToolsIcon } from "./doodle/doodleIcons.jsx";
 
 /** Hlavní 3 akce souseda — nejčastější nahoře; zbytek pod Další */
 const NEIGHBOR_PRIMARY = [
@@ -43,7 +43,7 @@ const NEIGHBOR_MORE = [
     id: "lend",
     label: "Půjčím věc",
     hint: "Přidat do půjčovny",
-    icon: DoodleCartIcon,
+    icon: DoodleToolsIcon,
     action: "create",
     category: "pujcovna",
   },

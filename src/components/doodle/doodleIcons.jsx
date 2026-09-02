@@ -608,16 +608,25 @@ export function DoodlePawIcon({ className }) {
   );
 }
 
-/** Vozík — půjčovna / výpůjčka */
-export function DoodleCartIcon({ className }) {
+/** Nářadí — půjčovna (kladivo a klíč) */
+export function DoodleToolsIcon({ className }) {
   return (
     <DoodleIcon className={className}>
-      <path {...s} d="M4.5 5.5h2.2l1.4 9.2h9.8" />
-      <path {...s} d="M7.5 8.2h11.2l-1.2 5.2H8.2" />
-      <circle {...s} cx="9.5" cy="18" r="1.4" />
-      <circle {...s} cx="16.2" cy="18" r="1.4" />
+      <path
+        {...s}
+        d="M3.2 5.4h6.2c.5 0 .8.4.8.8v2.2c0 .5-.3.8-.8.8H5.4L3 7.8c-.5-.4-.4-1.2.2-1.5z"
+      />
+      <path {...s} d="M6.4 9.2v11" />
+      <path {...s} d="M14.6 7.4c0-2.2 1.6-3.6 3.4-3.6s3.4 1.4 3.4 3.6" />
+      <path {...s} d="M16.4 7.2c0-1.1.8-1.8 1.6-1.8s1.6.7 1.6 1.8" />
+      <path {...s} d="M18 7.4v12.8" />
     </DoodleIcon>
   );
+}
+
+/** Alias — dřív vozík, teď stejné nářadí jako DoodleToolsIcon */
+export function DoodleCartIcon({ className }) {
+  return <DoodleToolsIcon className={className} />;
 }
 
 /** Otazník — jiné / nezařazené */
@@ -719,16 +728,15 @@ export function DoodlePairIcon({ className }) {
   );
 }
 
-/** Otevřená kniha — kroužek / lekce */
+/** Lektor s míčem — kroužek / lekce */
 export function DoodleLessonIcon({ className }) {
   return (
     <DoodleIcon className={className}>
-      <path
-        {...s}
-        d="M5 6.6c2.3-.7 4.3-.2 7 1.2 2.7-1.4 4.7-1.9 7-1.2v11.8c-2.3-.7-4.3-.2-7 1.2-2.7-1.4-4.7-1.9-7-1.2V6.6z"
-      />
-      <path {...s} d="M12 7.8v11.6" />
-      <path {...s} d="M8 10.4h2.4M8 13.2h2.4" opacity="0.55" />
+      <circle {...s} cx="9.2" cy="6.5" r="2.35" />
+      <path {...s} d="M5.2 19.8c0-3.1 2.1-5.5 4.4-5.5s4.4 2.4 4.4 5.5" />
+      <path {...s} d="M12.4 12.8L16.6 8.2" />
+      <circle {...s} cx="18.3" cy="6.6" r="2.2" />
+      <path {...s} d="M16.8 5.5c1.1.7 1.9 1.8 2.2 3.1" opacity="0.65" />
     </DoodleIcon>
   );
 }
@@ -881,7 +889,7 @@ export const VECI_TYPE_DOODLE_ICONS = {
   daruji: DoodleGiveIcon,
   prodam: DoodleSellIcon,
   shanim: DoodleWantIcon,
-  pujcovna: DoodleLendIcon,
+  pujcovna: DoodleToolsIcon,
 };
 
 /** Filtry Výpomoc — Vše / Hledám / Nabízím */
