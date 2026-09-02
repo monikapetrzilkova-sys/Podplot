@@ -4,9 +4,8 @@ import FeedCard from "./FeedCard.jsx";
 import { GroupNavIcon, GROUP_ICON_CLASS } from "./communityNavIcons.jsx";
 
 export default function GroupPostsStrip() {
-  const { userGroupPosts, communityGroups, switchFeedMainMode, selectFeedSubFilter } = useApp();
-  const memberIds = communityGroups.map((g) => g.id);
-  const posts = getRecentGroupPosts(userGroupPosts, 4).filter((p) => memberIds.includes(p.groupId));
+  const { userGroupPosts, communityGroups, joinedGroupIds, switchFeedMainMode, selectFeedSubFilter } = useApp();
+  const posts = getRecentGroupPosts(userGroupPosts, 4, joinedGroupIds);
 
   if (posts.length === 0) return null;
 

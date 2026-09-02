@@ -1,10 +1,12 @@
 import {
   DEFAULT_EVENTS_MAP_RADIUS_KM,
+  DEFAULT_NEIGHBOR_RADIUS_KM,
   DEFAULT_REPORTS_MAP_RADIUS_KM,
   filterByMapRadius,
   mapPosToDistanceKm,
 } from "./mapRadiusSettings.js";
 import { URGENT_SCOPE } from "./reportUrgency.js";
+import { isBareStatutoryCity, parseCityDistrict } from "./czechCityDistricts.js";
 
 /** Filtrace obsahu podle vzdálenosti a obce */
 
@@ -20,22 +22,105 @@ export function distanceBetweenKm(a, b) {
   return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
 }
 
-/** Volné párování názvů obcí (Jesenice / jesenice u Prahy). */
+function normalizeMunName(value) {
+  return String(value ?? "")
+    .trim()
+    .toLocaleLowerCase("cs")
+    .replace(/[—–]/g, "-")
+    .replace(/\s+/g, " ");
+}
+
+function statutoryCityKey(name) {
+  const district = parseCityDistrict(name);
+  if (district) return district.city;
+  if (isBareStatutoryCity(name)) {
+    const n = normalizeMunName(name)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+    if (n === "plzen" || n === "plzeň") return "plzen";
+    return n;
+  }
+  return null;
+}
+
+/** Alias malých obcí (Jesenice / Jesenice u Prahy) — ne „Praha“ uvnitř „u Prahy“. */
+function smallTownAlias(left, right) {
+  if (left === right) return true;
+  const shorter = left.length <= right.length ? left : right;
+  const longer = left.length <= right.length ? right : left;
+  return longer.startsWith(`${shorter} `) || longer.startsWith(`${shorter}-`) || longer.startsWith(`${shorter},`);
+}
+
+/**
+ * Sousedské párování obcí.
+ * Praha 4 ≠ Praha 1 a holé „Praha“ se neslévá s městskou částí.
+ */
 export function municipalitiesMatch(a, b) {
-  const left = String(a ?? "").trim().toLowerCase();
-  const right = String(b ?? "").trim().toLowerCase();
+  const left = normalizeMunName(a);
+  const right = normalizeMunName(b);
   if (!left || !right) return false;
-  return left === right || left.includes(right) || right.includes(left);
+  if (left === right) {
+    // Holé „Praha“/„Brno“ nestačí — bez městské části nebo GPS by se slilo celé město.
+    if (isBareStatutoryCity(a) && isBareStatutoryCity(b)) return false;
+    return true;
+  }
+
+  const leftD = parseCityDistrict(a);
+  const rightD = parseCityDistrict(b);
+  const leftBare = isBareStatutoryCity(a);
+  const rightBare = isBareStatutoryCity(b);
+
+  if (leftBare || rightBare || leftD || rightD) {
+    if (leftBare && rightBare) return statutoryCityKey(a) === statutoryCityKey(b);
+    if (leftD && rightD) {
+      if (leftD.city !== rightD.city) return false;
+      return leftD.district === rightD.district;
+    }
+    return false;
+  }
+
+  return smallTownAlias(left, right);
+}
+
+/** Oficiální zpráva za celé město (úřad Praha) smí dorazit i do městské části. */
+export function officialMunicipalityMatch(officialMun, userMun) {
+  if (municipalitiesMatch(officialMun, userMun)) return true;
+  const officialKey = statutoryCityKey(officialMun);
+  const userKey = statutoryCityKey(userMun);
+  if (!officialKey || !userKey || officialKey !== userKey) return false;
+  return isBareStatutoryCity(officialMun) || isBareStatutoryCity(userMun);
+}
+
+/** Známá místa v textech demo/seed příspěvků — ať se nevezou na každou mapu jako „kousek odsud“. */
+const KNOWN_PLACE_COORDS = [
+  { test: /václavsk/i, lat: 50.0813, lng: 14.4273, municipality: "Praha 1" },
+];
+
+export function inferItemCoords(item) {
+  if (!item) return null;
+  const lat = item.lat ?? item.mapPos?.lat ?? null;
+  const lng = item.lng ?? item.mapPos?.lng ?? null;
+  if (lat != null && lng != null) return { lat: Number(lat), lng: Number(lng) };
+  const blob = `${item.title ?? ""} ${item.body ?? ""} ${item.type ?? ""} ${item.placeLabel ?? ""} ${item.address ?? ""}`;
+  const known = KNOWN_PLACE_COORDS.find((p) => p.test.test(blob));
+  return known ? { lat: known.lat, lng: known.lng } : null;
 }
 
 function withinActiveRadius(item, activeLocation, radiusKm) {
-  if (item.lat == null || item.lng == null || !activeLocation) return true;
+  const point = inferItemCoords(item);
+  if (!point || !activeLocation) return true;
   if (activeLocation.lat == null || activeLocation.lng == null) return true;
-  return distanceBetweenKm(activeLocation, item) <= radiusKm;
+  return distanceBetweenKm(activeLocation, point) <= radiusKm;
+}
+
+function demoMunicipalityForSlot(locationId) {
+  if (locationId === "prace") return "Praha 1";
+  if (locationId === "chata") return "Přední Lhota";
+  return "Jesenice";
 }
 
 /** Komerční/komunitní obsah — v okruhu rádiusu od středu lokality */
-export function filterByRadius(items, location, radiusKm = location?.radiusKm ?? 7) {
+export function filterByRadius(items, location, radiusKm = location?.radiusKm ?? DEFAULT_NEIGHBOR_RADIUS_KM) {
   if (!location) return items;
   return items.filter((item) => {
     if (item.distanceKm != null) return item.distanceKm <= radiusKm;
@@ -61,37 +146,49 @@ export function resolveLocationId(item, legacyDefault = "domov") {
  */
 export function filterByActiveLocation(items, activeLocationId, activeLocation, legacyDefault = "domov") {
   if (!activeLocationId) return items;
-  const radius = activeLocation?.radiusKm ?? 7;
+  const radius = activeLocation?.radiusKm ?? DEFAULT_NEIGHBOR_RADIUS_KM;
   const activeMun = activeLocation?.municipality ?? activeLocation?.shortLabel ?? null;
+  const hasCenter = activeLocation?.lat != null && activeLocation?.lng != null;
 
   return items.filter((item) => {
     if (item?.mine) return true;
 
     const itemMun = item.municipality;
+    const point = inferItemCoords(item);
+    const hasGps = hasCenter && point != null;
+
+    // GPS + zvolený okruh mají přednost — Václavák nesmí spadnout do Lhotky.
+    if (hasGps) {
+      return withinActiveRadius(item, activeLocation, radius);
+    }
 
     if (itemMun && itemMun !== "all" && activeMun) {
-      if (!municipalitiesMatch(itemMun, activeMun)) return false;
-      return withinActiveRadius(item, activeLocation, radius);
+      return municipalitiesMatch(itemMun, activeMun);
     }
 
     if (itemMun === "all") {
-      return withinActiveRadius(item, activeLocation, radius);
+      return true;
     }
 
-    // Legacy mock bez obce — osobní slot (domov / práce / …)
-    if (resolveLocationId(item, legacyDefault) !== activeLocationId) return false;
-    return withinActiveRadius(item, activeLocation, radius);
+    const slot = resolveLocationId(item, legacyDefault);
+    if (slot !== activeLocationId) return false;
+    // Starý mock bez obce: jen ve stejné demo obci (Jesenice ≠ každý „domov“).
+    if (!activeMun) return true;
+    return (
+      municipalitiesMatch(activeMun, demoMunicipalityForSlot(slot)) ||
+      municipalitiesMatch(activeMun, "Jesenice u Prahy")
+    );
   });
 }
 
-/** Oficiální/krizová hlášení — striktně podle obce */
+/** Oficiální/krizová hlášení — striktně podle obce, město-wide úřad i do městské části */
 export function filterByMunicipality(items, municipality) {
   if (!municipality) return items;
   return items.filter(
     (item) =>
       !item.municipality ||
       item.municipality === "all" ||
-      municipalitiesMatch(item.municipality, municipality)
+      officialMunicipalityMatch(item.municipality, municipality)
   );
 }
 
@@ -102,18 +199,25 @@ export function filterSecurityReportsByLocation(
   activeLocation,
   legacyDefault = "domov"
 ) {
-  if (!activeLocationId || !activeLocation) return reports;
+  if (!activeLocationId || !activeLocation) return [];
   const activeMun = activeLocation.municipality ?? activeLocation.shortLabel ?? null;
+  const radius = activeLocation.radiusKm ?? DEFAULT_REPORTS_MAP_RADIUS_KM;
+  const hasCenter = activeLocation.lat != null && activeLocation.lng != null;
 
   return reports.filter((report) => {
     // Vlastní hlášení vždy vidět — nesmí zmizet kvůli GPS mimo demo střed obce
     if (report?.mine) return true;
 
+    const point = inferItemCoords(report);
+    if (hasCenter && point) {
+      return distanceBetweenKm(activeLocation, point) <= radius;
+    }
+
     const reportMun = report.municipality;
 
     if (report.urgentScope === "municipality" && report.urgent) {
       if (reportMun && reportMun !== "all" && activeMun) {
-        return municipalitiesMatch(reportMun, activeMun);
+        return officialMunicipalityMatch(reportMun, activeMun);
       }
       return resolveLocationId(report, legacyDefault) === activeLocationId;
     }
@@ -122,7 +226,10 @@ export function filterSecurityReportsByLocation(
       return municipalitiesMatch(reportMun, activeMun);
     }
 
-    return resolveLocationId(report, legacyDefault) === activeLocationId;
+    const slot = resolveLocationId(report, legacyDefault);
+    if (slot !== activeLocationId) return false;
+    if (!activeMun) return true;
+    return municipalitiesMatch(activeMun, demoMunicipalityForSlot(slot));
   });
 }
 
@@ -147,8 +254,12 @@ export function filterReportsForMapView(
       return hasPos;
     }
 
-    // % pozice na schématu má přednost — GPS z „aktuální polohy“ může být daleko
-    // od demo středu, zatímco x/y už je na mapě (příp. na okraji).
+    const inferred = inferItemCoords(report);
+    if (inferred && center?.lat != null && center?.lng != null) {
+      return distanceBetweenKm(center, inferred) <= radiusKm;
+    }
+
+    // % pozice na schématu — jen když hlášení nemá reálné / odvozené GPS
     if (hasPct) {
       return mapPosToDistanceKm(report.mapPos, referenceRadiusKm) <= radiusKm;
     }

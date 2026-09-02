@@ -43,7 +43,7 @@ export default function InstitutionsMapModule() {
       <header className="mb-3">
         <h2 className="text-lg font-bold text-stone-900">Instituce a podniky</h2>
         <p className="text-xs text-stone-500 mt-1 leading-relaxed">
-          Veřejná místa ve vaší lokalitě — obchody, provozovny služeb a instituce.
+          Veřejná místa ve tvé lokalitě — obchody, provozovny služeb a instituce.
         </p>
       </header>
 

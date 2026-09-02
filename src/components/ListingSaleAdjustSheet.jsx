@@ -55,7 +55,7 @@ export default function ListingSaleAdjustSheet({ open, order, onClose }) {
             </div>
           </div>
 
-          <p className="text-xs font-semibold text-stone-600 mb-2">Kolik můžete dát?</p>
+          <p className="text-xs font-semibold text-stone-600 mb-2">Kolik můžeš dát?</p>
           <ListingQuantityStepper
             unitId={unitId}
             value={qty}
@@ -80,7 +80,7 @@ export default function ListingSaleAdjustSheet({ open, order, onClose }) {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             rows={3}
-            placeholder="Např. dnes jich mám jen tolik — stačilo by vám to?"
+            placeholder="Např. dnes jich mám jen tolik — stačilo by ti to?"
             className="w-full px-4 py-3 rounded-2xl border border-stone-200 text-sm resize-none focus:outline-none focus:border-[#1B4332] focus:ring-2 focus:ring-[#D8F3DC]"
           />
 

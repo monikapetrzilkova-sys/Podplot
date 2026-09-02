@@ -4,6 +4,7 @@ import { Avatar } from "./RoleBadge.jsx";
 import PersonLabel from "./PersonLabel.jsx";
 import { PROFILE_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
 import { isCurrentUserRef, isSelfNeighborCandidate } from "../data/listingSales.js";
+import { TRUST_COPY, trustPendingCountLabel, neighborLocalityCaption } from "../data/trustNetworkCopy.js";
 
 /** Domů — sbalená výzva: noví sousedé k potvrzení (po rozkliknutí) */
 export default function TrustNeighborHomePrompt() {
@@ -17,6 +18,7 @@ export default function TrustNeighborHomePrompt() {
     dismissTrustNeighbor,
     hideTrustHomePrompt,
     getPersonPhoto,
+    activeLocation,
   } = useApp();
 
   const [expanded, setExpanded] = useState(false);
@@ -33,11 +35,10 @@ export default function TrustNeighborHomePrompt() {
   if (trustHomePromptHidden || pending.length === 0) return null;
 
   const TrustIcon = PROFILE_DOODLE_ICONS.trust;
-  const countLabel =
-    pending.length === 1 ? "1 nový soused" : `${pending.length} noví sousedé`;
+  const countLabel = trustPendingCountLabel(pending.length);
 
   return (
-    <section className="px-3 pt-2 pb-1" aria-label="Noví sousedé k potvrzení">
+    <section className="px-3 pt-2 pb-1" aria-label={TRUST_COPY.sectionTitle}>
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
@@ -51,8 +52,10 @@ export default function TrustNeighborHomePrompt() {
           </span>
         </span>
         <span className="flex-1 min-w-0">
-          <span className="block text-sm font-semibold text-stone-900">Potvrzení sousedů</span>
-          <span className="block text-[11px] text-stone-500 mt-0.5">{countLabel} k potvrzení</span>
+          <span className="block text-sm font-semibold text-stone-900">{TRUST_COPY.homeTitle}</span>
+          <span className="block text-[11px] text-stone-500 mt-0.5">
+            {TRUST_COPY.homeCollapsedHint(countLabel)}
+          </span>
         </span>
         <span className="text-[11px] font-semibold text-[#3D7A68] shrink-0">
           {expanded ? "Sbalit ▲" : "Rozbalit ▼"}
@@ -67,9 +70,12 @@ export default function TrustNeighborHomePrompt() {
               onClick={() => hideTrustHomePrompt?.()}
               className="text-[11px] font-semibold text-stone-500 hover:text-stone-700 underline underline-offset-2"
             >
-              Skrýt na Domů
+              {TRUST_COPY.hideOnHome}
             </button>
           </div>
+          <p className="text-[11px] text-stone-600 leading-snug px-0.5 pb-0.5">
+            {TRUST_COPY.homeIntro}
+          </p>
           {pending.map((n) => {
             const initials =
               n.initials ||
@@ -96,13 +102,16 @@ export default function TrustNeighborHomePrompt() {
                   />
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] font-bold uppercase tracking-wide text-emerald-800">
-                      Nový soused v lokalitě
+                      {TRUST_COPY.cardEyebrow}
                     </p>
                     <p className="text-sm font-bold text-stone-900 mt-0.5 truncate">
                       <PersonLabel personId={n.id} name={n.name} />
                     </p>
+                    <p className="text-[11px] font-medium text-[#3D7A68] mt-0.5 truncate">
+                      {neighborLocalityCaption(n, activeLocation)}
+                    </p>
                     <p className="text-[11px] text-stone-600 mt-0.5 leading-snug">
-                      Znáte se? Potvrďte sousedství, nebo dejte vědět, že ho neznáte.
+                      {TRUST_COPY.cardHint}
                     </p>
                     <div className="flex flex-wrap gap-2 mt-2.5">
                       <button
@@ -110,14 +119,14 @@ export default function TrustNeighborHomePrompt() {
                         onClick={() => confirmNeighbor(n.id)}
                         className="px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-[#3D7A68] border border-[#3D7A68] hover:bg-[#346859]"
                       >
-                        Potvrdit sousedství
+                        {TRUST_COPY.confirmAction}
                       </button>
                       <button
                         type="button"
                         onClick={() => dismissTrustNeighbor(n.id)}
                         className="px-3 py-1.5 rounded-xl text-xs font-semibold text-stone-600 bg-white border border-stone-200 hover:bg-stone-50"
                       >
-                        Neznám ho
+                        {TRUST_COPY.skipAction}
                       </button>
                     </div>
                   </div>

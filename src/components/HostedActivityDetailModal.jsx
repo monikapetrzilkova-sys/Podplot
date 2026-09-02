@@ -52,7 +52,7 @@ export default function HostedActivityDetailModal() {
     }
     for (const slot of filled) {
       if (!slot.timeTbd && !isValidCzechTime(slot.eventTime)) {
-        setFormError("Zadejte čas ve formátu 24 hodin (např. 16:00).");
+        setFormError("Zadej čas ve formátu 24 hodin (např. 16:00).");
         return;
       }
       const startsAt = combineDateAndTime(slot.eventDate, slot.eventTime, slot.timeTbd);

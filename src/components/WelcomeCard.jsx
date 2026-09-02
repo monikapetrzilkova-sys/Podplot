@@ -1,5 +1,6 @@
 import { useApp } from "../context/AppContext.jsx";
 import { UI_KEYS } from "../data/uiPreferences.js";
+import { greetingFirstName } from "../data/czechVocative.js";
 import { useUiPref } from "../hooks/useUiPref.js";
 import { DoodleNeighborsIntro } from "./doodle/doodleIllustrations.jsx";
 import { DoodleStarIcon } from "./doodle/doodleIcons.jsx";
@@ -10,7 +11,7 @@ export default function WelcomeCard() {
 
   if (dismissed) return null;
 
-  const firstName = user?.name?.split(" ")[0] ?? "sousede";
+  const firstName = greetingFirstName(user?.name);
 
   return (
     <div className="mx-4 mt-3 mb-1 p-4 bg-gradient-to-br from-teal-700 to-teal-800 text-white rounded-2xl shrink-0 relative overflow-hidden">

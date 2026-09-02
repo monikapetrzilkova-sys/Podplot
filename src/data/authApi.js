@@ -20,13 +20,13 @@ function mapAuthError(error) {
   const msg = error?.message ?? "Něco se nepovedlo.";
   if (/Invalid login|invalid credentials/i.test(msg)) return "Nesprávný e-mail nebo heslo.";
   if (/already registered|User already registered/i.test(msg)) {
-    return "Tento e-mail už je registrovaný — přihlaste se.";
+    return "Tento e-mail už je registrovaný — přihlas se.";
   }
   if (/Email not confirmed/i.test(msg)) {
-    return "Nejdřív potvrďte e-mail z odkazu, který jsme poslali.";
+    return "Nejdřív potvrď e-mail z odkazu, který jsme poslali.";
   }
   if (/rate limit|security purposes/i.test(msg)) {
-    return "Příliš mnoho pokusů — zkuste to za chvíli.";
+    return "Příliš mnoho pokusů — zkus to za chvíli.";
   }
   if (/Password should be/i.test(msg)) {
     return `Heslo musí mít alespoň ${MIN_PASSWORD_LENGTH} znaků.`;

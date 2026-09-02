@@ -223,7 +223,7 @@ export default function GlobalSearchResults() {
 
       {results.total === 0 ? (
         <p className="pp-card px-4 py-6 text-sm text-stone-500 text-center leading-relaxed">
-          Nic jsme nenašli. Zkuste jiné slovo — např. běh, oblečení, hřiště, jahody.
+          Nic jsme nenašli. Zkus jiné slovo — např. běh, oblečení, hřiště, jahody.
         </p>
       ) : (
         <>

@@ -39,17 +39,17 @@ export default function CreateHelpModal() {
       : "Co nabízíte? — např. Pomoc se stěhováním";
   const bodyPlaceholder =
     type === "hledam"
-      ? "Popište, s čím potřebujete pomoci, kdy a kde…"
-      : "Popište, jak můžete pomoci sousedům…";
+      ? "Popiš, s čím potřebuješ pomoci, kdy a kde…"
+      : "Popiš, jak můžeš pomoci sousedům…";
 
   const submit = (e) => {
     e.preventDefault();
     if (!title.trim()) {
-      setError("Zadejte krátký název.");
+      setError("Zadej krátký název.");
       return;
     }
     if (!body.trim()) {
-      setError("Doplňte popis.");
+      setError("Doplň popis.");
       return;
     }
     setError("");
@@ -78,7 +78,7 @@ export default function CreateHelpModal() {
               </button>
             </div>
             <p className="text-xs text-stone-500">
-              Neformální sousedská výpomoc — uvidí ji lidé ve vašem okolí.
+              Neformální sousedská výpomoc — uvidí ji lidé ve tvém okolí.
             </p>
           </div>
 

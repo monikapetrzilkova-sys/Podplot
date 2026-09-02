@@ -96,9 +96,10 @@ export default function NeighborsPage() {
     setThingsCategory,
     setThingsLendingSubCategory,
     communityGroups,
+    joinedGroupIds,
     setFeedSubFilter,
+    feedSubFilter,
     setCalendarFilter,
-    activeLocationId,
   } = useApp();
 
   const [activeSection, setActiveSection] = useState(
@@ -111,7 +112,7 @@ export default function NeighborsPage() {
   const skipNeighborsRootReset = useRef(true);
   const prevNeighborsSection = useRef(null);
 
-  const hasMyGroups = getMyMemberGroups(communityGroups, activeLocationId).length > 0;
+  const hasMyGroups = getMyMemberGroups(communityGroups, joinedGroupIds).length > 0;
   const defaultSkupinyFilter = hasMyGroups ? "moje" : "vse";
 
   const applySkupinyFilter = (filterId) => {
@@ -127,10 +128,15 @@ export default function NeighborsPage() {
     const prev = prevNeighborsSection.current;
     prevNeighborsSection.current = activeSection;
     if (activeSection === "skupiny" && prev !== "skupiny") {
-      applySkupinyFilter(defaultSkupinyFilter);
+      const alreadySpecificGroup =
+        feedSubFilter &&
+        feedSubFilter !== "vse" &&
+        feedSubFilter !== "skupiny" &&
+        feedSubFilter !== "moje";
+      if (!alreadySpecificGroup) applySkupinyFilter(defaultSkupinyFilter);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- jen při vstupu do sekce
-  }, [activeSection, defaultSkupinyFilter]);
+  }, [activeSection, defaultSkupinyFilter, feedSubFilter]);
 
   useEffect(() => {
     saveNavSession({ neighborsSection: activeSection });

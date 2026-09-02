@@ -10,7 +10,7 @@ export const PROMPT_STATUS = {
 
 export const PROMPT_STATUS_AUTO_MESSAGE = {
   progress: (title) =>
-    `Úřad přijal váš podnět „${title}" a začal ho řešit. O průběhu vás budeme informovat.`,
+    `Úřad přijal tvůj podnět „${title}" a začal ho řešit. O průběhu tě budeme informovat.`,
   done: (title) => `Úřad označil podnět „${title}" jako vyřešený. Děkujeme za nahlášení.`,
 };
 

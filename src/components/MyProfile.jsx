@@ -6,6 +6,7 @@ import {
   isCurrentUserRef,
   isSelfNeighborCandidate,
 } from "../data/listingSales.js";
+import { TRUST_COPY, trustPendingCountLabel, neighborLocalityCaption } from "../data/trustNetworkCopy.js";
 import { getAccountType, ADDRESS_PRIVACY_NOTE, getPodnikatelSubtypeLabel, isBusinessAccount, getRegistrationFields, resolveBusinessSubtype } from "../data/accountTypes.js";
 import { isInjectedDemoPersona } from "../data/businessProfiles.js";
 import { getVerifiedLabel } from "../data/domainVerification.js";
@@ -118,9 +119,9 @@ function ProfileCollapsible({
 
 /** Sbalený seznam sousedů čekajících na potvrzení (bez už potvrzených). */
 function TrustPendingAccordion({ pending, confirmNeighbor, dismissTrustNeighbor, getPersonPhoto }) {
+  const { activeLocation } = useApp();
   const [expanded, setExpanded] = useState(false);
-  const countLabel =
-    pending.length === 1 ? "1 nový soused" : `${pending.length} noví sousedé`;
+  const countLabel = trustPendingCountLabel(pending.length);
 
   return (
     <div>
@@ -134,9 +135,9 @@ function TrustPendingAccordion({ pending, confirmNeighbor, dismissTrustNeighbor,
           <span className="text-xs font-bold tabular-nums">{pending.length}</span>
         </span>
         <span className="flex-1 min-w-0">
-          <span className="block text-sm font-semibold text-stone-900">{countLabel} k potvrzení</span>
+          <span className="block text-sm font-semibold text-stone-900">{TRUST_COPY.pendingTitle(countLabel)}</span>
           <span className="block text-[11px] text-stone-500 mt-0.5">
-            Rozbalte a potvrďte sousedství, pokud se znáte.
+            {TRUST_COPY.pendingHint}
           </span>
         </span>
         <span className="text-[11px] font-semibold text-[#3D7A68] shrink-0">
@@ -167,7 +168,7 @@ function TrustPendingAccordion({ pending, confirmNeighbor, dismissTrustNeighbor,
                     </p>
                     <p className="text-xs text-stone-500">
                       {(n.confirmations ?? 0) > 0 ? `${n.confirmations} potvrzení · ` : ""}
-                      {n.location || "ve vaší lokalitě"}
+                      {neighborLocalityCaption(n, activeLocation)}
                     </p>
                   </div>
                 </div>
@@ -177,14 +178,14 @@ function TrustPendingAccordion({ pending, confirmNeighbor, dismissTrustNeighbor,
                     onClick={() => confirmNeighbor(n.id)}
                     className="text-[10px] font-semibold text-emerald-700 bg-white px-2 py-1 rounded-lg border border-emerald-200"
                   >
-                    Potvrdit
+                    {TRUST_COPY.confirmAction}
                   </button>
                   <button
                     type="button"
                     onClick={() => dismissTrustNeighbor(n.id)}
                     className="text-[10px] font-semibold text-stone-500 bg-white px-2 py-1 rounded-lg border border-stone-200"
                   >
-                    Neznám ho
+                    {TRUST_COPY.skipAction}
                   </button>
                 </div>
               </div>
@@ -484,7 +485,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
             <span className="text-xs text-stone-600 leading-relaxed">
               <strong className="text-stone-800">Nové zprávy</strong>
               <span className="block mt-0.5 text-stone-500">
-                Systémové upozornění v telefonu, když vám někdo napíše.
+                Systémové upozornění v telefonu, když ti někdo napíše.
               </span>
             </span>
           </label>
@@ -512,9 +513,9 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
               className="mt-0.5 rounded accent-emerald-600"
             />
             <span className="text-xs text-stone-600 leading-relaxed">
-              <strong className="text-stone-800">Noví sousedé na Domů</strong>
+              <strong className="text-stone-800">{TRUST_COPY.settingsTitle}</strong>
               <span className="block mt-0.5 text-stone-500">
-                Karty k potvrzení nahoře na Domů. Jinak jen v Síti důvěry.
+                {TRUST_COPY.settingsHint}
               </span>
             </span>
           </label>
@@ -530,7 +531,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
           }
         >
           <p className="text-xs text-stone-500 leading-relaxed">
-            Pokud v obci žije někdo stejnojmenný, ostatní uvidí u vašeho jména jen obecný popisek (se souhlasem)
+            Pokud v obci žije někdo stejnojmenný, ostatní uvidí u tvého jména jen obecný popisek (se souhlasem)
             nebo hrubou vzdálenost — nikdy plnou adresu bydliště.
           </p>
           <label className="flex items-start gap-3 cursor-pointer p-3 rounded-xl border border-stone-200 bg-stone-50/50">
@@ -733,11 +734,11 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                 }}
                 title={
                   trustVerifiers.length === 0
-                    ? "Zatím bez ověření od sousedů"
-                    : `${trustVerifiers.length} ověření od sousedů — klepněte pro detail`
+                    ? "Zatím bez potvrzení z okolí"
+                    : `${trustVerifiers.length} potvrzení z okolí — klepni pro detail`
                 }
                 aria-expanded={trustInfoOpen}
-                aria-label={`${trustVerifiers.length} ověření od sousedů`}
+                aria-label={`${trustVerifiers.length} potvrzení z okolí`}
                 className={`absolute -bottom-1 -right-1 min-w-[1.35rem] h-[1.35rem] px-1 rounded-full text-[10px] font-bold tabular-nums flex items-center justify-center border-2 border-white shadow-sm ${
                   isCommunityVerified
                     ? "bg-[#1B4D3E] text-white"
@@ -763,8 +764,8 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
               <p className="text-[11px] text-stone-500 truncate mt-0.5">{user.email}</p>
               <p className="text-[11px] text-[#3D7A68] mt-1 leading-snug">
                 {user.isVerified || isCommunityVerified
-                  ? "Ověřený soused — ostatní vám snáz důvěřují."
-                  : "Ověření od 3 sousedů zvyšuje důvěru. Přichází od lidí, kteří vás znají z okolí — nejde o přátelství."}
+                  ? TRUST_COPY.verifiedHint
+                  : TRUST_COPY.unverifiedHint}
               </p>
               {!(user.isVerified || isCommunityVerified) ? (
                 <button
@@ -775,7 +776,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                   }}
                   className="mt-1 text-[10px] font-semibold text-[#3D7A68] hover:underline"
                 >
-                  Znáte někoho z okolí? Napsat zprávu
+                  Znáš někoho z okolí? Napsat zprávu
                 </button>
               ) : null}
               <div className="flex flex-wrap items-center gap-2 mt-1.5">
@@ -802,7 +803,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
           {trustInfoOpen ? (
             <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50/70 p-2.5 text-left">
               <div className="flex items-center justify-between gap-2 mb-1.5">
-                <p className="text-[11px] font-bold text-stone-800">Kdo mě ověřil</p>
+                <p className="text-[11px] font-bold text-stone-800">{TRUST_COPY.verifiersTitle}</p>
                 <button
                   type="button"
                   onClick={() => setTrustInfoOpen(false)}
@@ -813,14 +814,14 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
               </div>
               {trustVerifiers.length === 0 ? (
                 <p className="text-[11px] text-stone-500 leading-snug">
-                  Zatím 0 potvrzení. Do ověření komunitou zbývá 3.
+                  {TRUST_COPY.verifiersEmpty}
                 </p>
               ) : (
                 <ul className="space-y-1">
                   <p className="text-[10px] text-stone-500 mb-1">
                     {isCommunityVerified
-                      ? "Komunitou ověřený soused (alespoň 3)."
-                      : `Do ověření zbývá ${Math.max(0, 3 - trustVerifiers.length)}.`}
+                      ? TRUST_COPY.verifiersDone
+                      : TRUST_COPY.verifiersRemaining(Math.max(0, 3 - trustVerifiers.length))}
                   </p>
                   {trustVerifiers.map((v) => (
                     <li
@@ -926,6 +927,9 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                         compact
                         initialAddress={loc.address}
                         initialLabel={loc.label}
+                        initialRadiusKm={loc.radiusKm}
+                        initialLat={loc.lat}
+                        initialLng={loc.lng}
                         showLabel={!isHome}
                         labelRequired={!isHome}
                         submitLabel="Uložit"
@@ -1014,9 +1018,9 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
       {showNeighborProfile && (
         <>
       <section id="profile-trust-network" className="pp-card p-4 mb-4 scroll-mt-4">
-        <ProfileSectionTitle icon={PROFILE_DOODLE_ICONS.trust}>Potvrzení sousedů</ProfileSectionTitle>
+        <ProfileSectionTitle icon={PROFILE_DOODLE_ICONS.trust}>{TRUST_COPY.sectionTitle}</ProfileSectionTitle>
         <p className="text-[10px] text-stone-500 mb-2 leading-snug">
-          Potvrďte lidi, které znáte z okolí. Není to seznam přátel ani počet známostí — jen důvěra v lokalitě.
+          {TRUST_COPY.sectionHint}
         </p>
         {(() => {
           const dismissed = trustDismissedIds ?? [];
@@ -1031,8 +1035,8 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
           if (pending.length === 0) {
             return (
               <p className="text-xs text-stone-500 leading-relaxed">
-                Teď nemáte nikoho nového k potvrzení. Až se v lokalitě objeví nový soused, ukáže se tady.
-                Znáte někoho jménem?{" "}
+                {TRUST_COPY.profileEmpty}{" "}
+                Znáš někoho jménem?{" "}
                 <button
                   type="button"
                   onClick={() => {
@@ -1041,7 +1045,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                   }}
                   className="font-semibold text-[#3D7A68] hover:underline"
                 >
-                  Napište mu ve Zprávách
+                  Napiš mu ve Zprávách
                 </button>
                 .
               </p>
@@ -1073,7 +1077,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
             return (
               <div className="space-y-3">
                 <p className="text-xs text-stone-500 leading-relaxed">
-                  Zatím jste nenavrhli žádnou skupinu. Návrh uvidíte tady s počtem podpor od sousedů.
+                  Zatím jsi nenavrhl/a žádnou skupinu. Návrh uvidíš tady s počtem podpor od sousedů.
                 </p>
                 <button
                   type="button"
@@ -1092,7 +1096,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
             <div className="space-y-3">
               <p className="text-xs text-stone-500 leading-relaxed">
                 Sousedé návrh vidí na Domů a ve Skupinách. Po {mine[0]?.required ?? 5} podporách se skupina
-                aktivuje. Podpory uvidíte po rozbalení u konkrétního návrhu.
+                aktivuje. Podpory uvidíš po rozbalení u konkrétního návrhu.
               </p>
               {mine.map((p) => (
                 <GroupProposalCard
@@ -1168,7 +1172,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
         reservations.length === 0 &&
         myListings.length === 0 ? (
           <p className="text-sm text-stone-500 leading-relaxed">
-            Zatím nic — zkuste přidat inzerát nebo půjčit věc na tržišti.
+            Zatím nic — zkus přidat inzerát nebo půjčit věc na tržišti.
           </p>
         ) : (
           <div className="space-y-2">
@@ -1269,7 +1273,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
         <ProfileSectionTitle>Moje hlášení</ProfileSectionTitle>
         {myReportItems.length === 0 ? (
           <p className="text-sm text-stone-500 leading-relaxed">
-            Zatím jste neodeslala žádné hlášení na mapu.
+            Zatím jsi neodeslal/a žádné hlášení na mapu.
           </p>
         ) : (
           <div className="space-y-2">
@@ -1312,7 +1316,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
         <ProfileSectionTitle>Moje podněty úřadu</ProfileSectionTitle>
         {myMunicipalityPrompts.length === 0 ? (
           <p className="text-sm text-stone-500 leading-relaxed">
-            Zatím jste neodeslala žádný podnět. Najdete je v záložce{" "}
+            Zatím jsi neodeslal/a žádný podnět. Najdeš je v záložce{" "}
             <strong>Mapa → Podat podnět úřadu</strong>.
           </p>
         ) : (
@@ -1350,7 +1354,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
           summary={formatCraftsmanRadiusLabel(craftsmanRadius)}
         >
           <p className="text-xs text-stone-500 leading-relaxed">
-            V katalogu a ve feedu poptávek se zobrazíte sousedům ve vašem dojezdu. Výchozí poloha odpovídá
+            V katalogu a ve feedu poptávek se zobrazíš sousedům ve tvém dojezdu. Výchozí poloha odpovídá
             aktivnímu místu ({locations.find((l) => l.id === activeLocationId)?.label ?? "Domov"}).
           </p>
           <label className="flex items-start gap-3 p-3 rounded-xl border border-stone-200 bg-[#F7FAF9] cursor-pointer">

@@ -8,6 +8,7 @@ export default function InstitutionAutocomplete({
   value = null,
   onChange,
   disabled = false,
+  required = false,
   placeholder = "Hledejte úřad — název, PSČ nebo obec…",
 }) {
   const listId = useId();
@@ -74,6 +75,11 @@ export default function InstitutionAutocomplete({
     <div ref={wrapRef} className="relative">
       <label className="block text-xs font-semibold text-stone-600 mb-1.5">
         Obecní / městský úřad
+        {required ? (
+          <span className="text-teal-800" aria-hidden="true">
+            {" *"}
+          </span>
+        ) : null}
       </label>
       <div className="flex gap-2">
         <input
@@ -83,6 +89,7 @@ export default function InstitutionAutocomplete({
           aria-controls={listId}
           aria-autocomplete="list"
           disabled={disabled}
+          aria-required={required || undefined}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);

@@ -1,3 +1,5 @@
+import { isGenericLocalityHint } from "./trustNetworkCopy.js";
+
 /** Odlišení osob se stejným jménem v rámci obce — bez zobrazení přesné adresy */
 
 export const PUBLIC_AREA_LABEL_HINT =
@@ -12,7 +14,10 @@ export function personDisambiguator(person) {
   if (person?.allowPublicAreaLabel && person?.publicAreaLabel?.trim()) {
     return person.publicAreaLabel.trim();
   }
-  if (person?.location?.trim()) return person.location.trim();
+  const loc = String(person?.location ?? "").trim();
+  if (loc && !isGenericLocalityHint(loc)) return loc;
+  const mun = String(person?.municipality ?? "").trim();
+  if (mun) return mun;
   return "";
 }
 
@@ -117,6 +122,7 @@ export function collectLocalPeople({
       allowPublicAreaLabel: Boolean(currentUser.allowPublicAreaLabel),
       publicAreaLabel: currentUser.publicAreaLabel ?? "",
       municipality,
+      location: currentUser.location ?? currentUser.geo?.city ?? "",
     });
   }
 

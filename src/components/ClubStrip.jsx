@@ -108,7 +108,7 @@ export default function ClubStrip() {
 
               >
 
-                {club.voted ? "Už jste hlasovala" : "To mě zajímá"}
+                {club.voted ? "Už jsi hlasoval/a" : "To mě zajímá"}
 
               </button>
 

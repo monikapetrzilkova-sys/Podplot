@@ -16,7 +16,7 @@ export default function NeighborOnboardingChecklist() {
     {
       id: "photo",
       label: "Přidejte fotku",
-      hint: "Sousedé vás snáz poznají",
+      hint: "Sousedé tě snáz poznají",
       done: hasPhoto,
       onClick: () => openProfile?.(),
     },

@@ -11,8 +11,11 @@ import {
   isThingsModuleListing,
   isCommunityAnnouncementPost,
   isPujcovnaListing,
+  isGroupFeedPost,
   normalizeLendingToThing,
 } from "../utils/thingsModule.js";
+import { isGroupBoardDiscussionPost } from "../data/groups.js";
+import { getGroupPostBadge } from "./feed/feedBadgeMeta.js";
 import { isServiceOrSponsoredAdPost } from "../utils/categoryAccents.js";
 import { REPORTS_TIP_CATEGORY_ID, resolveReportCategoryId } from "../data/reportCategories.js";
 import { getPostInteractionType, INTERACTION_TYPES } from "../data/postInteractions.js";
@@ -23,6 +26,7 @@ import { reportSnapshotFromFeedPost } from "../utils/reportPinUtils.js";
 import { feedItemNeedsExpand } from "./feed/feedExpand.js";
 import { isReportActive, normalizeReportValidity } from "../data/reportExpiry.js";
 import { SECURITY_REPORTS } from "../data/mockData.js";
+import { filterSecurityReportsByLocation } from "../data/geoFilter.js";
 
 function listingPreview(post, title) {
   const body = String(post?.body ?? "").trim();
@@ -88,6 +92,11 @@ export default function LiveNeighborFeed() {
     user,
     extraReports,
     userReports,
+    userGroupPosts,
+    communityGroups,
+    openGroup,
+    activeLocation,
+    activeLocationId,
   } = useApp();
 
   const [showSkeleton, setShowSkeleton] = useState(true);
@@ -157,7 +166,7 @@ export default function LiveNeighborFeed() {
       id: a.id,
       kind: "eventGallery",
       title: a.participated
-        ? `Nové fotky z akce, které jste se zúčastnili`
+        ? `Nové fotky z akce, které ses zúčastnil/a`
         : `Nové fotky z akce v okolí`,
       subtitle: `${formatPersonName({ id: a.authorId, name: a.authorName })} · ${a.eventTitle}`,
       distance: a.time,
@@ -246,9 +255,64 @@ export default function LiveNeighborFeed() {
       })
       .slice(0, 10);
 
-    const announcements = communityPosts
-      .filter(isCommunityAnnouncementPost)
-      .filter(isAnnouncementStillVisible)
+    const seenGroupIds = new Set();
+    const groupItems = [...communityPosts, ...(userGroupPosts ?? [])]
+      .filter((p) => isGroupBoardDiscussionPost(p) || isGroupFeedPost(p))
+      .filter((p) => {
+        if (!p?.id || seenGroupIds.has(p.id)) return false;
+        seenGroupIds.add(p.id);
+        return true;
+      })
+      .map((p) => ({
+        id: `group-${p.id}`,
+        kind: "group",
+        title: p.title,
+        post: p,
+        mine: Boolean(p.mine),
+        createdAt: p.createdAt ?? 0,
+        engagement: engagementForPost(p),
+      }))
+      .sort((a, b) => b.engagement - a.engagement || (b.createdAt ?? 0) - (a.createdAt ?? 0))
+      .slice(0, 8);
+
+    const nearbyReports = filterSecurityReportsByLocation(
+      [...SECURITY_REPORTS, ...(extraReports ?? []), ...(userReports ?? [])],
+      activeLocationId,
+      activeLocation
+    );
+    const coveredReportIds = new Set(
+      communityPosts.map((p) => p.fromSecurityReportId || (String(p.id || "").startsWith("feed-") ? String(p.id).slice(5) : p.id))
+    );
+
+    const announcements = [
+      ...communityPosts
+        .filter((p) => isCommunityAnnouncementPost(p) && !isGroupFeedPost(p) && !isGroupBoardDiscussionPost(p))
+        .filter(isAnnouncementStillVisible),
+      ...nearbyReports
+        .filter((r) => r?.id && !coveredReportIds.has(r.id) && isReportActive(r))
+        .map((r) => ({
+          id: `feed-${r.id}`,
+          title: r.type,
+          body: r.body,
+          type: r.type,
+          author: r.author,
+          accountType: r.accountType,
+          initials: r.authorInitials,
+          meta: [r.distance, r.time].filter(Boolean).join(" · "),
+          feedSubtype: "hlaseni",
+          reportCategoryId: r.reportCategoryId,
+          fromSecurityReportId: r.id,
+          placeLabel: r.placeLabel,
+          mapPos: r.mapPos,
+          lat: r.lat,
+          lng: r.lng,
+          municipality: r.municipality,
+          locationId: r.locationId,
+          createdAt: r.createdAt,
+          mine: Boolean(r.mine),
+          photos: r.photos,
+        })),
+    ]
       .map((p) => ({
         id: `hlaseni-${p.id}`,
         kind: "announcement",
@@ -263,7 +327,7 @@ export default function LiveNeighborFeed() {
       .sort((a, b) => b.engagement - a.engagement || (b.createdAt ?? 0) - (a.createdAt ?? 0))
       .slice(0, 8);
 
-    const ordered = [...announcements, ...events, ...gallery, ...news, ...help, ...listings];
+    const ordered = [...announcements, ...groupItems, ...events, ...gallery, ...news, ...help, ...listings];
 
     const isFresh = (item) =>
       Boolean(item.mine) ||
@@ -300,6 +364,9 @@ export default function LiveNeighborFeed() {
     listingSaleOrders,
     extraReports,
     userReports,
+    userGroupPosts,
+    activeLocation,
+    activeLocationId,
   ]);
 
   const filteredItems = useMemo(() => {
@@ -489,6 +556,50 @@ export default function LiveNeighborFeed() {
                       alreadyOffered={hasOfferedHelp(item.helpId)}
                     />
                   )
+                ) : null}
+              </LiveFeedCard>
+            );
+          }
+
+          if (item.kind === "group") {
+            const post = item.post;
+            const badge = getGroupPostBadge(post, communityGroups);
+            const groupId = post.groupId || post.groupIds?.[0];
+
+            return (
+              <LiveFeedCard
+                key={item.id}
+                itemId={item.id}
+                badge={badge.label}
+                badgeClassName={badge.className}
+                badgeTone={badge.tone}
+                BadgeIcon={badge.Icon}
+                title={item.title}
+                authorLabel={displayCreatorLabel(post.author, post.accountType, {
+                  mine: post.mine,
+                })}
+                timeLabel={ageFor(post)}
+                preview={post.body}
+                editedItem={post}
+                onReport={
+                  post.mine || item.mine
+                    ? undefined
+                    : (reason) => reportPost(post.id, reason)
+                }
+                onDelete={
+                  post.mine || item.mine ? () => deleteOwnPost(post.id) : undefined
+                }
+                mine={Boolean(post.mine || item.mine)}
+              >
+                <FeedCard post={post} detailsOnly bodyInParent />
+                {groupId ? (
+                  <button
+                    type="button"
+                    onClick={() => openGroup(groupId)}
+                    className="text-xs font-semibold text-[#3D7A68] hover:underline"
+                  >
+                    Otevřít skupinu
+                  </button>
                 ) : null}
               </LiveFeedCard>
             );

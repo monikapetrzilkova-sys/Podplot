@@ -68,7 +68,7 @@ export default function PlaceSuggestionModal() {
           <div className="min-w-0 flex-1">
             <h2 className="text-base font-bold text-stone-900 leading-snug">Návrh na založení místa</h2>
             <p className="text-xs text-stone-500 mt-0.5 leading-snug">
-              Označte místo na mapě a vyplňte údaje. Návrh bude čekat na schválení administrátorem.
+              Označ místo na mapě a vyplň údaje. Návrh bude čekat na schválení administrátorem.
             </p>
           </div>
           <button

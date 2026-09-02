@@ -59,7 +59,7 @@ export default function ProfilePanel() {
 
           <section className="bg-white border border-stone-200 rounded-2xl p-4">
             <h3 className="text-sm font-semibold text-stone-800 mb-1">Co půjčím sousedům</h3>
-            <p className="text-xs text-stone-500 mb-3">Zaškrtněte věci, které máte doma.</p>
+            <p className="text-xs text-stone-500 mb-3">Zaškrtni věci, které máš doma.</p>
             <div className="flex flex-wrap gap-2">
               {LEND_ASSETS.map((a) => (
                 <button

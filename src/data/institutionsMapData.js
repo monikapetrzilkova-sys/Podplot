@@ -12,7 +12,7 @@ export const LOCAL_GUIDE_CATEGORIES = [
   { id: "zdravi", label: "Zdraví" },
   { id: "instituce", label: "Instituce" },
   { id: "verejny-prostor", label: "Veřejný prostor" },
-  { id: "remeslnici", label: "Služby u vás doma" },
+  { id: "remeslnici", label: "Služby u tebe doma" },
   { id: "ostatni", label: "Ostatní" },
 ];
 
@@ -153,7 +153,7 @@ export const INSTITUTIONS_MAP_PLACES = [
 
     distance: "520 m",
 
-    extraInfo: "Budova patří centru — kroužky v ní vedou různí lektoři. Smyslohranní a další aktivity najdete v kalendáři.",
+    extraInfo: "Budova patří centru — kroužky v ní vedou různí lektoři. Smyslohranní a další aktivity najdeš v kalendáři.",
 
   },
 

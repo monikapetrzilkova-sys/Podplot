@@ -142,7 +142,7 @@ export default function GalleryLightbox({
               </>
             ) : (
               <p className="text-sm text-white/60 px-6 text-center">
-                Zatím žádné fotky — můžete přidat první.
+                Zatím žádné fotky — můžeš přidat první.
               </p>
             )}
           </div>

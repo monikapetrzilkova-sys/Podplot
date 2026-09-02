@@ -396,7 +396,7 @@ export function getSuggestedMessageContacts({
 
     const author = findPostAuthor(allPosts, postId, neighbors);
 
-    if (author) push(author, "Reagovali jste na příspěvek", 90);
+    if (author) push(author, "Reagoval/a jsi na příspěvek", 90);
 
   });
 
@@ -418,7 +418,7 @@ export function getSuggestedMessageContacts({
 
     const author = findPostAuthor(allPosts, postId, neighbors);
 
-    if (author) push(author, "Nabídli jste pomoc u příspěvku", 88);
+    if (author) push(author, "Nabídl/a jsi pomoc u příspěvku", 88);
 
   });
 

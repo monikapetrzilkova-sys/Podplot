@@ -249,17 +249,17 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
   const submitReport = (e) => {
     e.preventDefault();
     if (!reportCategoryId) {
-      setCategoryError("Vyberte kategorii hlášení.");
-      showToast("Vyberte kategorii hlášení.", "error");
+      setCategoryError("Vyber kategorii hlášení.");
+      showToast("Vyber kategorii hlášení.", "error");
       return;
     }
     if (reportCategoryId === "loss" && !lossKind) {
       setCategoryError("U ztráty / nálezu vyberte, jestli jde o ztrátu, nebo nález.");
-      showToast("Vyberte ztrátu, nebo nález.", "error");
+      showToast("Vyber ztrátu, nebo nález.", "error");
       return;
     }
     if (!reportBody.trim()) {
-      showToast("Doplňte popis hlášení.", "error");
+      showToast("Doplň popis hlášení.", "error");
       return;
     }
     const municipalityWide = isUrgent && urgentScope === URGENT_SCOPE.MUNICIPALITY;
@@ -270,8 +270,8 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
     }
     if (reportValidityMode === REPORT_VALIDITY_MODE.CUSTOM) {
       if (!reportValidUntil.trim()) {
-        setValidUntilError("Zvolte termín platnosti.");
-        showToast("Zvolte termín platnosti.", "error");
+        setValidUntilError("Zvol termín platnosti.");
+        showToast("Zvol termín platnosti.", "error");
         return;
       }
       const until = new Date(reportValidUntil).getTime();
@@ -317,7 +317,7 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
       resetForms();
     } catch (err) {
       console.error(err);
-      showToast("Hlášení se nepodařilo odeslat. Zkuste to znovu.", "error");
+      showToast("Hlášení se nepodařilo odeslat. Zkus to znovu.", "error");
     }
   };
 
@@ -377,7 +377,7 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
           <p className="text-[11px] text-stone-500 mt-0.5">
             {isInstitution
               ? "Výzvy občanům — vyjádření k projektu, společný úklid, sběr nápadů. Nejde o výpadky ani havárie."
-              : "Úřad vás zve k vyjádření nebo společné akci. Výpadky a havárie najdete v ostatních kategoriích."}
+              : "Úřad tě zve k vyjádření nebo společné akci. Výpadky a havárie najdeš v ostatních kategoriích."}
           </p>
         </div>
       )}
@@ -410,7 +410,7 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
               <textarea
                 value={callBody}
                 onChange={(e) => setCallBody(e.target.value)}
-                placeholder="Co od občanů potřebujete — termín, místo, jak se zapojit…"
+                placeholder="Co od občanů potřebuješ — termín, místo, jak se zapojit…"
                 rows={3}
                 className="w-full px-3 py-2 border border-stone-200 rounded-xl text-sm resize-none bg-white"
                 required
@@ -457,7 +457,7 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
             {pinnedCalls.length === 0 && dismissedCalls.length === 0 && (
               <p className="text-sm text-stone-500 bg-stone-50 rounded-xl p-4 border border-stone-100">
                 {isInstitution
-                  ? "Zatím žádná výzva. Vytvořte ji tlačítkem výše nebo přes +."
+                  ? "Zatím žádná výzva. Vytvoř ji tlačítkem výše nebo přes +."
                   : "Zatím žádné výzvy od úřadu."}
               </p>
             )}

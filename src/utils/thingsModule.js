@@ -15,9 +15,18 @@ import { resolveLendingItemTypeLabel } from "../data/lendingItemTypes.js";
 const THING_CATEGORY_IDS = new Set(["daruji", "prodam", "shanim", "pujcovna"]);
 const THING_FEED_TYPES = new Set(["zbozi", "komunita", "sousede"]);
 
+/** Nástěnka skupiny — ne hlášení ani inzerát (bez importu groups.js kvůli cyklu). */
+export function isGroupFeedPost(post) {
+  if (!post) return false;
+  if (post.boardPost === true) return true;
+  if (post.boardPost === false) return false;
+  if (THING_CATEGORY_IDS.has(post.categoryId ?? post.feedSubtype)) return false;
+  return Boolean(post.groupId || (Array.isArray(post.groupIds) && post.groupIds.length && post.groupName));
+}
+
 /** Hlášení / pátrání — nepatří do modulu Věci */
 export function isCommunityAnnouncementPost(post) {
-  if (!post) return false;
+  if (!post || isGroupFeedPost(post)) return false;
   const cat = post.categoryId ?? post.feedSubtype;
   if (THING_CATEGORY_IDS.has(cat)) return false;
   if (post.feedSubtype === "hlaseni") return true;
@@ -30,7 +39,7 @@ export function isCommunityAnnouncementPost(post) {
 
 /** Inzerát do modulu Věci (daruji / prodám / sháním věc / půjčovna) */
 export function isThingsModuleListing(post) {
-  if (!post || isCommunityAnnouncementPost(post)) return false;
+  if (!post || isCommunityAnnouncementPost(post) || isGroupFeedPost(post)) return false;
   if (post.feedType && !THING_FEED_TYPES.has(post.feedType)) return false;
   const cat = post.categoryId ?? post.feedSubtype;
   if (THING_CATEGORY_IDS.has(cat)) return true;

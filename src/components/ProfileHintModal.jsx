@@ -16,8 +16,8 @@ export default function ProfileHintModal({ open, onClose, onGoToProfile, variant
 
   const body =
     variant === "reservation"
-      ? "Rezervaci i všechny další výpůjčky a nabídky najdete kdykoli v záložce Profil v sekci „Moje výpůjčky a nabídky“."
-      : "Všechny vaše nabídky k půjčení, rezervace i inzeráty najdete v záložce Profil v sekci „Moje výpůjčky a nabídky“.";
+      ? "Rezervaci i všechny další výpůjčky a nabídky najdeš kdykoli v záložce Profil v sekci „Moje výpůjčky a nabídky“."
+      : "Všechny tvoje nabídky k půjčení, rezervace i inzeráty najdeš v záložce Profil v sekci „Moje výpůjčky a nabídky“.";
 
   return (
     <AppPanelPortal>

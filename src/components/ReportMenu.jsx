@@ -45,7 +45,7 @@ export default function ReportMenu({
   const handleDelete = () => {
     const ok =
       typeof window !== "undefined"
-        ? window.confirm("Opravdu chcete smazat tento příspěvek? Tato akce nejde vrátit.")
+        ? window.confirm("Opravdu chceš smazat tento příspěvek? Tahle akce nejde vrátit.")
         : true;
     if (!ok) return;
     onDelete?.();

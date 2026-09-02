@@ -87,7 +87,7 @@ export default function ClaimProfileModal({ place, open, onClose }) {
 
           <div className="rounded-xl border border-[#C5DDD4] bg-[#F1F6F5] px-3 py-2.5 space-y-1.5">
             <p className="text-[11px] text-[#1B4D3E] leading-relaxed">
-              Chcete spravovat <strong>{place.name}</strong> jako provozovatel. Podplot vám pošle
+              Chceš spravovat <strong>{place.name}</strong> jako provozovatel. Podplot ti pošle
               jednorázový kód na <strong>telefon nebo e-mail, který u místa dohledáme</strong> (např.
               Google Maps nebo oficiální web) — ne na libovolný kontakt, který si vymyslíte.
             </p>
@@ -116,8 +116,8 @@ export default function ClaimProfileModal({ place, open, onClose }) {
                 ) : null}
               </p>
               <p className="text-xs text-stone-600 leading-relaxed">
-                Doplňte telefon nebo e-mail do firemního profilu na <strong>Google Maps</strong> (nebo
-                na oficiální web, ze kterého kontakty bereme) a zkuste převzetí znovu. Bez ověřitelného
+                Doplň telefon nebo e-mail do firemního profilu na <strong>Google Maps</strong> (nebo
+                na oficiální web, ze kterého kontakty bereme) a zkus převzetí znovu. Bez ověřitelného
                 kontaktu profil nepřiřadíme.
               </p>
               <button
@@ -196,7 +196,7 @@ export default function ClaimProfileModal({ place, open, onClose }) {
           ) : (
             <form onSubmit={handleVerify} className="space-y-3">
               <p className="text-xs text-stone-600 leading-relaxed">
-                Zadejte {CLAIM_OTP_LENGTH}místný kód, který jsme poslali na{" "}
+                Zadej {CLAIM_OTP_LENGTH}místný kód, který jsme poslali na{" "}
                 <strong>{selectedLabel}</strong>. Kód platí cca 10 minut.
               </p>
               <input
@@ -210,7 +210,7 @@ export default function ClaimProfileModal({ place, open, onClose }) {
                 required
               />
               <p className="text-[10px] text-stone-400">
-                Demo: v toastu uvidíte vygenerovaný kód; funguje i {CLAIM_DEMO_OTP}.
+                Demo: v toastu uvidíš vygenerovaný kód; funguje i {CLAIM_DEMO_OTP}.
               </p>
               <div className="flex gap-2">
                 <button

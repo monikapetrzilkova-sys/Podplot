@@ -29,7 +29,7 @@ export default function Feed({ atTop = false }) {
           illustration="box"
           message={
             zboziSearchQuery.trim()
-              ? "Pro toto hledání nic nenalezeno — zkuste jiné slovo nebo kategorii."
+              ? "Pro toto hledání nic nenalezeno — zkus jiné slovo nebo kategorii."
               : "V této kategorii zatím nic není. Přidejte vlastní nabídku."
           }
           className="bg-white rounded-xl border border-stone-100"

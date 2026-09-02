@@ -32,6 +32,7 @@ export function hasReportMapPosition(report) {
  */
 export function reportSnapshotFromFeedPost(post) {
   if (!post) return null;
+  if (post.boardPost === true) return null;
   const id =
     post.fromSecurityReportId ||
     (String(post.id || "").startsWith("feed-") ? String(post.id).slice(5) : post.id);

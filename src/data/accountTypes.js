@@ -5,7 +5,7 @@ export const BUSINESS_SUBTYPES = {
     id: "fyzicka",
     label: "Podnik s pobočkou",
     shortLabel: "Podnik",
-    hint: "Kamenná adresa — zákazníci k vám mohou přijít (gastro, obchod, služba na místě).",
+    hint: "Kamenná adresa — zákazníci k tobě mohou přijít (gastro, obchod, služba na místě).",
     nameLabel: "Název podniku",
     namePlaceholder: "Kavárna U Ráje",
     addressLabel: "Adresa podniku",
@@ -77,7 +77,7 @@ const LEGACY_BUSINESS_SUBTYPE_MAP = {
 };
 
 export const ADDRESS_PRIVACY_NOTE =
-  "Adresa nebude veřejně zobrazena ostatním na profilu — slouží pouze k zafixování vaší geolokace v okolí.";
+  "Adresa nebude veřejně zobrazena ostatním na profilu — slouží pouze k zafixování tvé geolokace v okolí.";
 
 export const ACCOUNT_TYPE_LIST = Object.values(ACCOUNT_TYPES);
 

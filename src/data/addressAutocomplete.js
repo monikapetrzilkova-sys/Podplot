@@ -2,7 +2,8 @@
  * Našeptávání adres pro celou ČR — OpenStreetMap přes server Podplot.
  */
 
-import { municipalitiesMatch } from "./geoFilter.js";
+import { officialMunicipalityMatch } from "./geoFilter.js";
+import { refineLocalityFromPsc } from "./czechCityDistricts.js";
 
 const MIN_QUERY_LENGTH = 3;
 const DEBOUNCE_MS = 450;
@@ -49,7 +50,7 @@ function mapPhotonFeature(f) {
     street,
     houseNumber,
     psc,
-    city,
+    city: refineLocalityFromPsc(psc, city),
     label: [street, houseNumber, city].filter(Boolean).join(" ") + (psc ? ` · ${psc}` : ""),
     lat,
     lon,
@@ -72,7 +73,7 @@ function mapNominatimItem(item) {
     street,
     houseNumber,
     psc,
-    city,
+    city: refineLocalityFromPsc(psc, city),
     label: item.display_name?.split(",").slice(0, 3).join(",").trim() || street,
     lat: parseFloat(item.lat),
     lon: parseFloat(item.lon),
@@ -93,7 +94,59 @@ function dedupeItems(items) {
   });
 }
 
-export async function fetchAddressSuggestions(query) {
+export function normalizeHouseNumber(value) {
+  return String(value ?? "")
+    .trim()
+    .toLocaleLowerCase("cs")
+    .replace(/\s+/g, "");
+}
+
+/** 12 sedí na 12, 12a, 12/1; 12a jen na 12a; 12 nesedí na 120. */
+export function houseNumberMatches(candidate, filter) {
+  const c = normalizeHouseNumber(candidate);
+  const f = normalizeHouseNumber(filter);
+  if (!f) return true;
+  if (!c) return false;
+  if (c === f) return true;
+  const fCore = f.match(/^(\d+)/)?.[1];
+  const cCore = c.match(/^(\d+)/)?.[1];
+  if (!fCore || cCore !== fCore) return false;
+  if (f === fCore) return true;
+  return c.startsWith(f);
+}
+
+export function buildAddressSearchQuery({ street = "", houseNumber = "", city = "", psc = "" } = {}) {
+  return [houseNumber, street, city || psc]
+    .map((part) => String(part ?? "").trim())
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function canSearchAddress(parts) {
+  return buildAddressSearchQuery(parts).length >= MIN_QUERY_LENGTH;
+}
+
+export function rankAddressSuggestions(items, houseNumber) {
+  const list = items ?? [];
+  const filter = normalizeHouseNumber(houseNumber);
+  if (!filter) return list;
+  const matched = [];
+  const rest = [];
+  for (const item of list) {
+    if (houseNumberMatches(item.houseNumber, filter)) matched.push(item);
+    else rest.push(item);
+  }
+  matched.sort((a, b) => {
+    const ae = normalizeHouseNumber(a.houseNumber) === filter ? 0 : 1;
+    const be = normalizeHouseNumber(b.houseNumber) === filter ? 0 : 1;
+    return ae - be;
+  });
+  return matched.length ? matched : rest;
+}
+
+export async function fetchAddressSuggestions(query, { houseNumber } = {}) {
   const q = query.trim();
   if (q.length < MIN_QUERY_LENGTH) return [];
 
@@ -101,13 +154,13 @@ export async function fetchAddressSuggestions(query) {
   if (!res.ok) throw new Error("Address search failed");
   const data = await res.json();
 
+  let items = [];
   if (data.source === "photon" && data.features?.length) {
-    return dedupeItems(data.features.map(mapPhotonFeature).filter(Boolean)).slice(0, 8);
+    items = dedupeItems(data.features.map(mapPhotonFeature).filter(Boolean));
+  } else if (data.items?.length) {
+    items = dedupeItems(data.items.map(mapNominatimItem).filter(Boolean));
   }
-  if (data.items?.length) {
-    return dedupeItems(data.items.map(mapNominatimItem).filter(Boolean)).slice(0, 8);
-  }
-  return [];
+  return rankAddressSuggestions(items, houseNumber).slice(0, 8);
 }
 
 function pickBestGeocodeHit(results, preferredCity = null) {
@@ -116,7 +169,7 @@ function pickBestGeocodeHit(results, preferredCity = null) {
   const city = String(preferredCity ?? "").trim();
   if (city) {
     const match = withCoords.find((r) => {
-      if (r.city && municipalitiesMatch(r.city, city)) return true;
+      if (r.city && officialMunicipalityMatch(r.city, city)) return true;
       const label = `${r.formatted || ""} ${r.label || ""}`.toLowerCase();
       return label.includes(city.toLowerCase());
     });
@@ -175,11 +228,22 @@ export function createAddressAutocomplete(onResults, onLoading, onError) {
   let lastQuery = "";
   let requestId = 0;
 
-  const search = (query) => {
-    lastQuery = query;
+  const search = (streetOrQuery, context = {}) => {
+    const houseNumber = context.houseNumber ?? "";
+    const q =
+      context.houseNumber != null || context.city != null || context.psc != null
+        ? buildAddressSearchQuery({
+            street: streetOrQuery,
+            houseNumber,
+            city: context.city,
+            psc: context.psc,
+          })
+        : String(streetOrQuery ?? "").trim();
+    lastQuery = q;
+    const houseForQuery = houseNumber;
     clearTimeout(timer);
 
-    if (query.trim().length < MIN_QUERY_LENGTH) {
+    if (q.length < MIN_QUERY_LENGTH) {
       onResults([]);
       onLoading(false);
       return;
@@ -190,16 +254,16 @@ export function createAddressAutocomplete(onResults, onLoading, onError) {
 
     timer = setTimeout(async () => {
       const id = ++requestId;
-      const q = query;
+      const query = q;
       try {
-        const results = await fetchAddressSuggestions(q);
-        if (id !== requestId || q !== lastQuery) return;
+        const results = await fetchAddressSuggestions(query, { houseNumber: houseForQuery });
+        if (id !== requestId || query !== lastQuery) return;
         onResults(results);
         onError(null);
       } catch {
         if (id !== requestId) return;
         onResults([]);
-        onError("Adresy se nepodařilo načíst. Zkontrolujte internet nebo adresu doplňte ručně.");
+        onError("Adresy se nepodařilo načíst. Zkontroluj internet nebo adresu doplň ručně.");
       } finally {
         if (id === requestId) onLoading(false);
       }
@@ -216,6 +280,6 @@ export function createAddressAutocomplete(onResults, onLoading, onError) {
 }
 
 export const ADDRESS_SEARCH_HINT =
-  "Našeptávání adres pro celou Českou republiku — začněte psát ulici a obec (min. 3 znaky).";
+  "Nejdřív zadej číslo popisné — našeptávání pak nabídne jen ulice a čísla, která k němu sedí.";
 
 export { MIN_QUERY_LENGTH, DEBOUNCE_MS };

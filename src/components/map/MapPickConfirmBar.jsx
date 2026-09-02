@@ -17,12 +17,12 @@ export default function MapPickConfirmBar({
         <DoodleTargetIcon className="w-8 h-8 shrink-0 text-[#1B4332] mt-0.5" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold text-stone-900 leading-snug">
-            {isReport ? "Nové hlášení — vyberte místo" : "Podnět úřadu — vyberte místo"}
+            {isReport ? "Nové hlášení — vyber místo" : "Podnět úřadu — vyber místo"}
           </p>
           <p className="text-xs text-stone-500 mt-0.5 leading-snug">
             {isReport
-              ? "Klepněte na mapu nebo použijte svou polohu — formulář se otevře hned."
-              : "Klepněte na mapu, nebo pokračujte bez místa."}
+              ? "Klepni na mapu nebo použij svou polohu — formulář se otevře hned."
+              : "Klepni na mapu, nebo pokračuj bez místa."}
           </p>
           {pinError && <p className="text-xs text-red-600 mt-1">{pinError}</p>}
         </div>

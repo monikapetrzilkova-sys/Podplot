@@ -107,14 +107,14 @@ export default function InstitutionCrisisPage() {
     <div className="pp-page flex flex-col min-h-full px-4 pt-4 pb-8 gap-4">
       <div>
         <p className="text-xs text-stone-500">
-          Co vydává úřad — klepněte na typ a doplňte nadpis s textem
+          Co vydává úřad — klepni na typ a doplň nadpis s textem
         </p>
       </div>
 
       {plusPicker && (
         <section className="pp-card p-4 space-y-2 ring-2 ring-[#3D7A68] border-[#3D7A68]">
           <h2 className="text-sm font-bold text-[#1B4D3E]">Nové oznámení</h2>
-          <p className="text-[11px] text-stone-500">Vyberte typ hlášení úřadu.</p>
+          <p className="text-[11px] text-stone-500">Vyber typ hlášení úřadu.</p>
           <button
             type="button"
             onClick={() => pickFromPlus("crisis")}

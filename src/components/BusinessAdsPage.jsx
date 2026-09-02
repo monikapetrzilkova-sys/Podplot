@@ -172,8 +172,8 @@ export default function BusinessAdsPage() {
         {locationBannerSlots.scheduled > 0
           ? ` · rezervace ve frontě: ${locationBannerSlots.scheduled}`
           : ""}
-        {hasActiveBanner ? " · váš banner běží" : ""}
-        {hasScheduledBanner ? " · máte rezervaci" : ""}
+        {hasActiveBanner ? " · tvůj banner běží" : ""}
+        {hasScheduledBanner ? " · máš rezervaci" : ""}
       </p>
       {isScheduledOffer && (
         <p className="text-[11px] text-amber-900 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
@@ -287,7 +287,7 @@ export default function BusinessAdsPage() {
         onClose={() => setPushPayOpen(false)}
         title={`Push poptávek — ${MOBILNI_PUSH_SUBSCRIPTION.period}`}
         amount={MOBILNI_PUSH_SUBSCRIPTION.price}
-        note="Platba kartou za okamžité upozornění na nové poptávky ve vašem okruhu."
+        note="Platba kartou za okamžité upozornění na nové poptávky ve tvém okruhu."
         confirmLabel={`Zaplatit ${MOBILNI_PUSH_SUBSCRIPTION.price} Kč`}
         onConfirm={(method) => {
           const ok = subscribeMobilniPush(method);
@@ -357,7 +357,7 @@ export default function BusinessAdsPage() {
     return (
       <div className="pp-page flex flex-col min-h-full px-4 pt-4 pb-8 gap-3">
         <p className="text-xs text-stone-500">
-          Vyberte typ — detail a aktivace se otevřou po kliknutí
+          Vyber typ — detail a aktivace se otevřou po kliknutí
         </p>
 
         <div className="space-y-2.5">
@@ -372,7 +372,7 @@ export default function BusinessAdsPage() {
             Icon={PROMO_DOODLE_ICONS.push}
           >
             <p className="text-[11px] text-stone-500 pt-3 leading-relaxed">
-              {MOBILNI_PUSH_SUBSCRIPTION.hint} Bez předplatného se nové poptávky ve vašem okruhu
+              {MOBILNI_PUSH_SUBSCRIPTION.hint} Bez předplatného se nové poptávky ve tvém okruhu
               zobrazí se zpožděním (~15 min).
             </p>
             {pushActive ? (

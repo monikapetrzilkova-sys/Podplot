@@ -502,7 +502,7 @@ export default function ReportsMap({
 
         {isInstitutionsMode && visibleInstitutions.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center text-xs text-stone-500 px-4 text-center">
-            V této kategorii nejsou žádná místa ve vaší lokalitě.
+            V této kategorii nejsou žádná místa ve tvé lokalitě.
           </div>
         )}
 

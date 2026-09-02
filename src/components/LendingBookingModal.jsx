@@ -178,7 +178,7 @@ export default function LendingBookingModal({ open, item, onClose }) {
                 className="mb-4"
               />
               <p className="text-xs text-stone-500 mb-4">
-                Můžete napsat majiteli a domluvit se na termínu po návratu.
+                Můžeš napsat majiteli a domluvit se na termínu po návratu.
               </p>
               <div className="flex flex-col gap-2">
                 <button
@@ -206,7 +206,7 @@ export default function LendingBookingModal({ open, item, onClose }) {
             <>
               <div className="flex items-start justify-between gap-2 mb-3">
                 <div>
-                  <h2 className="text-lg font-bold text-stone-900">Kdy chcete půjčit?</h2>
+                  <h2 className="text-lg font-bold text-stone-900">Kdy chceš půjčit?</h2>
                   <p className="text-sm text-stone-600 mt-0.5">{itemLabel}</p>
                   <p className="text-xs text-stone-500">{perDay} Kč / den · od {ownerName}</p>
                 </div>
@@ -263,8 +263,8 @@ export default function LendingBookingModal({ open, item, onClose }) {
               </div>
 
               <p className="text-[11px] text-stone-500 mb-3">
-                Klepněte na začátek a pak na konec období
-                {pickingEnd ? " — teď vyberte poslední den." : "."}
+                Klepni na začátek a pak na konec období
+                {pickingEnd ? " — teď vyber poslední den." : "."}
               </p>
 
               <div className="rounded-xl bg-stone-50 border border-stone-200 px-3 py-2 mb-3 text-sm">

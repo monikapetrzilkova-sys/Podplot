@@ -23,7 +23,7 @@ export default function FormMarketCategoryPicker({
 
       {showHint && (
         <p className="text-[11px] mt-1.5" style={{ color: "#A85858" }}>
-          Vyberte kategorii.
+          Vyber kategorii.
         </p>
       )}
     </fieldset>

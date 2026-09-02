@@ -32,7 +32,7 @@ export function AddOfficeAccountCard({ className = "" }) {
             closeProfile?.();
             logoutAndRegisterAs?.("urad", {
               notice:
-                "Zvolte obec a zadejte oficiální e-mail úřadu. Soukromý e-mail (Gmail apod.) úřad neumožní.",
+                "Zvol obec a zadej oficiální e-mail úřadu. Soukromý e-mail (Gmail apod.) úřad neumožní.",
             });
           }}
           className="shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-semibold border border-stone-200 text-[#1B4D3E] bg-white hover:bg-[#F1F6F5]"
@@ -42,8 +42,8 @@ export function AddOfficeAccountCard({ className = "" }) {
       </div>
       {open ? (
         <p className="mt-1.5 pl-8 text-[10px] text-stone-500 leading-snug">
-          Úřad nejde založit na soukromém e-mailu — potřebujete oficiální mail obce (např.
-          @jesenice.cz). Po odhlášení dokončíte samostatnou registraci; pod správou ho budete mít
+          Úřad nejde založit na soukromém e-mailu — potřebuješ oficiální mail obce (např.
+          @jesenice.cz). Po odhlášení dokončíš samostatnou registraci; pod správou ho budeš mít
           vedle sousedského účtu.
         </p>
       ) : null}
@@ -91,9 +91,9 @@ export function AddNeighborAccountCard({ className = "" }) {
       </div>
       {open ? (
         <p className="mt-1.5 pl-8 text-[10px] text-stone-500 leading-snug">
-          Úřad a soused nejsou jeden účet — nelze je přepínat pod stejným přihlášením. Můžete si
+          Úřad a soused nejsou jeden účet — nelze je přepínat pod stejným přihlášením. Můžeš si
           přidat osobní sousedský účet (soukromý e-mail, nebo oficiální mail obce, pokud ještě
-          nemáte sousedskou registraci).
+          nemáš sousedskou registraci).
         </p>
       ) : null}
     </section>

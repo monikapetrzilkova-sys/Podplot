@@ -195,11 +195,11 @@ export default function MyProfilesPanel({ embedded = false }) {
     const addressResult = validateAddressFields({ street, houseNumber, psc, city });
     setAddressErrors(addressResult.errors);
     if (!addressResult.valid) {
-      setFormError("Doplňte adresu ve správném formátu (ulice, č.p., PSČ).");
+      setFormError("Doplň adresu ve správném formátu (ulice, č.p., PSČ).");
       return;
     }
     if (isMobilniSetup && !primarySubcategory) {
-      setFormError("Vyberte hlavní zaměření služby.");
+      setFormError("Vyber hlavní zaměření služby.");
       return;
     }
     const fullAddress = formatFullAddress({ street, houseNumber, psc, city });
@@ -303,7 +303,7 @@ export default function MyProfilesPanel({ embedded = false }) {
                     <p className="text-[11px] text-stone-500 mt-1 leading-relaxed">
                       Stejné přihlášení jako{" "}
                       <span className="font-semibold text-stone-700">{user?.name}</span>
-                      — vyplňte jen katalog a působnost.
+                      — vyplň jen katalog a působnost.
                     </p>
                   </div>
                   <button
@@ -471,7 +471,10 @@ export function SousedRoleView() {
         </p>
       )}
       <section className="bg-white border border-stone-200 rounded-2xl p-4">
-        <h3 className="text-sm font-bold mb-2">Sousedé k potvrzení</h3>
+        <h3 className="text-sm font-bold mb-2">Lidé z okolí k potvrzení</h3>
+        <p className="text-[11px] text-stone-500 mb-2 leading-snug">
+          Pomoz nám udržet Podplot bezpečný. Potvrď sousedy, které znáš z okolí — nejde o klasické přátelství na sítích.
+        </p>
         <div className="space-y-2">
           {neighbors
             .filter((n) => n?.id && n.id !== user?.id && n.id !== "me" && !confirmationsGiven.includes(n.id))
@@ -490,19 +493,21 @@ export function SousedRoleView() {
                     <span className="ml-2 text-[10px] font-bold uppercase text-emerald-700">Nový</span>
                   ) : null}
                 </p>
-                <p className="text-xs text-stone-500">{n.distance ?? n.location}</p>
+                <p className="text-xs text-stone-500">
+                  {n.municipality || n.distance || n.location || "Ve stejném okolí"}
+                </p>
               </div>
               <button
                 type="button"
                 onClick={() => confirmNeighbor(n.id)}
                 className="text-xs font-semibold px-2 py-1 rounded-lg bg-emerald-600 text-white"
               >
-                Potvrdit, že se známe
+                Znám z okolí
               </button>
             </div>
           ))}
           {neighbors.every((n) => confirmationsGiven.includes(n.id)) && (
-            <p className="text-xs text-stone-500">Zatím nemáte nikoho nového k potvrzení.</p>
+            <p className="text-xs text-stone-500">Zatím nemáš nikoho nového k potvrzení.</p>
           )}
         </div>
       </section>
@@ -575,7 +580,7 @@ export function CraftsmanCapacitySettings() {
       <div>
         <h3 className="text-sm font-bold mb-2">Kapacita a dojezd</h3>
         <p className="text-xs text-stone-500 mb-3">
-          Na pracovní stránce uvidíte jen poptávky ve zvoleném okruhu a ve vašem oboru.
+          Na pracovní stránce uvidíš jen poptávky ve zvoleném okruhu a ve tvém oboru.
         </p>
         <label className="flex items-center justify-between p-3 bg-stone-50 rounded-xl">
           <span className="text-sm font-medium">
@@ -603,7 +608,7 @@ export function CraftsmanCapacitySettings() {
           <span className="min-w-0">
             <span className="block text-sm font-medium text-stone-800">Celá republika</span>
             <span className="block text-[11px] text-stone-500 mt-0.5">
-              Bez omezení vzdálenosti — poptávky z celé ČR ve vašem oboru
+              Bez omezení vzdálenosti — poptávky z celé ČR ve tvém oboru
             </span>
           </span>
         </label>
@@ -739,7 +744,7 @@ function CraftsmanAccountSettings() {
     const addressResult = validateAddressFields({ street, houseNumber, psc, city });
     setAddressErrors(addressResult.errors);
     if (!addressResult.valid) {
-      setFormError("Doplňte adresu ve správném formátu (ulice, č.p., PSČ).");
+      setFormError("Doplň adresu ve správném formátu (ulice, č.p., PSČ).");
       return;
     }
     updateAccountProfile({

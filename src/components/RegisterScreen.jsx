@@ -9,9 +9,11 @@ import {
   formatFullAddress,
   formatPscInput,
   pscDigits,
-  lookupCityByPsc,
-  ADDRESS_PRIVACY_NOTE_INLINE,
 } from "../data/addressValidation.js";
+import StructuredAddressFields from "./StructuredAddressFields.jsx";
+import LocalityRadiusPreview from "./LocalityRadiusPreview.jsx";
+import { DEFAULT_NEIGHBOR_RADIUS_KM } from "../data/mapRadiusSettings.js";
+import { buildMapPickResult } from "../utils/geoCoordinates.js";
 import { PUBLIC_AREA_LABEL_HINT } from "../data/personDisplay.js";
 import {
   buildServiceSubcategoryList,
@@ -31,6 +33,14 @@ import { readRegisterIntent, clearRegisterIntent } from "../data/registrationInt
 const AUTH_INPUT =
   "w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-700/30";
 
+function ReqStar() {
+  return (
+    <span className="text-teal-800" aria-hidden="true">
+      {" *"}
+    </span>
+  );
+}
+
 export default function RegisterScreen() {
   const {
     register,
@@ -49,8 +59,8 @@ export default function RegisterScreen() {
   const [houseNumber, setHouseNumber] = useState("");
   const [psc, setPsc] = useState("");
   const [city, setCity] = useState("");
-  const [cityLoading, setCityLoading] = useState(false);
-  const [cityManual, setCityManual] = useState(false);
+  const [radiusKm, setRadiusKm] = useState(DEFAULT_NEIGHBOR_RADIUS_KM);
+  const [areaPin, setAreaPin] = useState(null);
   const [accountType, setAccountType] = useState("soused");
   const [businessSubtype, setBusinessSubtype] = useState("fyzicka");
   const [serviceHomeGroup, setServiceHomeGroup] = useState("domov-zahrada");
@@ -128,7 +138,6 @@ export default function RegisterScreen() {
     if (selectedInstitution.psc) setPsc(formatPscInput(selectedInstitution.psc));
     if (selectedInstitution.seatCity) {
       setCity(selectedInstitution.seatCity);
-      setCityManual(true);
     }
     if (selectedInstitution.seatAddress) {
       const parts = selectedInstitution.seatAddress.split(",");
@@ -143,40 +152,6 @@ export default function RegisterScreen() {
     }
   }, [selectedInstitution?.id]);
 
-  useEffect(() => {
-    const digits = pscDigits(psc);
-    if (digits.length !== 5 || cityManual) return;
-
-    let cancelled = false;
-    setCityLoading(true);
-    lookupCityByPsc(digits).then((result) => {
-      if (cancelled) return;
-      if (result?.city) {
-        setCity(result.city);
-        setFieldErrors((prev) => ({ ...prev, city: "", psc: "" }));
-      } else {
-        setCity("");
-        setFieldErrors((prev) => ({
-          ...prev,
-          city: "Obec k tomuto PSČ nenašla — doplňte ji ručně níže.",
-        }));
-      }
-      setCityLoading(false);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [psc, cityManual]);
-
-  const handlePscChange = (value) => {
-    setPsc(formatPscInput(value));
-    setCityManual(false);
-    if (fieldErrors.psc || fieldErrors.city) {
-      setFieldErrors((prev) => ({ ...prev, psc: "", city: "" }));
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitError("");
@@ -189,7 +164,7 @@ export default function RegisterScreen() {
     setFieldErrors(addressResult.errors);
 
     if (!name.trim()) {
-      setSubmitError("Vyplňte prosím jméno.");
+      setSubmitError("Vyplň prosím jméno.");
       return;
     }
     if (!emailResult.valid) return;
@@ -198,28 +173,28 @@ export default function RegisterScreen() {
       return;
     }
     if (!addressResult.valid) {
-      setSubmitError("Zkontrolujte adresu — některé údaje chybí nebo nejsou správně.");
+      setSubmitError("Zkontroluj adresu — některé údaje chybí nebo nejsou správně.");
       return;
     }
 
     if (accountType === "podnik" && !businessSubtype) {
-      setSubmitError("Vyberte formát fungování podniku / služby.");
+      setSubmitError("Vyber formát fungování podniku / služby.");
       return;
     }
 
     if (accountType === "podnik" && businessSubtype === "mobilni" && !primarySubcategory) {
-      setSubmitError("Vyberte hlavní zaměření služby.");
+      setSubmitError("Vyber hlavní zaměření služby.");
       return;
     }
 
     if (isUrad && !selectedInstitution) {
-      setSubmitError("Vyhledejte a vyberte svůj obecní nebo městský úřad.");
+      setSubmitError("Vyhledej a vyber svůj obecní nebo městský úřad.");
       return;
     }
 
     if (isUrad && selectedInstitution) {
       if (municipalityLookupBusy || !municipalityLookup?.ok) {
-        setSubmitError("Počkejte na ověření oficiálního webu obce, nebo vyberte úřad znovu.");
+        setSubmitError("Počkej na ověření oficiálního webu obce, nebo vyber úřad znovu.");
         return;
       }
       const check = verifyWorkEmailForInstitution(
@@ -250,7 +225,15 @@ export default function RegisterScreen() {
         address: fullAddress,
         accountType,
         businessSubtype: accountType === "podnik" ? businessSubtype : null,
-        geo: { city: city.trim(), street: street.trim(), houseNumber: houseNumber.trim(), psc: pscDigits(psc) },
+        geo: {
+          city: city.trim(),
+          street: street.trim(),
+          houseNumber: houseNumber.trim(),
+          psc: pscDigits(psc),
+          lat: areaPin?.lat ?? null,
+          lng: areaPin?.lng ?? areaPin?.lon ?? null,
+        },
+        radiusKm,
         allowPublicAreaLabel,
         publicAreaLabel: allowPublicAreaLabel ? publicAreaLabel.trim() : "",
         serviceHomeGroup: isMobilniCraft ? serviceHomeGroup : null,
@@ -273,7 +256,7 @@ export default function RegisterScreen() {
     setEmailError(emailResult.valid ? "" : emailResult.error);
     if (!emailResult.valid) return;
     if (!password) {
-      setSubmitError("Zadejte heslo.");
+      setSubmitError("Zadej heslo.");
       return;
     }
     setBusy(true);
@@ -341,7 +324,7 @@ export default function RegisterScreen() {
   if (passwordRecovery) {
     return authShell(
       "Nové heslo",
-      "Zadejte nové heslo pro svůj účet (odkaz z e-mailu).",
+      "Zadej nové heslo pro svůj účet (odkaz z e-mailu).",
       <form onSubmit={handleRecovery} noValidate className="space-y-4">
         <div>
           <label className="block text-xs font-semibold text-stone-600 mb-1.5">Nové heslo</label>
@@ -381,7 +364,7 @@ export default function RegisterScreen() {
   if (authMode === "login") {
     return authShell(
       "Přihlášení",
-      "Vstupte do svého sousedství.",
+      "Vstup do svého sousedství.",
       <>
         <form onSubmit={handleLogin} noValidate className="space-y-4">
           <div>
@@ -424,7 +407,7 @@ export default function RegisterScreen() {
             Zapomenuté heslo
           </button>
           <button type="button" className="text-stone-500" onClick={() => { setSubmitError(""); setAuthMode("register"); }}>
-            Nemáte účet? Zaregistrujte se
+            Nemáš účet? Zaregistruj se
           </button>
         </div>
       </>
@@ -434,7 +417,7 @@ export default function RegisterScreen() {
   if (authMode === "forgot") {
     return authShell(
       "Zapomenuté heslo",
-      "Pošleme vám odkaz pro nastavení nového hesla.",
+      "Pošleme ti odkaz pro nastavení nového hesla.",
       <>
         <form onSubmit={handleForgot} noValidate className="space-y-4">
           <div>
@@ -480,34 +463,45 @@ export default function RegisterScreen() {
         </div>
 
         <div className="bg-white border border-stone-200 rounded-2xl p-6 shadow-sm">
-          <h1 className="text-lg font-bold text-stone-900 mb-1">Vytvořte si účet</h1>
+          <h1 className="text-lg font-bold text-stone-900 mb-1">Vytvoř si účet</h1>
           <p className="text-sm text-stone-500 mb-4">Registrace je povinná. Účet zůstane uložený v tomto telefonu i po aktualizaci.</p>
           {linkNotice ? (
             <p className="text-[12px] font-medium text-[#1B4D3E] bg-[#E8F3EF] border border-[#C5DDD4] rounded-xl px-3 py-2 mb-4 leading-snug">
               {linkNotice}
             </p>
           ) : null}
-          <p className="text-sm text-stone-500 mb-6">
-            Už máte účet?{" "}
+          <p className="text-sm text-stone-500 mb-4">
+            Už máš účet?{" "}
             <button type="button" className="text-teal-800 font-semibold" onClick={() => { setSubmitError(""); setAuthMode("login"); }}>
-              Přihlaste se
+              Přihlas se
             </button>
+          </p>
+          <p className="text-[11px] text-stone-400 mb-6">
+            <span className="text-teal-800">*</span> povinné údaje
           </p>
 
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-stone-600 mb-1.5">{registrationFields.nameLabel}</label>
+              <label className="block text-xs font-semibold text-stone-600 mb-1.5">
+                {registrationFields.nameLabel}
+                <ReqStar />
+              </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={registrationFields.namePlaceholder}
+                required
+                aria-required="true"
                 className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-700/30"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-stone-600 mb-1.5">E-mail</label>
+              <label className="block text-xs font-semibold text-stone-600 mb-1.5">
+                E-mail
+                <ReqStar />
+              </label>
               <input
                 type="text"
                 inputMode="email"
@@ -520,6 +514,8 @@ export default function RegisterScreen() {
                   if (email.trim()) setEmailError(validateEmail(email).error || "");
                 }}
                 placeholder={canVerifyAccountType(accountType) ? "info@obec.cz" : "vas@email.cz"}
+                required
+                aria-required="true"
                 className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-700/30 ${
                   emailError ? "border-red-300 bg-red-50/50" : "border-stone-200"
                 }`}
@@ -546,7 +542,7 @@ export default function RegisterScreen() {
                   ) : null}
                   {!municipalityLookupBusy && municipalityLookup && !municipalityLookup.ok ? (
                     <div className="text-xs rounded-xl px-3 py-2 bg-amber-50 text-amber-900 border border-amber-200">
-                      Oficiální web obce se nepodařilo ověřit. Zkuste jiný úřad v seznamu.
+                      Oficiální web obce se nepodařilo ověřit. Zkus jiný úřad v seznamu.
                     </div>
                   ) : null}
                   {institutionEmailCheck && email.includes("@") && validateEmail(email).valid ? (
@@ -567,7 +563,7 @@ export default function RegisterScreen() {
                         </>
                       ) : (
                         <span>
-                          Osobní schránky (Gmail, Seznam…) nestačí. Použijte @{municipalityLookup.domain}.
+                          Osobní schránky (Gmail, Seznam…) nestačí. Použij @{municipalityLookup.domain}.
                         </span>
                       )}
                     </div>
@@ -599,23 +595,33 @@ export default function RegisterScreen() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-stone-600 mb-1.5">Heslo</label>
+              <label className="block text-xs font-semibold text-stone-600 mb-1.5">
+                Heslo
+                <ReqStar />
+              </label>
               <input
                 type="password"
                 autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={`Alespoň ${MIN_PASSWORD_LENGTH} znaků`}
+                required
+                aria-required="true"
                 className={AUTH_INPUT}
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-stone-600 mb-1.5">Potvrzení hesla</label>
+              <label className="block text-xs font-semibold text-stone-600 mb-1.5">
+                Potvrzení hesla
+                <ReqStar />
+              </label>
               <input
                 type="password"
                 autoComplete="new-password"
                 value={passwordConfirm}
                 onChange={(e) => setPasswordConfirm(e.target.value)}
+                required
+                aria-required="true"
                 className={AUTH_INPUT}
               />
             </div>
@@ -624,92 +630,49 @@ export default function RegisterScreen() {
               <InstitutionAutocomplete
                 value={selectedInstitution}
                 onChange={setSelectedInstitution}
+                required
               />
             ) : null}
 
-            <fieldset className="space-y-3">
-              <legend className="text-xs font-semibold text-stone-600 mb-1">{registrationFields.addressLabel}</legend>
+            <StructuredAddressFields
+              street={street}
+              houseNumber={houseNumber}
+              psc={psc}
+              city={city}
+              onStreetChange={(value) => {
+                setStreet(value);
+                setAreaPin(null);
+              }}
+              onHouseNumberChange={(value) => {
+                setHouseNumber(value);
+                setAreaPin(null);
+              }}
+              onPscChange={setPsc}
+              onCityChange={setCity}
+              onSuggestionPick={(item) => {
+                if (item.lat != null && (item.lon != null || item.lng != null)) {
+                  const lat = Number(item.lat);
+                  const lng = Number(item.lon ?? item.lng);
+                  setAreaPin(buildMapPickResult(lat, lng, { lat, lng }, radiusKm));
+                }
+              }}
+              fieldErrors={fieldErrors}
+              onClearError={(key) => setFieldErrors((prev) => ({ ...prev, [key]: "" }))}
+              onFieldError={(key, message) => setFieldErrors((prev) => ({ ...prev, [key]: message }))}
+              legend={registrationFields.addressLabel}
+              required
+            />
 
-              <div>
-                <label className="block text-[11px] text-stone-500 mb-1">Ulice</label>
-                <input
-                  type="text"
-                  value={street}
-                  onChange={(e) => {
-                    setStreet(e.target.value);
-                    if (fieldErrors.street) setFieldErrors((p) => ({ ...p, street: "" }));
-                  }}
-                  placeholder="např. Hlavní"
-                  className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-700/30 ${
-                    fieldErrors.street ? "border-red-300" : "border-stone-200"
-                  }`}
-                />
-                {fieldErrors.street && <p className="mt-1 text-xs text-red-600">{fieldErrors.street}</p>}
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] text-stone-500 mb-1">Číslo popisné</label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={houseNumber}
-                    onChange={(e) => {
-                      setHouseNumber(e.target.value);
-                      if (fieldErrors.houseNumber) setFieldErrors((p) => ({ ...p, houseNumber: "" }));
-                    }}
-                    placeholder="12"
-                    className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-700/30 ${
-                      fieldErrors.houseNumber ? "border-red-300" : "border-stone-200"
-                    }`}
-                  />
-                  {fieldErrors.houseNumber && (
-                    <p className="mt-1 text-xs text-red-600">{fieldErrors.houseNumber}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-[11px] text-stone-500 mb-1">PSČ</label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={psc}
-                    onChange={(e) => handlePscChange(e.target.value)}
-                    placeholder="142 00"
-                    maxLength={6}
-                    className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-700/30 ${
-                      fieldErrors.psc ? "border-red-300" : "border-stone-200"
-                    }`}
-                  />
-                  {fieldErrors.psc && <p className="mt-1 text-xs text-red-600">{fieldErrors.psc}</p>}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[11px] text-stone-500 mb-1">Obec (dle PSČ)</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={cityLoading ? "Načítám obec…" : city}
-                    onChange={(e) => {
-                      setCityManual(true);
-                      setCity(e.target.value);
-                      if (fieldErrors.city) setFieldErrors((p) => ({ ...p, city: "" }));
-                    }}
-                    readOnly={cityLoading && !cityManual}
-                    placeholder={pscDigits(psc).length === 5 ? "Doplní se automaticky" : "Nejdřív zadejte PSČ"}
-                    className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-700/30 ${
-                      fieldErrors.city ? "border-red-300" : city && !cityManual ? "bg-teal-50/50 border-teal-200" : "border-stone-200"
-                    }`}
-                  />
-                </div>
-                {fieldErrors.city && <p className="mt-1 text-xs text-red-600">{fieldErrors.city}</p>}
-                {city && !cityManual && !cityLoading && (
-                  <p className="mt-1 text-[11px] text-teal-700">✓ Obec doplněna podle PSČ</p>
-                )}
-              </div>
-
-              <p className="text-[11px] text-stone-400 leading-relaxed">{ADDRESS_PRIVACY_NOTE_INLINE}</p>
-            </fieldset>
+            <LocalityRadiusPreview
+              street={street}
+              houseNumber={houseNumber}
+              psc={psc}
+              city={city}
+              radiusKm={radiusKm}
+              onRadiusChange={setRadiusKm}
+              pin={areaPin}
+              onPinChange={setAreaPin}
+            />
 
             <fieldset className="space-y-3 pt-1 border-t border-stone-100">
               <legend className="text-xs font-semibold text-stone-600 mb-1">Rozlišení u stejného jména (volitelné)</legend>
@@ -744,15 +707,18 @@ export default function RegisterScreen() {
               )}
               {!allowPublicAreaLabel && (
                 <p className="text-[11px] text-stone-400 leading-relaxed">
-                  Bez souhlasu u jmenovců uvidí ostatní jen hrubou vzdálenost (např. „350 m“), ne vaši adresu.
+                  Bez souhlasu u jmenovců uvidí ostatní jen hrubou vzdálenost (např. „350 m“), ne tvoji adresu.
                 </p>
               )}
             </fieldset>
 
             <div>
-              <label className="block text-xs font-semibold text-stone-600 mb-2">Typ účtu</label>
+              <label className="block text-xs font-semibold text-stone-600 mb-2">
+                Typ účtu
+                <ReqStar />
+              </label>
               <p className="text-[11px] text-stone-500 mb-2 leading-relaxed">
-                Většina lidí volí Soused — ostatní typy až když máte podnik nebo úřad.
+                Většina lidí volí Soused — ostatní typy až když máš podnik nebo úřad.
               </p>
               <div className="space-y-2">
                 {ACCOUNT_TYPE_LIST.filter((t) => t.id === "soused").map((type) => (
@@ -820,7 +786,10 @@ export default function RegisterScreen() {
 
             {accountType === "podnik" && (
               <div>
-                <label className="block text-xs font-semibold text-stone-600 mb-2">Formát fungování</label>
+                <label className="block text-xs font-semibold text-stone-600 mb-2">
+                  Formát fungování
+                  <ReqStar />
+                </label>
                 <div className="space-y-2">
                   {Object.values(BUSINESS_SUBTYPES).map((sub) => (
                     <button
@@ -858,6 +827,7 @@ export default function RegisterScreen() {
                   onPrimaryChange={setPrimarySubcategory}
                   secondaryIds={secondarySubcategories}
                   onSecondaryChange={setSecondarySubcategories}
+                  required
                 />
 
                 <div>

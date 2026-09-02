@@ -36,7 +36,7 @@ export default function LendingAvailabilityPanel({ offerCount }) {
       <p className="text-xs font-bold text-[#1B4D3E] mb-0.5">Dostupnost půjčovny</p>
       <p className="text-[11px] text-stone-500 mb-3">
         Platí automaticky pro všech {offerCount}{" "}
-        {offerCount === 1 ? "vaši věc" : offerCount < 5 ? "vaše věci" : "vašich věcí"} k půjčení.
+        {offerCount === 1 ? "tvoji věc" : offerCount < 5 ? "tvoje věci" : "tvých věcí"} k půjčení.
       </p>
 
       <label className="flex items-start gap-2.5 mb-3 cursor-pointer">

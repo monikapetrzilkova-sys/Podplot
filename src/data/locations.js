@@ -1,5 +1,9 @@
 /** Geografické lokality uživatele — střed, obec, rádius */
 
+import { parseStoredAddress, pscDigits } from "./addressValidation.js";
+import { isBareStatutoryCity, localityShortLabel, refineLocalityFromPsc } from "./czechCityDistricts.js";
+import { DEFAULT_NEIGHBOR_RADIUS_KM } from "./mapRadiusSettings.js";
+
 export const DEFAULT_RADIUS_KM = 7;
 
 export const USER_LOCATIONS = [
@@ -80,9 +84,12 @@ export function buildHomeLocation({
   lat,
   lng,
   radiusKm = DEFAULT_RADIUS_KM,
+  psc = null,
 } = {}) {
-  const mun = String(municipality || shortLabel || "Obec").trim() || "Obec";
-  const label = String(shortLabel || mun).trim() || mun;
+  const parsed = parseStoredAddress(address || "");
+  const zip = pscDigits(psc || parsed.psc || "");
+  const mun = refineLocalityFromPsc(zip, String(municipality || shortLabel || parsed.city || "Obec").trim()) || "Obec";
+  const label = String(shortLabel || localityShortLabel(mun) || mun).trim() || mun;
   return {
     id: "domov",
     emoji: "🏠",
@@ -93,7 +100,29 @@ export function buildHomeLocation({
     lat: lat ?? null,
     lng: lng ?? null,
     radiusKm,
+    psc: zip || null,
   };
+}
+
+/** Starší účty s holou „Prahou“ a výchozím 7 km — městská část z PSČ a užší okruh. */
+export function migrateLocationDistricts(locations = []) {
+  return locations.map((loc) => {
+    if (!loc) return loc;
+    const parsed = parseStoredAddress(loc.address || "");
+    const zip = pscDigits(loc.psc || parsed.psc || "");
+    const refined = refineLocalityFromPsc(zip, loc.municipality || parsed.city || loc.shortLabel);
+    const wasBare = isBareStatutoryCity(loc.municipality);
+    const next = { ...loc };
+    if (refined && refined !== loc.municipality) {
+      next.municipality = refined;
+      next.shortLabel = localityShortLabel(refined) || loc.shortLabel;
+    }
+    if (zip) next.psc = zip;
+    if (wasBare && (loc.radiusKm == null || Number(loc.radiusKm) >= DEFAULT_RADIUS_KM)) {
+      next.radiusKm = DEFAULT_NEIGHBOR_RADIUS_KM;
+    }
+    return next;
+  });
 }
 
 export const GROUPS_BY_LOCATION = {
@@ -249,19 +278,23 @@ export function getGroupsForLocation(locationId) {
   return GROUPS_BY_LOCATION[locationId] ?? GROUPS_BY_LOCATION.domov;
 }
 
-/** Skupiny, kde je přihlášený uživatel členem (dle lokality) */
+/** Demo členství jen pro lokální SKIP_REGISTRATION — reálný účet začíná prázdný. */
 export const MY_GROUP_IDS_BY_LOCATION = {
   domov: ["maminky", "zahradkari", "tenis"],
   prace: ["praha-sousede", "praha-obedy"],
   chata: ["zahradkari", "houbari"],
 };
 
-export function getMyMemberGroups(communityGroups, locationId) {
-  const ids = new Set(MY_GROUP_IDS_BY_LOCATION[locationId] ?? MY_GROUP_IDS_BY_LOCATION.domov);
-  return communityGroups.filter((g) => ids.has(g.id));
+export function demoMemberGroupIds(locationId = "domov") {
+  return [...(MY_GROUP_IDS_BY_LOCATION[locationId] ?? MY_GROUP_IDS_BY_LOCATION.domov)];
 }
 
-export function getDiscoverGroups(communityGroups, locationId) {
-  const ids = new Set(MY_GROUP_IDS_BY_LOCATION[locationId] ?? MY_GROUP_IDS_BY_LOCATION.domov);
-  return communityGroups.filter((g) => !ids.has(g.id));
+export function getMyMemberGroups(communityGroups, joinedGroupIds = []) {
+  const ids = new Set(joinedGroupIds ?? []);
+  return (communityGroups ?? []).filter((g) => ids.has(g.id));
+}
+
+export function getDiscoverGroups(communityGroups, joinedGroupIds = []) {
+  const ids = new Set(joinedGroupIds ?? []);
+  return (communityGroups ?? []).filter((g) => !ids.has(g.id));
 }

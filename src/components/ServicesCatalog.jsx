@@ -168,7 +168,7 @@ export default function ServicesCatalog({ showRequestForm = false, hideToolbar =
 
       {filtered.length === 0 ? (
         <p className="text-sm text-stone-500 text-center py-6">
-          {servicesSearchQuery.trim() ? "Nic nenalezeno — zkuste jiné hledání." : "V kategorii zatím nikdo není."}
+          {servicesSearchQuery.trim() ? "Nic nenalezeno — zkus jiné hledání." : "V kategorii zatím nikdo není."}
         </p>
       ) : (
         <div className="space-y-1.5">

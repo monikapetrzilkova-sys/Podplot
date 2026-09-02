@@ -141,20 +141,20 @@ export default function CreateHostedActivityModal() {
   const submit = (e) => {
     e.preventDefault();
     if (!form.title.trim()) {
-      setFormError("Zadejte název kroužku nebo lekce.");
+      setFormError("Zadej název kroužku nebo lekce.");
       return;
     }
     if (form.venueKind === "place" && !form.placeId) {
-      setFormError("Vyberte místo z Průvodce, nebo zvolte adresu / venku.");
+      setFormError("Vyber místo z Průvodce, nebo zvol adresu / venku.");
       return;
     }
     if (form.venueKind !== "place" && !form.address.trim()) {
-      setFormError(form.venueKind === "outdoor" ? "Napište, kde venku se scházíte." : "Zadejte adresu.");
+      setFormError(form.venueKind === "outdoor" ? "Napiš, kde venku se scházíš." : "Zadej adresu.");
       return;
     }
     for (const slot of filledSlots) {
       if (!slot.timeTbd && !isValidCzechTime(slot.eventTime)) {
-        setFormError("U termínů zadejte čas (např. 16:00), nebo zaškrtněte, že bude upřesněn.");
+        setFormError("U termínů zadej čas (např. 16:00), nebo zaškrtni, že bude upřesněn.");
         return;
       }
       const startsAt = combineDateAndTime(slot.eventDate, slot.eventTime, slot.timeTbd);
@@ -299,7 +299,7 @@ export default function CreateHostedActivityModal() {
                   className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm"
                   required
                 >
-                  <option value="">Vyberte místo</option>
+                  <option value="">Vyber místo</option>
                   {placeOptions.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
@@ -382,7 +382,7 @@ export default function CreateHostedActivityModal() {
                 </button>
               </div>
               <p className="text-[11px] text-stone-500 mb-2">
-                Můžete je vyplnit teď, nebo vypisovat později z karty kroužku.
+                Můžeš je vyplnit teď, nebo vypisovat později z karty kroužku.
               </p>
               <div className="space-y-2">
                 {slots.map((slot, index) => (

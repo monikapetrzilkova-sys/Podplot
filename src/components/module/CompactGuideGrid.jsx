@@ -5,7 +5,7 @@ import { GuideCategoryIcon } from "./guideCategoryIcons.jsx";
 /** Dlouhé názvy zobrazíme na 2 řádcích místo zmenšeného fontu */
 const MULTILINE_LABELS = {
   "verejny-prostor": ["Veřejný", "prostor"],
-  remeslnici: ["Služby u vás", "doma"],
+  remeslnici: ["Služby u tebe", "doma"],
 };
 
 function GuideLabel({ id, label, active }) {

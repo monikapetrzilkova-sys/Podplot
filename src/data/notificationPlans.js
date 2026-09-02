@@ -10,7 +10,7 @@ export const MOBILNI_PUSH_SUBSCRIPTION = {
   label: "Push poptávky v okruhu",
   price: 199,
   period: "měsíc",
-  hint: "Okamžitá notifikace, když soused ve vaší kategorii a dojezdu zadá poptávku.",
+  hint: "Okamžitá notifikace, když soused ve tvé kategorii a dojezdu zadá poptávku.",
 };
 
 export const LUNCH_MENU_PUSH_PRICE = 19;

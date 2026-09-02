@@ -9,7 +9,7 @@ export const URGENT_LOCAL_RADIUS_M = 300;
 
 export const URGENCY_REACH_COPY = {
   intro:
-    "Urgentní hlášení může platit pro konkrétní místo (sousedi v okolí) nebo pro celou obec. Obyčejná hlášení jsou viditelná v mapě v okruhu vaší lokality.",
+    "Urgentní hlášení může platit pro konkrétní místo (sousedi v okolí) nebo pro celou obec. Obyčejná hlášení jsou viditelná v mapě v okruhu tvé lokality.",
   local: `Konkrétní místo — nejbližší sousedé v okruhu cca ${URGENT_LOCAL_RADIUS_M} m od špendlíku.`,
   municipality: "Celá obec — varování vidí všichni v aktivní lokalitě (např. celá Jesenice).",
 };

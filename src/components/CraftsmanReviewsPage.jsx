@@ -120,7 +120,7 @@ export default function CraftsmanReviewsPage() {
     return (
       <div className="pp-page flex flex-col min-h-full px-4 pt-4 pb-8">
         <p className="text-sm text-stone-500 leading-relaxed">
-          Zatím nemáte katalogový profil služby. Doplňte obor v Profilu — pak zde uvidíte hodnocení
+          Zatím nemáš katalogový profil služby. Doplň obor v Profilu — pak zde uvidíš hodnocení
           od zákazníků.
         </p>
       </div>

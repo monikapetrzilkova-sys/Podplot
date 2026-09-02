@@ -13,8 +13,11 @@ import { calculateTopCost, getTopPlan, canTopCategory } from "../data/pricing.js
 import { getAccountType, normalizeAccountType, resolveBusinessSubtype } from "../data/accountTypes.js";
 import { CLUB_VOTES_REQUIRED, getClubCategory } from "../data/clubCategories.js";
 import { inferFeedClassification, getDefaultSubfilter } from "../data/feedNavigation.js";
-import { USER_LOCATIONS, getGroupsForLocation, DEFAULT_RADIUS_KM, sanitizeUserLocations, buildHomeLocation, isStockJeseniceCoords } from "../data/locations.js";
+import { USER_LOCATIONS, getGroupsForLocation, sanitizeUserLocations, buildHomeLocation, isStockJeseniceCoords, migrateLocationDistricts, demoMemberGroupIds } from "../data/locations.js";
+import { loadJoinedGroupIds, persistJoinedGroupIds, normalizeJoinedGroupIds } from "../data/groupMembership.js";
 import { filterByRadius, filterByMunicipality, filterByActiveLocation, municipalitiesMatch, distanceBetweenKm } from "../data/geoFilter.js";
+import { refineLocalityFromPsc, localityShortLabel } from "../data/czechCityDistricts.js";
+import { clampNeighborRadius, DEFAULT_NEIGHBOR_RADIUS_KM, formatMapRadiusKm } from "../data/mapRadiusSettings.js";
 import { FEED_POSTS, LENDING_ITEMS } from "../data/mockData.js";
 import { AREA_NEWS, getAreaNewsForLocation, getActiveCrisis } from "../data/areaNews.js";
 import { LUNCH_MENUS, sortLunchMenus } from "../data/lunchMenus.js";
@@ -52,6 +55,7 @@ import {
 } from "../data/communityGroups.js";
 import { clampMapPos, posToDistanceLabel } from "../data/mapData.js";
 import { pscDigits } from "../data/addressValidation.js";
+import { TRUST_COPY } from "../data/trustNetworkCopy.js";
 import { geocodeCzechAddress } from "../data/addressAutocomplete.js";
 import { isValidMapPos } from "../utils/reportPinUtils.js";
 import { latLngToMapPos, mapPosToLatLng, latLngOffsetMeters } from "../utils/geoCoordinates.js";
@@ -754,6 +758,13 @@ export function AppProvider({ children }) {
       filterUserGroupsForMunicipality(loadStoredUserGroups(), loc?.municipality)
     );
   });
+  const [joinedGroupIds, setJoinedGroupIds] = useState(() => {
+    if (SKIP_REGISTRATION) return demoMemberGroupIds("domov");
+    const uid = loadUserSession()?.user?.id;
+    if (!uid) return [];
+    const stored = loadJoinedGroupIds(uid);
+    return stored ?? [];
+  });
   const [userCreatedGroups, setUserCreatedGroups] = useState(() => loadStoredUserGroups());
   const [groupProposals, setGroupProposals] = useState(() =>
     mergeProposalLists(INITIAL_GROUP_PROPOSALS, loadStoredGroupProposals())
@@ -775,6 +786,11 @@ export function AppProvider({ children }) {
   useEffect(() => {
     persistUserGroups(userCreatedGroups);
   }, [userCreatedGroups]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    persistJoinedGroupIds(user.id, joinedGroupIds);
+  }, [user?.id, joinedGroupIds]);
 
   const rebuildCommunityGroups = useCallback((locationId, municipality, extraUserGroups = null) => {
     const userGroups = filterUserGroupsForMunicipality(
@@ -987,7 +1003,7 @@ export function AppProvider({ children }) {
   const [trustVerifiersSeenIds, setTrustVerifiersSeenIds] = useState([]);
   const trustVerifiersRef = useRef(trustVerifiers);
   trustVerifiersRef.current = trustVerifiers;
-  /** Sousedi označení „Neznám ho“ — už nepřipomínat na Domů */
+  /** Sousedi označení „Zatím neznám“ — už nepřipomínat na Domů */
   const [trustDismissedIds, setTrustDismissedIds] = useState([]);
   const trustDismissedIdsRef = useRef(trustDismissedIds);
   trustDismissedIdsRef.current = trustDismissedIds;
@@ -1036,10 +1052,16 @@ export function AppProvider({ children }) {
         lat: user.geo?.lat,
         lng: user.geo?.lng,
       });
-      const next = sanitizeUserLocations(prev, homeFallback);
+      const next = migrateLocationDistricts(sanitizeUserLocations(prev, homeFallback));
       if (
         next.length === prev.length &&
-        next.every((loc, i) => loc.id === prev[i]?.id && loc.address === prev[i]?.address)
+        next.every(
+          (loc, i) =>
+            loc.id === prev[i]?.id &&
+            loc.address === prev[i]?.address &&
+            loc.municipality === prev[i]?.municipality &&
+            loc.radiusKm === prev[i]?.radiusKm
+        )
       ) {
         return prev;
       }
@@ -1305,8 +1327,8 @@ export function AppProvider({ children }) {
           {
             id,
             type: "blue",
-            title: `Nový soused: ${neighbor.name?.split(/\s+/)[0] ?? "Soused"}`,
-            body: "Potvrďte sousedství na Domů, pokud se znáte — nebo zvolte Neznám ho.",
+            title: TRUST_COPY.notifNewTitle(neighbor.name?.split(/\s+/)[0] ?? "Soused"),
+            body: TRUST_COPY.notifNewBody,
             read: false,
             time: "právě teď",
             actionType: "trust_network",
@@ -1318,7 +1340,7 @@ export function AppProvider({ children }) {
       if (seenSet) markTrustSeen(neighbor.id, seenSet);
       if (toast) {
         setToast({
-          message: `${neighbor.name?.split(/\s+/)[0] ?? "Nový soused"} je ve vaší lokalitě — potvrďte sousedství na Domů.`,
+          message: TRUST_COPY.toastNewNeighbor(neighbor.name?.split(/\s+/)[0] ?? "Nový soused"),
           type: "info",
           locationId: null,
         });
@@ -1518,8 +1540,8 @@ export function AppProvider({ children }) {
             {
               id: notifId,
               type: "green",
-              title: `${(v.name || "Soused").split(/\s+/)[0]} vás potvrdil/a`,
-              body: "Nové potvrzení v síti důvěry — podívejte se v profilu, kdo vás ověřil.",
+              title: TRUST_COPY.notifReceivedTitle((v.name || "Soused").split(/\s+/)[0]),
+              body: TRUST_COPY.notifReceivedBody,
               read: false,
               time: "právě teď",
               actionType: "trust_received",
@@ -1575,8 +1597,8 @@ export function AppProvider({ children }) {
               {
                 id: notifId,
                 type: "green",
-                title: `${name.split(/\s+/)[0]} vás potvrdil/a`,
-                body: "Nové potvrzení v síti důvěry — podívejte se v profilu, kdo vás ověřil.",
+                title: TRUST_COPY.notifReceivedTitle(name.split(/\s+/)[0]),
+                body: TRUST_COPY.notifReceivedBody,
                 read: false,
                 time: "právě teď",
                 actionType: "trust_received",
@@ -1586,7 +1608,7 @@ export function AppProvider({ children }) {
             ];
           });
           setToast({
-            message: `${name.split(/\s+/)[0]} potvrdil/a vaše sousedství.`,
+            message: TRUST_COPY.toastReceived(name.split(/\s+/)[0]),
             type: "success",
             locationId: null,
           });
@@ -1648,8 +1670,8 @@ export function AppProvider({ children }) {
         {
           id: notifId,
           type: "green",
-          title: `${first} podpořil/a váš návrh`,
-          body: `„${entry.proposalName || "Skupina"}“ — podívejte se v profilu, kdo vás podpořil.`,
+          title: `${first} podpořil/a tvůj návrh`,
+          body: `„${entry.proposalName || "Skupina"}“ — podívej se v profilu, kdo tě podpořil.`,
           read: false,
           time: "právě teď",
           actionType: "group_proposal_support",
@@ -1812,10 +1834,11 @@ export function AppProvider({ children }) {
       const revivedReports = feedRemote
         .filter(
           (p) =>
-            p.fromSecurityReportId ||
-            p.feedSubtype === "hlaseni" ||
-            (p.type ?? "").toLowerCase().includes("hlášení") ||
-            (p.type ?? "").toLowerCase() === "tip"
+            !isGroupBoardDiscussionPost(p) &&
+            (p.fromSecurityReportId ||
+              p.feedSubtype === "hlaseni" ||
+              (p.type ?? "").toLowerCase().includes("hlášení") ||
+              (p.type ?? "").toLowerCase() === "tip")
         )
         .map((p) => reportFromFeedPost(p))
         .filter((r) => r && !isDeletedReport(r, deletedContentRef.current));
@@ -1837,7 +1860,15 @@ export function AppProvider({ children }) {
         const post = rowToFeedPost(row, user.id);
         if (isDeletedPost(post, deletedContentRef.current)) return;
         const activeMun = activeLocation?.municipality ?? user.geo?.city ?? null;
-        if (activeMun && post.municipality && !municipalitiesMatch(post.municipality, activeMun)) {
+        const radius = activeLocation?.radiusKm ?? user.geo?.radiusKm ?? DEFAULT_NEIGHBOR_RADIUS_KM;
+        const hasGps =
+          post.lat != null &&
+          post.lng != null &&
+          activeLocation?.lat != null &&
+          activeLocation?.lng != null;
+        if (hasGps) {
+          if (distanceBetweenKm(activeLocation, post) > radius) return;
+        } else if (activeMun && post.municipality && !municipalitiesMatch(post.municipality, activeMun)) {
           return;
         }
         if (isGroupProposalPost(post)) {
@@ -1935,7 +1966,7 @@ export function AppProvider({ children }) {
             return [post, ...prev];
           });
         }
-        const revived = reportFromFeedPost(post);
+        const revived = isGroupBoardDiscussionPost(post) ? null : reportFromFeedPost(post);
         if (revived && !isDeletedReport(revived, deletedContentRef.current)) {
           setExtraReports((prev) => mergeReportsById(prev, [revived]));
           if (revived.mine) {
@@ -1952,6 +1983,9 @@ export function AppProvider({ children }) {
   }, [
     user?.id,
     activeLocation?.municipality,
+    activeLocation?.radiusKm,
+    activeLocation?.lat,
+    activeLocation?.lng,
     user?.geo?.city,
     user,
     loadGroupSupportSeen,
@@ -2038,7 +2072,7 @@ export function AppProvider({ children }) {
             {
               id: `n-msg-${row.id}`,
               type: "blue",
-              title: `${peerName} vám napsal/a`,
+              title: `${peerName} ti napsal/a`,
               body: row.body?.slice(0, 80) || "Nová zpráva",
               read: false,
               time: "právě teď",
@@ -2135,7 +2169,7 @@ export function AppProvider({ children }) {
         "zvolené místo";
       const label = loc?.label && loc.label !== place ? loc.label : null;
       const where = label ? `${label} · ${place}` : place;
-      showToast(`Teď jste v ${where}.`, "info", { locationId, durationMs: 3200 });
+      showToast(`Teď jsi v ${where}.`, "info", { locationId, durationMs: 3200 });
     },
     [showToast]
   );
@@ -2237,7 +2271,7 @@ export function AppProvider({ children }) {
       // Kredity zrušeny — platby jdou kartou (demo vždy projde).
       if (method === "wallet") {
         if (!silent) {
-          showToast("Platba kredity už není. Použijte kartu / Apple Pay.", "info");
+          showToast("Platba kredity už není. Použij kartu / Apple Pay.", "info");
         }
         return false;
       }
@@ -2266,6 +2300,7 @@ export function AppProvider({ children }) {
       serviceKeywords = [],
       institutionId = null,
       institutionRole = null,
+      radiusKm = DEFAULT_NEIGHBOR_RADIUS_KM,
     }) => {
       const pwdCheck = validatePassword(password, null);
       if (!pwdCheck.ok) {
@@ -2278,7 +2313,7 @@ export function AppProvider({ children }) {
       let { isVerified, domain } = verifyEmailDomain(email, normalizedType);
       if (normalizedType === "urad") {
         if (!institutionId) {
-          showToast("Vyberte obecní nebo městský úřad.", "error");
+          showToast("Vyber obecní nebo městský úřad.", "error");
           return { ok: false, error: "missing_institution" };
         }
         const institution = await getInstitutionById(institutionId);
@@ -2302,10 +2337,13 @@ export function AppProvider({ children }) {
         isVerified = true;
         domain = lookup.domain;
       }
-      const cityFromGeo = geo?.city || address.split(",").pop()?.trim() || address;
+      const cityFromGeo = refineLocalityFromPsc(
+        geo?.psc,
+        geo?.city || address.split(",").pop()?.trim() || address
+      );
       const municipality = String(cityFromGeo).trim();
-      const shortLabel =
-        municipality.split("—")[0].split("–")[0].trim() || municipality;
+      const shortLabel = localityShortLabel(municipality) || municipality;
+      const interestRadius = clampNeighborRadius(radiusKm ?? geo?.radiusKm ?? DEFAULT_NEIGHBOR_RADIUS_KM);
       const resolvedSubtype =
         normalizedType === "podnik" ? businessSubtype ?? resolveBusinessSubtype(accountType) : null;
 
@@ -2326,7 +2364,7 @@ export function AppProvider({ children }) {
       }
       if (auth.ok && auth.needsEmailConfirm) {
         showToast(
-          "Poslali jsme potvrzovací e-mail. Po kliknutí na odkaz se přihlaste heslem.",
+          "Poslali jsme potvrzovací e-mail. Po kliknutí na odkaz se přihlas heslem.",
           "info"
         );
         return { ok: false, needsEmailConfirm: true };
@@ -2380,7 +2418,7 @@ export function AppProvider({ children }) {
       const homeLng = nextLng ?? (useJeseniceFallback ? USER_LOCATIONS[0].lng : null);
       if (homeLat == null || homeLng == null) {
         showToast(
-          "Adresu jsme uložili, ale mapu se nepodařilo přesně zaměřit. Upravte Domov v profilu.",
+          "Adresu jsme uložili, ale mapu se nepodařilo přesně zaměřit. Uprav Domov v profilu.",
           "info"
         );
       }
@@ -2395,10 +2433,20 @@ export function AppProvider({ children }) {
         initials: initialsFromName(name),
         role: acc.role,
         location: shortLabel,
-        radius: normalizedType === "podnik" && resolvedSubtype === "mobilni" ? "15 km" : "1,2 km",
+        radius:
+          normalizedType === "podnik" && resolvedSubtype === "mobilni"
+            ? "15 km"
+            : formatMapRadiusKm(interestRadius),
         isVerified,
         verifiedDomain: isVerified ? domain : null,
-        geo: { ...(geo ?? {}), city: municipality, lat: homeLat, lng: homeLng },
+        geo: {
+          ...(geo ?? {}),
+          city: municipality,
+          lat: homeLat,
+          lng: homeLng,
+          psc: geo?.psc ?? null,
+          radiusKm: interestRadius,
+        },
         geolocVerified: true,
         neighborhoodConfirmations: 0,
         isPremium: false,
@@ -2439,9 +2487,13 @@ export function AppProvider({ children }) {
           shortLabel,
           lat: homeLat,
           lng: homeLng,
+          radiusKm: interestRadius,
+          psc: geo?.psc,
         }),
       ]);
       setActiveLocationId("domov");
+      setJoinedGroupIds([]);
+      persistJoinedGroupIds(userId, []);
       setCommunityGroups(
         mergeCommunityGroups(
           getGroupsForLocation("domov"),
@@ -2551,15 +2603,19 @@ export function AppProvider({ children }) {
         setCitizenProfile((prev) => prev ?? saved.citizenProfile);
       }
       if (saved?.user?.id === nextUser.id && Array.isArray(saved.locations) && saved.locations.length) {
-        const cleaned = sanitizeUserLocations(
-          saved.locations,
-          buildHomeLocation({
-            address: nextUser.address,
-            municipality: nextUser.geo?.city || nextUser.location,
-            shortLabel: nextUser.geo?.city || nextUser.location,
-            lat: nextUser.geo?.lat,
-            lng: nextUser.geo?.lng,
-          })
+        const cleaned = migrateLocationDistricts(
+          sanitizeUserLocations(
+            saved.locations,
+            buildHomeLocation({
+              address: nextUser.address,
+              municipality: nextUser.geo?.city || nextUser.location,
+              shortLabel: nextUser.geo?.city || nextUser.location,
+              lat: nextUser.geo?.lat,
+              lng: nextUser.geo?.lng,
+              radiusKm: nextUser.geo?.radiusKm,
+              psc: nextUser.geo?.psc,
+            })
+          )
         );
         setLocations(cleaned);
         const locId = cleaned.some((l) => l.id === saved.activeLocationId)
@@ -2600,6 +2656,8 @@ export function AppProvider({ children }) {
           shortLabel: municipality,
           lat: nextUser.geo?.lat ?? null,
           lng: nextUser.geo?.lng ?? null,
+          radiusKm: nextUser.geo?.radiusKm,
+          psc: nextUser.geo?.psc,
         });
         setLocations([home]);
         setActiveLocationId("domov");
@@ -2610,6 +2668,8 @@ export function AppProvider({ children }) {
           )
         );
       }
+      const storedJoined = loadJoinedGroupIds(nextUser.id);
+      setJoinedGroupIds(storedJoined ?? []);
       void upsertRemoteProfile(nextUser);
       showToast(`Vítejte zpět, ${nextUser.name}.`, "success");
       return { ok: true };
@@ -2643,7 +2703,7 @@ export function AppProvider({ children }) {
         return result;
       }
       setPasswordRecovery(false);
-      showToast("Heslo je nastavené. Můžete se přihlásit.", "success");
+      showToast("Heslo je nastavené. Můžeš se přihlásit.", "success");
       await authSignOut();
       clearUserSession();
       setUser(null);
@@ -2674,6 +2734,7 @@ export function AppProvider({ children }) {
     await authSignOut();
     clearUserSession();
     setUser(null);
+    setJoinedGroupIds([]);
     setPasswordRecovery(false);
     setLocations(DEFAULT_LOCATIONS);
     setActiveLocationId("domov");
@@ -2710,7 +2771,7 @@ export function AppProvider({ children }) {
     setSearchHelpCounts({ ...DEFAULT_SEARCH_HELP_COUNTS });
     setSearchHighlightedPosts([...DEFAULT_SEARCH_HIGHLIGHTED_POSTS]);
     setActiveTab("home");
-    showToast("Odhlášeno. Pro vstup se znovu přihlaste nebo zaregistrujte.", "info");
+    showToast("Odhlášeno. Pro vstup se znovu přihlas nebo zaregistruj.", "info");
   }, [showToast]);
 
   /** Odhlásit a otevřít registraci odděleného účtu (úřad ↔ soused). */
@@ -2722,8 +2783,8 @@ export function AppProvider({ children }) {
         notice:
           notice ||
           (accountType === "urad"
-            ? "Dokončete registraci úřadu s oficiálním e-mailem obce."
-            : "Dokončete registraci sousedského účtu."),
+            ? "Dokonči registraci úřadu s oficiálním e-mailem obce."
+            : "Dokonči registraci sousedského účtu."),
       });
       await authSignOut();
       clearUserSession();
@@ -2766,8 +2827,8 @@ export function AppProvider({ children }) {
       setActiveTab("home");
       showToast(
         accountType === "urad"
-          ? "Pokračujte registrací úředního účtu (oficiální e-mail obce)."
-          : "Pokračujte registrací sousedského účtu.",
+          ? "Pokračuj registrací úředního účtu (oficiální e-mail obce)."
+          : "Pokračuj registrací sousedského účtu.",
         "info"
       );
     },
@@ -2812,7 +2873,7 @@ export function AppProvider({ children }) {
     (postId, reason) => {
       setReportedPosts((prev) => (prev.includes(postId) ? prev : [...prev, postId]));
       const label = reason === "spam" ? "Spam" : "Urážlivé";
-      showToast(`Příspěvek nahlášen (${label}) — pro vás je skrytý.`, "info");
+      showToast(`Příspěvek nahlášen (${label}) — pro tebe je skrytý.`, "info");
     },
     [showToast]
   );
@@ -3119,7 +3180,7 @@ export function AppProvider({ children }) {
       let reporterKey = viewerId;
       if (already) {
         if (!SKIP_REGISTRATION) {
-          showToast("Tuto akci jste už nahlásili.", "info");
+          showToast("Tuhle akci už jsi nahlásil/a.", "info");
           return false;
         }
         reporterKey = `demo-${existing.length}-${Date.now()}`;
@@ -3194,11 +3255,11 @@ export function AppProvider({ children }) {
   const confirmNeighbor = useCallback(
     (neighborId) => {
       if (!neighborId || isSelfNeighborCandidate(neighborId, user) || isCurrentUserRef(neighborId, user)) {
-        showToast("Sama sebe jako souseda potvrdit nemůžete.", "info");
+        showToast(TRUST_COPY.toastSelf, "info");
         return;
       }
       if (confirmationsGiven.includes(neighborId)) {
-        showToast("Totoho souseda jste už potvrdili.", "info");
+        showToast(TRUST_COPY.toastAlready, "info");
         return;
       }
       const nextGiven = [...confirmationsGiven, neighborId];
@@ -3228,7 +3289,7 @@ export function AppProvider({ children }) {
             : n
         )
       );
-      showToast("Potvrzení přidáno — děkujeme za budování důvěry.", "success");
+      showToast(TRUST_COPY.toastConfirmed, "success");
     },
     [confirmationsGiven, showToast, user]
   );
@@ -3256,7 +3317,7 @@ export function AppProvider({ children }) {
             : n
         )
       );
-      showToast("V pořádku — tohoto souseda už nebudeme připomínat.", "info");
+      showToast(TRUST_COPY.toastSkipped, "info");
     },
     [showToast, user?.id]
   );
@@ -3270,7 +3331,7 @@ export function AppProvider({ children }) {
     } catch {
       /* ignore */
     }
-    showToast("Připomínky nových sousedů na Domů jsou skryté. Zapnete je znovu v profilu.", "info");
+    showToast(TRUST_COPY.toastHomeHidden, "info");
   }, [showToast, user?.id]);
 
   const showTrustHomePrompt = useCallback(() => {
@@ -3282,7 +3343,7 @@ export function AppProvider({ children }) {
     } catch {
       /* ignore */
     }
-    showToast("Připomínky nových sousedů na Domů jsou znovu zapnuté.", "success");
+    showToast(TRUST_COPY.toastHomeShown, "success");
   }, [showToast, user?.id]);
 
   const switchFeedMainMode = useCallback((mode) => {
@@ -3514,7 +3575,7 @@ export function AppProvider({ children }) {
           existing.proposer &&
           String(existing.proposer).trim() === String(user.name).trim());
       if (!isMine) {
-        showToast("Upravovat můžete jen vlastní návrh.", "error");
+        showToast("Upravovat můžeš jen vlastní návrh.", "error");
         return false;
       }
 
@@ -3619,8 +3680,34 @@ export function AppProvider({ children }) {
           return [...groups, group];
         });
       }
+      setJoinedGroupIds((prev) => normalizeJoinedGroupIds([...prev, group.id]));
     },
     [activeLocation?.municipality, activeLocationId, user?.geo?.city, user?.location]
+  );
+
+  const joinGroup = useCallback(
+    (groupId) => {
+      const id = String(groupId ?? "").trim();
+      if (!id) return false;
+      setJoinedGroupIds((prev) => {
+        if (prev.includes(id)) return prev;
+        return normalizeJoinedGroupIds([...prev, id]);
+      });
+      showToast("Jsi členem skupiny. Můžeš ji kdykoli opustit.", "success");
+      return true;
+    },
+    [showToast]
+  );
+
+  const leaveGroup = useCallback(
+    (groupId) => {
+      const id = String(groupId ?? "").trim();
+      if (!id) return false;
+      setJoinedGroupIds((prev) => prev.filter((gid) => gid !== id));
+      showToast("Skupinu jsi opustil/a — můžeš se znovu přidat, kdy budeš chtít.", "info");
+      return true;
+    },
+    [showToast]
   );
   const voteGroupProposal = useCallback(
     async (id) => {
@@ -3767,7 +3854,7 @@ export function AppProvider({ children }) {
                 id,
                 type: "blue",
                 title: `Nový návrh skupiny: ${proposal.name}`,
-                body: "Můžete podpořit vznik — po 5 hlasech se skupina aktivuje.",
+                body: "Můžeš podpořit vznik — po 5 hlasech se skupina aktivuje.",
                 read: false,
                 time: "právě teď",
                 actionType: "group_proposal",
@@ -3777,7 +3864,7 @@ export function AppProvider({ children }) {
             ];
           });
           setToast({
-            message: `Nový návrh skupiny „${proposal.name}" — můžete ho podpořit.`,
+            message: `Nový návrh skupiny „${proposal.name}" — můžeš ho podpořit.`,
             type: "info",
             locationId: null,
           });
@@ -3846,7 +3933,7 @@ export function AppProvider({ children }) {
       }
       const pointDistance = mapPos
         ? posToDistanceLabel(normalizedMapPos.x, normalizedMapPos.y, undefined, undefined, reportsMapRadiusKm)
-        : "0 m · vaše hlášení";
+        : "0 m · tvoje hlášení";
       const distance = resolveReportDistance({ urgent, urgentScope }, pointDistance);
       const photoUrls = photos.map((p) => (typeof p === "string" ? p : p.url)).filter(Boolean);
       const createdAt = new Date().toISOString();
@@ -4086,7 +4173,7 @@ export function AppProvider({ children }) {
         persistDismissedList(UI_KEYS.DISMISSED_PROMPT_CALLS, next);
         return next;
       });
-      showToast("Výzva skryta — najdete ji v kategorii Výzvy.", "info");
+      showToast("Výzva skryta — najdeš ji v kategorii Výzvy.", "info");
     },
     [showToast, persistDismissedList]
   );
@@ -4205,7 +4292,7 @@ export function AppProvider({ children }) {
   const createInvoice = useCallback(
     ({ clientName, description, amount }) => {
       if (!clientName?.trim() || !description?.trim() || !(Number(amount) > 0)) {
-        showToast("Vyplňte odběratele, popis práce a částku.", "error");
+        showToast("Vyplň odběratele, popis práce a částku.", "error");
         return false;
       }
       setCraftsmanInvoices((prev) => [
@@ -4338,7 +4425,7 @@ export function AppProvider({ children }) {
         };
       });
       if (already) {
-        showToast("Tuto nabídku pomoci už máte aktivní (platí 48 hodin).", "info");
+        showToast("Tuhle nabídku pomoci už máš aktivní (platí 48 hodin).", "info");
         return;
       }
 
@@ -4395,7 +4482,7 @@ export function AppProvider({ children }) {
         },
         ...prev,
       ]);
-      showToast("Nabídka odeslána ve zprávách — můžete domluvit detaily.", "success");
+      showToast("Nabídka odeslána ve zprávách — můžeš domluvit detaily.", "success");
     },
     [user, showToast, neighborHelp, userPosts, userGroupPosts, isHelpOfferActive, helpOffersByPost, activeLocationId, activeLocation]
   );
@@ -4491,16 +4578,16 @@ export function AppProvider({ children }) {
       const customKw = Array.isArray(payload.serviceKeywords) ? payload.serviceKeywords : [];
 
       if (role.businessSubtype === "mobilni" && !primarySub) {
-        return { ok: false, error: "Vyberte hlavní zaměření služby." };
+        return { ok: false, error: "Vyber hlavní zaměření služby." };
       }
       if (role.businessSubtype === "mobilni" && !businessName) {
-        return { ok: false, error: "Vyplňte katalogové jméno." };
+        return { ok: false, error: "Vyplň katalogové jméno." };
       }
       if (role.businessSubtype === "fyzicka" && !businessName) {
-        return { ok: false, error: "Vyplňte název podniku." };
+        return { ok: false, error: "Vyplň název podniku." };
       }
       if (!address) {
-        return { ok: false, error: "Vyplňte výchozí adresu." };
+        return { ok: false, error: "Vyplň výchozí adresu." };
       }
 
       if (!isInjectedDemoPersona(user)) {
@@ -4754,7 +4841,7 @@ export function AppProvider({ children }) {
       showToast(
         enabled
           ? "Zapnuto — budete dostávat upozornění na polední menu v okolí."
-          : "Vypnuto — upozornění na polední menu nebudete dostávat.",
+          : "Vypnuto — upozornění na polední menu nebudeš dostávat.",
         "info"
       );
     },
@@ -4792,7 +4879,7 @@ export function AppProvider({ children }) {
       }
       setStoredMessageAlertsPref(false);
       updateNotificationPrefs({ messageAlerts: false });
-      showToast("Vypnuto — systémová upozornění na zprávy nebudete dostávat.", "info");
+      showToast("Vypnuto — systémová upozornění na zprávy nebudeš dostávat.", "info");
     },
     [updateNotificationPrefs, showToast]
   );
@@ -4930,7 +5017,7 @@ export function AppProvider({ children }) {
     const title = areaNewsTitleDraft.trim();
     const body = areaNewsBodyDraft.trim();
     if (!title || !body) {
-      showToast("Vyplňte nadpis i text aktuality.", "error");
+      showToast("Vyplň nadpis i text aktuality.", "error");
       return;
     }
     const item = {
@@ -4954,7 +5041,7 @@ export function AppProvider({ children }) {
     const title = crisisTitleDraft.trim();
     const body = crisisBodyDraft.trim();
     if (!title || !body) {
-      showToast("Vyplňte nadpis i text krizového hlášení.", "error");
+      showToast("Vyplň nadpis i text krizového hlášení.", "error");
       return;
     }
     const item = {
@@ -4980,7 +5067,7 @@ export function AppProvider({ children }) {
     const title = officePromptTitleDraft.trim();
     const body = officePromptBodyDraft.trim();
     if (!title || !body) {
-      showToast("Vyplňte nadpis i text podnětu.", "error");
+      showToast("Vyplň nadpis i text podnětu.", "error");
       return;
     }
     const prompt = {
@@ -5023,7 +5110,7 @@ export function AppProvider({ children }) {
   const withdrawToBank = useCallback(
     (amount, account) => {
       if (!account?.trim()) {
-        showToast("Zadejte číslo účtu.", "error");
+        showToast("Zadej číslo účtu.", "error");
         return;
       }
       showToast(`Převod ${amount} Kč na účet ${account} odeslán (simulace).`, "success");
@@ -5082,7 +5169,7 @@ export function AppProvider({ children }) {
   const openEditListing = useCallback(
     (post) => {
       if (!post?.mine) {
-        showToast("Upravit můžete jen vlastní příspěvek.", "info");
+        showToast("Upravit můžeš jen vlastní příspěvek.", "info");
         return;
       }
       setEditingPost(post);
@@ -5142,7 +5229,7 @@ export function AppProvider({ children }) {
       const nextType = type != null ? String(type).trim() : null;
       const nextBody = body != null ? String(body).trim() : null;
       if ((nextType != null && !nextType) || (nextBody != null && !nextBody)) {
-        showToast("Vyplňte typ i text hlášení.", "error");
+        showToast("Vyplň typ i text hlášení.", "error");
         return false;
       }
       const updatedAt = new Date().toISOString();
@@ -5212,7 +5299,7 @@ export function AppProvider({ children }) {
       const nextTitle = title != null ? String(title).trim() : null;
       const nextBody = body != null ? String(body).trim() : null;
       if ((nextTitle != null && !nextTitle) || (nextBody != null && !nextBody)) {
-        showToast("Vyplňte nadpis i text.", "error");
+        showToast("Vyplň nadpis i text.", "error");
         return false;
       }
       const updatedAt = new Date().toISOString();
@@ -5252,7 +5339,7 @@ export function AppProvider({ children }) {
       const nextTitle = title != null ? String(title).trim() : null;
       const nextBody = body != null ? String(body).trim() : null;
       if ((nextTitle != null && !nextTitle) || (nextBody != null && !nextBody)) {
-        showToast("Vyplňte nadpis i text.", "error");
+        showToast("Vyplň nadpis i text.", "error");
         return false;
       }
       const updatedAt = new Date().toISOString();
@@ -5279,7 +5366,8 @@ export function AppProvider({ children }) {
     setFeedMainMode("skupiny");
     setFeedSubFilter(groupId);
     setShowDiscoveryWall(false);
-    setActiveTab("home");
+    setPendingNeighborsSection("skupiny");
+    setActiveTab("neighbors");
   }, []);
 
   const closeGroup = useCallback(() => {
@@ -5375,7 +5463,7 @@ export function AppProvider({ children }) {
           })
         );
         showToast(
-          `Boost katalogu aktivní (${plan.label}) — váš profil je na předních pozicích u sousedů.`
+          `Boost katalogu aktivní (${plan.label}) — tvůj profil je na předních pozicích u sousedů.`
         );
       } else if (promoType === "sponsored" && bannerOffer) {
         const banner = {
@@ -5385,7 +5473,7 @@ export function AppProvider({ children }) {
             (options.tagline ?? user?.tagline ?? "Sousedská nabídka · Podplot").trim() ||
             "Sousedská nabídka · Podplot",
           emoji: user?.accountType === "podnik" ? "🏪" : "🛠️",
-          distance: "ve vaší lokalitě",
+          distance: "ve tvé lokalitě",
           address: user?.address ?? activeLocation?.address ?? "",
           phone: user?.phone ?? "",
           hours: businessHours || user?.hours || "Dle domluvy",
@@ -5647,7 +5735,7 @@ export function AppProvider({ children }) {
             description: body.trim(),
             credits: Number(price) || 0,
             period: "den",
-            distance: primaryGroup ? `${primaryGroup.name} · vaše nabídka` : "Právě teď · 0 m",
+            distance: primaryGroup ? `${primaryGroup.name} · tvoje nabídka` : "Právě teď · 0 m",
             mine: true,
             groupId: primaryGroupId,
             groupIds: resolvedGroupIds,
@@ -5712,7 +5800,7 @@ export function AppProvider({ children }) {
   const rentItem = useCallback(
     (item, _method = "card", booking = {}) => {
       if (item.mine) {
-        showToast("Toto je vaše vlastní nabídka.", "info");
+        showToast("Tohle je tvoje vlastní nabídka.", "info");
         return false;
       }
       if (item.onVacation) {
@@ -5753,7 +5841,7 @@ export function AppProvider({ children }) {
   const buyListing = useCallback(
     (post) => {
       if (post.mine) {
-        showToast("Toto je váš inzerát.", "info");
+        showToast("Tohle je tvůj inzerát.", "info");
         return false;
       }
       showToast(
@@ -5774,7 +5862,7 @@ export function AppProvider({ children }) {
         return false;
       }
       if (order.status === LISTING_SALE_STATUS.adjust_pending) {
-        showToast("Nejdřív potvrďte nebo odmítněte navržené množství.", "info");
+        showToast("Nejdřív potvrď nebo odmítni navržené množství.", "info");
         return false;
       }
       if (!isSameAppUser(order.buyerId, user?.id ?? "me")) {
@@ -6143,13 +6231,13 @@ export function AppProvider({ children }) {
       const expectedTarget = channel === "phone" ? contacts.phone : contacts.email;
       if (!expectedTarget || pending.target !== expectedTarget) {
         showToast(
-          "Kontakt místa se změnil. Zvolte oficiální telefon/e-mail a pošlete kód znovu.",
+          "Kontakt místa se změnil. Zvol oficiální telefon/e-mail a pošli kód znovu.",
           "error"
         );
         return false;
       }
       if (!isClaimOtpValid(code, pending.code, pending.expiresAt)) {
-        showToast("Neplatný nebo expirovaný kód. Zkuste znovu.", "error");
+        showToast("Neplatný nebo expirovaný kód. Zkus znovu.", "error");
         return false;
       }
 
@@ -6187,7 +6275,7 @@ export function AppProvider({ children }) {
         },
       }));
       placeClaimOtpRef.current = null;
-      showToast("Profil ověřen a přiřazen k vašemu účtu.", "success");
+      showToast("Profil ověřen a přiřazen k tvému účtu.", "success");
       return true;
     },
     [user, showToast]
@@ -6266,7 +6354,7 @@ export function AppProvider({ children }) {
       subcategories = null,
       keywords = [],
     } = {}) => {
-      if (!user) return { ok: false, error: "Nejste přihlášeni." };
+      if (!user) return { ok: false, error: "Nejsi přihlášený." };
       const primary = primarySubcategory || null;
       const rawSubs = Array.isArray(subcategories) ? subcategories : [];
       const subIds = [
@@ -6275,7 +6363,7 @@ export function AppProvider({ children }) {
         ),
       ];
       if (!primary || subIds.length === 0) {
-        return { ok: false, error: "Vyberte hlavní zaměření." };
+        return { ok: false, error: "Vyber hlavní zaměření." };
       }
       const name =
         (typeof businessName === "string" && businessName.trim()) ||
@@ -6285,7 +6373,7 @@ export function AppProvider({ children }) {
       const fullAddress =
         (typeof address === "string" && address.trim()) || user.address || "";
       if (!fullAddress) {
-        return { ok: false, error: "Vyplňte výchozí adresu." };
+        return { ok: false, error: "Vyplň výchozí adresu." };
       }
       const labelsJoined = formatServiceSubcategoryLabels(subIds);
       const catLabels = subIds.map((id) => getServiceCategory(id)?.label).filter(Boolean);
@@ -6471,7 +6559,7 @@ export function AppProvider({ children }) {
   const reportServiceReview = useCallback(
     (reviewId, { reasonId, comment = "" } = {}) => {
       if (!reasonId) {
-        showToast("Zvolte důvod nahlášení.", "error");
+        showToast("Zvol důvod nahlášení.", "error");
         return false;
       }
       setServiceReviews((prev) =>
@@ -6952,7 +7040,7 @@ export function AppProvider({ children }) {
       sendMessage(
         order.buyerId,
         order.buyerName || "Kupující",
-        `U „${order.title}“ mám teď jen ${qtyLabel} (místo ${formatListingQuantity(currentQty, order.priceUnit)}). Stačilo by vám to? ${note}`,
+        `U „${order.title}“ mám teď jen ${qtyLabel} (místo ${formatListingQuantity(currentQty, order.priceUnit)}). Stačilo by ti to? ${note}`,
         listingSaleTopic(order)
       );
       showToast(`Návrh ${qtyLabel} je u kupujícího — čeká se na potvrzení.`, "success");
@@ -7536,12 +7624,13 @@ export function AppProvider({ children }) {
   );
 
   const updateUserLocation = useCallback(
-    async (locationId, { street, houseNumber, psc, city, fullAddress, lat, lng, label } = {}) => {
+    async (locationId, { street, houseNumber, psc, city, fullAddress, lat, lng, label, radiusKm } = {}) => {
       if (!locationId) return false;
-      const municipality = String(city ?? "").trim();
+      const municipality = refineLocalityFromPsc(psc, String(city ?? "").trim());
       if (!municipality || !fullAddress) return false;
-      const shortLabel = municipality.split("—")[0].split("–")[0].trim() || municipality;
+      const shortLabel = localityShortLabel(municipality) || municipality;
       const current = locations.find((l) => l.id === locationId);
+      const nextRadius = clampNeighborRadius(radiusKm ?? current?.radiusKm ?? DEFAULT_NEIGHBOR_RADIUS_KM);
       const { lat: resolvedLat, lng: resolvedLng } = await resolveLocationCoords({
         street,
         houseNumber,
@@ -7571,7 +7660,8 @@ export function AppProvider({ children }) {
                 shortLabel,
                 lat: resolvedLat,
                 lng: resolvedLng,
-                radiusKm: loc.radiusKm ?? DEFAULT_RADIUS_KM,
+                radiusKm: nextRadius,
+                psc: pscDigits(psc) || null,
               }
             : loc
         )
@@ -7589,7 +7679,10 @@ export function AppProvider({ children }) {
                   city: municipality,
                   lat: resolvedLat,
                   lng: resolvedLng,
+                  psc: pscDigits(psc) || null,
+                  radiusKm: nextRadius,
                 },
+                radius: formatMapRadiusKm(nextRadius),
               }
             : u
         );
@@ -7610,11 +7703,12 @@ export function AppProvider({ children }) {
   );
 
   const addUserLocation = useCallback(
-    async ({ street, houseNumber, psc, city, fullAddress, lat, lng, label } = {}) => {
+    async ({ street, houseNumber, psc, city, fullAddress, lat, lng, label, radiusKm } = {}) => {
       const placeLabel = String(label ?? "").trim();
-      const municipality = String(city ?? "").trim();
+      const municipality = refineLocalityFromPsc(psc, String(city ?? "").trim());
       if (!placeLabel || !municipality || !fullAddress) return false;
-      const shortLabel = municipality.split("—")[0].split("–")[0].trim() || municipality;
+      const shortLabel = localityShortLabel(municipality) || municipality;
+      const nextRadius = clampNeighborRadius(radiusKm ?? DEFAULT_NEIGHBOR_RADIUS_KM);
       const slug = placeLabel
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
@@ -7641,7 +7735,8 @@ export function AppProvider({ children }) {
         address: fullAddress,
         lat: resolvedLat,
         lng: resolvedLng,
-        radiusKm: DEFAULT_RADIUS_KM,
+        radiusKm: nextRadius,
+        psc: pscDigits(psc) || null,
         custom: true,
       };
 
@@ -7742,7 +7837,7 @@ export function AppProvider({ children }) {
       skipNavigate = false,
     }) => {
       if (!user) {
-        if (!silent) showToast("Pro vytvoření akce se nejdřív přihlaste.", "error");
+        if (!silent) showToast("Pro vytvoření akce se nejdřív přihlas.", "error");
         return null;
       }
       const cat = INTEREST_OPTIONS.find((i) => i.id === category);
@@ -7939,7 +8034,7 @@ export function AppProvider({ children }) {
       dates = [],
     }) => {
       if (!user) {
-        showToast("Pro vytvoření kroužku se nejdřív přihlaste.", "error");
+        showToast("Pro vytvoření kroužku se nejdřív přihlas.", "error");
         return null;
       }
       const id = `act-${Date.now()}`;
@@ -8003,7 +8098,7 @@ export function AppProvider({ children }) {
       showToast(
         slots.length > 0
           ? "Kroužek je zveřejněný a termíny jsou v kalendáři."
-          : "Kroužek je zveřejněný — termíny můžete vypsat kdykoli.",
+          : "Kroužek je zveřejněný — termíny můžeš vypsat kdykoli.",
         "success"
       );
       return id;
@@ -8334,13 +8429,13 @@ export function AppProvider({ children }) {
     (inquiry) => {
       if (!user || !inquiry?.authorId) return false;
       if (inquiry.interestSent) {
-        showToast("U této poptávky už máte zájem.", "info");
+        showToast("U téhle poptávky už máš zájem.", "info");
         return false;
       }
       const service = ownedService;
       const craftsmanName = user.name ?? service?.name ?? "Řemeslník";
-      const title = inquiry.title?.trim() || "vaši poptávku";
-      const text = `Mám zájem o vaši poptávku „${title}“. Rád se domluvím na termínu.`;
+      const title = inquiry.title?.trim() || "tvoji poptávku";
+      const text = `Mám zájem o tvoji poptávku „${title}“. Rád se domluvím na termínu.`;
       const meta = {
         kind: "interest",
         inquiryId: inquiry.id,
@@ -8368,7 +8463,7 @@ export function AppProvider({ children }) {
         ...prev,
       ]);
       showToast(
-        `${inquiry.author} dostane zprávu a může otevřít váš profil s recenzemi.`,
+        `${inquiry.author} dostane zprávu a může otevřít tvůj profil s recenzemi.`,
         "success"
       );
       return true;
@@ -8722,6 +8817,9 @@ export function AppProvider({ children }) {
         togglePillar,
         goToHomeWall,
         communityGroups,
+        joinedGroupIds,
+        joinGroup,
+        leaveGroup,
         groupProposals: groupProposalsForLocation,
         proposeGroup,
         updateGroupProposal,

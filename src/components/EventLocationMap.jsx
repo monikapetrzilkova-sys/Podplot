@@ -9,6 +9,9 @@ export default function EventLocationMap({
   onPickPin,
   address = "",
   compact = false,
+  mapCenter = null,
+  radiusKm = null,
+  homeLabel = "Tvoje okolí",
 }) {
   const { activeLocation, user } = useApp();
   const pin = pickMode ? draftPin : mapPos;
@@ -36,7 +39,9 @@ export default function EventLocationMap({
             ? address.split(",").pop()?.trim()
             : activeLocation?.shortLabel
         }
-        homeLabel="Vaše okolí"
+        homeLabel={homeLabel}
+        mapCenter={mapCenter}
+        radiusKm={radiusKm}
         focusDraftPin={pickMode && Boolean(draftPin)}
         draftPinOnly={pickMode}
         large={false}
@@ -45,8 +50,8 @@ export default function EventLocationMap({
       {pickMode && (
         <p className="text-[11px] text-stone-500 px-2.5 py-2 bg-stone-50 border-t border-stone-100">
           {draftPin
-            ? "Místo je na mapě — klepnutím nebo posunutím špendlíku ho můžete upřesnit."
-            : "Klepněte na mapu, nebo zadejte adresu výše — místo se doplní samo."}
+            ? "Místo je na mapě — klepnutím nebo posunutím špendlíku ho můžeš upřesnit."
+            : "Klepni na mapu, nebo zadej adresu výše — místo se doplní samo."}
         </p>
       )}
     </div>

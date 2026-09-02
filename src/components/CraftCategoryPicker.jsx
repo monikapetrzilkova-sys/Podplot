@@ -27,6 +27,7 @@ export default function CraftCategoryPicker({
   onPrimaryChange,
   secondaryIds = [],
   onSecondaryChange,
+  required = false,
   className = "",
 }) {
   const safeHomeGroup = homeGroup || "domov-zahrada";
@@ -58,7 +59,14 @@ export default function CraftCategoryPicker({
   return (
     <div className={`space-y-3 ${className}`.trim()}>
       <div>
-        <p className="text-xs font-semibold text-stone-600 mb-1">Skupina služeb</p>
+        <p className="text-xs font-semibold text-stone-600 mb-1">
+          Skupina služeb
+          {required ? (
+            <span className="text-teal-800" aria-hidden="true">
+              {" *"}
+            </span>
+          ) : null}
+        </p>
         <div className="grid grid-cols-2 gap-2">
           {HOME_SERVICE_SUB_FILTERS.map((g) => {
             const GroupIcon = CATALOG_DOODLE_ICONS[g.id] ?? CATALOG_DOODLE_ICONS.ostatni;
@@ -82,7 +90,14 @@ export default function CraftCategoryPicker({
       </div>
 
       <div>
-        <p className="text-xs font-semibold text-stone-600 mb-1">Hlavní zaměření</p>
+        <p className="text-xs font-semibold text-stone-600 mb-1">
+          Hlavní zaměření
+          {required ? (
+            <span className="text-teal-800" aria-hidden="true">
+              {" *"}
+            </span>
+          ) : null}
+        </p>
         <p className="text-[10px] text-stone-500 mb-1.5 leading-snug">
           Podle něj se v katalogu ukáže ikona a hlavní štítek.
         </p>

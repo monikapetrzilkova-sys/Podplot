@@ -5,8 +5,23 @@ import {
   getGroupPosts,
   mergePostsById,
 } from "./groups.js";
+import { getMyMemberGroups } from "./locations.js";
 import { rowToFeedPost } from "./communityApi.js";
 import { loadGroupBoardPosts, persistGroupBoardPosts } from "./groupPostsStorage.js";
+
+describe("group membership", () => {
+  it("does not treat catalog groups as joined by default", () => {
+    const catalog = [
+      { id: "maminky", name: "Maminky" },
+      { id: "tenis", name: "Tenis" },
+    ];
+    assert.deepEqual(getMyMemberGroups(catalog, []), []);
+    assert.deepEqual(
+      getMyMemberGroups(catalog, ["tenis"]).map((g) => g.id),
+      ["tenis"]
+    );
+  });
+});
 
 describe("group board posts", () => {
   it("keeps explicit board posts on the group wall", () => {

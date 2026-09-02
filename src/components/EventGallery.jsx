@@ -104,7 +104,7 @@ export default function EventGallery({ event, past = false }) {
         {past
           ? participated
             ? "Vzpomínky od účastníků a organizátorů — prohlédněte si, jak akce proběhla."
-            : "Fotky z akce sdílené sousedy — můžete si je prohlédnout i bez účasti."
+            : "Fotky z akce sdílené sousedy — můžeš si je prohlédnout i bez účasti."
           : canUpload
             ? "Sdílejte fotky průběhu nebo příprav — vidí je přihlášení sousedi."
             : "Fotky z akce — prohlédnout může kdokoli z lokality."}

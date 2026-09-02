@@ -70,14 +70,14 @@ export default function SecurityReportFormModal({
   const subtitle = isReport
     ? isTip
       ? draftPin
-        ? "Tip se uloží mezi hlášení na mapě — místo můžete ještě upravit."
+        ? "Tip se uloží mezi hlášení na mapě — místo můžeš ještě upravit."
         : "Tip zadáte jako hlášení: kategorie Tip, místo na mapě a krátký popis."
       : draftPin
-        ? "Místo jste vybrali na mapě — v případě potřeby ho upravte a doplňte detaily."
-        : "Vyberte kategorii, označte místo a popište situaci."
+        ? "Místo jsi vybral/a na mapě — v případě potřeby ho uprav a doplň detaily."
+        : "Vyber kategorii, označ místo a popiš situaci."
     : draftPin
-      ? "Místo jste vybrali na mapě — v případě potřeby ho upravte a doplňte podnět."
-      : "Označte místo (volitelné) a popište podnět pro obecní úřad.";
+      ? "Místo jsi vybral/a na mapě — v případě potřeby ho uprav a doplň podnět."
+      : "Označ místo (volitelné) a popiš podnět pro obecní úřad.";
 
   const modal = (
     <div className="pp-security-form-overlay pointer-events-none">
@@ -141,16 +141,16 @@ export default function SecurityReportFormModal({
               {draftPin && (
                 <span className="inline-flex items-center px-2.5 py-2 text-xs font-medium text-teal-700 bg-teal-50 rounded-xl border border-teal-100">
                   {draftPin.lat != null && draftPin.lng != null
-                    ? "Poloha: GPS souřadnice — na mapě výše můžete špendlík ještě posunout"
+                    ? "Poloha: GPS souřadnice — na mapě výše můžeš špendlík ještě posunout"
                     : draftPin.x === MAP_CENTER.x && draftPin.y === MAP_CENTER.y
-                      ? "Poloha: u vás — na mapě výše můžete špendlík ještě posunout"
+                      ? "Poloha: u tebe — na mapě výše můžeš špendlík ještě posunout"
                       : `${posToDistanceLabel(
                           draftPin.x,
                           draftPin.y,
                           undefined,
                           undefined,
                           reportsMapRadiusKm
-                        )} · mapu výše můžete upravit`}
+                        )} · mapu výše můžeš upravit`}
                 </span>
               )}
             </div>
@@ -160,7 +160,7 @@ export default function SecurityReportFormModal({
                 <p className="text-xs text-stone-500 shrink-0">
                   {isUrgent && urgentScope === URGENT_SCOPE.MUNICIPALITY
                     ? "Pro varování celé obce není nutné přesné místo — špendlík je volitelný."
-                    : "Klepněte na mapu nebo použijte tlačítko pro vaši polohu."}
+                    : "Klepni na mapu nebo použij tlačítko pro tvoji polohu."}
                 </p>
                 {pinError && <p className="text-xs text-red-600 shrink-0">{pinError}</p>}
                 {categoryError && <p className="text-xs text-red-600 shrink-0">{categoryError}</p>}
@@ -372,7 +372,7 @@ export default function SecurityReportFormModal({
                   </p>
                 ) : null}
                 <p className="text-xs text-stone-500 shrink-0">
-                  Klepněte na mapu nebo použijte tlačítko pro vaši polohu. Není povinné, ale úřadu to pomůže.
+                  Klepni na mapu nebo použij tlačítko pro tvoji polohu. Není povinné, ale úřadu to pomůže.
                 </p>
                 <input
                   type="text"

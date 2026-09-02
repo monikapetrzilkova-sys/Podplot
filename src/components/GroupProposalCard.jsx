@@ -133,7 +133,7 @@ export default function GroupProposalCard({
               </p>
               {supportList.length === 0 ? (
                 <p className="text-[11px] text-stone-500 leading-snug">
-                  Zatím nikdo — až soused podpoří návrh, uvidíte ho tady.
+                  Zatím nikdo — až soused podpoří návrh, uvidíš ho tady.
                 </p>
               ) : (
                 <ul className="space-y-1">

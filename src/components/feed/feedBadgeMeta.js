@@ -1,5 +1,6 @@
 /** Metadata štítků ve feedu — doodle ikona + tón (barva jen na ikoně/textu) */
 
+import { resolveGroupName } from "../../data/groups.js";
 import {
   DoodleSearchIcon,
   DoodlePawIcon,
@@ -161,6 +162,11 @@ export function getListingBadge(type, { reportCategoryId } = {}) {
     tone: "default",
     Icon: DoodleQuestionIcon,
   };
+}
+
+export function getGroupPostBadge(post, communityGroups = []) {
+  const name = resolveGroupName(post, communityGroups);
+  return { label: name, className: "pp-badge--skupina", tone: "groups", Icon: DoodleGroupsIcon };
 }
 
 export function getNeighborSectionBadge(section, helpType = null) {

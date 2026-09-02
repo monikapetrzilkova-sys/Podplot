@@ -269,7 +269,7 @@ export function resolveBannerPurchaseOffer(bannersInLocation, ownerUserId, plan,
       ok: false,
       usedLive: live.length,
       maxLive,
-      message: `Rezervace na další termíny jsou plné. Zkuste to později — živých Promo je max. ${maxLive}.`,
+      message: `Rezervace na další termíny jsou plné. Zkus to později — živých Promo je max. ${maxLive}.`,
     };
   }
 
@@ -353,7 +353,7 @@ export function resolveBannerPurchaseOffer(bannersInLocation, ownerUserId, plan,
     ok: false,
     usedLive: live.length,
     maxLive,
-    message: `Nepodařilo se najít volný Promo termín. Zkuste kratší plán nebo později.`,
+    message: `Nepodařilo se najít volný Promo termín. Zkus kratší plán nebo později.`,
   };
 }
 
@@ -402,7 +402,7 @@ export function canPurchaseTopSlot({ locationToppedCount, userToppedCount, alrea
       ok: false,
       used: userToppedCount,
       max: maxUser,
-      message: `Můžete mít najednou max. ${maxUser} TOPované inzeráty.`,
+      message: `Můžeš mít najednou max. ${maxUser} TOPované inzeráty.`,
     };
   }
   if (locationToppedCount >= maxLoc) {
@@ -410,7 +410,7 @@ export function canPurchaseTopSlot({ locationToppedCount, userToppedCount, alrea
       ok: false,
       used: locationToppedCount,
       max: maxLoc,
-      message: `TOP pozice v lokalitě jsou obsazené (${maxLoc}/${maxLoc}). Zkuste to později.`,
+      message: `TOP pozice v lokalitě jsou obsazené (${maxLoc}/${maxLoc}). Zkus to později.`,
     };
   }
   return { ok: true, used: locationToppedCount, max: maxLoc };

@@ -60,7 +60,7 @@ export default function LocationAccessPrompt() {
 
   const skip = () => {
     finish(
-      "Bez GPS použijeme adresu z profilu. Polohu můžete povolit později v nastavení prohlížeče.",
+      "Bez GPS použijeme adresu z profilu. Polohu můžeš povolit později v nastavení prohlížeče.",
       "info"
     );
   };
@@ -87,7 +87,7 @@ export default function LocationAccessPrompt() {
             </p>
             <ul className="mt-3 space-y-1.5 text-xs text-stone-500 leading-relaxed">
               <li>· Přesnou adresu ostatním nezobrazujeme — jen vzdálenost a okruh.</li>
-              <li>· Polohu používáme jen pro lokalizaci ve vaší obci / okolí.</li>
+              <li>· Polohu používáme jen pro lokalizaci ve tvé obci / okolí.</li>
               <li>· Bez GPS použijeme adresu z profilu (méně přesné).</li>
             </ul>
           </div>

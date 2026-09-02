@@ -14,10 +14,13 @@ export default function MapComponent(props) {
   const { ready, enabled, loading, error } = useGoogleMapsReady();
   const { activeLocation } = useApp();
 
-  const mapCenter = {
-    lat: activeLocation?.lat ?? 49.966,
-    lng: activeLocation?.lng ?? 14.512,
-  };
+  const mapCenter =
+    props.mapCenter?.lat != null && props.mapCenter?.lng != null
+      ? { lat: Number(props.mapCenter.lat), lng: Number(props.mapCenter.lng) }
+      : {
+          lat: activeLocation?.lat ?? 49.966,
+          lng: activeLocation?.lng ?? 14.512,
+        };
 
   const referenceRadiusKm =
     props.mapMode === "events"

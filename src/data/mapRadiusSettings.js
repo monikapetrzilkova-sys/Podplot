@@ -15,6 +15,17 @@ export const DEFAULT_EVENTS_MAP_RADIUS_KM = 10;
 export const MIN_EVENTS_MAP_RADIUS_KM = 2;
 export const MAX_EVENTS_MAP_RADIUS_KM = 20;
 
+/** Okruh sousedství při registraci / úpravě místa (ne filtr mapy hlášení). */
+export const DEFAULT_NEIGHBOR_RADIUS_KM = 2;
+export const MIN_NEIGHBOR_RADIUS_KM = 0.5;
+export const MAX_NEIGHBOR_RADIUS_KM = 5;
+
+export function clampNeighborRadius(km) {
+  const n = Number(km);
+  if (Number.isNaN(n)) return DEFAULT_NEIGHBOR_RADIUS_KM;
+  return Math.min(MAX_NEIGHBOR_RADIUS_KM, Math.max(MIN_NEIGHBOR_RADIUS_KM, Math.round(n * 10) / 10));
+}
+
 /** Poloměr elipsy na mapě při výchozím rádiusu daného režimu (procenta). */
 export const BASE_MAP_ELLIPSE_PERCENT = 42;
 export const MAX_MAP_ELLIPSE_PERCENT = 48;

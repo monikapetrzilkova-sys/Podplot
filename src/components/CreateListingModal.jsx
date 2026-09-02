@@ -57,7 +57,7 @@ export default function CreateListingModal() {
     zboziMarketCategory,
     thingsLendingSubCategory,
     communityGroups,
-    activeLocationId,
+    joinedGroupIds,
   } = useApp();
   const [categoryId, setCategoryId] = useState("");
   const [itemCategoryId, setItemCategoryId] = useState("");
@@ -160,7 +160,7 @@ export default function CreateListingModal() {
   const boardGroupId = isBoardCompose ? createGroupId : null;
   const categories = getCategoriesForGroup(boardGroupId || null);
   const cat = categoryId ? getCategory(categoryId, boardGroupId || null) : null;
-  const myGroups = getMyMemberGroups(communityGroups, activeLocationId);
+  const myGroups = getMyMemberGroups(communityGroups, joinedGroupIds);
   const selectedGroupLabels = groupIds
     .map((id) => myGroups.find((g) => g.id === id)?.name || getGroup(id)?.name)
     .filter(Boolean);
@@ -308,7 +308,7 @@ export default function CreateListingModal() {
                 })}
               </div>
               <p className="text-[11px] text-stone-500 mt-2 leading-snug">
-                Můžete zvolit více skupin — omezí to, kdo inzerát uvidí. Nejde o diskusní nástěnku;
+                Můžeš zvolit více skupin — omezí to, kdo inzerát uvidí. Nejde o diskusní nástěnku;
                 komentáře jsou jen u příspěvků přímo ve skupině.
               </p>
             </fieldset>
@@ -384,7 +384,7 @@ export default function CreateListingModal() {
                 disabled={!categoryId || !categoryDetailReady}
                 placeholder={
                   categoryId
-                    ? titleHint ?? "Stručný popis vaší nabídky nebo poptávky"
+                    ? titleHint ?? "Stručný popis tvojí nabídky nebo poptávky"
                     : "Nejdřív zvolte kategorii"
                 }
                 className="w-full px-4 py-3 rounded-2xl border border-stone-200 text-sm focus:outline-none focus:border-[#1B4332] focus:ring-2 focus:ring-[#D8F3DC] disabled:bg-[#FAF9F6]"
@@ -416,7 +416,7 @@ export default function CreateListingModal() {
               {showUnitPicker && (
                 <fieldset>
                   <legend className="block text-sm font-semibold text-stone-800 mb-1.5">
-                    Jak chcete cenu zadat?
+                    Jak chceš cenu zadat?
                   </legend>
                   <div className="grid grid-cols-3 gap-2">
                     {LISTING_PRICE_UNITS.map((unit) => {

@@ -2,7 +2,7 @@ import { DoodleTargetIcon } from "../doodle/doodleIcons.jsx";
 
 /** Nápověda při výběru místa — monochromatický doodle cíl */
 export default function MapPickHint({
-  children = "Klepněte na mapu nebo přetáhněte špendlík",
+  children = "Klepni na mapu nebo přetáhni špendlík",
   className = "",
 }) {
   return (

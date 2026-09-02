@@ -18,7 +18,7 @@ export function posToDistanceLabel(
   radiusKm = DEFAULT_REPORTS_MAP_RADIUS_KM
 ) {
   const meters = Math.max(0, Math.round(mapPosToDistanceKm({ x, y }, radiusKm, cx, cy) * 1000));
-  if (meters < 50) return "0 m · vaše hlášení";
+  if (meters < 50) return "0 m · tvoje hlášení";
   if (meters >= 1000) return `${(meters / 1000).toFixed(1)} km`;
   return `${meters} m`;
 }

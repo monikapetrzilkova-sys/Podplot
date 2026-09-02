@@ -8,7 +8,7 @@ export function formatPscInput(value) {
 }
 
 export function pscDigits(psc) {
-  return psc.replace(/\D/g, "");
+  return String(psc ?? "").replace(/\D/g, "");
 }
 
 export function formatFullAddress({ street, houseNumber, psc, city }) {
@@ -18,14 +18,14 @@ export function formatFullAddress({ street, houseNumber, psc, city }) {
 
 export function validateEmail(email) {
   const trimmed = email.trim();
-  if (!trimmed) return { valid: false, error: "Zadejte e-mail." };
+  if (!trimmed) return { valid: false, error: "Zadej e-mail." };
   if (trimmed.includes(" ")) return { valid: false, error: "E-mail nesmí obsahovat mezery." };
   if (!trimmed.includes("@")) {
     return { valid: false, error: "E-mail musí obsahovat znak @ (např. jmeno@email.cz)." };
   }
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   if (!re.test(trimmed)) {
-    return { valid: false, error: "E-mail nemá správný tvar. Zkuste např. jmeno@email.cz." };
+    return { valid: false, error: "E-mail nemá správný tvar. Zkus např. jmeno@email.cz." };
   }
   return { valid: true, error: null };
 }
@@ -61,26 +61,26 @@ export function validateAddressFields({ street, houseNumber, psc, city }) {
   const errors = {};
 
   if (!street.trim()) {
-    errors.street = "Zadejte ulici.";
+    errors.street = "Zadej ulici.";
   } else if (!/[A-Za-zÁ-žÀ-ÿ]{2,}/u.test(street)) {
     errors.street = "Název ulice vypadá neúplně.";
   }
 
   if (!houseNumber.trim()) {
-    errors.houseNumber = "Zadejte číslo popisné.";
+    errors.houseNumber = "Zadej číslo popisné.";
   } else if (!/^\d+[a-zA-Z0-9/-]*$/u.test(houseNumber.trim())) {
     errors.houseNumber = "Číslo popisné vypadá neplatně (např. 12 nebo 12a).";
   }
 
   const digits = pscDigits(psc);
   if (!digits) {
-    errors.psc = "Zadejte PSČ.";
+    errors.psc = "Zadej PSČ.";
   } else if (digits.length !== 5) {
     errors.psc = "PSČ má mít 5 číslic (např. 142 00).";
   }
 
   if (!city?.trim()) {
-    errors.city = "Obec se doplní z PSČ — zkontrolujte, že je PSČ správně.";
+    errors.city = "Obec se doplní z PSČ — zkontroluj, že je PSČ správně.";
   }
 
   const valid = Object.keys(errors).length === 0;

@@ -5,7 +5,7 @@ const PAGES = {
     title: "Obchodní podmínky",
     content: [
       "Podplot je komunitní platforma pro sousedskou výpomoc, sdílení a lokální služby.",
-      "Používáním aplikace souhlasíte s pravidly slušného chování vůči ostatním uživatelům a s tím, že nebudete zneužívat platformu k podvodům, spamu nebo nelegálním aktivitám.",
+      "Používáním aplikace souhlasíš s pravidly slušného chování vůči ostatním uživatelům a s tím, že nebudeš zneužívat platformu k podvodům, spamu nebo nelegálním aktivitám.",
       "Provozovatel si vyhrazuje právo moderovat obsah a omezit účty porušující pravidla komunity.",
       "Placené služby (TOP inzerát, propagace profilu) jsou nevratné po aktivaci, pokud není uvedeno jinak.",
     ],
@@ -13,11 +13,11 @@ const PAGES = {
   privacy: {
     title: "Zásady ochrany osobních údajů",
     content: [
-      "Vaše přesná adresa není veřejně zobrazena ostatním uživatelům — slouží pouze k určení vaší lokality v okolí.",
+      "Tvoje přesná adresa není veřejně zobrazena ostatním uživatelům — slouží pouze k určení tvé lokality v okolí.",
       "Poloha (GPS) se používá jen ke zobrazení obsahu v okolí a k označení místa u hlášení. Bez GPS vycházíme z adresy zadané při registraci.",
       "Údaje z profilu sdílíme pouze v rozsahu nezbytném pro fungování služby (např. jméno u inzerátu, kontakt při domluvě).",
       "Pro základní běh aplikace ukládáme nezbytné údaje v zařízení (např. přihlášení, preference). Marketingové cookies a sledování třetími stranami v této verzi nepoužíváme.",
-      "Máte právo požádat o export nebo smazání svých údajů kontaktováním provozovatele.",
+      "Máš právo požádat o export nebo smazání svých údajů kontaktováním provozovatele.",
     ],
   },
   about: {
@@ -26,7 +26,7 @@ const PAGES = {
       "Podplot propojuje sousedy, místní podnikatele a instituce v jedné aplikaci.",
       "Verze: 1.0 (demo)",
       "Kontakt: podpora@podplot.cz",
-      "Podplot — sousedská síť pro váš kousek světa.",
+      "Podplot — sousedská síť pro tvůj kousek světa.",
     ],
   },
 };

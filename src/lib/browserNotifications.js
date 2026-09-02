@@ -65,7 +65,7 @@ export async function showMessageNotification({
 
   const payload = {
     title: title || "Nová zpráva",
-    body: body || "Někdo vám napsal na Podplotu.",
+    body: body || "Někdo ti napsal na Podplotu.",
     icon: "/icons/icon-192.png",
     badge: "/icons/icon-192.png",
     tag: tag || (peerId ? `podplot-msg-${peerId}` : `podplot-msg-${Date.now()}`),

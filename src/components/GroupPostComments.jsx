@@ -50,7 +50,7 @@ export default function GroupPostComments({ postId, postTitle = "", groupName = 
 
       {comments.length === 0 ? (
         <p className="text-[11px] text-stone-500 leading-snug">
-          Zatím bez komentářů — zeptejte se sousedů přímo tady. Klepnutím na souseda mu pak můžete napsat i soukromě.
+          Zatím bez komentářů — zeptej se sousedů přímo tady. Klepnutím na souseda mu pak můžeš napsat i soukromě.
         </p>
       ) : (
         <ul className="space-y-2 max-h-56 overflow-y-auto pr-0.5">

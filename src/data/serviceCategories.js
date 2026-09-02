@@ -122,15 +122,15 @@ export const ALL_SERVICE_CATEGORIES = [
 ];
 
 export const SERVICE_PLACEHOLDERS = {
-  instalater: "Co potřebujete? např. Oprava kohoutku, ucpaný odpad…",
-  elektrikar: "Co potřebujete? např. Montáž lustru, revize…",
-  zahrada: "Co přesně potřebujete udělat? např. Realizace terasy…",
+  instalater: "Co potřebuješ? např. Oprava kohoutku, ucpaný odpad…",
+  elektrikar: "Co potřebuješ? např. Montáž lustru, revize…",
+  zahrada: "Co přesně potřebuješ udělat? např. Realizace terasy…",
   uklid: "Popište rozsah — např. Generální úklid bytu 3+1…",
   beauty: "Co hledáte? např. Manikúra, líčení na akci…",
   hlidani: "Kdy a koho? např. Hlídání dětí večer o víkendu…",
   doucovani: "Předmět a ročník — např. Matematika pro 6. třídu…",
-  event: "Co potřebujete? např. Catering na oslavu, občerstvení na akci…",
-  default: "Popište, co potřebujete…",
+  event: "Co potřebuješ? např. Catering na oslavu, občerstvení na akci…",
+  default: "Popiš, co potřebuješ…",
 };
 
 /** Legacy alias — dřívější „Catering“ sloučeno do Event & catering */

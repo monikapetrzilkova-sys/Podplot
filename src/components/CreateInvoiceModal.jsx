@@ -42,7 +42,7 @@ export default function CreateInvoiceModal() {
         <form onSubmit={handleSubmit} className="pp-app-sheet p-5 space-y-3" role="dialog" aria-label="Nová faktura">
           <h3 className="text-sm font-bold text-stone-900">Vytvořit fakturu</h3>
           <p className="text-xs text-stone-500 leading-relaxed">
-            Jednoduchá faktura pro sousedskou zakázku. Doklad zůstane u vás v přehledu — nepatří do veřejného feedu.
+            Jednoduchá faktura pro sousedskou zakázku. Doklad zůstane u tebe v přehledu — nepatří do veřejného feedu.
           </p>
           <p className="text-[11px] text-stone-400">Dodavatel: {user?.name ?? "—"}</p>
           <label className="block space-y-1">

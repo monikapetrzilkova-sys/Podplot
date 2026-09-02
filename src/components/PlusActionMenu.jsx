@@ -284,7 +284,7 @@ export default function PlusActionMenu() {
         )}
         {isNeighbor && (
           <p className="px-4 pb-2 text-[11px] font-semibold uppercase tracking-wide text-[#3D7A68]">
-            Co chcete udělat?
+            Co chceš udělat?
           </p>
         )}
 

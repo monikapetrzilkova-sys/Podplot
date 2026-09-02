@@ -26,7 +26,7 @@ export const REVIEW_REPORT_REASONS = [
   {
     id: "other",
     label: "Jiný důvod",
-    hint: "Doplňte krátký komentář pro moderátora",
+    hint: "Doplň krátký komentář pro moderátora",
   },
 ];
 

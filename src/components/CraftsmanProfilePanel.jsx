@@ -168,17 +168,17 @@ export default function CraftsmanProfilePanel() {
     setFormError("");
     const name = catalogName.trim();
     if (!name) {
-      setFormError("Vyplňte katalogové jméno.");
+      setFormError("Vyplň katalogové jméno.");
       return;
     }
     const addressResult = validateAddressFields({ street, houseNumber, psc, city });
     setAddressErrors(addressResult.errors);
     if (!addressResult.valid) {
-      setFormError("Doplňte adresu působnosti ve správném formátu.");
+      setFormError("Doplň adresu působnosti ve správném formátu.");
       return;
     }
     if (!primarySubcategory) {
-      setFormError("Vyberte hlavní zaměření.");
+      setFormError("Vyber hlavní zaměření.");
       return;
     }
     const fullAddress = formatFullAddress({ street, houseNumber, psc, city });
@@ -431,7 +431,7 @@ export default function CraftsmanProfilePanel() {
       {!ownedService && (
         <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 flex items-start gap-2">
           <IconMapPin className="w-4 h-4 shrink-0 mt-0.5" />
-          Katalogový profil ještě není hotový — doplňte údaje přes Upravit profil.
+          Katalogový profil ještě není hotový — doplň údaje přes Upravit profil.
         </p>
       )}
     </div>

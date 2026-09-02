@@ -46,7 +46,7 @@ function loadImageElement(src) {
  */
 export async function fileToListingPhotoDataUrl(file) {
   if (!file || !String(file.type || "").startsWith("image/")) {
-    throw new Error("Vyberte obrázek (JPG, PNG, WEBP…).");
+    throw new Error("Vyber obrázek (JPG, PNG, WEBP…).");
   }
 
   const original = await readFileAsDataUrl(file);

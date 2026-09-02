@@ -105,20 +105,20 @@ export default function CreateEventModal() {
     e.preventDefault();
     if (!form.title.trim()) return;
     if (!form.address.trim()) {
-      setFormError("Zadejte přesnou adresu místa akce.");
+      setFormError("Zadej přesnou adresu místa akce.");
       return;
     }
     if (!form.eventDate) {
-      setFormError("Vyberte datum akce.");
+      setFormError("Vyber datum akce.");
       return;
     }
     if (!form.timeTbd && !isValidCzechTime(form.eventTime)) {
-      setFormError("Zadejte čas ve formátu 24 hodin (např. 17:00), nebo zaškrtněte, že bude upřesněn.");
+      setFormError("Zadej čas ve formátu 24 hodin (např. 17:00), nebo zaškrtni, že bude upřesněn.");
       return;
     }
     const startsAtCheck = combineDateAndTime(form.eventDate, form.eventTime, form.timeTbd);
     if (startsAtCheck && !form.timeTbd && new Date(startsAtCheck).getTime() < Date.now()) {
-      setFormError("Zvolte datum a čas v budoucnosti — jinak by se akce hned přesunula do archivu.");
+      setFormError("Zvol datum a čas v budoucnosti — jinak by se akce hned přesunula do archivu.");
       return;
     }
     const center = {
@@ -129,7 +129,7 @@ export default function CreateEventModal() {
     if (!pin) {
       const autoPos = addressToMapPos(form.address.trim());
       if (!autoPos) {
-        setPinError("Zadejte platnou adresu — místo na mapě se doplní automaticky.");
+        setPinError("Zadej platnou adresu — místo na mapě se doplní automaticky.");
         return;
       }
       pin = {

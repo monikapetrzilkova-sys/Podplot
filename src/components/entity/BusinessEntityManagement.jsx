@@ -25,7 +25,7 @@ export default function BusinessEntityManagement() {
       <section className="bg-white border border-stone-200 rounded-2xl p-4">
         <h3 className="text-sm font-bold text-stone-800 mb-1">Správa mého podniku</h3>
         <p className="text-xs text-stone-500">
-          Zatím nemáte přiřazený profil podniku. V modulu Instituce použijte „Převzít profil“ u vašeho místa.
+          Zatím nemáš přiřazený profil podniku. V modulu Instituce použij „Převzít profil“ u tvého místa.
         </p>
       </section>
     );
@@ -49,7 +49,7 @@ export default function BusinessEntityManagement() {
         <h3 className="text-sm font-bold text-stone-800">Správa mého podniku</h3>
         <p className="text-xs text-stone-500 mt-0.5 flex items-center gap-1.5">
           <PlaceIcon place={ownedInstitution} className="w-4 h-4" />
-          <span>{ownedInstitution.name} · pouze váš profil</span>
+          <span>{ownedInstitution.name} · pouze tvůj profil</span>
         </p>
       </div>
 

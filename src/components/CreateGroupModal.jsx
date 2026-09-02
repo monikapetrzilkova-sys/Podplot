@@ -131,7 +131,7 @@ export default function CreateGroupModal({ open, onClose }) {
                 <textarea
                   value={purpose}
                   onChange={(e) => setPurpose(e.target.value)}
-                  placeholder="Co chcete v okolí společně řešit?"
+                  placeholder="Co chceš v okolí společně řešit?"
                   rows={2}
                   className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm resize-none"
                   required

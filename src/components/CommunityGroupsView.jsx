@@ -384,7 +384,6 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
     communityGroups,
     userGroupPosts,
     setFeedSubFilter,
-    activeLocationId,
     openCreateGroupModal,
     groupProposals,
     voteGroupProposal,
@@ -392,6 +391,9 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
     dismissGroupProposal,
     restoreGroupProposal,
     user,
+    joinedGroupIds,
+    joinGroup,
+    leaveGroup,
     locationHostedActivities,
     events,
     openHostedActivityDetail,
@@ -404,8 +406,8 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
   const query = normalize(search.trim());
 
   const myGroups = useMemo(
-    () => getMyMemberGroups(communityGroups, activeLocationId),
-    [communityGroups, activeLocationId]
+    () => getMyMemberGroups(communityGroups, joinedGroupIds),
+    [communityGroups, joinedGroupIds]
   );
   const myGroupsRanked = useMemo(
     () => sortGroupsByFrequency(myGroups, userGroupPosts, user),
@@ -478,9 +480,26 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-bold text-[#1a1a1a] truncate">{activeGroup.name}</h2>
             <p className="text-[10px] text-[#6b7280]">
-              {activeGroup.members} členů{isMember ? " · jste člen" : ""}
+              {activeGroup.members} členů{isMember ? " · jsi člen" : ""}
             </p>
           </div>
+          {isMember ? (
+            <button
+              type="button"
+              onClick={() => leaveGroup(activeGroup.id)}
+              className="shrink-0 text-[10px] font-semibold text-stone-500 px-2 py-1 rounded-lg border border-stone-200 bg-white"
+            >
+              Opustit
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => joinGroup(activeGroup.id)}
+              className="shrink-0 text-[10px] font-semibold text-white px-2 py-1 rounded-lg bg-[#3D7A68]"
+            >
+              Přidat se
+            </button>
+          )}
           <SectionBackButton
             onClick={() => setFeedSubFilter(returnFilter)}
             className="shrink-0"
@@ -541,7 +560,7 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
     body = (
       <div className={`px-3 ${atTop ? "pt-1" : "py-1"} flex flex-col flex-1 min-h-0 gap-2 pb-14`}>
         {myGroups.length === 0 ? (
-          <DoodleEmptyState illustration="group" message="Zatím nejste členem žádné skupiny." />
+          <DoodleEmptyState illustration="group" message="Zatím nejsi členem žádné skupiny." />
         ) : (
           <>
             <div className="shrink-0 space-y-1.5">

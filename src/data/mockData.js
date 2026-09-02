@@ -713,8 +713,11 @@ export const SECURITY_REPORTS = [
     confirmations: 0,
     urgent: false,
     locationId: "prace",
-    municipality: "Praha",
-    mapPos: { x: 62, y: 41 },
+    municipality: "Praha 1",
+    lat: 50.0813,
+    lng: 14.4273,
+    mapPos: { x: 62, y: 41, lat: 50.0813, lng: 14.4273 },
+    placeLabel: "Václavské náměstí",
   },
   {
     id: "r7",

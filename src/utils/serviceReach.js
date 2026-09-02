@@ -19,7 +19,7 @@ export function getServiceReachLabel(service, userDistanceKm = null) {
   }
   if (dist > radius) return null;
   if (dist <= LOCAL_SERVICE_RADIUS_KM) {
-    return { label: "Působí ve vašem okolí", type: "local" };
+    return { label: "Působí ve tvém okolí", type: "local" };
   }
   return { label: "Dojíždí k vám", type: "travel" };
 }

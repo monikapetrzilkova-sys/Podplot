@@ -178,9 +178,9 @@ export function getGroup(id) {
   return GROUPS.find((g) => g.id === id);
 }
 
-export function getMyGroups(locationId = "domov") {
-  const ids = MY_GROUP_IDS_BY_LOCATION[locationId] ?? MY_GROUP_IDS_BY_LOCATION.domov;
-  return GROUPS.filter((g) => ids.includes(g.id));
+export function getMyGroups(joinedGroupIds = []) {
+  const ids = new Set(joinedGroupIds ?? []);
+  return GROUPS.filter((g) => ids.has(g.id));
 }
 
 export function getGroupPosts(groupId, userGroupPosts = []) {
@@ -191,9 +191,10 @@ export function getGroupPosts(groupId, userGroupPosts = []) {
   return [...user, ...mock];
 }
 
-export function getRecentGroupPosts(userGroupPosts = [], limit = 5) {
+export function getRecentGroupPosts(userGroupPosts = [], limit = 5, joinedGroupIds = MY_GROUP_IDS) {
+  const memberIds = Array.isArray(joinedGroupIds) ? joinedGroupIds : MY_GROUP_IDS;
   const all = [...userGroupPosts, ...GROUP_POSTS].filter(
-    (p) => isGroupBoardDiscussionPost(p) && MY_GROUP_IDS.some((id) => postVisibleInGroup(p, id))
+    (p) => isGroupBoardDiscussionPost(p) && memberIds.some((id) => postVisibleInGroup(p, id))
   );
   return all.slice(0, limit);
 }

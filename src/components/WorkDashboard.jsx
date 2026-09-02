@@ -132,7 +132,7 @@ export default function WorkDashboard() {
         {b2bInquiries.length === 0 ? (
           <div className="pp-doodle-empty py-10">
             <p className="text-sm text-center font-medium text-[#3D7A68]/80 max-w-xs leading-relaxed mx-auto">
-              V tomto okruhu a oboru zatím žádné poptávky. S push předplatným je uvidíte jako první.
+              V tomto okruhu a oboru zatím žádné poptávky. S push předplatným je uvidíš jako první.
             </p>
           </div>
         ) : (
