@@ -659,6 +659,19 @@ export function DoodleChatIcon({ className }) {
   );
 }
 
+/** Zprávy v záhlaví — obálka s rezervou ve viewBoxu, nic se neukrají */
+export function DoodleMessageIcon({ className }) {
+  return (
+    <DoodleIcon className={className}>
+      <path
+        {...s}
+        d="M4.6 8.4c.2-1 1-1.8 2.1-1.9h10.6c1.1.1 1.9.9 2.1 1.9v7.2c-.2 1-1 1.8-2.1 1.9H6.7c-1.1-.1-1.9-.9-2.1-1.9V8.4z"
+      />
+      <path {...s} d="M5.1 8.2l6.2 4.4c.4.3 1 .3 1.4 0l6.2-4.4" />
+    </DoodleIcon>
+  );
+}
+
 export function DoodleStarIcon({ className }) {
   return (
     <DoodleIcon className={className}>
