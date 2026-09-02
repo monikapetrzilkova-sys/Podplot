@@ -10,10 +10,9 @@ import {
 import { reportMarkerIconSvg } from "./reportPinMarkerSvg.js";
 import { institutionMarkerIconSvg } from "./institutionPinMarkerSvg.js";
 import {
-  MAP_PIN_H,
   MAP_PIN_ICON_CX,
   MAP_PIN_ICON_CY,
-  MAP_PIN_W,
+  mapPinSvgOpenTag,
   mapPinTeardropPath,
 } from "./mapPinShape.js";
 
@@ -175,12 +174,12 @@ export const PIN_COLORS = {
   reportFire: { bg: "#5a9587", border: "#1B4332" },
 };
 
-export function markerIconSvg(variant, emoji) {
+export function markerIconSvg(variant, emoji, selected = false) {
   const c = PIN_COLORS[variant] ?? PIN_COLORS.default;
   const inner = emoji
     ? `<text x="${MAP_PIN_ICON_CX}" y="${MAP_PIN_ICON_CY + 4}" text-anchor="middle" font-size="12">${emoji}</text>`
     : `<circle cx="${MAP_PIN_ICON_CX}" cy="${MAP_PIN_ICON_CY}" r="3.4" fill="white"/>`;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${MAP_PIN_W}" height="${MAP_PIN_H}" viewBox="0 0 ${MAP_PIN_W} ${MAP_PIN_H}" preserveAspectRatio="xMidYMax meet">
+  const svg = `${mapPinSvgOpenTag(selected)}
     <path d="${mapPinTeardropPath()}" fill="${c.bg}" stroke="${c.border}" stroke-width="1.6" stroke-linejoin="round"/>
     ${inner}
   </svg>`;
