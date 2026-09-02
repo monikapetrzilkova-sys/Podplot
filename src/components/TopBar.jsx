@@ -79,7 +79,7 @@ export default function TopBar() {
             className="pp-header-icon-btn relative"
             aria-label="Zprávy"
           >
-            <DoodleMessageIcon className="w-5 h-5" />
+            <DoodleMessageIcon className="w-6 h-6" />
             {unreadMessagesCount > 0 && (
               <span className="pp-header-notify-dot">
                 {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}

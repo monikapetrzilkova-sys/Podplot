@@ -384,13 +384,12 @@ body,
 }
 
 .pp-header-brand-bar {
-  --pp-brand-logo-inset: 12px;
+  --pp-brand-logo-inset: 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: var(--pp-brand-logo-inset) 14px;
-  padding-left: var(--pp-brand-logo-inset);
+  padding: var(--pp-brand-logo-inset);
   padding-top: calc(var(--pp-brand-logo-inset) + env(safe-area-inset-top, 0px));
   background: var(--pp-header-brand);
   overflow: visible;
@@ -449,6 +448,7 @@ body,
   background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
   cursor: pointer;
+  overflow: visible;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
