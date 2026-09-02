@@ -728,15 +728,31 @@ export function DoodlePairIcon({ className }) {
   );
 }
 
-/** Lektor s míčem — kroužek / lekce */
+/** Nota — kroužek / lekce */
 export function DoodleLessonIcon({ className }) {
   return (
     <DoodleIcon className={className}>
-      <circle {...s} cx="9.2" cy="6.5" r="2.35" />
-      <path {...s} d="M5.2 19.8c0-3.1 2.1-5.5 4.4-5.5s4.4 2.4 4.4 5.5" />
-      <path {...s} d="M12.4 12.8L16.6 8.2" />
-      <circle {...s} cx="18.3" cy="6.6" r="2.2" />
-      <path {...s} d="M16.8 5.5c1.1.7 1.9 1.8 2.2 3.1" opacity="0.65" />
+      <ellipse
+        cx="7"
+        cy="16.8"
+        rx="3.1"
+        ry="2.25"
+        transform="rotate(-22 7 16.8)"
+        fill="currentColor"
+        stroke="none"
+      />
+      <ellipse
+        cx="15.6"
+        cy="15.2"
+        rx="3.1"
+        ry="2.25"
+        transform="rotate(-22 15.6 15.2)"
+        fill="currentColor"
+        stroke="none"
+      />
+      <path {...s} d="M9.8 15.8V6.2" />
+      <path {...s} d="M18.4 14.2V4.8" />
+      <path {...s} d="M9.8 6.2L18.4 4.8" />
     </DoodleIcon>
   );
 }
