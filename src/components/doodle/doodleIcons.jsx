@@ -31,11 +31,10 @@ export function DoodleHelpIcon({ className }) {
 export function DoodleGroupsIcon({ className }) {
   return (
     <DoodleIcon className={className}>
-      <circle {...s} cx="8.5" cy="8.5" r="2.8" />
-      <circle {...s} cx="16.2" cy="9.8" r="2.2" />
-      <path {...s} d="M3.5 19.5c0-2.8 2.5-4.8 5-4.8s5 2 5 4.8" />
-      <path {...s} d="M13.5 19.5c0-2 1.8-3.5 3.5-3.5" />
-      <path {...s} d="M8.5 11.5v1.5M16.2 12.2v1" opacity="0.6" />
+      <circle {...s} cx="8.4" cy="8.2" r="2.6" />
+      <circle {...s} cx="15.8" cy="8.4" r="2.4" />
+      <path {...s} d="M3.6 19.6c0-2.6 2.1-4.5 4.8-4.5s4.8 1.9 4.8 4.5" />
+      <path {...s} d="M11.2 19.6c0-2.5 2-4.3 4.6-4.3s4.6 1.8 4.6 4.3" />
     </DoodleIcon>
   );
 }
@@ -77,11 +76,10 @@ export function DoodleBeautyIcon({ className }) {
 export function DoodleFamilyIcon({ className }) {
   return (
     <DoodleIcon className={className}>
-      <circle {...s} cx="9" cy="8" r="2.5" />
-      <circle {...s} cx="16" cy="9.5" r="2" />
-      <path {...s} d="M4 19.5c0-2.5 2.2-4.5 5-4.5s5 2 5 4.5" />
-      <path {...s} d="M14 19.5c0-1.8 1.5-3.2 3-3.2" />
-      <path {...s} d="M9 10.5v2M16 11.5v1.5" opacity="0.55" />
+      <circle {...s} cx="8.6" cy="7.8" r="2.5" />
+      <circle {...s} cx="15.8" cy="8" r="2.3" />
+      <path {...s} d="M3.8 19.6c0-2.5 2.1-4.4 4.8-4.4s4.8 1.9 4.8 4.4" />
+      <path {...s} d="M11.4 19.6c0-2.4 1.9-4.1 4.4-4.1s4.4 1.7 4.4 4.1" />
     </DoodleIcon>
   );
 }
@@ -114,11 +112,12 @@ export function DoodleAllIcon({ className }) {
 export function DoodleReportIcon({ className }) {
   return (
     <DoodleIcon className={className}>
-      <path {...s} d="M12 8.5v4.2M12 15.8h.01" />
       <path
         {...s}
-        d="M10.2 4.8L3.2 17.5c-.6 1.1.2 2.5 1.4 2.5h14.8c1.2 0 2-1.4 1.4-2.5L13.8 4.8c-.5-.9-1.7-.9-2.6 0z"
+        d="M10.4 5L3.6 17.2c-.55 1 .16 2.3 1.32 2.3h14.16c1.16 0 1.87-1.3 1.32-2.3L13.6 5c-.5-.9-1.7-.9-2.2 0z"
       />
+      <path {...s} d="M12 9.2v4.4" />
+      <circle cx="12" cy="16.6" r="0.95" fill="currentColor" stroke="none" />
     </DoodleIcon>
   );
 }
@@ -704,6 +703,32 @@ export function DoodlePersonIcon({ className }) {
     <DoodleIcon className={className}>
       <circle {...s} cx="12" cy="8" r="3" />
       <path {...s} d="M5.5 19.5c0-3.2 2.8-5.5 6.5-5.5s6.5 2.3 6.5 5.5" />
+    </DoodleIcon>
+  );
+}
+
+/** Dva kompletní sousedé — výpomoc / požádat o pomoc */
+export function DoodlePairIcon({ className }) {
+  return (
+    <DoodleIcon className={className}>
+      <circle {...s} cx="8.2" cy="7.4" r="2.5" />
+      <circle {...s} cx="15.8" cy="7.6" r="2.5" />
+      <path {...s} d="M3.6 19.6c0-2.6 2-4.5 4.6-4.5s4.6 1.9 4.6 4.5" />
+      <path {...s} d="M11.2 19.6c0-2.6 2-4.5 4.6-4.5s4.6 1.9 4.6 4.5" />
+    </DoodleIcon>
+  );
+}
+
+/** Otevřená kniha — kroužek / lekce */
+export function DoodleLessonIcon({ className }) {
+  return (
+    <DoodleIcon className={className}>
+      <path
+        {...s}
+        d="M5 6.6c2.3-.7 4.3-.2 7 1.2 2.7-1.4 4.7-1.9 7-1.2v11.8c-2.3-.7-4.3-.2-7 1.2-2.7-1.4-4.7-1.9-7-1.2V6.6z"
+      />
+      <path {...s} d="M12 7.8v11.6" />
+      <path {...s} d="M8 10.4h2.4M8 13.2h2.4" opacity="0.55" />
     </DoodleIcon>
   );
 }

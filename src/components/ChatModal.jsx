@@ -13,6 +13,8 @@ import {
   chatTopicKindLabel,
 } from "../data/chatTopics.js";
 import SectionBackButton from "./SectionBackButton.jsx";
+import SampleBadge from "./SampleBadge.jsx";
+import { isSampleContent } from "../data/sampleContent.js";
 
 /** Messenger-style fajfky: odesláno / doručeno / přečteno */
 function MessageTicks({ status = "sent" }) {
@@ -103,6 +105,7 @@ function ThreadHeader({ section, expanded, onToggle }) {
   const count = section.messages.length;
   const kind = section.topic?.label || chatTopicKindLabel(section.topic?.kind);
   const title = section.topic?.title || formatTopicHeading(section.topic);
+  const showTitle = Boolean(title && title !== kind);
 
   return (
     <button
@@ -147,7 +150,9 @@ function ThreadHeader({ section, expanded, onToggle }) {
             <span className="text-[10px] text-stone-400 ml-auto">{topicLastTime(section)}</span>
           ) : null}
         </div>
-        <p className="text-sm font-semibold text-stone-900 mt-1 line-clamp-2 leading-snug">{title}</p>
+        {showTitle ? (
+          <p className="text-sm font-semibold text-stone-900 mt-1 line-clamp-2 leading-snug">{title}</p>
+        ) : null}
         {!expanded && (
           <p className="text-[11px] text-stone-500 mt-0.5 line-clamp-1">{topicPreviewText(section)}</p>
         )}
@@ -171,6 +176,7 @@ export default function ChatModal({
     openCraftsmanPublicProfile,
     setChatActiveTopic,
     getPersonPhoto,
+    chats,
   } = useApp();
   const [text, setText] = useState("");
   const [didInitThread, setDidInitThread] = useState(false);
@@ -180,6 +186,8 @@ export default function ChatModal({
   const topic = normalizeChatTopic(activeTopic);
   const activeKey = topic ? topicSectionKey(topic) : null;
 
+  const sampleChat = (chats ?? []).find((c) => c.participantId === participantId);
+  const isTestChat = isSampleContent(sampleChat) || isSampleContent({ chatId: `chat-${participantId}` });
   const participantService = resolveChatParticipantService?.(participantId);
   const displayName = formatPersonName({ id: participantId, name: participantName });
   const participantPhoto = getPersonPhoto?.(participantId);
@@ -235,7 +243,11 @@ export default function ChatModal({
   if (!open) return null;
 
   const selectThread = (section) => {
-    if (section.key === activeKey) return;
+    if (section.key === activeKey) {
+      setChatActiveTopic?.(null);
+      setText("");
+      return;
+    }
     setChatActiveTopic?.(section.topic);
     setText("");
   };
@@ -291,6 +303,13 @@ export default function ChatModal({
             ) : (
               <h2 className="font-semibold text-stone-900 truncate min-w-0 flex-1">{displayName}</h2>
             )}
+            {isTestChat ? (
+              <SampleBadge
+                className="shrink-0"
+                label="Testovací"
+                title="Testovací konverzace — jen ukázka, jak vypadají zprávy v Podplotu"
+              />
+            ) : null}
             <button
               type="button"
               onClick={onClose}
@@ -302,7 +321,7 @@ export default function ChatModal({
           </header>
 
           <p className="shrink-0 px-3.5 py-2 text-[11px] text-stone-500 border-b border-stone-100 bg-stone-50">
-            Všechna témata zůstávají nahoře — klepnutím rozbalíte jiné vlákno.
+            Všechna témata zůstávají nahoře — klepnutím na − vlákno sbalíte.
           </p>
 
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">

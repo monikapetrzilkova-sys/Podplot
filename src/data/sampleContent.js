@@ -10,6 +10,7 @@ export function markAsSample(items) {
   return (items ?? []).map((item) => {
     if (!item || typeof item !== "object") return item;
     rememberId(item.id);
+    rememberId(item.chatId);
     rememberId(item.fromSecurityReportId);
     return { ...item, sample: true };
   });
@@ -18,8 +19,9 @@ export function markAsSample(items) {
 export function isSampleContent(item) {
   if (!item || item.mine) return false;
   if (item.sample === true) return true;
-  const candidates = [
+  const raw = [
     item.id,
+    item.chatId,
     item.fromSecurityReportId,
     item.eventId,
     item.helpId,
@@ -30,6 +32,9 @@ export function isSampleContent(item) {
     item.newsItem?.id,
   ]
     .filter(Boolean)
-    .map((id) => String(id).replace(/^(feed-|hlaseni-|event-|help-|news-|group-|post-)/, ""));
-  return candidates.some((id) => SAMPLE_IDS.has(id));
+    .map(String);
+  const stripped = raw.map((id) =>
+    id.replace(/^(feed-|hlaseni-|event-|help-|news-|group-|post-|chat-)/, "")
+  );
+  return [...raw, ...stripped].some((id) => SAMPLE_IDS.has(id));
 }

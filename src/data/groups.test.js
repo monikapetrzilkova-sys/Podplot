@@ -3,9 +3,11 @@ import assert from "node:assert/strict";
 import {
   isGroupBoardDiscussionPost,
   getGroupPosts,
+  getRecentGroupPosts,
+  groupPostsLocation,
   mergePostsById,
 } from "./groups.js";
-import { getMyMemberGroups } from "./locations.js";
+import { getGroupsForLocation, getMyMemberGroups } from "./locations.js";
 import { rowToFeedPost } from "./communityApi.js";
 import { loadGroupBoardPosts, persistGroupBoardPosts } from "./groupPostsStorage.js";
 
@@ -129,5 +131,97 @@ describe("group board posts", () => {
     assert.equal(loaded.length, 1);
     assert.equal(loaded[0].id, "gp-1");
     assert.equal(loaded[0].groupId, "tenis");
+  });
+});
+
+describe("group locality", () => {
+  const jesenice = {
+    id: "domov",
+    municipality: "Jesenice",
+    lat: 49.966,
+    lng: 14.512,
+    radiusKm: 7,
+  };
+  const brno = {
+    id: "domov",
+    municipality: "Brno-střed",
+    lat: 49.195,
+    lng: 16.608,
+    radiusKm: 3,
+  };
+  const location = (loc) => groupPostsLocation(loc.id, loc);
+
+  it("shows the demo Tenis catalog only in Jesenice, not in another town", () => {
+    const homeGroups = getGroupsForLocation("domov", "Jesenice");
+    assert.equal(homeGroups.some((g) => g.id === "tenis"), true);
+    assert.equal(getGroupsForLocation("domov", "Brno-střed").some((g) => g.id === "tenis"), false);
+    assert.equal(getGroupsForLocation("domov", "Jesenice u Prahy").some((g) => g.id === "tenis"), true);
+  });
+
+  it("keeps Praha work-slot catalog off a remapped home in another city", () => {
+    assert.equal(getGroupsForLocation("prace", "Praha").some((g) => g.id === "praha-obedy"), true);
+    assert.equal(getGroupsForLocation("prace", "Brno-střed").length, 0);
+  });
+
+  it("hides a tennis tip from another municipality on the local board", () => {
+    const foreign = {
+      id: "gp-user-foreign",
+      boardPost: true,
+      groupId: "tenis",
+      categoryId: "diskuse",
+      type: "Příspěvek",
+      title: "Tip na trenéra",
+      municipality: "Praha 1",
+      locationId: "domov",
+    };
+    const local = {
+      id: "gp-user-local",
+      boardPost: true,
+      groupId: "tenis",
+      categoryId: "diskuse",
+      type: "Příspěvek",
+      title: "Kurty v Jesenici",
+      municipality: "Jesenice",
+      locationId: "domov",
+    };
+    const posts = getGroupPosts("tenis", [foreign, local], location(jesenice));
+    assert.equal(posts.some((p) => p.id === "gp-user-foreign"), false);
+    assert.equal(posts.some((p) => p.id === "gp-user-local"), true);
+  });
+
+  it("does not show Jesenice seed group posts in another town", () => {
+    const posts = getGroupPosts("maminky", [], location(brno));
+    assert.equal(posts.some((p) => p.id === "gp1"), false);
+  });
+
+  it("keeps own group posts visible even from another slot", () => {
+    const mine = {
+      id: "gp-user-mine",
+      boardPost: true,
+      groupId: "tenis",
+      categoryId: "diskuse",
+      type: "Příspěvek",
+      title: "Hledám spoluhráče",
+      municipality: "Praha 1",
+      locationId: "prace",
+      mine: true,
+    };
+    const posts = getGroupPosts("tenis", [mine], location(jesenice));
+    assert.equal(posts.some((p) => p.id === "gp-user-mine"), true);
+  });
+
+  it("limits recent group posts to joined groups in the active locality", () => {
+    const foreign = {
+      id: "gp-user-foreign-recent",
+      boardPost: true,
+      groupId: "tenis",
+      categoryId: "diskuse",
+      type: "Příspěvek",
+      title: "Tip na trenéra",
+      municipality: "Praha 1",
+      locationId: "domov",
+    };
+    const recent = getRecentGroupPosts([foreign], 5, ["tenis"], location(jesenice));
+    assert.equal(recent.some((p) => p.id === "gp-user-foreign-recent"), false);
   });
 });

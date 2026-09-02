@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getGroupPosts } from "../data/groups.js";
+import { getGroupPosts, groupPostsLocation } from "../data/groups.js";
 import { useApp } from "../context/AppContext.jsx";
 import CreateGroupModal from "./CreateGroupModal.jsx";
 import GroupProposalsSection from "./GroupProposalsSection.jsx";
@@ -13,6 +13,8 @@ export default function Groups() {
     dismissGroupProposal,
     restoreGroupProposal,
     userGroupPosts,
+    activeLocationId,
+    activeLocation,
     setActiveTab,
     switchFeedMainMode,
   } = useApp();
@@ -62,7 +64,11 @@ export default function Groups() {
         <h3 className="text-[11px] font-bold uppercase tracking-widest text-emerald-700 mb-3">Aktivní skupiny</h3>
         <div className="space-y-3">
           {communityGroups.map((g) => {
-            const count = getGroupPosts(g.id, userGroupPosts).length;
+            const count = getGroupPosts(
+              g.id,
+              userGroupPosts,
+              groupPostsLocation(activeLocationId, activeLocation)
+            ).length;
             return (
               <button
                 key={g.id}

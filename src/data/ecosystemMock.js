@@ -693,7 +693,7 @@ const EVENTS_RAW = [
 
 export const EVENTS = markAsSample(EVENTS_RAW);
 
-export const INITIAL_CHATS = [
+export const INITIAL_CHATS = markAsSample([
   {
     chatId: "chat-marie",
     participantName: "Marie Nováková",
@@ -721,7 +721,7 @@ export const INITIAL_CHATS = [
       { sender: "them", text: "Můžu zítra dopoledne.", time: "včera" },
     ],
   },
-];
+]);
 
 export const INITIAL_NOTIFICATIONS = [
   { id: "n1", type: "blue", title: "Marie daruje jahody", body: "350 m · právě teď", read: false, time: "10:15" },

@@ -2,6 +2,7 @@
 
 import { parseStoredAddress, pscDigits } from "./addressValidation.js";
 import { isBareStatutoryCity, localityShortLabel, refineLocalityFromPsc } from "./czechCityDistricts.js";
+import { municipalitiesMatch } from "./geoFilter.js";
 import { DEFAULT_NEIGHBOR_RADIUS_KM } from "./mapRadiusSettings.js";
 
 export const DEFAULT_RADIUS_KM = 7;
@@ -274,8 +275,46 @@ export function getLocation(id) {
   return USER_LOCATIONS.find((l) => l.id === id);
 }
 
-export function getGroupsForLocation(locationId) {
-  return GROUPS_BY_LOCATION[locationId] ?? GROUPS_BY_LOCATION.domov;
+function normalizeMunLoose(value) {
+  return String(value ?? "")
+    .trim()
+    .toLocaleLowerCase("cs");
+}
+
+function catalogSlotId(locationId) {
+  return GROUPS_BY_LOCATION[locationId] ? locationId : "domov";
+}
+
+/** Obec, ke které patří ukázkový katalog skupin daného slotu. */
+export function demoMunicipalityForGroupCatalog(locationId) {
+  const slot = catalogSlotId(locationId);
+  return USER_LOCATIONS.find((l) => l.id === slot)?.municipality ?? "Jesenice";
+}
+
+/** Ukázkový katalog (Tenis, Maminky…) jen v demo obci slotu — ne v každé jiné lokalitě. */
+export function isDemoGroupCatalogMunicipality(locationId, municipality) {
+  if (!municipality) return false;
+  const slot = catalogSlotId(locationId);
+  const stockMun = demoMunicipalityForGroupCatalog(slot);
+  if (normalizeMunLoose(municipality) === normalizeMunLoose(stockMun)) return true;
+  if (municipalitiesMatch(municipality, stockMun)) return true;
+  if (slot === "domov" && municipalitiesMatch(municipality, "Jesenice u Prahy")) return true;
+  if (slot === "prace" && municipalitiesMatch(municipality, "Praha 1")) return true;
+  return false;
+}
+
+export function getGroupsForLocation(locationId, municipality = null) {
+  const slot = catalogSlotId(locationId);
+  const raw = GROUPS_BY_LOCATION[slot] ?? GROUPS_BY_LOCATION.domov;
+  const slotMun = demoMunicipalityForGroupCatalog(slot);
+  if (municipality && !isDemoGroupCatalogMunicipality(slot, municipality)) {
+    return [];
+  }
+  return raw.map((g) => ({
+    ...g,
+    locationId: slot,
+    municipality: slotMun,
+  }));
 }
 
 /** Demo členství jen pro lokální SKIP_REGISTRATION — reálný účet začíná prázdný. */

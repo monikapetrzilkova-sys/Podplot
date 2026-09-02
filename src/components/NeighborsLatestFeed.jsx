@@ -6,7 +6,7 @@ import HelpFeedActions from "./HelpFeedActions.jsx";
 import DoodleEmptyState from "./doodle/DoodleEmptyState.jsx";
 import { extractListingPrice } from "./CompactListingRow.jsx";
 import { isThingsModuleListing } from "../utils/thingsModule.js";
-import { getRecentGroupPosts, getGroup } from "../data/groups.js";
+import { getRecentGroupPosts, getGroup, groupPostsLocation } from "../data/groups.js";
 import { displayCreatorLabel } from "../data/accountTypes.js";
 import { feedItemNeedsExpand } from "./feed/feedExpand.js";
 import { formatContentAge } from "../data/czechDateTime.js";
@@ -41,6 +41,9 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
     feedPostsForLocation,
     neighborHelp,
     userGroupPosts,
+    joinedGroupIds,
+    activeLocationId,
+    activeLocation,
     upcomingEvents,
     openEventDetail,
     joinEvent,
@@ -116,7 +119,12 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
       )
       .slice(0, PER_CATEGORY);
 
-    const skupiny = getRecentGroupPosts(userGroupPosts, PER_CATEGORY).map((post) => {
+    const skupiny = getRecentGroupPosts(
+      userGroupPosts,
+      PER_CATEGORY,
+      joinedGroupIds,
+      groupPostsLocation(activeLocationId, activeLocation)
+    ).map((post) => {
       const group = getGroup(post.groupId) ?? communityGroups.find((g) => g.id === post.groupId);
       const groupName = post.groupName ?? group?.name ?? "Skupina";
       return {
@@ -167,6 +175,9 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
     feedPostsForLocation,
     neighborHelp,
     userGroupPosts,
+    joinedGroupIds,
+    activeLocationId,
+    activeLocation,
     upcomingEvents,
     communityGroups,
     getHelpOffers,

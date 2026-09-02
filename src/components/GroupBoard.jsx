@@ -1,5 +1,5 @@
 import { useApp } from "../context/AppContext.jsx";
-import { getGroup, getGroupPosts } from "../data/groups.js";
+import { getGroup, getGroupPosts, groupPostsLocation } from "../data/groups.js";
 import { getCategoriesForGroup, postMatchesCategory, getCategory } from "../data/listingCategories.js";
 import { sortPostsByTop } from "../data/pricing.js";
 import FeedCard from "./FeedCard.jsx";
@@ -12,6 +12,8 @@ export default function GroupBoard() {
     activeGroupId,
     closeGroup,
     userGroupPosts,
+    activeLocationId,
+    activeLocation,
     groupFilter,
     setGroupFilter,
     openCreate,
@@ -20,7 +22,11 @@ export default function GroupBoard() {
   const group = getGroup(activeGroupId);
   if (!group) return null;
 
-  const allPosts = getGroupPosts(activeGroupId, userGroupPosts);
+  const allPosts = getGroupPosts(
+    activeGroupId,
+    userGroupPosts,
+    groupPostsLocation(activeLocationId, activeLocation)
+  );
   const filtered = sortPostsByTop(
     groupFilter ? allPosts.filter((p) => postMatchesCategory(p, groupFilter)) : allPosts
   );

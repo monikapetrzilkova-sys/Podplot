@@ -4,7 +4,7 @@ import { buildGlobalSearchResults } from "../utils/globalSearch.js";
 import { SECURITY_REPORTS } from "../data/mockData.js";
 import { filterSecurityReportsByLocation } from "../data/geoFilter.js";
 import { filterActiveReports } from "../data/reportExpiry.js";
-import { getGroupPosts, getGroup } from "../data/groups.js";
+import { getGroupPosts, getGroup, groupPostsLocation } from "../data/groups.js";
 import { PlaceIcon } from "./module/placeIcons.jsx";
 import { ReportPinIcon } from "./module/reportPinIcons.jsx";
 import InstitutionDetailCard from "./InstitutionDetailCard.jsx";
@@ -127,8 +127,10 @@ export default function GlobalSearchResults() {
   );
 
   const groupPosts = useMemo(() => {
-    return (communityGroups ?? []).flatMap((g) => getGroupPosts(g.id, userGroupPosts ?? []));
-  }, [communityGroups, userGroupPosts]);
+    return (communityGroups ?? []).flatMap((g) =>
+      getGroupPosts(g.id, userGroupPosts ?? [], groupPostsLocation(activeLocationId, activeLocation))
+    );
+  }, [communityGroups, userGroupPosts, activeLocationId, activeLocation]);
 
   const searchableNeighbors = useMemo(
     () =>

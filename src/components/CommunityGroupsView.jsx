@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
-import { getGroupPosts } from "../data/groups.js";
+import { getGroupPosts, groupPostsLocation } from "../data/groups.js";
 import { getMyMemberGroups } from "../data/locations.js";
 import { CLUB_CATEGORIES } from "../data/clubCategories.js";
 import { buildGroupHierarchy, countPendingProposalsForCategory } from "../utils/groupHierarchy.js";
@@ -162,7 +162,7 @@ function SubgroupRow({ group, postCount, onOpen, memberBadge = false }) {
 }
 
 /** Seřadí moje skupiny podle mé aktivity (moje příspěvky → aktivita ve skupině → nejnovější). */
-function sortGroupsByFrequency(groups, userGroupPosts, user = null) {
+function sortGroupsByFrequency(groups, userGroupPosts, user = null, location = null) {
   const isMine = (p) =>
     Boolean(
       p.mine ||
@@ -172,8 +172,8 @@ function sortGroupsByFrequency(groups, userGroupPosts, user = null) {
     );
 
   return [...groups].sort((a, b) => {
-    const postsA = getGroupPosts(a.id, userGroupPosts);
-    const postsB = getGroupPosts(b.id, userGroupPosts);
+    const postsA = getGroupPosts(a.id, userGroupPosts, location);
+    const postsB = getGroupPosts(b.id, userGroupPosts, location);
     const myPostsA = postsA.filter(isMine);
     const myPostsB = postsB.filter(isMine);
     const latestMineA = myPostsA.reduce((max, p) => Math.max(max, Number(p.createdAt) || 0), 0);
@@ -237,6 +237,7 @@ function CategoryTrunk({
   groups,
   proposals,
   userGroupPosts,
+  postsLocation,
   onOpen,
   myGroupIds,
   forceOpen,
@@ -300,7 +301,7 @@ function CategoryTrunk({
                 <SubgroupRow
                   key={g.id}
                   group={g}
-                  postCount={getGroupPosts(g.id, userGroupPosts).length}
+                  postCount={getGroupPosts(g.id, userGroupPosts, postsLocation).length}
                   onOpen={onOpen}
                   memberBadge={myGroupIds.has(g.id)}
                 />
@@ -385,6 +386,8 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
     feedSubFilter,
     communityGroups,
     userGroupPosts,
+    activeLocationId,
+    activeLocation,
     setFeedSubFilter,
     openCreateGroupModal,
     groupProposals,
@@ -411,9 +414,13 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
     () => getMyMemberGroups(communityGroups, joinedGroupIds),
     [communityGroups, joinedGroupIds]
   );
+  const postsLocation = useMemo(
+    () => groupPostsLocation(activeLocationId, activeLocation),
+    [activeLocationId, activeLocation]
+  );
   const myGroupsRanked = useMemo(
-    () => sortGroupsByFrequency(myGroups, userGroupPosts, user),
-    [myGroups, userGroupPosts, user]
+    () => sortGroupsByFrequency(myGroups, userGroupPosts, user, postsLocation),
+    [myGroups, userGroupPosts, user, postsLocation]
   );
   const myGroupIds = useMemo(() => new Set(myGroups.map((g) => g.id)), [myGroups]);
   const activeGroup = communityGroups.find((g) => g.id === feedSubFilter);
@@ -472,7 +479,7 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
   let body = null;
 
   if (activeGroup && !isOverview && !isMyGroups) {
-    const posts = getGroupPosts(activeGroup.id, userGroupPosts);
+    const posts = getGroupPosts(activeGroup.id, userGroupPosts, postsLocation);
     const isMember = myGroupIds.has(activeGroup.id);
 
     body = (
@@ -545,7 +552,7 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
     const feedPosts = myGroupsRanked
       .filter((g) => effectiveFocus === "vse" || g.id === effectiveFocus)
       .flatMap((g) =>
-        getGroupPosts(g.id, userGroupPosts).map((p) => ({
+        getGroupPosts(g.id, userGroupPosts, postsLocation).map((p) => ({
           ...p,
           groupName: g.name,
           groupId: g.id,
@@ -631,6 +638,7 @@ export default function CommunityGroupsView({ atTop = false, hideFilterBar = fal
               groups={cat.subgroups}
               proposals={catProposals}
               userGroupPosts={userGroupPosts}
+              postsLocation={postsLocation}
               onOpen={setFeedSubFilter}
               myGroupIds={myGroupIds}
               forceOpen={Boolean(query)}

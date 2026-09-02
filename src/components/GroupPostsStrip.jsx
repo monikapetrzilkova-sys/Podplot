@@ -1,11 +1,24 @@
 import { useApp } from "../context/AppContext.jsx";
-import { getRecentGroupPosts, getGroup } from "../data/groups.js";
+import { getRecentGroupPosts, getGroup, groupPostsLocation } from "../data/groups.js";
 import FeedCard from "./FeedCard.jsx";
 import { GroupNavIcon, GROUP_ICON_CLASS } from "./communityNavIcons.jsx";
 
 export default function GroupPostsStrip() {
-  const { userGroupPosts, communityGroups, joinedGroupIds, switchFeedMainMode, selectFeedSubFilter } = useApp();
-  const posts = getRecentGroupPosts(userGroupPosts, 4, joinedGroupIds);
+  const {
+    userGroupPosts,
+    communityGroups,
+    joinedGroupIds,
+    activeLocationId,
+    activeLocation,
+    switchFeedMainMode,
+    selectFeedSubFilter,
+  } = useApp();
+  const posts = getRecentGroupPosts(
+    userGroupPosts,
+    4,
+    joinedGroupIds,
+    groupPostsLocation(activeLocationId, activeLocation)
+  );
 
   if (posts.length === 0) return null;
 

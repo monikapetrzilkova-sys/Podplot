@@ -2,17 +2,15 @@ import { useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import { APP_ROLES } from "../data/userRoles.js";
 import {
-  IconAlert,
   IconBook,
   IconBulb,
   IconHammer,
   IconMapPin,
-  IconPalette,
   IconShop,
   IconTabCalendar,
   IconTabCatalog,
-  IconTabNeighbors,
 } from "../data/icons.jsx";
+import { DoodleCartIcon, DoodleLessonIcon, DoodlePairIcon, DoodleReportIcon } from "./doodle/doodleIcons.jsx";
 
 /** Hlavní 3 akce souseda — nejčastější nahoře; zbytek pod Další */
 const NEIGHBOR_PRIMARY = [
@@ -20,7 +18,7 @@ const NEIGHBOR_PRIMARY = [
     id: "report",
     label: "Nahlásit",
     hint: "Závada, ztráta nebo tip na mapě",
-    icon: IconAlert,
+    icon: DoodleReportIcon,
     action: "report",
   },
   {
@@ -35,7 +33,7 @@ const NEIGHBOR_PRIMARY = [
     id: "ask",
     label: "Požádat o pomoc",
     hint: "Výpomoc od lidí v okolí",
-    icon: IconTabNeighbors,
+    icon: DoodlePairIcon,
     action: "help",
   },
 ];
@@ -45,7 +43,7 @@ const NEIGHBOR_MORE = [
     id: "lend",
     label: "Půjčím věc",
     hint: "Přidat do půjčovny",
-    icon: IconHammer,
+    icon: DoodleCartIcon,
     action: "create",
     category: "pujcovna",
   },
@@ -60,7 +58,7 @@ const NEIGHBOR_MORE = [
     id: "hosted-activity",
     label: "Kroužek / lekce",
     hint: "Rozvrh a termíny",
-    icon: IconPalette,
+    icon: DoodleLessonIcon,
     action: "hosted-activity",
   },
   {
@@ -125,7 +123,7 @@ const OFFICE_ACTIONS = [
     id: "announce",
     label: "Nové oznámení",
     hint: "Mimořádné hlášení nebo běžná aktualita obce",
-    icon: IconAlert,
+    icon: DoodleReportIcon,
     action: "office-announce",
   },
   {
@@ -153,10 +151,10 @@ function ActionRow({ item, onPick }) {
       className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left hover:bg-[#F1F6F5] transition-colors"
     >
       <span
-        className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+        className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 overflow-visible"
         style={{ background: "#E8F3EF", color: "#3D7A68" }}
       >
-        <Icon className="w-5 h-5" />
+        <Icon className="w-5 h-5 overflow-visible" />
       </span>
       <span className="min-w-0">
         <span className="block text-sm font-semibold text-stone-900 leading-snug">{item.label}</span>

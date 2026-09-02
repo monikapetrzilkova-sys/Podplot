@@ -1,6 +1,7 @@
 /** Skupiny, nástěnky a propojení — nástěnka je na seznámení a tipy, ne na tržiště */
 
 import { MY_GROUP_IDS_BY_LOCATION } from "./locations.js";
+import { filterByActiveLocation } from "./geoFilter.js";
 import { isThingsModuleListing } from "../utils/thingsModule.js";
 import { markAsSample } from "./sampleContent.js";
 
@@ -97,6 +98,8 @@ const GROUP_POSTS_RAW = [
     body: "Pro děti 4–7 let, úterý 15:30. První lekce zdarma — napište do komentáře.",
     meta: "800 m · Maminky",
     type: "Kroužek",
+    locationId: "chata",
+    municipality: "Přední Lhota",
   },
   {
     id: "gp4",
@@ -137,7 +140,11 @@ const GROUP_POSTS_RAW = [
     meta: "před 1 dnem · Sport",
     type: "Příspěvek",
   },
-];
+].map((post) =>
+  post.locationId
+    ? post
+    : { ...post, locationId: "domov", municipality: "Jesenice" }
+);
 
 export const GROUP_POSTS = markAsSample(GROUP_POSTS_RAW);
 
@@ -186,17 +193,32 @@ export function getMyGroups(joinedGroupIds = []) {
   return GROUPS.filter((g) => ids.has(g.id));
 }
 
-export function getGroupPosts(groupId, userGroupPosts = []) {
+export function groupPostsLocation(activeLocationId, activeLocation) {
+  if (!activeLocationId) return null;
+  return { activeLocationId, activeLocation };
+}
+
+export function scopeGroupPostsToLocation(posts, location = null) {
+  if (!location?.activeLocationId) return posts ?? [];
+  return filterByActiveLocation(posts ?? [], location.activeLocationId, location.activeLocation);
+}
+
+export function getGroupPosts(groupId, userGroupPosts = [], location = null) {
   const isBoardInGroup = (p) =>
     isGroupBoardDiscussionPost(p) && postVisibleInGroup(p, groupId);
-  const mock = GROUP_POSTS.filter(isBoardInGroup);
-  const user = userGroupPosts.filter(isBoardInGroup);
+  const mock = scopeGroupPostsToLocation(GROUP_POSTS.filter(isBoardInGroup), location);
+  const user = scopeGroupPostsToLocation(userGroupPosts.filter(isBoardInGroup), location);
   return [...user, ...mock];
 }
 
-export function getRecentGroupPosts(userGroupPosts = [], limit = 5, joinedGroupIds = MY_GROUP_IDS) {
+export function getRecentGroupPosts(
+  userGroupPosts = [],
+  limit = 5,
+  joinedGroupIds = MY_GROUP_IDS,
+  location = null
+) {
   const memberIds = Array.isArray(joinedGroupIds) ? joinedGroupIds : MY_GROUP_IDS;
-  const all = [...userGroupPosts, ...GROUP_POSTS].filter(
+  const all = scopeGroupPostsToLocation([...userGroupPosts, ...GROUP_POSTS], location).filter(
     (p) => isGroupBoardDiscussionPost(p) && memberIds.some((id) => postVisibleInGroup(p, id))
   );
   return all.slice(0, limit);

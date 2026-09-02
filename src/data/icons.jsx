@@ -55,9 +55,18 @@ export function IconBell({ className = "w-5 h-5" }) {
 
 export function IconAlert({ className = "w-4 h-4" }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-      <path d="M12 9v4M12 17h.01" />
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 4.4 3.7 18.4c-.5.9.2 2.1 1.3 2.1h14c1.1 0 1.8-1.2 1.3-2.1L12 4.4z" />
+      <path d="M12 10v4.2" />
+      <circle cx="12" cy="17.2" r="0.95" fill="currentColor" stroke="none" />
     </svg>
   );
 }
@@ -142,9 +151,10 @@ export function IconTabUser({ className = "w-5 h-5" }) {
 export function IconTabNeighbors({ className = "w-5 h-5" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" {...tabStroke}>
-      <circle cx="9" cy="7" r="3" />
-      <circle cx="17" cy="9" r="2.5" />
-      <path d="M3 20c0-3 3-5 6-5s6 2 6 5M14 20c0-2 2-3.5 4-3.5" />
+      <circle cx="7" cy="8" r="2.7" />
+      <path d="M2.6 20c0-2.6 2-4.6 4.4-4.6s4.4 2 4.4 4.6" />
+      <circle cx="17" cy="8" r="2.7" />
+      <path d="M12.6 20c0-2.6 2-4.6 4.4-4.6s4.4 2 4.4 4.6" />
     </svg>
   );
 }

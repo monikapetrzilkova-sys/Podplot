@@ -754,7 +754,7 @@ export function AppProvider({ children }) {
       : sanitizeUserLocations(loadUserSession()?.locations);
     const loc = sessionLocs.find((l) => l.id === locId) ?? sessionLocs[0];
     return mergeCommunityGroups(
-      getGroupsForLocation(loc?.id || locId),
+      getGroupsForLocation(loc?.id || locId, loc?.municipality),
       filterUserGroupsForMunicipality(loadStoredUserGroups(), loc?.municipality)
     );
   });
@@ -797,7 +797,7 @@ export function AppProvider({ children }) {
       extraUserGroups ?? userCreatedGroups,
       municipality
     );
-    return mergeCommunityGroups(getGroupsForLocation(locationId), userGroups);
+    return mergeCommunityGroups(getGroupsForLocation(locationId, municipality), userGroups);
   }, [userCreatedGroups]);
 
   // Ecosystem state
@@ -2496,7 +2496,7 @@ export function AppProvider({ children }) {
       persistJoinedGroupIds(userId, []);
       setCommunityGroups(
         mergeCommunityGroups(
-          getGroupsForLocation("domov"),
+          getGroupsForLocation("domov", municipality),
           filterUserGroupsForMunicipality(loadStoredUserGroups(), municipality)
         )
       );
@@ -2625,7 +2625,7 @@ export function AppProvider({ children }) {
         const loc = cleaned.find((l) => l.id === locId) ?? cleaned[0];
         setCommunityGroups(
           mergeCommunityGroups(
-            getGroupsForLocation(locId),
+            getGroupsForLocation(locId, loc?.municipality),
             filterUserGroupsForMunicipality(loadStoredUserGroups(), loc?.municipality)
           )
         );
@@ -2663,7 +2663,7 @@ export function AppProvider({ children }) {
         setActiveLocationId("domov");
         setCommunityGroups(
           mergeCommunityGroups(
-            getGroupsForLocation("domov"),
+            getGroupsForLocation("domov", municipality),
             filterUserGroupsForMunicipality(loadStoredUserGroups(), municipality)
           )
         );
@@ -2740,7 +2740,7 @@ export function AppProvider({ children }) {
     setActiveLocationId("domov");
     setCommunityGroups(
       mergeCommunityGroups(
-        getGroupsForLocation("domov"),
+        getGroupsForLocation("domov", DEFAULT_LOCATIONS[0]?.municipality),
         filterUserGroupsForMunicipality(
           loadStoredUserGroups(),
           DEFAULT_LOCATIONS[0]?.municipality
@@ -2794,7 +2794,7 @@ export function AppProvider({ children }) {
       setActiveLocationId("domov");
       setCommunityGroups(
         mergeCommunityGroups(
-          getGroupsForLocation("domov"),
+          getGroupsForLocation("domov", DEFAULT_LOCATIONS[0]?.municipality),
           filterUserGroupsForMunicipality(
             loadStoredUserGroups(),
             DEFAULT_LOCATIONS[0]?.municipality
@@ -8248,6 +8248,16 @@ export function AppProvider({ children }) {
     return applyListingSaleVisibility(base, listingSaleOrders, user?.id ?? "me");
   }, [userPosts, activeLocationId, activeLocation, listingSaleOrders, user?.id, deletedContent]);
 
+  const userGroupPostsForLocation = useMemo(
+    () =>
+      filterByActiveLocation(
+        (userGroupPosts ?? []).filter((p) => !isDeletedPost(p, deletedContent)),
+        activeLocationId,
+        activeLocation
+      ),
+    [userGroupPosts, activeLocationId, activeLocation, deletedContent]
+  );
+
   const neighborHelpForLocation = useMemo(
     () => filterByActiveLocation(neighborHelp, activeLocationId, activeLocation),
     [neighborHelp, activeLocationId, activeLocation]
@@ -8557,7 +8567,7 @@ export function AppProvider({ children }) {
         currentUser: user,
         neighbors,
         events: locationEvents,
-        posts: [...feedPostsForLocation, ...userPostsForLocation, ...userGroupPosts],
+        posts: [...feedPostsForLocation, ...userPostsForLocation, ...userGroupPostsForLocation],
         lendingItems: lendingItemsForLocation,
         neighborHelp: neighborHelpForLocation,
         chats,
@@ -8569,7 +8579,7 @@ export function AppProvider({ children }) {
       locationEvents,
       feedPostsForLocation,
       userPostsForLocation,
-      userGroupPosts,
+      userGroupPostsForLocation,
       lendingItemsForLocation,
       neighborHelpForLocation,
       chats,
@@ -8616,7 +8626,7 @@ export function AppProvider({ children }) {
         neighbors,
         feedPosts: feedPostsForLocation,
         userPosts: userPostsForLocation,
-        userGroupPosts,
+        userGroupPosts: userGroupPostsForLocation,
         events,
         servicesCatalog: filteredServicesCatalog,
         lendingItems: lendingItemsForLocation,
@@ -8631,7 +8641,7 @@ export function AppProvider({ children }) {
       neighbors,
       feedPostsForLocation,
       userPostsForLocation,
-      userGroupPosts,
+      userGroupPostsForLocation,
       events,
       filteredServicesCatalog,
       lendingItemsForLocation,
@@ -8783,7 +8793,8 @@ export function AppProvider({ children }) {
         userPostsForLocation,
         feedPostsForLocation,
         lendingItemsForLocation,
-        userGroupPosts,
+        userGroupPosts: userGroupPostsForLocation,
+        userGroupPostsForLocation,
         userLendingItems,
         lendingAvailability,
         updateLendingAvailability,

@@ -3,6 +3,8 @@ import NewMessageComposer from "./NewMessageComposer.jsx";
 import { Avatar } from "./RoleBadge.jsx";
 import PersonLabel from "./PersonLabel.jsx";
 import { DoodleChatIcon, LOCATION_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
+import SampleBadge from "./SampleBadge.jsx";
+import { isSampleContent } from "../data/sampleContent.js";
 
 function chatLocationLabel(chat, locations) {
   const locId = chat?.locationId;
@@ -68,9 +70,18 @@ export default function MessagesPage({ embedded = false }) {
                     photo={photo}
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2 mb-0.5">
-                      <span className={`truncate ${unread > 0 ? "font-bold text-stone-900" : "font-semibold text-stone-900"}`}>
-                        <PersonLabel personId={chat.participantId} name={chat.participantName} />
+                    <div className="flex items-center justify-between gap-2 mb-0.5 min-w-0">
+                      <span className="flex items-center gap-1.5 min-w-0 flex-1">
+                        <span className={`truncate ${unread > 0 ? "font-bold text-stone-900" : "font-semibold text-stone-900"}`}>
+                          <PersonLabel personId={chat.participantId} name={chat.participantName} />
+                        </span>
+                        {isSampleContent(chat) ? (
+                          <SampleBadge
+                            className="shrink-0"
+                            label="Testovací"
+                            title="Testovací konverzace — jen ukázka, jak vypadají zprávy v Podplotu"
+                          />
+                        ) : null}
                       </span>
                       <div className="flex items-center gap-1.5 shrink-0">
                         {unread > 0 && (
