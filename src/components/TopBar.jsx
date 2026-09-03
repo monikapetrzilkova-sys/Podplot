@@ -100,7 +100,7 @@ export default function TopBar() {
             aria-label="Vyhledávání"
           />
           {activeTab === "home" && (
-            <DoodleHomeIntro className="shrink-0 w-[4.5rem] h-9" aria-hidden />
+            <DoodleHomeIntro className="shrink-0 w-24 h-10" aria-hidden />
           )}
         </div>
         <LocationSwitcher />

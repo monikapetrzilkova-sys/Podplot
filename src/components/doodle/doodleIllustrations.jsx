@@ -2,6 +2,37 @@ import { doodleStroke, DOODLE_OLIVE } from "./doodleStroke.js";
 
 const s = doodleStroke;
 
+/**
+ * Čitelné sluníčko i vedle vyhledávání (~36 px výšky): kotouč + 8 delších paprsků.
+ * Bez obličeje — oči a úsměv v malém rozměru slunce rozmazávají.
+ */
+function DoodleSun({ cx, cy, r = 7 }) {
+  const ray = r * 1.05;
+  const gap = r + 1.7;
+  const dRay = ray * 0.72;
+  const dGap = gap * 0.72;
+  return (
+    <g>
+      <circle
+        cx={cx}
+        cy={cy}
+        r={r}
+        {...s}
+        stroke={DOODLE_OLIVE}
+        strokeWidth={1.7}
+        fill={DOODLE_OLIVE}
+        fillOpacity={0.2}
+      />
+      <path
+        {...s}
+        stroke={DOODLE_OLIVE}
+        strokeWidth={1.6}
+        d={`M${cx} ${cy - gap}v${-ray}M${cx} ${cy + gap}v${ray}M${cx + gap} ${cy}h${ray}M${cx - gap} ${cy}h${-ray}M${cx + dGap} ${cy - dGap}l${dRay} ${-dRay}M${cx - dGap} ${cy + dGap}l${-dRay} ${dRay}M${cx + dGap} ${cy + dGap}l${dRay} ${dRay}M${cx - dGap} ${cy - dGap}l${-dRay} ${-dRay}`}
+      />
+    </g>
+  );
+}
+
 /** Jemná silueta domků a stromů pro záhlaví */
 export function DoodleHeaderLandscape({ className = "w-20 h-8" }) {
   return (
@@ -32,11 +63,10 @@ export function DoodleHeaderLandscape({ className = "w-20 h-8" }) {
 export function DoodleNeighborsIntro({ className = "w-28 h-14" }) {
   return (
     <svg viewBox="0 0 112 56" fill="none" className={`pp-doodle-characters ${className}`} aria-hidden>
-      {/* Panáček vlevo — mává */}
+      {/* Panáček vlevo — zvednutá ruka od ramene šikmo ven, mimo hlavu */}
       <circle cx="28" cy="14" r="6" {...s} />
-      <path {...s} d="M28 20v14M28 26l-8 6M28 26l6-4" />
+      <path {...s} d="M28 20v14M28 26l-8 6M28 24l14-16" />
       <path {...s} d="M28 34l-5 10M28 34l5 10" />
-      <path {...s} d="M22 22l-5-4" opacity={0.8} />
       {/* Panáček vpravo */}
       <circle cx="72" cy="16" r="5.5" {...s} />
       <path {...s} d="M72 21.5v12M72 27l-7 5M72 27l7 4" />
@@ -144,15 +174,13 @@ export function DoodleMapIntro({ className = "w-28 h-14" }) {
 export function DoodleHomeIntro({ className = "w-28 h-14" }) {
   return (
     <svg viewBox="0 0 112 56" fill="none" className={`pp-doodle-characters ${className}`} aria-hidden>
-      <circle cx="88" cy="12" r="6" {...s} stroke={DOODLE_OLIVE} opacity={0.75} />
-      <path {...s} stroke={DOODLE_OLIVE} d="M88 4v2M88 18v2M96 12h2M78 12h2M94 8l1.5 1.5M82 16l1.5 1.5M94 16l1.5-1.5M82 8l1.5-1.5" strokeWidth={1.25} opacity={0.45} />
-      <path {...s} d="M24 38V24l12-9 12 9v14" />
-      <path {...s} d="M32 38v-8h8v8" />
-      <path {...s} stroke={DOODLE_OLIVE} d="M16 40c10-3 20-2 28 2" strokeWidth={1.5} opacity={0.55} />
-      <circle cx="68" cy="22" r="5" {...s} />
-      <path {...s} d="M68 27v11M68 32l-6 5M68 32l5 4" />
-      <path {...s} d="M68 38l-4 9M68 38l4 9" />
-      <path {...s} d="M62 26l-4-3" opacity={0.75} />
+      <DoodleSun cx={94} cy={20} r={7.6} />
+      <path {...s} d="M18 40V26l12-9 12 9v14" />
+      <path {...s} d="M26 40v-8h8v8" />
+      <path {...s} stroke={DOODLE_OLIVE} d="M10 42c10-3 20-2 28 2" strokeWidth={1.5} opacity={0.55} />
+      <circle cx="56" cy="24" r="5" {...s} />
+      <path {...s} d="M56 29v11M56 33l-7 6M56 31l12-14" />
+      <path {...s} d="M56 40l-4 9M56 40l4 9" />
     </svg>
   );
 }
@@ -174,9 +202,8 @@ export function DoodleEventsIntro({ className = "w-36 h-14" }) {
       <circle cx="38" cy="42" r="2.2" {...s} stroke={DOODLE_OLIVE} opacity={0.8} />
 
       <circle cx="78" cy="16" r="5.5" {...s} />
-      <path {...s} d="M78 21.5v12M78 27l-7 5M78 27l7 4" />
+      <path {...s} d="M78 21.5v12M78 27l7 4M78 25l-14-16" />
       <path {...s} d="M78 33.5l-4.5 10M78 33.5l4.5 10" />
-      <path {...s} d="M72 24l-4-5" opacity={0.75} />
 
       <circle cx="104" cy="18" r="5" {...s} />
       <path {...s} d="M104 23v11M104 28l-6 4M104 28l6 3.5" />
@@ -325,15 +352,7 @@ export function DoodleSousedstviScene({ className = "w-full max-w-[280px] h-auto
       <circle cx="258" cy="78" r="12" {...s} stroke={DOODLE_OLIVE} opacity={0.55} />
       <path {...s} stroke={DOODLE_OLIVE} d="M258 90v22" opacity={0.55} />
 
-      {/* Sluníčko */}
-      <circle cx="248" cy="28" r="8" {...s} stroke={DOODLE_OLIVE} opacity={0.7} />
-      <path
-        {...s}
-        stroke={DOODLE_OLIVE}
-        strokeWidth={1.3}
-        d="M248 14v3M248 39v3M262 28h3M231 28h3M258 18l2 2M236 36l2 2M258 38l2-2M236 20l2-2"
-        opacity={0.45}
-      />
+      <DoodleSun cx={248} cy={28} r={8} />
     </svg>
   );
 }
@@ -392,9 +411,8 @@ export function DoodleSousedskaAkceScene({ className = "w-full max-w-[320px] h-a
       <path {...s} d="M72 103.5l-4 10M72 103.5l4 10" />
 
       <circle cx="118" cy="84" r="5" {...s} />
-      <path {...s} d="M118 89v12M118 95l-6 4M118 95l6 3" />
+      <path {...s} d="M118 89v12M118 95l6 3M118 93l-14-16" />
       <path {...s} d="M118 101l-3.5 10M118 101l3.5 10" />
-      <path {...s} d="M112 90l-4-5" opacity={0.75} />
 
       {/* Třetí soused s míčem / hrou */}
       <circle cx="168" cy="96" r="5.5" {...s} />
@@ -412,15 +430,7 @@ export function DoodleSousedskaAkceScene({ className = "w-full max-w-[320px] h-a
       />
       <path {...s} stroke={DOODLE_OLIVE} d="M152 77h6" strokeWidth={1.25} opacity={0.55} />
 
-      {/* Sluníčko */}
-      <circle cx="292" cy="28" r="7" {...s} stroke={DOODLE_OLIVE} opacity={0.65} />
-      <path
-        {...s}
-        stroke={DOODLE_OLIVE}
-        strokeWidth={1.3}
-        d="M292 16v2.5M292 37.5V40M304 28h2.5M277.5 28H280M301 19l1.8 1.8M281 35l1.8 1.8M301 37l1.8-1.8M281 21l1.8-1.8"
-        opacity={0.4}
-      />
+      <DoodleSun cx={292} cy={28} r={7.5} />
     </svg>
   );
 }
