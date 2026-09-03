@@ -321,37 +321,42 @@ export function DoodleSousedstviScene({ className = "w-full max-w-[280px] h-auto
       <path {...s} d="M214 96V80h14v16" />
       <path {...s} stroke={DOODLE_OLIVE} d="M228 74h10M228 82h8" strokeWidth={1.4} opacity={0.5} />
 
-      {/* Plot uprostřed */}
-      <path {...s} stroke={DOODLE_OLIVE} d="M118 98V58M138 98V54M158 98V58" strokeWidth={1.6} opacity={0.85} />
-      <path {...s} stroke={DOODLE_OLIVE} d="M112 66h52M112 78h52M112 90h52" strokeWidth={1.5} opacity={0.75} />
-      <path {...s} stroke={DOODLE_OLIVE} d="M118 54l10-8 10 8 10-8 10 8" strokeWidth={1.5} opacity={0.7} />
+      {/* Plot uprostřed — laťky se špičkami a dvě příčky */}
+      <path
+        {...s}
+        d="M116 98V66M112.8 68L116 58L119.2 68M124 98V64M120.8 66L124 56L127.2 66M132 98V62M128.8 64L132 54L135.2 64M140 98V60M136.8 62L140 52L143.2 62M148 98V62M144.8 64L148 54L151.2 64M156 98V64M152.8 66L156 56L159.2 66M164 98V66M160.8 68L164 58L167.2 68"
+      />
+      <path {...s} d="M112 72h56M112 86h56" />
 
       {/* Soused vlevo u plotu */}
       <circle cx="98" cy="72" r="7" {...s} />
       <path {...s} d="M98 79v18M98 86l-8 6M98 86l7 3" />
       <path {...s} d="M98 97l-5 12M98 97l5 12" />
-      <path {...s} d="M106 86l10-2" opacity={0.85} />
+      <path {...s} d="M105 86l11 0" />
 
       {/* Soused vpravo u plotu */}
       <circle cx="178" cy="74" r="6.5" {...s} />
       <path {...s} d="M178 80.5v16M178 87l-7 5M178 87l8 4" />
       <path {...s} d="M178 96.5l-4.5 12M178 96.5l5 12" />
-      <path {...s} d="M170 87l-10-1" opacity={0.85} />
+      <path {...s} d="M171 87l-11 0" />
 
-      {/* Bublina mezi nimi */}
+      {/* Bublina nad plotem, ne přes laťky */}
       <path
         {...s}
         stroke={DOODLE_OLIVE}
-        d="M128 42c5-3.5 14-3 17.5 2.5s-1 11-7 12c-2 .3-3.5 2-3.5 2l-3.5-2s-5-.8-6.5-4.5 2.5-10 5.5-10z"
+        d="M128 26c5-3.5 14-3 17.5 2.5s-1 11-7 12c-2 .3-3.5 2-3.5 2l-3.5-2s-5-.8-6.5-4.5 2.5-10 5.5-10z"
         opacity={0.8}
       />
-      <path {...s} stroke={DOODLE_OLIVE} d="M132 48h10M132 53h7" strokeWidth={1.3} opacity={0.55} />
+      <path {...s} stroke={DOODLE_OLIVE} d="M132 32h10M132 37h7" strokeWidth={1.3} opacity={0.55} />
 
-      {/* Stromek vpravo */}
-      <circle cx="258" cy="78" r="12" {...s} stroke={DOODLE_OLIVE} opacity={0.55} />
-      <path {...s} stroke={DOODLE_OLIVE} d="M258 90v22" opacity={0.55} />
+      {/* Strom vpravo — koruna ze tří bublin a kmen */}
+      <circle cx="254" cy="68" r="11" {...s} />
+      <circle cx="243" cy="76" r="7.5" {...s} />
+      <circle cx="265" cy="75" r="7.5" {...s} />
+      <path {...s} d="M254 80v22" />
+      <path {...s} d="M249 102h10" opacity={0.55} />
 
-      <DoodleSun cx={248} cy={28} r={8} />
+      <DoodleSun cx={232} cy={24} r={7.2} />
     </svg>
   );
 }
