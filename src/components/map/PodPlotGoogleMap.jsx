@@ -314,7 +314,7 @@ export default function PodPlotGoogleMap({
         cursor: "pointer",
         icon: googleMapsPinIcon(
           window.google.maps,
-          marker.iconUrl ?? markerIconSvg(marker.variant, marker.emoji),
+          marker.iconUrl ?? markerIconSvg(marker.variant, marker.emoji, marker.selected),
           marker.selected
         ),
         zIndex: marker.selected ? 2000 : marker.showPinLabel ? 800 : 100,
