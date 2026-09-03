@@ -668,15 +668,18 @@ export function DoodleChatIcon({ className }) {
   );
 }
 
-/** Zprávy v záhlaví — doodle bublina se špičatým ocáskem vlevo dole */
+/** Zprávy v záhlaví — doodle bublina: panáček vlevo, dva řádky vpravo, ocásek vlevo dole */
 export function DoodleMessageIcon({ className }) {
   return (
     <DoodleIcon className={className}>
       <path
         {...s}
-        d="M5.5 5.2c.2-1.15 1.2-2.05 2.4-2.15h8.5c1.25.1 2.25 1.05 2.3 2.25v7.35c-.05 1.2-1.15 2.15-2.4 2.25H9.15L4.75 20.55l2.2-5.4H7.65c-1.15 0-2.05-1.05-2.15-2.2V5.2z"
+        d="M4.5 5.5c.2-1.25 1.25-2.2 2.55-2.3h10.4c1.35.1 2.4 1.15 2.5 2.4v6.9c-.1 1.25-1.2 2.25-2.5 2.35H9.45L4.7 21.05l2.15-5.7H7.05c-1.35 0-2.4-1.15-2.55-2.4V5.5z"
       />
-      <path {...s} d="M8.4 7.6h6.8M8.4 10.5h4.5" opacity="0.5" />
+      <circle {...s} cx="8.15" cy="7.25" r="1.7" />
+      <ellipse {...s} cx="8.15" cy="10.75" rx="2.4" ry="1.25" />
+      <rect {...s} x="11.55" y="6.45" width="5.7" height="1.9" rx="0.95" />
+      <rect {...s} x="11.55" y="9.55" width="3.95" height="1.9" rx="0.95" />
     </DoodleIcon>
   );
 }
