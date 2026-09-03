@@ -248,11 +248,12 @@ export function DoodleNameTagIcon({ className }) {
 export function DoodleSettingsIcon({ className }) {
   return (
     <DoodleIcon className={className}>
+      {/* Šest širokých zaoblených zubů — ne úzké mechanické hroty */}
       <path
         {...s}
-        d="M10.2 3h3.6l.5 2.1 1.9-.6 1.8 3.1-1.6 1.2.5 2.1h2.1v3.6h-2.1l-.5 2.1 1.6 1.2-1.8 3.1-1.9-.6-.5 2.1h-3.6l-.5-2.1-1.9.6-1.8-3.1 1.6-1.2-.5-2.1H4.5V9.8h2.1l.5-2.1-1.6-1.2 1.8-3.1 1.9.6.5-2.1z"
+        d="M8.83 6.5C8.67 2.84 15.33 2.84 15.18 6.5C18.27 4.53 21.6 10.31 18.35 12C21.6 13.69 18.27 19.47 15.18 17.5C15.33 21.16 8.67 21.16 8.83 17.5C5.73 19.47 2.4 13.69 5.65 12C2.4 10.31 5.73 4.53 8.83 6.5z"
       />
-      <circle {...s} cx="12" cy="12" r="2.6" />
+      <circle {...s} cx="12" cy="12" r="3.1" />
     </DoodleIcon>
   );
 }
