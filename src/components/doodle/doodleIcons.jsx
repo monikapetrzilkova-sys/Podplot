@@ -248,12 +248,12 @@ export function DoodleNameTagIcon({ className }) {
 export function DoodleSettingsIcon({ className }) {
   return (
     <DoodleIcon className={className}>
-      {/* Osm širších zubů — kolečko nastavení, ne kytička */}
+      {/* Šest zaoblených zubů podle dodané doodle reference — jen app stroke */}
       <path
         {...s}
-        d="M9.92 3.04L14.08 3.04L13.4 5.96L15.28 6.74L16.87 4.19L19.81 7.13L17.26 8.72L18.04 10.6L20.96 9.92L20.96 14.08L18.04 13.4L17.26 15.28L19.81 16.87L16.87 19.81L15.28 17.26L13.4 18.04L14.08 20.96L9.92 20.96L10.6 18.04L8.72 17.26L7.13 19.81L4.19 16.87L6.74 15.28L5.96 13.4L3.04 14.08L3.04 9.92L5.96 10.6L6.74 8.72L4.19 7.13L7.13 4.19L8.72 6.74L10.6 5.96z"
+        d="M9.33 7.37Q12 2.45 14.68 7.37Q20.27 7.23 17.35 12Q20.27 16.77 14.68 16.63Q12 21.55 9.33 16.63Q3.73 16.77 6.65 12Q3.73 7.22 9.33 7.37z"
       />
-      <circle {...s} cx="12" cy="12" r="3.2" />
+      <circle {...s} cx="12" cy="12" r="2.8" />
     </DoodleIcon>
   );
 }
@@ -668,15 +668,15 @@ export function DoodleChatIcon({ className }) {
   );
 }
 
-/** Zprávy v záhlaví — zaoblená bublina s širším zobáčkem vlevo dole */
+/** Zprávy v záhlaví — doodle bublina se špičatým ocáskem vlevo dole */
 export function DoodleMessageIcon({ className }) {
   return (
     <DoodleIcon className={className}>
       <path
         {...s}
-        d="M5.3 5.5c.2-1.2 1.25-2.15 2.5-2.25h8.4c1.3.1 2.3 1.1 2.4 2.3v6.45c-.1 1.2-1.15 2.15-2.45 2.25H13.5L5.9 20.3l2.55-6.05H7.7c-1.25 0-2.2-1.05-2.4-2.25V5.5z"
+        d="M5.5 5.2c.2-1.15 1.2-2.05 2.4-2.15h8.5c1.25.1 2.25 1.05 2.3 2.25v7.35c-.05 1.2-1.15 2.15-2.4 2.25H9.15L4.75 20.55l2.2-5.4H7.65c-1.15 0-2.05-1.05-2.15-2.2V5.2z"
       />
-      <path {...s} d="M8.5 7.7h6.6M8.5 10.5h4.3" opacity="0.5" />
+      <path {...s} d="M8.4 7.6h6.8M8.4 10.5h4.5" opacity="0.5" />
     </DoodleIcon>
   );
 }
