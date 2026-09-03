@@ -670,16 +670,17 @@ export function DoodleChatIcon({ className }) {
 
 /** Zprávy v záhlaví — doodle bublina: panáček vlevo, dva řádky vpravo, ocásek vlevo dole */
 export function DoodleMessageIcon({ className }) {
+  const inner = { ...s, strokeWidth: 1.45 };
   return (
     <DoodleIcon className={className}>
       <path
         {...s}
-        d="M4.5 5.5c.2-1.25 1.25-2.2 2.55-2.3h10.4c1.35.1 2.4 1.15 2.5 2.4v6.9c-.1 1.25-1.2 2.25-2.5 2.35H9.45L4.7 21.05l2.15-5.7H7.05c-1.35 0-2.4-1.15-2.55-2.4V5.5z"
+        d="M4.4 5.45c.2-1.25 1.25-2.2 2.55-2.3h10.6c1.35.1 2.4 1.15 2.5 2.4v6.95c-.1 1.25-1.2 2.25-2.5 2.35H9.4L4.55 21.15l2.2-5.75H6.95c-1.35 0-2.4-1.15-2.55-2.4V5.45z"
       />
-      <circle {...s} cx="8.15" cy="7.25" r="1.7" />
-      <ellipse {...s} cx="8.15" cy="10.75" rx="2.4" ry="1.25" />
-      <rect {...s} x="11.55" y="6.45" width="5.7" height="1.9" rx="0.95" />
-      <rect {...s} x="11.55" y="9.55" width="3.95" height="1.9" rx="0.95" />
+      <circle {...inner} cx="8.2" cy="7.3" r="2.05" />
+      <ellipse {...inner} cx="8.2" cy="11.15" rx="2.75" ry="1.4" />
+      <rect {...inner} x="11.7" y="6.35" width="6.05" height="2.15" rx="1.05" />
+      <rect {...inner} x="11.7" y="9.7" width="4.25" height="2.15" rx="1.05" />
     </DoodleIcon>
   );
 }
