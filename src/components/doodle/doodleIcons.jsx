@@ -679,7 +679,7 @@ export function DoodleMessageIcon({ className }) {
       overflow="hidden"
     >
       {/* Zmenšení + vycentrování, aby obrys nepřesahoval přes kruh tlačítka. */}
-      <g transform="translate(1.44 1.32) scale(0.88)">
+      <g transform="translate(2.4 2.21) scale(0.80)">
         <path {...s} d={bubbleD} />
       </g>
     </DoodleIcon>
