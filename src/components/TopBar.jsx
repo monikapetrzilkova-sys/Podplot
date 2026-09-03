@@ -1,8 +1,8 @@
 import { useApp } from "../context/AppContext.jsx";
-import { IconTabChat } from "../data/icons.jsx";
 import LocationSwitcher from "./LocationSwitcher.jsx";
 import CrisisAlertBar from "./CrisisAlertBar.jsx";
 import { DoodleHomeIntro } from "./doodle/doodleIllustrations.jsx";
+import { DoodleMessageIcon } from "./doodle/doodleIcons.jsx";
 /** Přímo import — nové logo F (dům + plot + ruce), Vite cache-bust */
 import logoPodplot from "../assets/logo-podplot.png";
 
@@ -79,7 +79,7 @@ export default function TopBar() {
             className="pp-header-icon-btn relative"
             aria-label="Zprávy"
           >
-            <IconTabChat className="w-5 h-5" />
+            <DoodleMessageIcon className="w-6 h-6" />
             {unreadMessagesCount > 0 && (
               <span className="pp-header-notify-dot">
                 {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}

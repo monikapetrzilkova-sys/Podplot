@@ -667,6 +667,20 @@ export function DoodleChatIcon({ className }) {
   );
 }
 
+/** Zprávy v záhlaví — obálka s rezervou ve viewBoxu, nic se neukrají */
+export function DoodleMessageIcon({ className }) {
+  return (
+    <DoodleIcon className={className}>
+      <path
+        {...s}
+        d="M3.8 7.8c.2-1.1 1.1-1.9 2.2-2h12c1.1.1 2 .9 2.2 2v8.2c-.2 1.1-1.1 1.9-2.2 2H6c-1.1-.1-2-.9-2.2-2V7.8z"
+      />
+      <path {...s} d="M4.3 7.6l6.9 5.1c.5.35 1.1.35 1.6 0l6.9-5.1" />
+      <path {...s} d="M8.1 13.8L4.6 17.2M15.9 13.8l3.5 3.4" opacity="0.45" />
+    </DoodleIcon>
+  );
+}
+
 export function DoodleStarIcon({ className }) {
   return (
     <DoodleIcon className={className}>
