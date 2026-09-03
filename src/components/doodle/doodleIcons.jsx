@@ -676,9 +676,12 @@ export function DoodleMessageIcon({ className }) {
     <DoodleIcon
       className={className}
       viewBox="0 0 24 22.077041602465332"
-      overflow="visible"
+      overflow="hidden"
     >
-      <path {...s} d={bubbleD} />
+      {/* Zmenšení + vycentrování, aby obrys nepřesahoval přes kruh tlačítka. */}
+      <g transform="translate(1.44 1.32) scale(0.88)">
+        <path {...s} d={bubbleD} />
+      </g>
     </DoodleIcon>
   );
 }
