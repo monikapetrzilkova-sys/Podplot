@@ -3,7 +3,8 @@ import { doodleStroke, DOODLE_OLIVE } from "./doodleStroke.js";
 const s = doodleStroke;
 
 /**
- * Čitelné sluníčko i vedle vyhledávání (~36 px výšky): kotouč + 8 delších paprsků.
+ * Čitelné sluníčko i vedle vyhledávání: kotouč + 8 delších paprsků.
+ * currentColor — olivová byla na světlém pozadí moc bledá.
  * Bez obličeje — oči a úsměv v malém rozměru slunce rozmazávají.
  */
 function DoodleSun({ cx, cy, r = 7 }) {
@@ -18,15 +19,13 @@ function DoodleSun({ cx, cy, r = 7 }) {
         cy={cy}
         r={r}
         {...s}
-        stroke={DOODLE_OLIVE}
         strokeWidth={1.7}
-        fill={DOODLE_OLIVE}
-        fillOpacity={0.2}
+        fill="currentColor"
+        fillOpacity={0.16}
       />
       <path
         {...s}
-        stroke={DOODLE_OLIVE}
-        strokeWidth={1.6}
+        strokeWidth={1.65}
         d={`M${cx} ${cy - gap}v${-ray}M${cx} ${cy + gap}v${ray}M${cx + gap} ${cy}h${ray}M${cx - gap} ${cy}h${-ray}M${cx + dGap} ${cy - dGap}l${dRay} ${-dRay}M${cx - dGap} ${cy + dGap}l${-dRay} ${dRay}M${cx + dGap} ${cy + dGap}l${dRay} ${dRay}M${cx - dGap} ${cy - dGap}l${-dRay} ${-dRay}`}
       />
     </g>
@@ -65,7 +64,7 @@ export function DoodleNeighborsIntro({ className = "w-28 h-14" }) {
     <svg viewBox="0 0 112 56" fill="none" className={`pp-doodle-characters ${className}`} aria-hidden>
       {/* Panáček vlevo — zvednutá ruka od ramene šikmo ven, mimo hlavu */}
       <circle cx="28" cy="14" r="6" {...s} />
-      <path {...s} d="M28 20v14M28 26l-8 6M28 24l14-16" />
+      <path {...s} d="M28 20v14M28 26l-8 6M34 22l12-14" />
       <path {...s} d="M28 34l-5 10M28 34l5 10" />
       {/* Panáček vpravo */}
       <circle cx="72" cy="16" r="5.5" {...s} />
@@ -179,7 +178,7 @@ export function DoodleHomeIntro({ className = "w-28 h-14" }) {
       <path {...s} d="M26 40v-8h8v8" />
       <path {...s} stroke={DOODLE_OLIVE} d="M10 42c10-3 20-2 28 2" strokeWidth={1.5} opacity={0.55} />
       <circle cx="56" cy="24" r="5" {...s} />
-      <path {...s} d="M56 29v11M56 33l-7 6M56 31l12-14" />
+      <path {...s} d="M56 29v11M56 33l-7 6M62 31l12-16" />
       <path {...s} d="M56 40l-4 9M56 40l4 9" />
     </svg>
   );
@@ -202,7 +201,7 @@ export function DoodleEventsIntro({ className = "w-36 h-14" }) {
       <circle cx="38" cy="42" r="2.2" {...s} stroke={DOODLE_OLIVE} opacity={0.8} />
 
       <circle cx="78" cy="16" r="5.5" {...s} />
-      <path {...s} d="M78 21.5v12M78 27l7 4M78 25l-14-16" />
+      <path {...s} d="M78 21.5v12M78 27l7 4M72 23l-12-14" />
       <path {...s} d="M78 33.5l-4.5 10M78 33.5l4.5 10" />
 
       <circle cx="104" cy="18" r="5" {...s} />
@@ -331,13 +330,13 @@ export function DoodleSousedstviScene({ className = "w-full max-w-[280px] h-auto
       <circle cx="98" cy="72" r="7" {...s} />
       <path {...s} d="M98 79v18M98 86l-8 6M98 86l7 3" />
       <path {...s} d="M98 97l-5 12M98 97l5 12" />
-      <path {...s} d="M105 84l8-2" opacity={0.85} />
+      <path {...s} d="M106 86l10-2" opacity={0.85} />
 
       {/* Soused vpravo u plotu */}
       <circle cx="178" cy="74" r="6.5" {...s} />
       <path {...s} d="M178 80.5v16M178 87l-7 5M178 87l8 4" />
       <path {...s} d="M178 96.5l-4.5 12M178 96.5l5 12" />
-      <path {...s} d="M171 85l-8-1" opacity={0.85} />
+      <path {...s} d="M170 87l-10-1" opacity={0.85} />
 
       {/* Bublina mezi nimi */}
       <path
@@ -411,7 +410,7 @@ export function DoodleSousedskaAkceScene({ className = "w-full max-w-[320px] h-a
       <path {...s} d="M72 103.5l-4 10M72 103.5l4 10" />
 
       <circle cx="118" cy="84" r="5" {...s} />
-      <path {...s} d="M118 89v12M118 95l6 3M118 93l-14-16" />
+      <path {...s} d="M118 89v12M118 95l6 3M112 91l-12-14" />
       <path {...s} d="M118 101l-3.5 10M118 101l3.5 10" />
 
       {/* Třetí soused s míčem / hrou */}
