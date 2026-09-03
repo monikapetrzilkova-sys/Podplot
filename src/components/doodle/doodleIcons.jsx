@@ -667,16 +667,15 @@ export function DoodleChatIcon({ className }) {
   );
 }
 
-/** Zprávy v záhlaví — obálka s rezervou ve viewBoxu, nic se neukrají */
+/** Zprávy v záhlaví — zaoblená bublina se špičatým ocáskem vlevo dole */
 export function DoodleMessageIcon({ className }) {
   return (
     <DoodleIcon className={className}>
       <path
         {...s}
-        d="M3.8 7.8c.2-1.1 1.1-1.9 2.2-2h12c1.1.1 2 .9 2.2 2v8.2c-.2 1.1-1.1 1.9-2.2 2H6c-1.1-.1-2-.9-2.2-2V7.8z"
+        d="M5.5 5.2c.2-1.15 1.2-2.05 2.4-2.15h8.5c1.25.1 2.25 1.05 2.3 2.25v7.35c-.05 1.2-1.15 2.15-2.4 2.25H9.15L4.75 20.55l2.2-5.4H7.65c-1.15 0-2.05-1.05-2.15-2.2V5.2z"
       />
-      <path {...s} d="M4.3 7.6l6.9 5.1c.5.35 1.1.35 1.6 0l6.9-5.1" />
-      <path {...s} d="M8.1 13.8L4.6 17.2M15.9 13.8l3.5 3.4" opacity="0.45" />
+      <path {...s} d="M8.4 7.6h6.8M8.4 10.5h4.5" opacity="0.5" />
     </DoodleIcon>
   );
 }
