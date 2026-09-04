@@ -15,6 +15,7 @@ import {
   proxyAddressSearch,
   lookupPscCity,
   mockNearbyPlaces,
+  handleAddressSearch,
 } from "./lib/podplotBackend.mjs";
 
 const ROOT = fileURLToPath(new URL(".", import.meta.url));
@@ -105,13 +106,18 @@ const server = createServer(async (req, res) => {
     }
 
     if (url === "/api/address-search") {
-      const q = new URL(req.url, "http://localhost").searchParams.get("q")?.trim() ?? "";
-      if (q.length < 3) {
+      const params = new URL(req.url, "http://localhost").searchParams;
+      const q = params.get("q")?.trim() ?? "";
+      const street = params.get("street")?.trim() ?? "";
+      const city = params.get("city")?.trim() ?? "";
+      const psc = params.get("psc")?.trim() ?? "";
+      const houseNumber = params.get("houseNumber")?.trim() ?? "";
+      if (!q && !street) {
         res.writeHead(200, { "Content-Type": MIME[".json"] });
         res.end(JSON.stringify({ source: "empty", features: [], items: [] }));
         return;
       }
-      const data = await proxyAddressSearch(q);
+      const data = await handleAddressSearch({ street, city, psc, houseNumber, q });
       res.writeHead(200, { "Content-Type": MIME[".json"] });
       res.end(JSON.stringify(data));
       return;
@@ -200,6 +206,18 @@ const server = createServer(async (req, res) => {
     const ext = extname(filepath);
 
     if (BINARY_EXT.has(ext)) {
+      const dest = req.headers["sec-fetch-dest"] || "";
+      const accept = req.headers.accept || "";
+      const asModule =
+        dest === "script" ||
+        dest === "module" ||
+        accept.includes("text/javascript") ||
+        accept.includes("application/javascript");
+      if (asModule) {
+        res.writeHead(200, { "Content-Type": MIME[".js"] });
+        res.end(`export default ${JSON.stringify(url)};`);
+        return;
+      }
       const content = await readFile(filepath);
       res.writeHead(200, { "Content-Type": MIME[ext] ?? "application/octet-stream" });
       res.end(content);

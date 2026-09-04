@@ -40,6 +40,8 @@ describe("buildAddressSearchQuery", () => {
     assert.equal(canSearchAddress({ houseNumber: "12" }), false);
     assert.equal(canSearchAddress({ street: "Hlavní" }), false);
     assert.equal(canSearchAddress({ street: "Hl", psc: "14200" }), true);
+    assert.equal(canSearchAddress({ street: "P", psc: "25242" }), true);
+    assert.equal(canSearchAddress({ street: "P", city: "Jesenice" }), true);
     assert.equal(canSearchAddress({ street: "Hlavní", city: "Jesenice" }), true);
     assert.equal(canSearchAddress({ houseNumber: "12", city: "Jesenice" }), false);
   });
@@ -75,6 +77,21 @@ describe("filterSuggestionsByLocality", () => {
     assert.deepEqual(
       filtered.map((i) => `${i.street} ${i.houseNumber}`),
       ["Hlavní 12"]
+    );
+  });
+
+  it("keeps streets without PSČ when the city matches", () => {
+    const filtered = filterSuggestionsByLocality(
+      [
+        { street: "Pražská", houseNumber: "", psc: "", city: "Jesenice" },
+        { street: "Pražská", houseNumber: "21", psc: "252 42", city: "Jesenice" },
+        { street: "Hlavní", houseNumber: "1", psc: "110 00", city: "Praha 1" },
+      ],
+      { psc: "25242", city: "Jesenice" }
+    );
+    assert.deepEqual(
+      filtered.map((i) => `${i.street} ${i.houseNumber}`.trim()),
+      ["Pražská", "Pražská 21"]
     );
   });
 });

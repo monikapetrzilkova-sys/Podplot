@@ -49,6 +49,7 @@ export default function StructuredAddressFields({
   const [suggestError, setSuggestError] = useState(null);
   const autocompleteRef = useRef(null);
   const suggestWrapRef = useRef(null);
+  const suggestListRef = useRef(null);
   const pscReady = pscDigits(psc).length === 5;
 
   useEffect(() => {
@@ -63,6 +64,11 @@ export default function StructuredAddressFields({
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
+
+  useEffect(() => {
+    if (suggestions.length === 0) return;
+    suggestListRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [suggestions.length]);
 
   useEffect(() => {
     const digits = pscDigits(psc);
@@ -122,6 +128,9 @@ export default function StructuredAddressFields({
     onClearError?.("houseNumber");
     onClearError?.("psc");
     onClearError?.("city");
+    if (item.street && !item.houseNumber) {
+      runSearch(item.street, "", item.city || city, item.psc || psc);
+    }
   };
 
   const inputClass = (hasError) =>
@@ -186,39 +195,47 @@ export default function StructuredAddressFields({
           Ulice
           {required ? <ReqStar /> : null}
         </label>
-        <input
-          type="text"
-          value={street}
-          onChange={(e) => {
-            const value = e.target.value;
-            onStreetChange?.(value);
-            onClearError?.("street");
-            runSearch(value, houseNumber, city, psc);
-          }}
-          onFocus={() => runSearch(street, houseNumber, city, psc)}
-          placeholder={pscReady ? "Začněte psát ulici — nabídka včetně č.p." : "Nejdřív zadej PSČ"}
-          autoComplete="off"
-          className={inputClass(fieldErrors.street)}
-        />
+        <div>
+          <input
+            type="text"
+            value={street}
+            onChange={(e) => {
+              const value = e.target.value;
+              onStreetChange?.(value);
+              onClearError?.("street");
+              runSearch(value, houseNumber, city, psc);
+            }}
+            onFocus={() => runSearch(street, houseNumber, city, psc)}
+            placeholder={pscReady ? "Stačí P — nabídneme ulice i č.p. v obci" : "Nejdřív zadej PSČ"}
+            autoComplete="off"
+            className={inputClass(fieldErrors.street)}
+          />
+          {suggestions.length > 0 ? (
+            <ul
+              ref={suggestListRef}
+              className="pp-address-suggest-list"
+              onWheel={(event) => event.stopPropagation()}
+              onTouchMove={(event) => event.stopPropagation()}
+            >
+              {suggestions.map((item) => (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => applySuggestion(item)}
+                    className="w-full text-left px-3 py-2 text-xs text-stone-700 hover:bg-[#E8F3EF] border-b border-stone-100 last:border-0"
+                  >
+                    {formatSuggestionAddress(item)}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
         {fieldErrors.street ? <p className="mt-1 text-xs text-red-600">{fieldErrors.street}</p> : null}
         {!fieldErrors.street ? <p className="mt-1 text-[10px] text-stone-400">{ADDRESS_SEARCH_HINT}</p> : null}
         {suggestLoading ? <p className="mt-1 text-[11px] text-stone-400">Hledám adresy…</p> : null}
         {suggestError ? <p className="mt-1 text-[11px] text-amber-700">{suggestError}</p> : null}
-        {suggestions.length > 0 ? (
-          <ul className="mt-1 border border-stone-200 rounded-xl overflow-hidden bg-white shadow-sm">
-            {suggestions.map((item) => (
-              <li key={item.id}>
-                <button
-                  type="button"
-                  onClick={() => applySuggestion(item)}
-                  className="w-full text-left px-3 py-2 text-xs text-stone-700 hover:bg-[#E8F3EF] border-b border-stone-100 last:border-0"
-                >
-                  {formatSuggestionAddress(item)}
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : null}
       </div>
 
       <div>

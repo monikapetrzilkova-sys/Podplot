@@ -150,6 +150,27 @@ textarea {
   touch-action: manipulation;
 }
 
+/* Návrhy adres: v toku formuláře, s vlastním posuvem (gesto nesmí přebírat stránku). */
+.pp-address-suggest-list {
+  position: relative;
+  z-index: 5;
+  margin-top: 0.25rem;
+  max-height: min(16rem, 40dvh);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  border-radius: 0.75rem;
+  border: 1px solid #e7e5e4;
+  background: #ffffff;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.pp-address-suggest-list button {
+  touch-action: pan-y;
+}
+
 /* Celá appka: žádný pinch-zoom stránky (iOS/Android) */
 html,
 body,
