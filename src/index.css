@@ -150,6 +150,17 @@ textarea {
   touch-action: manipulation;
 }
 
+/* Návrhy adres: posun prstem/kolečkem má zůstat v seznamu, ne v listu pod ním. */
+.pp-address-suggest-list {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+.pp-address-suggest-list button {
+  touch-action: pan-y;
+}
+
 /* Celá appka: žádný pinch-zoom stránky (iOS/Android) */
 html,
 body,

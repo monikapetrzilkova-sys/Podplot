@@ -189,39 +189,46 @@ export default function StructuredAddressFields({
           Ulice
           {required ? <ReqStar /> : null}
         </label>
-        <input
-          type="text"
-          value={street}
-          onChange={(e) => {
-            const value = e.target.value;
-            onStreetChange?.(value);
-            onClearError?.("street");
-            runSearch(value, houseNumber, city, psc);
-          }}
-          onFocus={() => runSearch(street, houseNumber, city, psc)}
-          placeholder={pscReady ? "Stačí P — nabídneme ulice i č.p. v obci" : "Nejdřív zadej PSČ"}
-          autoComplete="off"
-          className={inputClass(fieldErrors.street)}
-        />
+        <div className="relative">
+          <input
+            type="text"
+            value={street}
+            onChange={(e) => {
+              const value = e.target.value;
+              onStreetChange?.(value);
+              onClearError?.("street");
+              runSearch(value, houseNumber, city, psc);
+            }}
+            onFocus={() => runSearch(street, houseNumber, city, psc)}
+            placeholder={pscReady ? "Stačí P — nabídneme ulice i č.p. v obci" : "Nejdřív zadej PSČ"}
+            autoComplete="off"
+            className={inputClass(fieldErrors.street)}
+          />
+          {suggestions.length > 0 ? (
+            <ul
+              className="pp-address-suggest-list absolute z-30 left-0 right-0 mt-1 max-h-52 overflow-y-auto rounded-xl border border-stone-200 bg-white shadow-lg"
+              onWheel={(event) => event.stopPropagation()}
+              onTouchMove={(event) => event.stopPropagation()}
+            >
+              {suggestions.map((item) => (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => applySuggestion(item)}
+                    className="w-full text-left px-3 py-2 text-xs text-stone-700 hover:bg-[#E8F3EF] border-b border-stone-100 last:border-0"
+                  >
+                    {formatSuggestionAddress(item)}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
         {fieldErrors.street ? <p className="mt-1 text-xs text-red-600">{fieldErrors.street}</p> : null}
         {!fieldErrors.street ? <p className="mt-1 text-[10px] text-stone-400">{ADDRESS_SEARCH_HINT}</p> : null}
         {suggestLoading ? <p className="mt-1 text-[11px] text-stone-400">Hledám adresy…</p> : null}
         {suggestError ? <p className="mt-1 text-[11px] text-amber-700">{suggestError}</p> : null}
-        {suggestions.length > 0 ? (
-          <ul className="mt-1 border border-stone-200 rounded-xl overflow-hidden bg-white shadow-sm">
-            {suggestions.map((item) => (
-              <li key={item.id}>
-                <button
-                  type="button"
-                  onClick={() => applySuggestion(item)}
-                  className="w-full text-left px-3 py-2 text-xs text-stone-700 hover:bg-[#E8F3EF] border-b border-stone-100 last:border-0"
-                >
-                  {formatSuggestionAddress(item)}
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : null}
       </div>
 
       <div>
