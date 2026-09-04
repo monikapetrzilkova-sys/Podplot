@@ -77,7 +77,7 @@ const LEGACY_BUSINESS_SUBTYPE_MAP = {
 };
 
 export const ADDRESS_PRIVACY_NOTE =
-  "Adresa nebude veřejně zobrazena ostatním na profilu — slouží pouze k zafixování tvé geolokace v okolí.";
+  "Adresa zůstane v tajnosti — slouží jen k tomu, abychom tě našli na mapě.";
 
 export const ACCOUNT_TYPE_LIST = Object.values(ACCOUNT_TYPES);
 

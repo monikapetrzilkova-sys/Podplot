@@ -3,6 +3,7 @@ import EventLocationMap from "./EventLocationMap.jsx";
 import MapRadiusControl from "./map/MapRadiusControl.jsx";
 import { geocodeCzechAddress } from "../data/addressAutocomplete.js";
 import { pscDigits } from "../data/addressValidation.js";
+import { CZECHIA_BOUNDS, CZECHIA_CENTER } from "../data/czechiaMapView.js";
 import {
   MIN_NEIGHBOR_RADIUS_KM,
   MAX_NEIGHBOR_RADIUS_KM,
@@ -22,14 +23,18 @@ export default function LocalityRadiusPreview({
 }) {
   const [status, setStatus] = useState("idle");
 
-  const addressReady =
-    String(street ?? "").trim().length >= 2 &&
-    Boolean(String(houseNumber ?? "").trim()) &&
-    (pscDigits(psc).length === 5 || String(city ?? "").trim().length >= 2);
+  const streetReady =
+    String(street ?? "").trim().length >= 2 && Boolean(String(houseNumber ?? "").trim());
+  const localityReady = pscDigits(psc).length === 5 && String(city ?? "").trim().length >= 2;
+  const canGeocode = streetReady || localityReady;
+  const hasPin = pin?.lat != null && (pin?.lng != null || pin?.lon != null);
+  const pinLat = hasPin ? Number(pin.lat) : null;
+  const pinLng = hasPin ? Number(pin.lng ?? pin.lon) : null;
 
   useEffect(() => {
-    if (!addressReady) {
+    if (!canGeocode) {
       setStatus("idle");
+      if (hasPin) onPinChange?.(null);
       return undefined;
     }
 
@@ -57,31 +62,34 @@ export default function LocalityRadiusPreview({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [street, houseNumber, psc, city, addressReady]); // eslint-disable-line react-hooks/exhaustive-deps -- geocode from address only
+  }, [street, houseNumber, psc, city, canGeocode]); // eslint-disable-line react-hooks/exhaustive-deps -- geocode from address only
 
   return (
     <div className="space-y-2">
       <p className="text-xs font-semibold text-stone-600">Tvoje okolí na mapě</p>
-      {!addressReady ? (
+      {!canGeocode ? (
         <p className="text-[11px] text-stone-400 leading-relaxed">
-          Až doplníš adresu, mapa se zaměří na tvoji lokalitu — včetně městské části.
+          Mapa ukazuje celé Česko. Jakmile doplníš adresu (nebo PSČ a obec), přiblíží se na tvoji lokalitu.
         </p>
       ) : null}
-      {addressReady && status === "loading" && !pin ? (
+      {canGeocode && status === "loading" && !hasPin ? (
         <p className="text-[11px] text-stone-400">Hledám místo na mapě…</p>
       ) : null}
-      {pin?.lat != null ? (
-        <EventLocationMap
-          pickMode
-          draftPin={pin}
-          onPickPin={onPinChange}
-          address={[street, houseNumber, city].filter(Boolean).join(" ")}
-          mapCenter={{ lat: Number(pin.lat), lng: Number(pin.lng ?? pin.lon) }}
-          radiusKm={radiusKm}
-          compact
-        />
-      ) : null}
-      {status === "missing" && !pin ? (
+      <EventLocationMap
+        pickMode
+        draftPin={hasPin ? pin : null}
+        onPickPin={onPinChange}
+        address={[street, houseNumber, city].filter(Boolean).join(" ")}
+        mapCenter={hasPin ? { lat: pinLat, lng: pinLng } : CZECHIA_CENTER}
+        fitBounds={hasPin ? null : CZECHIA_BOUNDS}
+        radiusKm={radiusKm}
+        compact
+        hidePickHint
+        showRadiusCircle={hasPin}
+        pickUnconstrained
+        focusDraftPin={hasPin}
+      />
+      {status === "missing" && !hasPin ? (
         <p className="text-[11px] text-amber-800 leading-relaxed">
           Adresu jsme zatím nenašli na mapě. Zkontroluj PSČ a ulici — můžeš pokračovat a místo upřesnit později v
           profilu.
@@ -89,7 +97,7 @@ export default function LocalityRadiusPreview({
       ) : null}
       <MapRadiusControl
         id="neighbor-radius"
-        label="Okruh, který tě zajímá"
+        label="Nastav si okruh, který tě zajímá."
         hint="Uvidíš příspěvky sousedů v tomto okruhu. Ve velkém městě stačí 1–2 km — nestačí jen název města."
         value={radiusKm}
         min={MIN_NEIGHBOR_RADIUS_KM}

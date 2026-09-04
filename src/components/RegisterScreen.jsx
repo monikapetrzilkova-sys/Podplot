@@ -639,14 +639,8 @@ export default function RegisterScreen() {
               houseNumber={houseNumber}
               psc={psc}
               city={city}
-              onStreetChange={(value) => {
-                setStreet(value);
-                setAreaPin(null);
-              }}
-              onHouseNumberChange={(value) => {
-                setHouseNumber(value);
-                setAreaPin(null);
-              }}
+              onStreetChange={setStreet}
+              onHouseNumberChange={setHouseNumber}
               onPscChange={setPsc}
               onCityChange={setCity}
               onSuggestionPick={(item) => {
