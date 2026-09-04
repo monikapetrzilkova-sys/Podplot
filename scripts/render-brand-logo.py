@@ -14,7 +14,8 @@ PUBLIC = ROOT / "public"
 ICONS = PUBLIC / "icons"
 ASSETS = ROOT / "src" / "assets"
 MARK_SVG = PUBLIC / "logo-podplot.svg"
-
+PREVIEW_SOURCE = PUBLIC / "logo-podplot-preview-source.jpg"
+OG_SIZE = 1200
 GREEN = "#1B4D3E"
 WHITE = "#ffffff"
 
@@ -62,6 +63,54 @@ def downscale_png(src: Path, dest: Path, width: int, height: int) -> None:
     im.save(dest, format="PNG", optimize=True)
 
 
+def preview_mark_rgb() -> "Image.Image":
+    """Clean JPEG grain on the supplied mark, keep the white line texture."""
+    import numpy as np
+    from PIL import Image
+
+    im = Image.open(PREVIEW_SOURCE).convert("RGB")
+    side = min(im.size)
+    left = (im.width - side) // 2
+    top = (im.height - side) // 2
+    im = im.crop((left, top, left + side, top + side))
+    arr = np.asarray(im, dtype=np.float32)
+    corners = np.concatenate(
+        [
+            arr[:24, :24].reshape(-1, 3),
+            arr[:24, -24:].reshape(-1, 3),
+            arr[-24:, :24].reshape(-1, 3),
+            arr[-24:, -24:].reshape(-1, 3),
+        ]
+    )
+    bg = np.median(corners, axis=0)
+    dist = np.linalg.norm(arr - bg, axis=2)
+    is_bg = dist < 36
+    arr = arr.copy()
+    arr[is_bg] = bg
+    return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8), "RGB")
+
+
+def save_preview_png(im: "Image.Image", dest: Path, size: int) -> None:
+    from PIL import Image
+
+    out = im.resize((size, size), Image.Resampling.LANCZOS)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    out.save(dest, format="PNG", optimize=True)
+
+
+def render_preview_assets() -> None:
+    if not PREVIEW_SOURCE.exists():
+        sys.exit(f"missing preview source {PREVIEW_SOURCE}")
+    mark = preview_mark_rgb()
+    ICONS.mkdir(parents=True, exist_ok=True)
+    save_preview_png(mark, PUBLIC / "og-image.png", OG_SIZE)
+    save_preview_png(mark, ICONS / "icon-512.png", 512)
+    save_preview_png(mark, ICONS / "icon-512-maskable.png", 512)
+    save_preview_png(mark, ICONS / "icon-192.png", 192)
+    save_preview_png(mark, PUBLIC / "apple-touch-icon.png", 180)
+    print("rendered preview assets from", PREVIEW_SOURCE.relative_to(ROOT))
+
+
 def square_icon_svg(size: int, pad_ratio: float) -> str:
     pad = round(size * pad_ratio)
     inner = size - 2 * pad
@@ -95,21 +144,7 @@ def main() -> None:
     ICONS.mkdir(parents=True, exist_ok=True)
     ASSETS.mkdir(parents=True, exist_ok=True)
 
-    og_path = PUBLIC / "og-image.svg"
-    og_path.write_text(og_svg(), encoding="utf-8")
-    # Render 2× then Lanczos-downscale so strokes stay smooth in WhatsApp/Messenger.
-    og_hi = PUBLIC / "og-image@2x.png"
-    rasterize_file(rsvg, og_path, og_hi, 2400, 2400)
-    downscale_png(og_hi, PUBLIC / "og-image.png", 1200, 1200)
-    og_hi.unlink(missing_ok=True)
-
-    rasterize(rsvg, square_icon_svg(512, 0.08), ICONS / "icon-512.png", 512)
-    rasterize(rsvg, square_icon_svg(512, 0.12), ICONS / "icon-512-maskable.png", 512)
-    rasterize(rsvg, square_icon_svg(192, 0.08), ICONS / "icon-192.png", 192)
-    apple_hi = PUBLIC / "apple-touch-icon@3x.png"
-    rasterize(rsvg, square_icon_svg(540, 0.08), apple_hi, 540)
-    downscale_png(apple_hi, PUBLIC / "apple-touch-icon.png", 180, 180)
-    apple_hi.unlink(missing_ok=True)
+    render_preview_assets()
 
     write_colored_mark(ASSETS / "logo-podplot.svg", WHITE)
     write_colored_mark(ASSETS / "logo-podplot-green.svg", GREEN)
