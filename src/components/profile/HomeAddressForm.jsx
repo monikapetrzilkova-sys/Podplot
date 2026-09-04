@@ -100,14 +100,8 @@ export default function HomeAddressForm({
         houseNumber={houseNumber}
         psc={psc}
         city={city}
-        onStreetChange={(value) => {
-          setStreet(value);
-          setPickedCoords(null);
-        }}
-        onHouseNumberChange={(value) => {
-          setHouseNumber(value);
-          setPickedCoords(null);
-        }}
+        onStreetChange={setStreet}
+        onHouseNumberChange={setHouseNumber}
         onPscChange={setPsc}
         onCityChange={setCity}
         onSuggestionPick={(item) => {

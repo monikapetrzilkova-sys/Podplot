@@ -64,6 +64,10 @@ export default function PodPlotGoogleMap({
   draftPinOnly = false,
   fluid = false,
   className = "",
+  compact = false,
+  fitBounds = null,
+  showRadiusCircle = false,
+  pickUnconstrained = false,
 }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
@@ -155,7 +159,7 @@ export default function PodPlotGoogleMap({
     const isTouch = window.matchMedia("(pointer: coarse)").matches;
     const draftFocus = focusDraftPin ? resolveDraftLatLng(draftPin) : null;
     const initialCenter = draftFocus ?? center;
-    const initialZoom = draftFocus ? 16 : 14;
+    const initialZoom = draftFocus ? 16 : fitBounds ? 7 : 14;
     viewCenterRef.current = initialCenter;
 
     const map = new window.google.maps.Map(el, {
@@ -171,6 +175,9 @@ export default function PodPlotGoogleMap({
       styles: mapMode === "institutions" ? HIDE_GOOGLE_POI_STYLES : undefined,
     });
     mapRef.current = map;
+    if (fitBounds && !draftFocus) {
+      map.fitBounds(fitBounds, 16);
+    }
     setMapReady(true);
 
     const triggerResize = () => {
@@ -214,11 +221,19 @@ export default function PodPlotGoogleMap({
     if (selectedReportId || selectedEventId || selectedInstitutionId || selectedThingId || selectedServiceId) {
       return;
     }
+    if (fitBounds) {
+      mapRef.current.fitBounds(fitBounds, 16);
+      return;
+    }
     viewCenterRef.current = center;
     mapRef.current.setCenter(center);
   }, [
     center.lat,
     center.lng,
+    fitBounds?.south,
+    fitBounds?.west,
+    fitBounds?.north,
+    fitBounds?.east,
     focusDraftPin,
     draftPin,
     selectedReportId,
@@ -366,10 +381,15 @@ export default function PodPlotGoogleMap({
     if (!map || !window.google?.maps) return;
 
     if (circleRef.current) circleRef.current.setMap(null);
-    if (!singleReportMode && !draftPinOnly && mapMode !== "institutions") {
+    const draftLatLng = resolveDraftLatLng(draftPin);
+    const circleCenter = showRadiusCircle ? draftLatLng : center;
+    const allowCircle = showRadiusCircle
+      ? Boolean(draftLatLng)
+      : !singleReportMode && !draftPinOnly && mapMode !== "institutions";
+    if (allowCircle && circleCenter) {
       circleRef.current = new window.google.maps.Circle({
         map,
-        center,
+        center: circleCenter,
         radius: effectiveRadiusKm * 1000,
         fillColor: mapMode === "events" ? "#40916C" : "#2D6A4F",
         fillOpacity: 0.06,
@@ -379,7 +399,7 @@ export default function PodPlotGoogleMap({
         clickable: false,
       });
     }
-  }, [center, effectiveRadiusKm, mapMode, singleReportMode, draftPinOnly, mapReady]);
+  }, [center, effectiveRadiusKm, mapMode, singleReportMode, draftPinOnly, mapReady, draftPin, showRadiusCircle]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -408,13 +428,11 @@ export default function PodPlotGoogleMap({
     }
 
     const draftLatLng = resolveDraftLatLng(draftPin);
+    if (!draftLatLng) return;
 
-    if (!draftLatLng && !pickMode) return;
-
-    const pos = draftLatLng ?? center;
     draftMarkerRef.current = new window.google.maps.Marker({
       map,
-      position: pos,
+      position: draftLatLng,
       draggable: pickMode,
       icon: googleMapsPinIcon(window.google.maps, markerIconSvg("draft")),
       zIndex: 4000,
@@ -424,10 +442,11 @@ export default function PodPlotGoogleMap({
       draftMarkerRef.current.addListener("dragend", (e) => {
         const lat = e.latLng.lat();
         const lng = e.latLng.lng();
-        onPickPin?.(buildMapPickResult(lat, lng, center, refRadius));
+        const pickCenter = pickUnconstrained ? { lat, lng } : center;
+        onPickPin?.(buildMapPickResult(lat, lng, pickCenter, refRadius));
       });
     }
-  }, [draftPin, pickMode, center, refRadius, mapReady, onPickPin]);
+  }, [draftPin, pickMode, center, refRadius, mapReady, onPickPin, pickUnconstrained]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -437,9 +456,21 @@ export default function PodPlotGoogleMap({
     if (!draftLatLng) return;
 
     viewCenterRef.current = draftLatLng;
-    map.panTo(draftLatLng);
-    const zoom = map.getZoom() ?? 14;
-    if (zoom < 16) map.setZoom(16);
+    if (showRadiusCircle && window.google?.maps?.Circle) {
+      const bounds = new window.google.maps.Circle({
+        center: draftLatLng,
+        radius: Math.max(effectiveRadiusKm, 0.8) * 1000,
+      }).getBounds();
+      if (bounds) {
+        map.fitBounds(bounds, 36);
+      } else {
+        map.panTo(draftLatLng);
+      }
+    } else {
+      map.panTo(draftLatLng);
+      const zoom = map.getZoom() ?? 14;
+      if (zoom < 16) map.setZoom(16);
+    }
     // Po layoutu modalu ještě jednou — resize jinak vracel střed na Domov
     const t1 = window.setTimeout(() => {
       if (!mapRef.current) return;
@@ -462,10 +493,10 @@ export default function PodPlotGoogleMap({
     const listener = map.addListener("click", (e) => {
       const lat = e.latLng.lat();
       const lng = e.latLng.lng();
-      onPickPin(buildMapPickResult(lat, lng, center, refRadius));
+      onPickPin(buildMapPickResult(lat, lng, pickUnconstrained ? { lat, lng } : center, refRadius));
     });
     return () => window.google.maps.event.removeListener(listener);
-  }, [pickMode, onPickPin, center, refRadius, mapReady]);
+  }, [pickMode, onPickPin, center, refRadius, mapReady, pickUnconstrained]);
 
   const zoomBy = (delta) => {
     const map = mapRef.current;
@@ -486,7 +517,7 @@ export default function PodPlotGoogleMap({
     >
       <div
         className={`pp-map-container pp-map-container--google relative w-full ${
-          fluid ? "flex-1 min-h-[240px] h-full" : "h-72"
+          fluid ? "flex-1 min-h-[240px] h-full" : compact ? "h-56" : "h-72"
         } ${pickMode ? "pp-map-container--pick" : ""}`}
       >
         <div

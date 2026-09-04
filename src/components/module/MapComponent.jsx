@@ -49,7 +49,7 @@ export default function MapComponent(props) {
       <div className={wrapClass}>
         <div
           className={`pp-map-container pp-map-container--google pp-map-container--loading relative w-full ${
-            props.fluid ? "flex-1 min-h-[220px] h-full" : "h-72"
+            props.fluid ? "flex-1 min-h-[220px] h-full" : props.compact ? "h-56" : "h-72"
           }`}
         >
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center bg-[#F7FAF9]/90">

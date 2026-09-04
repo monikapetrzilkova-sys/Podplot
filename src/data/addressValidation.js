@@ -1,5 +1,5 @@
 export const ADDRESS_PRIVACY_NOTE_INLINE =
-  "Adresa nebude veřejně zobrazena ostatním — slouží jen k zafixování geolokace v okolí.";
+  "Adresa zůstane v tajnosti — slouží jen k tomu, abychom tě našli na mapě.";
 
 export function formatPscInput(value) {
   const digits = value.replace(/\D/g, "").slice(0, 5);
