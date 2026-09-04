@@ -116,7 +116,7 @@ export function houseNumberMatches(candidate, filter) {
 }
 
 export function buildAddressSearchQuery({ street = "", houseNumber = "", city = "", psc = "" } = {}) {
-  return [houseNumber, street, city || psc]
+  return [street, houseNumber, psc, city]
     .map((part) => String(part ?? "").trim())
     .filter(Boolean)
     .join(" ")
@@ -124,7 +124,12 @@ export function buildAddressSearchQuery({ street = "", houseNumber = "", city = 
     .trim();
 }
 
-export function canSearchAddress(parts) {
+export function canSearchAddress(parts = {}) {
+  const pscOk = String(parts.psc ?? "").replace(/\D/g, "").length === 5;
+  const cityOk = String(parts.city ?? "").trim().length >= 2;
+  if (!pscOk && !cityOk) return false;
+  const street = String(parts.street ?? "").trim();
+  if (street.length < 2) return false;
   return buildAddressSearchQuery(parts).length >= MIN_QUERY_LENGTH;
 }
 
@@ -146,7 +151,27 @@ export function rankAddressSuggestions(items, houseNumber) {
   return matched.length ? matched : rest;
 }
 
-export async function fetchAddressSuggestions(query, { houseNumber } = {}) {
+export function filterSuggestionsByLocality(items, { psc = "", city = "" } = {}) {
+  const list = items ?? [];
+  const digits = String(psc ?? "").replace(/\D/g, "");
+  if (digits.length === 5) {
+    const matched = list.filter((item) => String(item.psc ?? "").replace(/\D/g, "") === digits);
+    if (matched.length) return matched;
+  }
+  const cityTrim = String(city ?? "").trim();
+  if (cityTrim.length >= 2) {
+    const needle = cityTrim.toLocaleLowerCase("cs");
+    const matched = list.filter((item) => {
+      if (item.city && officialMunicipalityMatch(item.city, cityTrim)) return true;
+      const hay = `${item.formatted || ""} ${item.label || ""} ${item.city || ""}`.toLocaleLowerCase("cs");
+      return hay.includes(needle);
+    });
+    if (matched.length) return matched;
+  }
+  return list;
+}
+
+export async function fetchAddressSuggestions(query, { houseNumber, psc, city } = {}) {
   const q = query.trim();
   if (q.length < MIN_QUERY_LENGTH) return [];
 
@@ -160,7 +185,7 @@ export async function fetchAddressSuggestions(query, { houseNumber } = {}) {
   } else if (data.items?.length) {
     items = dedupeItems(data.items.map(mapNominatimItem).filter(Boolean));
   }
-  return rankAddressSuggestions(items, houseNumber).slice(0, 8);
+  return filterSuggestionsByLocality(rankAddressSuggestions(items, houseNumber), { psc, city }).slice(0, 8);
 }
 
 function pickBestGeocodeHit(results, preferredCity = null) {
@@ -229,21 +254,17 @@ export function createAddressAutocomplete(onResults, onLoading, onError) {
   let requestId = 0;
 
   const search = (streetOrQuery, context = {}) => {
-    const houseNumber = context.houseNumber ?? "";
-    const q =
-      context.houseNumber != null || context.city != null || context.psc != null
-        ? buildAddressSearchQuery({
-            street: streetOrQuery,
-            houseNumber,
-            city: context.city,
-            psc: context.psc,
-          })
-        : String(streetOrQuery ?? "").trim();
+    const parts = {
+      street: streetOrQuery,
+      houseNumber: context.houseNumber ?? "",
+      city: context.city ?? "",
+      psc: context.psc ?? "",
+    };
+    const q = buildAddressSearchQuery(parts);
     lastQuery = q;
-    const houseForQuery = houseNumber;
     clearTimeout(timer);
 
-    if (q.length < MIN_QUERY_LENGTH) {
+    if (!canSearchAddress(parts)) {
       onResults([]);
       onLoading(false);
       return;
@@ -256,7 +277,11 @@ export function createAddressAutocomplete(onResults, onLoading, onError) {
       const id = ++requestId;
       const query = q;
       try {
-        const results = await fetchAddressSuggestions(query, { houseNumber: houseForQuery });
+        const results = await fetchAddressSuggestions(query, {
+          houseNumber: parts.houseNumber,
+          psc: parts.psc,
+          city: parts.city,
+        });
         if (id !== requestId || query !== lastQuery) return;
         onResults(results);
         onError(null);
@@ -280,6 +305,6 @@ export function createAddressAutocomplete(onResults, onLoading, onError) {
 }
 
 export const ADDRESS_SEARCH_HINT =
-  "Nejdřív zadej číslo popisné — našeptávání pak nabídne jen ulice a čísla, která k němu sedí.";
+  "Nejdřív zadej PSČ — našeptávání pak nabídne ulice včetně čísla popisného v této lokalitě.";
 
 export { MIN_QUERY_LENGTH, DEBOUNCE_MS };
