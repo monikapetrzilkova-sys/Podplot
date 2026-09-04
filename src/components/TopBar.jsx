@@ -3,8 +3,8 @@ import LocationSwitcher from "./LocationSwitcher.jsx";
 import CrisisAlertBar from "./CrisisAlertBar.jsx";
 import { DoodleHomeIntro } from "./doodle/doodleIllustrations.jsx";
 import { DoodleMessageIcon } from "./doodle/doodleIcons.jsx";
-/** Vektorové logo (dům + plot + ruce) */
-import logoPodplot from "../assets/logo-podplot.svg";
+/** Vektorové logo (dům + plot + ruce) — public SVG, ať funguje i bez Vite importu */
+const LOGO_PODPLOT = "/logo-podplot-white.svg";
 
 export default function TopBar() {
   const {
@@ -44,7 +44,7 @@ export default function TopBar() {
           aria-label="Domů — Podplot"
         >
           <img
-            src={logoPodplot}
+            src={LOGO_PODPLOT}
             alt="Podplot"
             className="pp-brand-logo"
             width={58}

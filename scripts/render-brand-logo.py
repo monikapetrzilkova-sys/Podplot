@@ -99,6 +99,7 @@ def main() -> None:
     rasterize_file(rsvg, ASSETS / "logo-podplot.svg", ASSETS / "logo-podplot.png", 1024)
     rasterize_file(rsvg, ASSETS / "logo-podplot-green.svg", ASSETS / "logo-podplot-green.png", 1024)
     shutil.copyfile(ASSETS / "logo-podplot.svg", PUBLIC / "logo-podplot-white.svg")
+    shutil.copyfile(ASSETS / "logo-podplot-green.svg", PUBLIC / "logo-podplot-green.svg")
     rasterize_file(rsvg, ASSETS / "logo-podplot.svg", PUBLIC / "logo-podplot.png", 1024)
     rasterize_file(rsvg, ASSETS / "logo-podplot.svg", PUBLIC / "logo-podplot-white-lines.png", 1024)
 

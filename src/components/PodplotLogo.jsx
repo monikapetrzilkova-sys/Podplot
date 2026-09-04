@@ -1,9 +1,9 @@
 /** Logo Podplot — vektorový mark (dům + plot + ruce). */
-import logoWhite from "../assets/logo-podplot.svg";
-import logoGreen from "../assets/logo-podplot-green.svg";
+const LOGO_WHITE = "/logo-podplot-white.svg";
+const LOGO_GREEN = "/logo-podplot-green.svg";
 
 export default function PodplotLogo({ size = 32, className = "", variant = "color" }) {
-  const src = variant === "white" ? logoWhite : logoGreen;
+  const src = variant === "white" ? LOGO_WHITE : LOGO_GREEN;
   return (
     <img
       src={src}
