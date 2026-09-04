@@ -4,7 +4,7 @@
 
 import { officialMunicipalityMatch } from "./geoFilter.js";
 import { refineLocalityFromPsc } from "./czechCityDistricts.js";
-import { searchRuianAddresses } from "../../lib/ruianAddress.mjs";
+import { searchRuianAddresses, splitStreetAndHouseNumber } from "../../lib/ruianAddress.mjs";
 
 const MIN_QUERY_LENGTH = 3;
 const DEBOUNCE_MS = 450;
@@ -184,12 +184,14 @@ export async function fetchAddressSuggestions(
   query,
   { houseNumber, psc, city, street, mode = "streets", streetKod = "" } = {}
 ) {
-  const streetQ = String(street ?? query ?? "").trim();
+  const rawStreet = String(street ?? query ?? "").trim();
+  const parsed = splitStreetAndHouseNumber(rawStreet);
+  const streetQ = parsed.street || rawStreet;
   const cityQ = String(city ?? "").trim();
   const pscQ = String(psc ?? "").replace(/\D/g, "");
-  const hnQ = String(houseNumber ?? "").trim();
+  const hnQ = String(houseNumber ?? "").trim() || parsed.houseNumber;
   const q = String(query ?? "").trim();
-  const searchMode = mode === "houses" ? "houses" : "streets";
+  const searchMode = mode === "houses" || parsed.houseNumber ? "houses" : "streets";
 
   const params = new URLSearchParams();
   if (streetQ && (pscQ.length === 5 || cityQ.length >= 2)) {
@@ -363,6 +365,6 @@ export function createAddressAutocomplete(onResults, onLoading, onError) {
 }
 
 export const ADDRESS_SEARCH_HINT =
-  "Vyber ulici z nabídky. Potom se ukážou všechna čísla popisná na té ulici.";
+  "Napiš název ulice, klidně i s číslem popisným. Po výběru ulice se nabídnou všechna čísla na ní.";
 
 export { MIN_QUERY_LENGTH, DEBOUNCE_MS };

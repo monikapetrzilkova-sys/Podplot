@@ -10,6 +10,7 @@ import {
   createAddressAutocomplete,
   ADDRESS_SEARCH_HINT,
 } from "../data/addressAutocomplete.js";
+import { splitStreetAndHouseNumber, stripDiacritics } from "../../lib/ruianAddress.mjs";
 
 function ReqStar() {
   return (
@@ -80,6 +81,7 @@ export default function StructuredAddressFields({
   const suggestListRef = useRef(null);
   const houseInputRef = useRef(null);
   const streetKodRef = useRef(null);
+  const selectedStreetRef = useRef("");
   const pscReady = pscDigits(psc).length === 5;
   const streetSuggestions = suggestMode === "streets" ? suggestions : [];
   const houseSuggestions = suggestMode === "houses" ? suggestions : [];
@@ -127,7 +129,6 @@ export default function StructuredAddressFields({
   }, [psc, cityManual]); // eslint-disable-line react-hooks/exhaustive-deps -- sync city from PSC only
 
   const runStreetSearch = (nextStreet = street, nextCity = city, nextPsc = psc) => {
-    streetKodRef.current = null;
     setSuggestMode("streets");
     autocompleteRef.current?.search(nextStreet, {
       city: nextCity,
@@ -147,9 +148,26 @@ export default function StructuredAddressFields({
     });
   };
 
+  const handleStreetQuery = (value) => {
+    const parsed = splitStreetAndHouseNumber(value);
+    const selected = stripDiacritics(selectedStreetRef.current);
+    const typed = stripDiacritics(parsed.street);
+    if (!selected || typed !== selected) {
+      streetKodRef.current = null;
+      selectedStreetRef.current = "";
+    }
+    if (parsed.street && parsed.houseNumber) {
+      if (parsed.houseNumber !== houseNumber) onHouseNumberChange?.(parsed.houseNumber);
+      runHouseSearch(parsed.street, parsed.houseNumber, city, psc);
+      return;
+    }
+    runStreetSearch(parsed.street || value, city, psc);
+  };
+
   const handlePscChange = (value) => {
     setCityManual(false);
     streetKodRef.current = null;
+    selectedStreetRef.current = "";
     setSuggestMode("streets");
     onPscChange?.(formatPscInput(value));
     onClearError?.("psc");
@@ -175,6 +193,7 @@ export default function StructuredAddressFields({
 
     if (item.kind === "street" || (item.street && !item.houseNumber)) {
       streetKodRef.current = item.streetKod ?? null;
+      selectedStreetRef.current = item.street || "";
       onHouseNumberChange?.("");
       onSuggestionPick?.(item);
       runHouseSearch(item.street, "", item.city || city, item.psc || psc);
@@ -183,6 +202,8 @@ export default function StructuredAddressFields({
     }
 
     if (item.houseNumber) onHouseNumberChange?.(item.houseNumber);
+    if (item.street) selectedStreetRef.current = item.street;
+    if (item.streetKod) streetKodRef.current = item.streetKod;
     onSuggestionPick?.(item);
     setSuggestions([]);
   };
@@ -257,10 +278,10 @@ export default function StructuredAddressFields({
               const value = e.target.value;
               onStreetChange?.(value);
               onClearError?.("street");
-              runStreetSearch(value, city, psc);
+              handleStreetQuery(value);
             }}
             onFocus={() => {
-              if (street) runStreetSearch(street, city, psc);
+              if (street) handleStreetQuery(street);
             }}
             placeholder={pscReady ? "Název ulice" : "Nejdřív zadej PSČ"}
             autoComplete="off"
