@@ -49,6 +49,7 @@ export default function StructuredAddressFields({
   const [suggestError, setSuggestError] = useState(null);
   const autocompleteRef = useRef(null);
   const suggestWrapRef = useRef(null);
+  const suggestListRef = useRef(null);
   const pscReady = pscDigits(psc).length === 5;
 
   useEffect(() => {
@@ -63,6 +64,11 @@ export default function StructuredAddressFields({
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
+
+  useEffect(() => {
+    if (suggestions.length === 0) return;
+    suggestListRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [suggestions.length]);
 
   useEffect(() => {
     const digits = pscDigits(psc);
@@ -189,7 +195,7 @@ export default function StructuredAddressFields({
           Ulice
           {required ? <ReqStar /> : null}
         </label>
-        <div className="pp-address-suggest-wrap">
+        <div>
           <input
             type="text"
             value={street}
@@ -206,6 +212,7 @@ export default function StructuredAddressFields({
           />
           {suggestions.length > 0 ? (
             <ul
+              ref={suggestListRef}
               className="pp-address-suggest-list"
               onWheel={(event) => event.stopPropagation()}
               onTouchMove={(event) => event.stopPropagation()}
