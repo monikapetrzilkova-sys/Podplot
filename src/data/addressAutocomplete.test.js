@@ -6,6 +6,7 @@ import {
   buildAddressSearchQuery,
   canSearchAddress,
   rankAddressSuggestions,
+  filterSuggestionsByLocality,
 } from "./addressAutocomplete.js";
 
 describe("houseNumberMatches", () => {
@@ -26,16 +27,21 @@ describe("houseNumberMatches", () => {
 });
 
 describe("buildAddressSearchQuery", () => {
-  it("puts house number first so suggestions can narrow streets", () => {
-    assert.equal(buildAddressSearchQuery({ houseNumber: "12", street: "Hlavní", city: "Jesenice" }), "12 Hlavní Jesenice");
-    assert.equal(buildAddressSearchQuery({ houseNumber: "12", street: "Hl" }), "12 Hl");
+  it("puts street first and keeps the locality from PSČ", () => {
+    assert.equal(
+      buildAddressSearchQuery({ street: "Hlavní", houseNumber: "12", psc: "142 00", city: "Praha 4" }),
+      "Hlavní 12 142 00 Praha 4"
+    );
+    assert.equal(buildAddressSearchQuery({ street: "Hl", psc: "142 00" }), "Hl 142 00");
     assert.equal(normalizeHouseNumber(" 12 A "), "12a");
   });
 
-  it("needs at least 3 characters before searching", () => {
+  it("needs a locality and a street before searching", () => {
     assert.equal(canSearchAddress({ houseNumber: "12" }), false);
-    assert.equal(canSearchAddress({ houseNumber: "12", street: "H" }), true);
-    assert.equal(canSearchAddress({ houseNumber: "12", city: "Jesenice" }), true);
+    assert.equal(canSearchAddress({ street: "Hlavní" }), false);
+    assert.equal(canSearchAddress({ street: "Hl", psc: "14200" }), true);
+    assert.equal(canSearchAddress({ street: "Hlavní", city: "Jesenice" }), true);
+    assert.equal(canSearchAddress({ houseNumber: "12", city: "Jesenice" }), false);
   });
 });
 
@@ -53,6 +59,22 @@ describe("rankAddressSuggestions", () => {
     assert.deepEqual(
       ranked.map((i) => `${i.street} ${i.houseNumber}`),
       ["Hlavní 12", "Lípová 12a"]
+    );
+  });
+});
+
+describe("filterSuggestionsByLocality", () => {
+  it("keeps addresses in the same PSČ when any match exists", () => {
+    const filtered = filterSuggestionsByLocality(
+      [
+        { street: "Hlavní", houseNumber: "12", psc: "142 00", city: "Praha 4" },
+        { street: "Hlavní", houseNumber: "8", psc: "252 42", city: "Jesenice" },
+      ],
+      { psc: "14200" }
+    );
+    assert.deepEqual(
+      filtered.map((i) => `${i.street} ${i.houseNumber}`),
+      ["Hlavní 12"]
     );
   });
 });
