@@ -98,7 +98,7 @@ export default function LocalityRadiusPreview({
       <MapRadiusControl
         id="neighbor-radius"
         label="Nastav si okruh, který tě zajímá."
-        hint="Uvidíš příspěvky sousedů v tomto okruhu. Ve velkém městě stačí 1–2 km — nestačí jen název města."
+        hint="Uvidíš příspěvky sousedů v tomto okruhu."
         value={radiusKm}
         min={MIN_NEIGHBOR_RADIUS_KM}
         max={MAX_NEIGHBOR_RADIUS_KM}
