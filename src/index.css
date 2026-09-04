@@ -150,11 +150,27 @@ textarea {
   touch-action: manipulation;
 }
 
-/* Návrhy adres: posun prstem/kolečkem má zůstat v seznamu, ne v listu pod ním. */
+/* Návrhy adres: overlay s vlastním posuvem (gesto nesmí přebírat formulář pod ním). */
+.pp-address-suggest-wrap {
+  position: relative;
+}
+
 .pp-address-suggest-list {
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  right: 0;
+  margin-top: 0.25rem;
+  max-height: 13rem;
+  overflow-x: hidden;
+  overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
+  border-radius: 0.75rem;
+  border: 1px solid #e7e5e4;
+  background: #ffffff;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
 .pp-address-suggest-list button {

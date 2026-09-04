@@ -189,7 +189,7 @@ export default function StructuredAddressFields({
           Ulice
           {required ? <ReqStar /> : null}
         </label>
-        <div className="relative">
+        <div className="pp-address-suggest-wrap">
           <input
             type="text"
             value={street}
@@ -206,7 +206,7 @@ export default function StructuredAddressFields({
           />
           {suggestions.length > 0 ? (
             <ul
-              className="pp-address-suggest-list absolute z-30 left-0 right-0 mt-1 max-h-52 overflow-y-auto rounded-xl border border-stone-200 bg-white shadow-lg"
+              className="pp-address-suggest-list"
               onWheel={(event) => event.stopPropagation()}
               onTouchMove={(event) => event.stopPropagation()}
             >
