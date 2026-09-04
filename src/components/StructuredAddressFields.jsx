@@ -349,7 +349,7 @@ export default function StructuredAddressFields({
             items={houseSuggestions}
             header={
               houseSuggestions.length
-                ? `Čísla popisná v ulici ${street || houseSuggestions[0].street} (${houseSuggestions.length})`
+                ? `Čísla popisná v ulici ${splitStreetAndHouseNumber(street).street || houseSuggestions[0].street} (${houseSuggestions.length})`
                 : null
             }
             listRef={suggestMode === "houses" ? suggestListRef : undefined}
