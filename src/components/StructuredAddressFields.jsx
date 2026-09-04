@@ -122,6 +122,9 @@ export default function StructuredAddressFields({
     onClearError?.("houseNumber");
     onClearError?.("psc");
     onClearError?.("city");
+    if (item.street && !item.houseNumber) {
+      runSearch(item.street, "", item.city || city, item.psc || psc);
+    }
   };
 
   const inputClass = (hasError) =>
@@ -196,7 +199,7 @@ export default function StructuredAddressFields({
             runSearch(value, houseNumber, city, psc);
           }}
           onFocus={() => runSearch(street, houseNumber, city, psc)}
-          placeholder={pscReady ? "Začněte psát ulici — nabídka včetně č.p." : "Nejdřív zadej PSČ"}
+          placeholder={pscReady ? "Stačí P — nabídneme ulice i č.p. v obci" : "Nejdřív zadej PSČ"}
           autoComplete="off"
           className={inputClass(fieldErrors.street)}
         />

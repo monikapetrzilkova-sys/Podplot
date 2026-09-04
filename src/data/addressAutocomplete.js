@@ -129,8 +129,7 @@ export function canSearchAddress(parts = {}) {
   const cityOk = String(parts.city ?? "").trim().length >= 2;
   if (!pscOk && !cityOk) return false;
   const street = String(parts.street ?? "").trim();
-  if (street.length < 2) return false;
-  return buildAddressSearchQuery(parts).length >= MIN_QUERY_LENGTH;
+  return street.length >= 1;
 }
 
 export function rankAddressSuggestions(items, houseNumber) {
@@ -154,11 +153,20 @@ export function rankAddressSuggestions(items, houseNumber) {
 export function filterSuggestionsByLocality(items, { psc = "", city = "" } = {}) {
   const list = items ?? [];
   const digits = String(psc ?? "").replace(/\D/g, "");
+  const cityTrim = String(city ?? "").split(/[—–]/)[0].trim();
   if (digits.length === 5) {
-    const matched = list.filter((item) => String(item.psc ?? "").replace(/\D/g, "") === digits);
+    const matched = list.filter((item) => {
+      const itemPsc = String(item.psc ?? "").replace(/\D/g, "");
+      if (itemPsc === digits) return true;
+      if (!itemPsc && cityTrim.length >= 2) {
+        if (item.city && officialMunicipalityMatch(item.city, cityTrim)) return true;
+        const hay = `${item.formatted || ""} ${item.label || ""} ${item.city || ""}`.toLocaleLowerCase("cs");
+        return hay.includes(cityTrim.toLocaleLowerCase("cs"));
+      }
+      return false;
+    });
     if (matched.length) return matched;
   }
-  const cityTrim = String(city ?? "").trim();
   if (cityTrim.length >= 2) {
     const needle = cityTrim.toLocaleLowerCase("cs");
     const matched = list.filter((item) => {
@@ -171,21 +179,37 @@ export function filterSuggestionsByLocality(items, { psc = "", city = "" } = {})
   return list;
 }
 
-export async function fetchAddressSuggestions(query, { houseNumber, psc, city } = {}) {
-  const q = query.trim();
-  if (q.length < MIN_QUERY_LENGTH) return [];
+export async function fetchAddressSuggestions(query, { houseNumber, psc, city, street } = {}) {
+  const streetQ = String(street ?? query ?? "").trim();
+  const cityQ = String(city ?? "").trim();
+  const pscQ = String(psc ?? "").replace(/\D/g, "");
+  const hnQ = String(houseNumber ?? "").trim();
+  const q = String(query ?? "").trim();
 
-  const res = await fetch(`/api/address-search?q=${encodeURIComponent(q)}`);
+  const params = new URLSearchParams();
+  if (streetQ && (pscQ.length === 5 || cityQ.length >= 2)) {
+    params.set("street", streetQ);
+    if (cityQ) params.set("city", cityQ);
+    if (pscQ) params.set("psc", pscQ);
+    if (hnQ) params.set("houseNumber", hnQ);
+  } else {
+    if (q.length < MIN_QUERY_LENGTH) return [];
+    params.set("q", q);
+  }
+
+  const res = await fetch(`/api/address-search?${params.toString()}`);
   if (!res.ok) throw new Error("Address search failed");
   const data = await res.json();
 
   let items = [];
-  if (data.source === "photon" && data.features?.length) {
+  if (data.source === "ruian" && data.items?.length) {
+    items = dedupeItems(data.items);
+  } else if (data.source === "photon" && data.features?.length) {
     items = dedupeItems(data.features.map(mapPhotonFeature).filter(Boolean));
   } else if (data.items?.length) {
     items = dedupeItems(data.items.map(mapNominatimItem).filter(Boolean));
   }
-  return filterSuggestionsByLocality(rankAddressSuggestions(items, houseNumber), { psc, city }).slice(0, 8);
+  return filterSuggestionsByLocality(rankAddressSuggestions(items, houseNumber), { psc, city }).slice(0, 12);
 }
 
 function pickBestGeocodeHit(results, preferredCity = null) {
@@ -278,6 +302,7 @@ export function createAddressAutocomplete(onResults, onLoading, onError) {
       const query = q;
       try {
         const results = await fetchAddressSuggestions(query, {
+          street: parts.street,
           houseNumber: parts.houseNumber,
           psc: parts.psc,
           city: parts.city,
@@ -305,6 +330,6 @@ export function createAddressAutocomplete(onResults, onLoading, onError) {
 }
 
 export const ADDRESS_SEARCH_HINT =
-  "Nejdřív zadej PSČ — našeptávání pak nabídne ulice včetně čísla popisného v této lokalitě.";
+  "Stačí začít psát ulici — nabídneme ulice i čísla popisná v této obci.";
 
 export { MIN_QUERY_LENGTH, DEBOUNCE_MS };
