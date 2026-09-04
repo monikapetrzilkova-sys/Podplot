@@ -3,8 +3,8 @@ import LocationSwitcher from "./LocationSwitcher.jsx";
 import CrisisAlertBar from "./CrisisAlertBar.jsx";
 import { DoodleHomeIntro } from "./doodle/doodleIllustrations.jsx";
 import { DoodleMessageIcon } from "./doodle/doodleIcons.jsx";
-/** Přímo import — nové logo F (dům + plot + ruce), Vite cache-bust */
-import logoPodplot from "../assets/logo-podplot.png";
+/** Vektorové logo (dům + plot + ruce) */
+import logoPodplot from "../assets/logo-podplot.svg";
 
 export default function TopBar() {
   const {
