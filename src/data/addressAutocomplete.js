@@ -4,6 +4,7 @@
 
 import { officialMunicipalityMatch } from "./geoFilter.js";
 import { refineLocalityFromPsc } from "./czechCityDistricts.js";
+import { searchRuianAddresses } from "../../lib/ruianAddress.mjs";
 
 const MIN_QUERY_LENGTH = 3;
 const DEBOUNCE_MS = 450;
@@ -197,18 +198,37 @@ export async function fetchAddressSuggestions(query, { houseNumber, psc, city, s
     params.set("q", q);
   }
 
-  const res = await fetch(`/api/address-search?${params.toString()}`);
-  if (!res.ok) throw new Error("Address search failed");
-  const data = await res.json();
-
   let items = [];
-  if (data.source === "ruian" && data.items?.length) {
-    items = dedupeItems(data.items);
-  } else if (data.source === "photon" && data.features?.length) {
-    items = dedupeItems(data.features.map(mapPhotonFeature).filter(Boolean));
-  } else if (data.items?.length) {
-    items = dedupeItems(data.items.map(mapNominatimItem).filter(Boolean));
+  try {
+    const res = await fetch(`/api/address-search?${params.toString()}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.source === "ruian" && data.items?.length) {
+        items = dedupeItems(data.items);
+      } else if (data.source === "photon" && data.features?.length) {
+        items = dedupeItems(data.features.map(mapPhotonFeature).filter(Boolean));
+      } else if (data.items?.length) {
+        items = dedupeItems(data.items.map(mapNominatimItem).filter(Boolean));
+      }
+    }
+  } catch {
+    items = [];
   }
+
+  if (!items.length && streetQ && (pscQ.length === 5 || cityQ.length >= 2)) {
+    try {
+      const ruian = await searchRuianAddresses({
+        street: streetQ,
+        houseNumber: hnQ,
+        city: cityQ,
+        psc: pscQ,
+      });
+      items = dedupeItems(ruian.items || []);
+    } catch {
+      items = [];
+    }
+  }
+
   return filterSuggestionsByLocality(rankAddressSuggestions(items, houseNumber), { psc, city }).slice(0, 12);
 }
 
