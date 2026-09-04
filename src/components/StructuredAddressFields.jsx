@@ -85,6 +85,8 @@ export default function StructuredAddressFields({
   const pscReady = pscDigits(psc).length === 5;
   const streetSuggestions = suggestMode === "streets" ? suggestions : [];
   const houseSuggestions = suggestMode === "houses" ? suggestions : [];
+  const houseTypedInStreet = Boolean(splitStreetAndHouseNumber(street).houseNumber);
+  const streetFieldSuggestions = houseTypedInStreet ? houseSuggestions : streetSuggestions;
 
   useEffect(() => {
     autocompleteRef.current = createAddressAutocomplete(setSuggestions, setSuggestLoading, setSuggestError);
@@ -157,6 +159,7 @@ export default function StructuredAddressFields({
       selectedStreetRef.current = "";
     }
     if (parsed.street && parsed.houseNumber) {
+      setSuggestions([]);
       if (parsed.houseNumber !== houseNumber) onHouseNumberChange?.(parsed.houseNumber);
       runHouseSearch(parsed.street, parsed.houseNumber, city, psc);
       return;
@@ -283,15 +286,31 @@ export default function StructuredAddressFields({
             onFocus={() => {
               if (street) handleStreetQuery(street);
             }}
+            onBlur={() => {
+              const parsed = splitStreetAndHouseNumber(street);
+              if (parsed.street && parsed.houseNumber) {
+                if (parsed.street !== street) onStreetChange?.(parsed.street);
+                if (parsed.houseNumber !== houseNumber) onHouseNumberChange?.(parsed.houseNumber);
+              }
+            }}
             placeholder={pscReady ? "Název ulice" : "Nejdřív zadej PSČ"}
             autoComplete="off"
             className={inputClass(fieldErrors.street)}
           />
           <AddressSuggestList
-            items={streetSuggestions}
-            listRef={suggestMode === "streets" ? suggestListRef : undefined}
+            items={streetFieldSuggestions}
+            header={
+              houseTypedInStreet && houseSuggestions.length
+                ? `Adresa v ulici ${splitStreetAndHouseNumber(street).street}`
+                : null
+            }
+            listRef={houseTypedInStreet || suggestMode === "streets" ? suggestListRef : undefined}
             onPick={applySuggestion}
-            renderLabel={(item) => item.street || item.label}
+            renderLabel={(item) =>
+              houseTypedInStreet
+                ? `${item.street} ${item.houseNumber}`.trim()
+                : item.street || item.label
+            }
           />
           {fieldErrors.street ? <p className="mt-1 text-xs text-red-600">{fieldErrors.street}</p> : null}
           {!fieldErrors.street ? <p className="mt-1 text-[10px] text-stone-400">{ADDRESS_SEARCH_HINT}</p> : null}

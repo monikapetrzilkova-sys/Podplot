@@ -7,7 +7,7 @@ import { refineLocalityFromPsc } from "./czechCityDistricts.js";
 import { searchRuianAddresses, splitStreetAndHouseNumber } from "../../lib/ruianAddress.mjs";
 
 const MIN_QUERY_LENGTH = 3;
-const DEBOUNCE_MS = 450;
+const DEBOUNCE_MS = 280;
 
 function formatPsc(postcode) {
   if (!postcode) return "";
