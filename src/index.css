@@ -155,7 +155,7 @@ textarea {
   position: relative;
   z-index: 5;
   margin-top: 0.25rem;
-  max-height: min(16rem, 40dvh);
+  max-height: min(20rem, 50dvh);
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
