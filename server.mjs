@@ -206,6 +206,18 @@ const server = createServer(async (req, res) => {
     const ext = extname(filepath);
 
     if (BINARY_EXT.has(ext)) {
+      const dest = req.headers["sec-fetch-dest"] || "";
+      const accept = req.headers.accept || "";
+      const asModule =
+        dest === "script" ||
+        dest === "module" ||
+        accept.includes("text/javascript") ||
+        accept.includes("application/javascript");
+      if (asModule) {
+        res.writeHead(200, { "Content-Type": MIME[".js"] });
+        res.end(`export default ${JSON.stringify(url)};`);
+        return;
+      }
       const content = await readFile(filepath);
       res.writeHead(200, { "Content-Type": MIME[ext] ?? "application/octet-stream" });
       res.end(content);
