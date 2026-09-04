@@ -40,16 +40,26 @@ def write_colored_mark(path: Path, color: str) -> None:
     )
 
 
-def og_svg(size: int = 1200, pad: int = 96) -> str:
+def og_svg(size: int = 1200, pad: int = 120) -> str:
+    """WhatsApp/Messenger: large square card, vector mark with room around it."""
     inner = size - 2 * pad
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="0 0 {size} {size}">
   <rect width="{size}" height="{size}" fill="{GREEN}"/>
-  <svg x="{pad}" y="{pad - 24}" width="{inner}" height="{inner}" viewBox="0 0 512 512">
+  <svg x="{pad}" y="{pad - 16}" width="{inner}" height="{inner}" viewBox="0 0 512 512">
     {mark_inner(WHITE)}
   </svg>
 </svg>
 """
+
+
+def downscale_png(src: Path, dest: Path, width: int, height: int) -> None:
+    from PIL import Image
+
+    im = Image.open(src).convert("RGB")
+    im = im.resize((width, height), Image.Resampling.LANCZOS)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    im.save(dest, format="PNG", optimize=True)
 
 
 def square_icon_svg(size: int, pad_ratio: float) -> str:
@@ -87,12 +97,19 @@ def main() -> None:
 
     og_path = PUBLIC / "og-image.svg"
     og_path.write_text(og_svg(), encoding="utf-8")
-    rasterize_file(rsvg, og_path, PUBLIC / "og-image.png", 1200)
+    # Render 2× then Lanczos-downscale so strokes stay smooth in WhatsApp/Messenger.
+    og_hi = PUBLIC / "og-image@2x.png"
+    rasterize_file(rsvg, og_path, og_hi, 2400, 2400)
+    downscale_png(og_hi, PUBLIC / "og-image.png", 1200, 1200)
+    og_hi.unlink(missing_ok=True)
 
     rasterize(rsvg, square_icon_svg(512, 0.08), ICONS / "icon-512.png", 512)
     rasterize(rsvg, square_icon_svg(512, 0.12), ICONS / "icon-512-maskable.png", 512)
     rasterize(rsvg, square_icon_svg(192, 0.08), ICONS / "icon-192.png", 192)
-    rasterize(rsvg, square_icon_svg(180, 0.08), PUBLIC / "apple-touch-icon.png", 180)
+    apple_hi = PUBLIC / "apple-touch-icon@3x.png"
+    rasterize(rsvg, square_icon_svg(540, 0.08), apple_hi, 540)
+    downscale_png(apple_hi, PUBLIC / "apple-touch-icon.png", 180, 180)
+    apple_hi.unlink(missing_ok=True)
 
     write_colored_mark(ASSETS / "logo-podplot.svg", WHITE)
     write_colored_mark(ASSETS / "logo-podplot-green.svg", GREEN)
