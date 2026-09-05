@@ -14,6 +14,8 @@ export default async function handler(req, res) {
       psc: req.query?.psc,
       houseNumber: req.query?.houseNumber,
       q: req.query?.q,
+      mode: req.query?.mode,
+      streetKod: req.query?.streetKod,
     });
     res.status(200).json(data);
   } catch (err) {

@@ -155,7 +155,7 @@ textarea {
   position: relative;
   z-index: 5;
   margin-top: 0.25rem;
-  max-height: min(16rem, 40dvh);
+  max-height: min(20rem, 50dvh);
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -169,6 +169,11 @@ textarea {
 
 .pp-address-suggest-list button {
   touch-action: pan-y;
+}
+
+/* Kompletní č.p. v toku formuláře — scroll stránky dojede i na poslední číslo. */
+.pp-address-suggest-list--expanded {
+  max-height: none;
 }
 
 /* Celá appka: žádný pinch-zoom stránky (iOS/Android) */

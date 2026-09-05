@@ -4,10 +4,10 @@
 
 import { officialMunicipalityMatch } from "./geoFilter.js";
 import { refineLocalityFromPsc } from "./czechCityDistricts.js";
-import { searchRuianAddresses } from "../../lib/ruianAddress.mjs";
+import { searchRuianAddresses, splitStreetAndHouseNumber, stripDiacritics } from "../../lib/ruianAddress.mjs";
 
 const MIN_QUERY_LENGTH = 3;
-const DEBOUNCE_MS = 450;
+const DEBOUNCE_MS = 280;
 
 function formatPsc(postcode) {
   if (!postcode) return "";
@@ -125,6 +125,18 @@ export function buildAddressSearchQuery({ street = "", houseNumber = "", city = 
     .trim();
 }
 
+/** Jedna jednoznačná ulice → rovnou načíst všechna č.p. (Platanová → … 1568). */
+export function shouldAutoloadHouses(items, typedStreet) {
+  const list = items ?? [];
+  if (list.length !== 1) return false;
+  const only = list[0];
+  if (!only?.street || only.kind === "house") return false;
+  const typed = stripDiacritics(splitStreetAndHouseNumber(typedStreet).street);
+  const name = stripDiacritics(only.street);
+  if (!typed || !name) return false;
+  return typed === name || (typed.length >= 4 && name.startsWith(typed));
+}
+
 export function canSearchAddress(parts = {}) {
   const pscOk = String(parts.psc ?? "").replace(/\D/g, "").length === 5;
   const cityOk = String(parts.city ?? "").trim().length >= 2;
@@ -180,19 +192,27 @@ export function filterSuggestionsByLocality(items, { psc = "", city = "" } = {})
   return list;
 }
 
-export async function fetchAddressSuggestions(query, { houseNumber, psc, city, street } = {}) {
-  const streetQ = String(street ?? query ?? "").trim();
+export async function fetchAddressSuggestions(
+  query,
+  { houseNumber, psc, city, street, mode = "streets", streetKod = "" } = {}
+) {
+  const rawStreet = String(street ?? query ?? "").trim();
+  const parsed = splitStreetAndHouseNumber(rawStreet);
+  const streetQ = parsed.street || rawStreet;
   const cityQ = String(city ?? "").trim();
   const pscQ = String(psc ?? "").replace(/\D/g, "");
-  const hnQ = String(houseNumber ?? "").trim();
+  const hnQ = String(houseNumber ?? "").trim() || parsed.houseNumber;
   const q = String(query ?? "").trim();
+  const searchMode = mode === "houses" || parsed.houseNumber ? "houses" : "streets";
 
   const params = new URLSearchParams();
   if (streetQ && (pscQ.length === 5 || cityQ.length >= 2)) {
     params.set("street", streetQ);
+    params.set("mode", searchMode);
     if (cityQ) params.set("city", cityQ);
     if (pscQ) params.set("psc", pscQ);
     if (hnQ) params.set("houseNumber", hnQ);
+    if (streetKod) params.set("streetKod", String(streetKod));
   } else {
     if (q.length < MIN_QUERY_LENGTH) return [];
     params.set("q", q);
@@ -222,6 +242,8 @@ export async function fetchAddressSuggestions(query, { houseNumber, psc, city, s
         houseNumber: hnQ,
         city: cityQ,
         psc: pscQ,
+        streetKod,
+        mode: searchMode,
       });
       items = dedupeItems(ruian.items || []);
     } catch {
@@ -229,7 +251,8 @@ export async function fetchAddressSuggestions(query, { houseNumber, psc, city, s
     }
   }
 
-  return filterSuggestionsByLocality(rankAddressSuggestions(items, houseNumber), { psc, city }).slice(0, 12);
+  if (searchMode === "houses") return dedupeItems(items);
+  return filterSuggestionsByLocality(rankAddressSuggestions(items, houseNumber), { psc, city });
 }
 
 function pickBestGeocodeHit(results, preferredCity = null) {
@@ -303,8 +326,10 @@ export function createAddressAutocomplete(onResults, onLoading, onError) {
       houseNumber: context.houseNumber ?? "",
       city: context.city ?? "",
       psc: context.psc ?? "",
+      mode: context.mode === "houses" ? "houses" : "streets",
+      streetKod: context.streetKod ?? "",
     };
-    const q = buildAddressSearchQuery(parts);
+    const q = `${parts.mode}|${buildAddressSearchQuery(parts)}|${parts.streetKod}|${parts.houseNumber}`;
     lastQuery = q;
     clearTimeout(timer);
 
@@ -326,6 +351,8 @@ export function createAddressAutocomplete(onResults, onLoading, onError) {
           houseNumber: parts.houseNumber,
           psc: parts.psc,
           city: parts.city,
+          mode: parts.mode,
+          streetKod: parts.streetKod,
         });
         if (id !== requestId || query !== lastQuery) return;
         onResults(results);
@@ -350,6 +377,6 @@ export function createAddressAutocomplete(onResults, onLoading, onError) {
 }
 
 export const ADDRESS_SEARCH_HINT =
-  "Stačí začít psát ulici — nabídneme ulice i čísla popisná v této obci.";
+  "Napiš ulici. U jedné shody se hned ukážou všechna čísla popisná — scrolluj seznam až na konec.";
 
 export { MIN_QUERY_LENGTH, DEBOUNCE_MS };

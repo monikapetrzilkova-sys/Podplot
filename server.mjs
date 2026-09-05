@@ -62,6 +62,7 @@ const MIME = {
   ".html": "text/html; charset=utf-8",
   ".js": "application/javascript; charset=utf-8",
   ".jsx": "application/javascript; charset=utf-8",
+  ".mjs": "application/javascript; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".json": "application/json; charset=utf-8",
   ".png": "image/png",
@@ -112,12 +113,14 @@ const server = createServer(async (req, res) => {
       const city = params.get("city")?.trim() ?? "";
       const psc = params.get("psc")?.trim() ?? "";
       const houseNumber = params.get("houseNumber")?.trim() ?? "";
+      const mode = params.get("mode")?.trim() ?? "streets";
+      const streetKod = params.get("streetKod")?.trim() ?? "";
       if (!q && !street) {
         res.writeHead(200, { "Content-Type": MIME[".json"] });
         res.end(JSON.stringify({ source: "empty", features: [], items: [] }));
         return;
       }
-      const data = await handleAddressSearch({ street, city, psc, houseNumber, q });
+      const data = await handleAddressSearch({ street, city, psc, houseNumber, q, mode, streetKod });
       res.writeHead(200, { "Content-Type": MIME[".json"] });
       res.end(JSON.stringify(data));
       return;
