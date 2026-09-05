@@ -9,6 +9,7 @@ import { refineLocalityFromPsc } from "../data/czechCityDistricts.js";
 import {
   createAddressAutocomplete,
   ADDRESS_SEARCH_HINT,
+  shouldAutoloadHouses,
 } from "../data/addressAutocomplete.js";
 import { splitStreetAndHouseNumber, stripDiacritics } from "../../lib/ruianAddress.mjs";
 
@@ -20,12 +21,12 @@ function ReqStar() {
   );
 }
 
-function AddressSuggestList({ items, header, onPick, listRef, renderLabel }) {
+function AddressSuggestList({ items, header, onPick, listRef, renderLabel, expanded = false }) {
   if (!items.length) return null;
   return (
     <ul
       ref={listRef}
-      className="pp-address-suggest-list"
+      className={`pp-address-suggest-list${expanded ? " pp-address-suggest-list--expanded" : ""}`}
       onWheel={(event) => event.stopPropagation()}
       onTouchMove={(event) => event.stopPropagation()}
     >
@@ -76,17 +77,24 @@ export default function StructuredAddressFields({
   const [suggestMode, setSuggestMode] = useState("streets");
   const [suggestLoading, setSuggestLoading] = useState(false);
   const [suggestError, setSuggestError] = useState(null);
+  const [houseFieldFocused, setHouseFieldFocused] = useState(false);
   const autocompleteRef = useRef(null);
   const suggestWrapRef = useRef(null);
   const suggestListRef = useRef(null);
   const houseInputRef = useRef(null);
   const streetKodRef = useRef(null);
   const selectedStreetRef = useRef("");
+  const autoHousesForRef = useRef("");
   const pscReady = pscDigits(psc).length === 5;
   const streetSuggestions = suggestMode === "streets" ? suggestions : [];
   const houseSuggestions = suggestMode === "houses" ? suggestions : [];
   const houseTypedInStreet = Boolean(splitStreetAndHouseNumber(street).houseNumber);
-  const streetFieldSuggestions = houseTypedInStreet ? houseSuggestions : streetSuggestions;
+  const showHousesUnderStreet = suggestMode === "houses" && !houseFieldFocused;
+  const streetFieldSuggestions = showHousesUnderStreet
+    ? houseSuggestions
+    : houseTypedInStreet
+      ? houseSuggestions
+      : streetSuggestions;
 
   useEffect(() => {
     autocompleteRef.current = createAddressAutocomplete(setSuggestions, setSuggestLoading, setSuggestError);
@@ -105,6 +113,24 @@ export default function StructuredAddressFields({
     if (suggestions.length === 0) return;
     suggestListRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
   }, [suggestions.length]);
+
+  useEffect(() => {
+    if (suggestMode !== "streets" || !shouldAutoloadHouses(suggestions, street)) return;
+    const only = suggestions[0];
+    const key = String(only.streetKod || only.street);
+    if (autoHousesForRef.current === key) return;
+    autoHousesForRef.current = key;
+    streetKodRef.current = only.streetKod ?? null;
+    selectedStreetRef.current = only.street || "";
+    setSuggestMode("houses");
+    autocompleteRef.current?.search(only.street, {
+      houseNumber: "",
+      city,
+      psc,
+      mode: "houses",
+      streetKod: only.streetKod,
+    });
+  }, [suggestions, suggestMode, street, city, psc]);
 
   useEffect(() => {
     const digits = pscDigits(psc);
@@ -157,11 +183,16 @@ export default function StructuredAddressFields({
     if (!selected || typed !== selected) {
       streetKodRef.current = null;
       selectedStreetRef.current = "";
+      autoHousesForRef.current = "";
     }
     if (parsed.street && parsed.houseNumber) {
       setSuggestions([]);
       if (parsed.houseNumber !== houseNumber) onHouseNumberChange?.(parsed.houseNumber);
       runHouseSearch(parsed.street, parsed.houseNumber, city, psc);
+      return;
+    }
+    if (selected && typed === selected && streetKodRef.current) {
+      runHouseSearch(parsed.street, houseNumber, city, psc);
       return;
     }
     runStreetSearch(parsed.street || value, city, psc);
@@ -171,6 +202,7 @@ export default function StructuredAddressFields({
     setCityManual(false);
     streetKodRef.current = null;
     selectedStreetRef.current = "";
+    autoHousesForRef.current = "";
     setSuggestMode("streets");
     onPscChange?.(formatPscInput(value));
     onClearError?.("psc");
@@ -197,10 +229,10 @@ export default function StructuredAddressFields({
     if (item.kind === "street" || (item.street && !item.houseNumber)) {
       streetKodRef.current = item.streetKod ?? null;
       selectedStreetRef.current = item.street || "";
+      autoHousesForRef.current = String(item.streetKod || item.street);
       onHouseNumberChange?.("");
       onSuggestionPick?.(item);
       runHouseSearch(item.street, "", item.city || city, item.psc || psc);
-      queueMicrotask(() => houseInputRef.current?.focus());
       return;
     }
 
@@ -284,6 +316,7 @@ export default function StructuredAddressFields({
               handleStreetQuery(value);
             }}
             onFocus={() => {
+              setHouseFieldFocused(false);
               if (street) handleStreetQuery(street);
             }}
             onBlur={() => {
@@ -299,17 +332,16 @@ export default function StructuredAddressFields({
           />
           <AddressSuggestList
             items={streetFieldSuggestions}
+            expanded={showHousesUnderStreet || houseTypedInStreet}
             header={
-              houseTypedInStreet && houseSuggestions.length
-                ? `Adresa v ulici ${splitStreetAndHouseNumber(street).street}`
+              (showHousesUnderStreet || houseTypedInStreet) && houseSuggestions.length
+                ? `Čísla popisná v ulici ${splitStreetAndHouseNumber(street).street || houseSuggestions[0].street} (${houseSuggestions.length})`
                 : null
             }
-            listRef={houseTypedInStreet || suggestMode === "streets" ? suggestListRef : undefined}
+            listRef={!houseFieldFocused ? suggestListRef : undefined}
             onPick={applySuggestion}
             renderLabel={(item) =>
-              houseTypedInStreet
-                ? `${item.street} ${item.houseNumber}`.trim()
-                : item.street || item.label
+              item.houseNumber ? `${item.street} ${item.houseNumber}`.trim() : item.street || item.label
             }
           />
           {fieldErrors.street ? <p className="mt-1 text-xs text-red-600">{fieldErrors.street}</p> : null}
@@ -339,20 +371,23 @@ export default function StructuredAddressFields({
               if (street) runHouseSearch(street, value, city, psc);
             }}
             onFocus={() => {
+              setHouseFieldFocused(true);
               if (street) runHouseSearch(street, houseNumber, city, psc);
             }}
+            onBlur={() => setHouseFieldFocused(false)}
             placeholder={street ? "Vyber číslo z nabídky" : "Nejdřív vyber ulici"}
             autoComplete="off"
             className={inputClass(fieldErrors.houseNumber)}
           />
           <AddressSuggestList
-            items={houseSuggestions}
+            items={houseFieldFocused ? houseSuggestions : []}
+            expanded
             header={
-              houseSuggestions.length
+              houseFieldFocused && houseSuggestions.length
                 ? `Čísla popisná v ulici ${splitStreetAndHouseNumber(street).street || houseSuggestions[0].street} (${houseSuggestions.length})`
                 : null
             }
-            listRef={suggestMode === "houses" ? suggestListRef : undefined}
+            listRef={houseFieldFocused ? suggestListRef : undefined}
             onPick={applySuggestion}
             renderLabel={(item) => item.houseNumber || item.label}
           />

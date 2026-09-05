@@ -4,7 +4,7 @@
 
 import { officialMunicipalityMatch } from "./geoFilter.js";
 import { refineLocalityFromPsc } from "./czechCityDistricts.js";
-import { searchRuianAddresses, splitStreetAndHouseNumber } from "../../lib/ruianAddress.mjs";
+import { searchRuianAddresses, splitStreetAndHouseNumber, stripDiacritics } from "../../lib/ruianAddress.mjs";
 
 const MIN_QUERY_LENGTH = 3;
 const DEBOUNCE_MS = 280;
@@ -123,6 +123,18 @@ export function buildAddressSearchQuery({ street = "", houseNumber = "", city = 
     .join(" ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+/** Jedna jednoznačná ulice → rovnou načíst všechna č.p. (Platanová → … 1568). */
+export function shouldAutoloadHouses(items, typedStreet) {
+  const list = items ?? [];
+  if (list.length !== 1) return false;
+  const only = list[0];
+  if (!only?.street || only.kind === "house") return false;
+  const typed = stripDiacritics(splitStreetAndHouseNumber(typedStreet).street);
+  const name = stripDiacritics(only.street);
+  if (!typed || !name) return false;
+  return typed === name || (typed.length >= 4 && name.startsWith(typed));
 }
 
 export function canSearchAddress(parts = {}) {
@@ -365,6 +377,6 @@ export function createAddressAutocomplete(onResults, onLoading, onError) {
 }
 
 export const ADDRESS_SEARCH_HINT =
-  "Napiš název ulice, klidně i s číslem popisným. Po výběru ulice se nabídnou všechna čísla na ní.";
+  "Napiš ulici. U jedné shody se hned ukážou všechna čísla popisná — scrolluj seznam až na konec.";
 
 export { MIN_QUERY_LENGTH, DEBOUNCE_MS };

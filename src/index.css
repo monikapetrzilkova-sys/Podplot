@@ -171,6 +171,11 @@ textarea {
   touch-action: pan-y;
 }
 
+/* Kompletní č.p. v toku formuláře — scroll stránky dojede i na poslední číslo. */
+.pp-address-suggest-list--expanded {
+  max-height: none;
+}
+
 /* Celá appka: žádný pinch-zoom stránky (iOS/Android) */
 html,
 body,

@@ -7,7 +7,21 @@ import {
   canSearchAddress,
   rankAddressSuggestions,
   filterSuggestionsByLocality,
+  shouldAutoloadHouses,
 } from "./addressAutocomplete.js";
+
+describe("shouldAutoloadHouses", () => {
+  it("loads houses once Platanová is the only match", () => {
+    const platanova = { street: "Platanová", kind: "street" };
+    assert.equal(shouldAutoloadHouses([platanova], "Platanová"), true);
+    assert.equal(shouldAutoloadHouses([platanova], "Plata"), true);
+    assert.equal(shouldAutoloadHouses([platanova], "P"), false);
+    assert.equal(
+      shouldAutoloadHouses([platanova, { street: "Plavecká", kind: "street" }], "Pla"),
+      false
+    );
+  });
+});
 
 describe("houseNumberMatches", () => {
   it("matches the same number and common Czech suffixes", () => {
