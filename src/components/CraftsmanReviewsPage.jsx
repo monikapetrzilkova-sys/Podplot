@@ -9,6 +9,9 @@ import {
 } from "../data/serviceReviews.js";
 import AppPanelPortal from "./AppPanelPortal.jsx";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
+import DoodleEmptyState from "./doodle/DoodleEmptyState.jsx";
+import SparsePageDoodle from "./doodle/SparsePageDoodle.jsx";
+import { DoodleReviewsScene } from "./doodle/doodleIllustrations.jsx";
 
 function ReportReviewSheet({ review, onClose, onSubmit }) {
   const [reasonId, setReasonId] = useState("");
@@ -119,10 +122,10 @@ export default function CraftsmanReviewsPage() {
   if (!ownedService && !isFyzickaWorkMode) {
     return (
       <div className="pp-page flex flex-col min-h-full px-4 pt-4 pb-8">
-        <p className="text-sm text-stone-500 leading-relaxed">
-          Zatím nemáš katalogový profil služby. Doplň obor v Profilu — pak zde uvidíš hodnocení
-          od zákazníků.
-        </p>
+        <DoodleEmptyState
+          illustration="reviews"
+          message="Zatím nemáš katalogový profil služby. Doplň obor v Profilu — pak tady uvidíš hodnocení od zákazníků."
+        />
       </div>
     );
   }
@@ -133,7 +136,7 @@ export default function CraftsmanReviewsPage() {
         <p className="text-xs text-stone-500">{profileName}</p>
       </div>
 
-      <div className="px-4 py-3 pb-8 space-y-3 flex-1">
+      <div className="px-4 py-3 pb-8 space-y-3 flex-1 flex flex-col">
         <section className="rounded-2xl border border-[#C5DDD4] bg-[#F7FAF9] p-4">
           <p className="text-[11px] font-bold uppercase tracking-wide text-stone-400">Průměrné skóre</p>
           <p className="text-2xl font-bold text-[#1B4D3E] mt-1">
@@ -146,13 +149,15 @@ export default function CraftsmanReviewsPage() {
         </section>
 
         {reviews.length === 0 ? (
-          <div className="pp-doodle-empty py-10">
-            <p className="text-sm text-center font-medium text-[#3D7A68]/80 max-w-xs leading-relaxed mx-auto">
-              {isFyzickaWorkMode
+          <DoodleEmptyState
+            className="flex-1"
+            illustration="reviews"
+            message={
+              isFyzickaWorkMode
                 ? "Zatím žádné recenze od zákazníků. Podezřelé hodnocení půjde nahlásit k moderaci."
-                : "Zatím žádné recenze. Po dokončených zakázkách se zde objeví hodnocení zákazníků."}
-            </p>
-          </div>
+                : "Zatím žádné recenze. Po dokončených zakázkách se tady objeví hodnocení zákazníků."
+            }
+          />
         ) : (
           reviews.map((r) => {
             const pending = isReviewPendingModeration(r);
@@ -200,6 +205,9 @@ export default function CraftsmanReviewsPage() {
             );
           })
         )}
+        {reviews.length > 0 ? (
+          <SparsePageDoodle Scene={DoodleReviewsScene} count={reviews.length} />
+        ) : null}
       </div>
 
       {reportTarget && (

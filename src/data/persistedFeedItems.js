@@ -361,6 +361,7 @@ export function eventToFeedPost(event, user) {
     lng: event.lng ?? event.mapPos?.lng ?? null,
     hostedActivityId: event.hostedActivityId ?? null,
     placeId: event.placeId ?? null,
+    partners: event.partners ?? [],
   };
 }
 
@@ -380,6 +381,7 @@ export function feedPostToEvent(post) {
     lng: payload.lng ?? post.lng ?? null,
     hostedActivityId: payload.hostedActivityId ?? post.hostedActivityId ?? null,
     placeId: payload.placeId ?? post.placeId ?? null,
+    partners: payload.partners ?? post.partners ?? [],
     mine: Boolean(post.mine || payload.mine),
     createdAt: payload.createdAt ?? post.createdAt ?? Date.now(),
   };

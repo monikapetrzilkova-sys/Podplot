@@ -26,6 +26,8 @@ const AREA_NEWS_RAW = [
     author: "Městský úřad Jesenice",
     time: "dnes 9:00",
     role: "urad",
+    scope: "streets",
+    streets: ["Lípová", "Na Louce"],
   },
   {
     id: "an3",
@@ -51,6 +53,8 @@ const AREA_NEWS_RAW = [
     time: "právě teď",
     role: "urad",
     active: true,
+    scope: "streets",
+    streets: ["Na Louce"],
   },
   {
     id: "an5",

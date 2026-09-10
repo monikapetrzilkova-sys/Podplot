@@ -93,7 +93,7 @@ export default function MapPage({ lockedSection = null, officeOverview = false }
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden px-2 pb-2 min-w-0 max-w-full">
         {officeOverview && (
           <p className="px-1 pb-1.5 text-[11px] text-stone-500 shrink-0">
-            Přehled dění v obci — ztráty, výpadky, závady a výzvy. Akce najdeš v Agendě.
+            Přehled toho, co sousedé nahlásili. Vlastní oznámení přidáš v Oznámení nebo tlačítkem +.
           </p>
         )}
         <div className="pp-map-toolbar shrink-0 min-w-0">

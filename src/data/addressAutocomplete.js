@@ -381,6 +381,31 @@ export function createAddressAutocomplete(onResults, onLoading, onError) {
   return { search, cancel };
 }
 
+/** Z GPS souřadnic zkusí vytáhnout název ulice (pro výběr ulic u oznámení úřadu). */
+export async function reverseGeocodeStreet(lat, lng) {
+  const nLat = Number(lat);
+  const nLng = Number(lng);
+  if (!Number.isFinite(nLat) || !Number.isFinite(nLng)) return null;
+  try {
+    const url = new URL("https://nominatim.openstreetmap.org/reverse");
+    url.searchParams.set("lat", String(nLat));
+    url.searchParams.set("lon", String(nLng));
+    url.searchParams.set("format", "jsonv2");
+    url.searchParams.set("addressdetails", "1");
+    url.searchParams.set("accept-language", "cs");
+    const res = await fetch(url.toString(), {
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const a = data?.address || {};
+    const street = a.road || a.pedestrian || a.residential || a.footway || a.path || "";
+    return street.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
 export const ADDRESS_SEARCH_HINT =
   "Začněte psát ulici — po jejím výběru nabídneme všechna čísla popisná v tomto PSČ.";
 

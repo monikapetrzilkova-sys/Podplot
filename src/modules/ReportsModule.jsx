@@ -282,8 +282,8 @@ export default function ReportsModule({
           }`}
           items={sortedReports}
           emptyMessage="V této kategorii v okruhu zatím žádná hlášení."
-          emptyActionLabel="Nahlásit"
-          onEmptyAction={() => openMapReport?.()}
+          emptyActionLabel={addMenuActions?.length ? "Nahlásit" : null}
+          onEmptyAction={addMenuActions?.length ? () => openMapReport?.() : null}
           renderItem={(report) => (
             <ReportListRow
               key={report.id}

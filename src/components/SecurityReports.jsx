@@ -360,12 +360,10 @@ export default function SecurityReports({ reportsCategoryFilter = "all" }) {
   }, [isInstitution, activeTab, setModuleViewMode]);
 
   const addMenuActions =
-    !formOpen && !pickMode && activeForm !== "call"
+    !isInstitution && !formOpen && !pickMode && activeForm !== "call"
       ? [
           { id: "report", label: "Nové hlášení", onClick: startReportPick },
-          ...(isInstitution
-            ? [{ id: "call", label: "Nová výzva", onClick: openCallForm }]
-            : [{ id: "prompt", label: "Podnět úřadu", onClick: () => startPromptPick() }]),
+          { id: "prompt", label: "Podnět úřadu", onClick: () => startPromptPick() },
         ]
       : null;
 

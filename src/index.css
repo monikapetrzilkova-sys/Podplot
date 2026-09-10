@@ -2152,6 +2152,12 @@ body,
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.12s ease;
 }
 
+.pp-map-tab-info-btn--inline {
+  position: relative;
+  top: auto;
+  right: auto;
+}
+
 .pp-map-main-tab-search {
   margin-top: 8px;
 }

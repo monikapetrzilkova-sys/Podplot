@@ -930,7 +930,7 @@ export function BusinessRoleView() {
         </div>
 
         <p className="text-[11px] text-stone-400 mt-2 leading-snug">
-          Denní provoz spravujete na záložce Provoz. Banner a viditelnost na záložce Propagace.
+          Provoz · Propagace (banner a menu) · místní akce
         </p>
         <div className="mt-3 grid grid-cols-2 gap-2">
           <button

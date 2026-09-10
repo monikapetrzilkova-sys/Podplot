@@ -7,6 +7,9 @@ import {
   isNationwideRadius,
 } from "../data/craftsmanSettings.js";
 import { MOBILNI_PUSH_SUBSCRIPTION } from "../data/notificationPlans.js";
+import DoodleEmptyState from "./doodle/DoodleEmptyState.jsx";
+import SparsePageDoodle from "./doodle/SparsePageDoodle.jsx";
+import { DoodlePoptavkyScene } from "./doodle/doodleIllustrations.jsx";
 
 function InquiryRow({ item, onMarkRead, onExpressInterest }) {
   const isDelayed = item.priority === "delayed";
@@ -95,7 +98,7 @@ export default function WorkDashboard() {
         </p>
       </div>
 
-      <div className="px-4 py-3 pb-8 space-y-3 flex-1">
+      <div className="px-4 py-3 pb-8 space-y-3 flex-1 flex flex-col">
         {isMobilni && (
           <div className="rounded-xl border border-[#C5DDD4] bg-[#F7FAF9] px-3 py-2.5 text-[11px] text-stone-600 leading-relaxed">
             Filtr:{" "}
@@ -130,20 +133,23 @@ export default function WorkDashboard() {
         )}
 
         {b2bInquiries.length === 0 ? (
-          <div className="pp-doodle-empty py-10">
-            <p className="text-sm text-center font-medium text-[#3D7A68]/80 max-w-xs leading-relaxed mx-auto">
-              V tomto okruhu a oboru zatím žádné poptávky. S push předplatným je uvidíš jako první.
-            </p>
-          </div>
+          <DoodleEmptyState
+            className="flex-1"
+            illustration="jobs"
+            message="V tomto okruhu a oboru zatím žádné poptávky. S push předplatným je uvidíš jako první."
+          />
         ) : (
-          b2bInquiries.map((item) => (
-            <InquiryRow
-              key={item.id}
-              item={item}
-              onMarkRead={markB2bInquiryRead}
-              onExpressInterest={expressInterestInInquiry}
-            />
-          ))
+          <>
+            {b2bInquiries.map((item) => (
+              <InquiryRow
+                key={item.id}
+                item={item}
+                onMarkRead={markB2bInquiryRead}
+                onExpressInterest={expressInterestInInquiry}
+              />
+            ))}
+            <SparsePageDoodle Scene={DoodlePoptavkyScene} count={b2bInquiries.length} />
+          </>
         )}
       </div>
     </div>

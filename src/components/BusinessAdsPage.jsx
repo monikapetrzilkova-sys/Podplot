@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import { TEST_PERSONAS } from "../data/businessProfiles.js";
 import {
@@ -10,7 +10,7 @@ import {
   isSponsoredBannerUpcoming,
 } from "../data/monetization.js";
 import { formatCzechDate } from "../data/czechDateTime.js";
-import { MOBILNI_PUSH_SUBSCRIPTION } from "../data/notificationPlans.js";
+import { LUNCH_MENU_PUSH_PRICE, MOBILNI_PUSH_SUBSCRIPTION } from "../data/notificationPlans.js";
 import PaymentModal from "./PaymentModal.jsx";
 import { PlaceIcon } from "./module/placeIcons.jsx";
 import { PROMO_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
@@ -72,8 +72,16 @@ export default function BusinessAdsPage() {
     businessHours,
     isMobilniWorkMode,
     ownedService,
+    ownedInstitution,
     businessNotificationPrefs,
     subscribeMobilniPush,
+    lunchMenuDraft,
+    setLunchMenuDraft,
+    publishLunchMenu,
+    lunchSubscribersCount,
+    lunchMenusForLocation,
+    pendingBusinessAction,
+    clearPendingBusinessAction,
   } = useApp();
 
   const isCraftsman = isMobilniWorkMode;
@@ -95,7 +103,26 @@ export default function BusinessAdsPage() {
   const [bannerPayOpen, setBannerPayOpen] = useState(false);
   const [catalogPayOpen, setCatalogPayOpen] = useState(false);
   const [pushPayOpen, setPushPayOpen] = useState(false);
+  const [menuPayOpen, setMenuPayOpen] = useState(false);
   const [openPromo, setOpenPromo] = useState(null);
+
+  useEffect(() => {
+    if (pendingBusinessAction === "menu") {
+      setOpenPromo("lunch");
+      clearPendingBusinessAction?.();
+    }
+  }, [pendingBusinessAction, clearPendingBusinessAction]);
+
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const myLunch = useMemo(() => {
+    const bid = ownedInstitution?.id || user?.id;
+    const name = ownedInstitution?.name || user?.name;
+    return (lunchMenusForLocation ?? []).find(
+      (m) => m.businessId === bid || m.businessId === user?.id || (name && m.businessName === name)
+    );
+  }, [lunchMenusForLocation, ownedInstitution, user]);
+  const lunchLiveToday = myLunch?.date === todayKey && Boolean(myLunch?.menuText);
+  const lunchPushed = lunchLiveToday && myLunch?.publishedPlan === "push";
 
   const selectedBannerPlan =
     SPONSORED_STRIP_PLANS.find((p) => p.id === bannerPlanId) ?? SPONSORED_STRIP_PLANS[0];
@@ -314,6 +341,17 @@ export default function BusinessAdsPage() {
         note="Platba kartou — přednostní výpis v katalogu služeb."
         onConfirm={activateCatalog}
       />
+      <PaymentModal
+        open={menuPayOpen}
+        onClose={() => setMenuPayOpen(false)}
+        title="Push poledního menu"
+        amount={LUNCH_MENU_PUSH_PRICE}
+        note="Platba kartou — dnešní menu lidem, co mají odběr zapnutý."
+        onConfirm={() => {
+          publishLunchMenu("push");
+          setMenuPayOpen(false);
+        }}
+      />
     </>
   );
 
@@ -463,13 +501,75 @@ export default function BusinessAdsPage() {
     );
   }
 
+  const lunchSubscribers = lunchSubscribersCount || persona?.stats?.subscribers || 0;
+  const runningBits = [
+    hasActiveBanner ? "Banner" : null,
+    lunchPushed ? "Menu + push" : lunchLiveToday ? "Menu" : null,
+  ].filter(Boolean);
+
   return (
-    <div className="pp-page flex flex-col min-h-full px-4 pt-4 pb-8 gap-4">
+    <div className="pp-page flex flex-col min-h-full px-4 pt-4 pb-8 gap-3">
       <p className="text-xs text-stone-500">
-        Banner Promo nahoře na Domů u sousedů v okolí
+        {runningBits.length ? `Teď běží: ${runningBits.join(" · ")}` : "Nic teď neběží — vyber banner nebo menu."}
       </p>
 
-      <section className="pp-card p-4 space-y-3">{bannerDetail}</section>
+      <div className="space-y-2.5">
+        <PromoTypeRow
+          id="banner"
+          title="Banner Promo"
+          summary={`Proužek nahoře na Domů sousedů · od ${SPONSORED_STRIP_PLANS[0].price} Kč`}
+          status={hasActiveBanner ? "Živý" : hasScheduledBanner ? "Rezervace" : "Vypnuto"}
+          statusActive={hasActiveBanner || hasScheduledBanner}
+          open={openPromo === "banner"}
+          onToggle={togglePromo}
+          Icon={PROMO_DOODLE_ICONS.banner}
+        >
+          {bannerDetail}
+        </PromoTypeRow>
+
+        <PromoTypeRow
+          id="lunch"
+          title="Polední menu"
+          summary={`Widget u sousedů · push ${LUNCH_MENU_PUSH_PRICE} Kč lidem s odběrem (${lunchSubscribers})`}
+          status={lunchPushed ? "Menu + push" : lunchLiveToday ? "Dnes zveřejněno" : "Nic dnes"}
+          statusActive={lunchLiveToday}
+          open={openPromo === "lunch"}
+          onToggle={togglePromo}
+          Icon={PROMO_DOODLE_ICONS.push}
+        >
+          <p className="text-[11px] text-stone-500 pt-3 leading-snug">
+            Zdarma se menu ukáže sousedům ve widgetu. Push dostanou jen ti, co mají polední menu zapnuté.
+          </p>
+          {lunchLiveToday && myLunch?.menuText ? (
+            <p className="text-[11px] text-[#1B4D3E] bg-[#F1F6F5] border border-[#C5DDD4] rounded-xl px-3 py-2">
+              Dnes: {myLunch.menuText}
+            </p>
+          ) : null}
+          <textarea
+            value={lunchMenuDraft}
+            onChange={(e) => setLunchMenuDraft(e.target.value)}
+            rows={3}
+            className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm resize-none bg-white"
+            placeholder="Polévka, hlavní jídlo, vegetarián…"
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => publishLunchMenu("free")}
+              className="flex-1 py-2.5 rounded-xl text-xs font-semibold border border-[#C5DDD4] text-[#1B4D3E] bg-white"
+            >
+              Zveřejnit zdarma
+            </button>
+            <button
+              type="button"
+              onClick={() => setMenuPayOpen(true)}
+              className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-[#3D7A68] text-white"
+            >
+              Push {LUNCH_MENU_PUSH_PRICE} Kč
+            </button>
+          </div>
+        </PromoTypeRow>
+      </div>
 
       {activeBannersList}
       {paymentModals}

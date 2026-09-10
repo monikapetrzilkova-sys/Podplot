@@ -489,6 +489,197 @@ export function DoodleFeedbackScene({ className = "w-full max-w-[240px] h-auto" 
   );
 }
 
+/**
+ * Recenze — zákazník dává hvězdy, provozovna / stánek vedle.
+ * Prázdná záložka Recenze u podniku a řemeslníka.
+ */
+export function DoodleReviewsScene({ className = "w-full max-w-[260px] h-auto" }) {
+  return (
+    <svg
+      viewBox="0 0 260 130"
+      fill="none"
+      className={`pp-doodle-characters text-[#3D7A68] ${className}`}
+      aria-hidden
+    >
+      <path
+        {...s}
+        stroke={DOODLE_OLIVE}
+        strokeWidth={1.5}
+        d="M8 112c26-7 50-5 74 2 26 7 46 5 68-2 24-7 48-5 70 3 14 5 24 3 32-1"
+        opacity={0.6}
+      />
+
+      <path {...s} d="M24 106V58l28-18 28 18v48" />
+      <path {...s} d="M42 106V82h20v24" />
+      <path {...s} stroke={DOODLE_OLIVE} d="M32 68h12M32 76h10" strokeWidth={1.35} opacity={0.5} />
+      <path {...s} stroke={DOODLE_OLIVE} d="M48 48h22" strokeWidth={1.4} opacity={0.55} />
+
+      <path
+        {...s}
+        stroke={DOODLE_OLIVE}
+        d="M118 34l3.2 6.4 7.1.8-5.3 4.8 1.5 7-6.5-3.6-6.5 3.6 1.5-7-5.3-4.8 7.1-.8z"
+        opacity={0.9}
+      />
+      <path
+        {...s}
+        stroke={DOODLE_OLIVE}
+        d="M142 30l3.2 6.4 7.1.8-5.3 4.8 1.5 7-6.5-3.6-6.5 3.6 1.5-7-5.3-4.8 7.1-.8z"
+      />
+      <path
+        {...s}
+        stroke={DOODLE_OLIVE}
+        d="M166 34l3.2 6.4 7.1.8-5.3 4.8 1.5 7-6.5-3.6-6.5 3.6 1.5-7-5.3-4.8 7.1-.8z"
+        opacity={0.75}
+      />
+
+      <circle cx="136" cy="72" r="6.5" {...s} />
+      <path {...s} d="M136 78.5v16M136 86l-9 6M136 86l14-2" />
+      <path {...s} d="M136 94.5l-5 14M136 94.5l5 14" />
+
+      <circle cx="196" cy="68" r="6.5" {...s} />
+      <path {...s} d="M196 74.5v18M196 82l-8 6M196 82l8 5" />
+      <path {...s} d="M196 92.5l-5 14M196 92.5l5 14" />
+      <path {...s} d="M204 80l10-12" />
+
+      <DoodleSun cx={232} cy={24} r={6.6} />
+    </svg>
+  );
+}
+
+/**
+ * Poptávky — dům souseda a řemeslník s nářadím.
+ * Prázdná záložka Poptávky u mobilního podniku.
+ */
+export function DoodlePoptavkyScene({ className = "w-full max-w-[260px] h-auto" }) {
+  return (
+    <svg
+      viewBox="0 0 260 130"
+      fill="none"
+      className={`pp-doodle-characters text-[#3D7A68] ${className}`}
+      aria-hidden
+    >
+      <path
+        {...s}
+        stroke={DOODLE_OLIVE}
+        strokeWidth={1.5}
+        d="M10 112c24-7 48-5 72 2 26 7 46 5 68-2 24-7 46-5 68 3 12 4 20 2 28-1"
+        opacity={0.6}
+      />
+
+      <path {...s} d="M28 106V62l26-20 26 20v44" />
+      <path {...s} d="M46 106V84h16v22" />
+      <path {...s} stroke={DOODLE_OLIVE} d="M36 72h12M36 80h8" strokeWidth={1.35} opacity={0.5} />
+
+      <circle cx="96" cy="70" r="6" {...s} />
+      <path {...s} d="M96 76v16M96 84l-8 6M96 84l10 2" />
+      <path {...s} d="M96 92l-4 14M96 92l5 14" />
+
+      <path
+        {...s}
+        stroke={DOODLE_OLIVE}
+        d="M112 36c4-2.5 11-2 14 2.2s-1 8.5-6 9.2c-1.6.2-2.8 1.6-2.8 1.6l-2.8-1.6s-4-.6-5.2-3.8 2-8.2 3.8-7.6z"
+        opacity={0.8}
+      />
+      <path {...s} stroke={DOODLE_OLIVE} d="M116 42h8M116 47h5" strokeWidth={1.25} opacity={0.55} />
+
+      <circle cx="176" cy="62" r="7" {...s} />
+      <path {...s} d="M176 69v20M176 78l-9 7M176 78l8 5" />
+      <path {...s} d="M176 89l-5 16M176 89l5 16" />
+      <path {...s} d="M184 76l14-8M184 76l-1 10M198 68v12" stroke={DOODLE_OLIVE} opacity={0.85} />
+      <path {...s} stroke={DOODLE_OLIVE} d="M188 82h6" strokeWidth={1.25} opacity={0.55} />
+
+      <path {...s} d="M210 96h22v8H210z" opacity={0.75} />
+      <path {...s} stroke={DOODLE_OLIVE} d="M214 90h14v6H214z" opacity={0.55} />
+
+      <DoodleSun cx={232} cy={22} r={6.4} />
+    </svg>
+  );
+}
+
+/**
+ * Agenda úřadu — radnice, podnět a kalendář.
+ */
+export function DoodleAgendaScene({ className = "w-full max-w-[260px] h-auto" }) {
+  return (
+    <svg
+      viewBox="0 0 260 130"
+      fill="none"
+      className={`pp-doodle-characters text-[#3D7A68] ${className}`}
+      aria-hidden
+    >
+      <path
+        {...s}
+        stroke={DOODLE_OLIVE}
+        strokeWidth={1.5}
+        d="M8 112c26-7 52-5 76 2 26 7 48 5 70-2 24-7 46-5 68 3 14 5 24 3 30-1"
+        opacity={0.6}
+      />
+
+      <path {...s} d="M22 106V64h72v42" />
+      <path {...s} d="M22 64L58 36l36 28" />
+      <path {...s} d="M46 106V86h24v20" />
+      <path {...s} d="M34 74h10M50 74h10M66 74h10M34 84h10M66 84h10" opacity={0.55} />
+      <path {...s} stroke={DOODLE_OLIVE} d="M58 42v8" strokeWidth={1.4} opacity={0.65} />
+
+      <circle cx="132" cy="68" r="6.5" {...s} />
+      <path {...s} d="M132 74.5v18M132 82l-8 6M132 82l14 1" />
+      <path {...s} d="M132 92.5l-5 14M132 92.5l5 14" />
+      <path {...s} d="M146 78h18v16H146z" />
+      <path {...s} stroke={DOODLE_OLIVE} d="M150 84h10M150 89h7" strokeWidth={1.25} opacity={0.65} />
+
+      <path
+        {...s}
+        d="M188 36c.2-2 1.6-3.5 3.5-3.5h36c1.9 0 3.3 1.5 3.5 3.5v32c-.2 2-1.6 3.5-3.5 3.5h-36c-1.9 0-3.3-1.5-3.5-3.5V36z"
+      />
+      <path {...s} d="M187.5 46h43" />
+      <path {...s} d="M200 32v6M216 32v6" />
+      <circle cx="202" cy="56" r="2.1" fill="currentColor" stroke="none" opacity={0.4} />
+      <circle cx="212" cy="56" r="2.1" {...s} stroke={DOODLE_OLIVE} opacity={0.85} />
+      <circle cx="222" cy="56" r="2.1" fill="currentColor" stroke="none" opacity={0.35} />
+
+      <DoodleSun cx={236} cy={22} r={6.2} />
+    </svg>
+  );
+}
+
+/**
+ * Oznámení úřadu — radnice, vývěska a soused, který čte.
+ */
+export function DoodleOznameniScene({ className = "w-full max-w-[260px] h-auto" }) {
+  return (
+    <svg
+      viewBox="0 0 260 130"
+      fill="none"
+      className={`pp-doodle-characters text-[#3D7A68] ${className}`}
+      aria-hidden
+    >
+      <path
+        {...s}
+        stroke={DOODLE_OLIVE}
+        strokeWidth={1.5}
+        d="M10 112c24-7 48-5 72 2 26 7 46 5 68-2 24-7 48-5 70 3 12 4 20 2 28-1"
+        opacity={0.6}
+      />
+
+      <path {...s} d="M26 106V66h56v40" />
+      <path {...s} d="M26 66L54 42l28 24" />
+      <path {...s} d="M44 106V90h20v16" />
+      <path {...s} d="M36 76h10M56 76h10" opacity={0.5} />
+
+      <path {...s} d="M112 48h52v46H112z" />
+      <path {...s} d="M138 48v-10" />
+      <path {...s} stroke={DOODLE_OLIVE} d="M122 60h32M122 70h26M122 80h20" strokeWidth={1.3} opacity={0.65} />
+
+      <circle cx="196" cy="68" r="6.5" {...s} />
+      <path {...s} d="M196 74.5v18M196 82l-8 6M196 82l8 5" />
+      <path {...s} d="M196 92.5l-5 14M196 92.5l5 14" />
+      <path {...s} d="M188 80l-16-6" />
+
+      <DoodleSun cx={230} cy={24} r={6.4} />
+    </svg>
+  );
+}
+
 export const DOODLE_EMPTY_ILLUSTRATIONS = {
   chat: DoodleEmptyChat,
   hands: DoodleEmptyHands,
@@ -496,4 +687,18 @@ export const DOODLE_EMPTY_ILLUSTRATIONS = {
   box: DoodleEmptyBox,
   calendar: DoodleEmptyCalendar,
   neighborEvent: DoodleSousedskaAkceScene,
+  reviews: DoodleReviewsScene,
+  jobs: DoodlePoptavkyScene,
+  agenda: DoodleAgendaScene,
+  announce: DoodleOznameniScene,
+  shop: DoodleSluzbyScene,
 };
+
+export const DOODLE_EMPTY_LARGE = new Set([
+  "neighborEvent",
+  "reviews",
+  "jobs",
+  "agenda",
+  "announce",
+  "shop",
+]);

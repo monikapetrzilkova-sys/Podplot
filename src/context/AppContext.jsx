@@ -21,6 +21,12 @@ import { clampNeighborRadius, DEFAULT_NEIGHBOR_RADIUS_KM, formatMapRadiusKm } fr
 import { FEED_POSTS, LENDING_ITEMS } from "../data/mockData.js";
 import { AREA_NEWS, getAreaNewsForLocation, getActiveCrisis } from "../data/areaNews.js";
 import { LUNCH_MENUS, sortLunchMenus } from "../data/lunchMenus.js";
+import {
+  eventHasPartner,
+  normalizeEventPartners,
+  partnerFromPlace,
+  upsertEventPartner,
+} from "../data/eventPartners.js";
 import { getTestRole } from "../data/testRoles.js";
 import {
   calcEscrowFee,
@@ -5084,7 +5090,7 @@ export function AppProvider({ children }) {
 
   const openBusinessComposer = useCallback((action = "note") => {
     setPendingBusinessAction(action);
-    setActiveTab("home");
+    setActiveTab(action === "menu" ? "ads" : "home");
     setPlusMenuOpen(false);
   }, []);
 
@@ -5125,19 +5131,32 @@ export function AppProvider({ children }) {
       const isTop = planId === "top";
       const withPush = planId === "push";
       const businessName = user?.name ?? "Restaurace U Ráje";
-      setLunchMenus((prev) =>
-        prev.map((m) =>
-          m.businessId === "sp1"
-            ? {
-                ...m,
-                menuText: lunchMenuDraft,
-                isTop: isTop || (planId === "top" ? true : m.isTop),
-                publishedPlan: planId,
-                date: new Date().toISOString().slice(0, 10),
-              }
-            : m
-        )
-      );
+      const businessId = user?.id || "sp1";
+      const today = new Date().toISOString().slice(0, 10);
+      setLunchMenus((prev) => {
+        const idx = prev.findIndex(
+          (m) => m.businessId === businessId || m.businessName === businessName
+        );
+        const nextItem = {
+          id: idx >= 0 ? prev[idx].id : `lm-${businessId}`,
+          businessId,
+          businessName,
+          emoji: prev[idx]?.emoji || "🍽️",
+          locationId: activeLocationId || "domov",
+          lat: activeLocation?.lat ?? null,
+          lng: activeLocation?.lng ?? null,
+          distanceKm: 0,
+          menuText: lunchMenuDraft,
+          date: today,
+          priceRange: prev[idx]?.priceRange || "",
+          isTop: isTop || (idx >= 0 ? prev[idx].isTop : false),
+          publishedPlan: planId,
+        };
+        if (idx >= 0) {
+          return prev.map((m, i) => (i === idx ? { ...m, ...nextItem } : m));
+        }
+        return [nextItem, ...prev];
+      });
       if (withPush) {
         const prefs = user?.notificationPrefs ?? notificationPrefs;
         const subscriberCount =
@@ -5167,62 +5186,82 @@ export function AppProvider({ children }) {
           : "Menu topováno na první pozici dne."
       );
     },
-    [lunchMenuDraft, payAmount, showToast, lunchSubscriptions.length, lunchSubscribersCount, user, notificationPrefs]
+    [
+      lunchMenuDraft,
+      payAmount,
+      showToast,
+      lunchSubscriptions.length,
+      lunchSubscribersCount,
+      user,
+      notificationPrefs,
+      activeLocationId,
+      activeLocation,
+    ]
   );
 
-  const publishAreaNews = useCallback(() => {
-    const title = areaNewsTitleDraft.trim();
-    const body = areaNewsBodyDraft.trim();
+  const publishAreaNews = useCallback((payload = {}) => {
+    const title = String(payload.title ?? areaNewsTitleDraft).trim();
+    const body = String(payload.body ?? areaNewsBodyDraft).trim();
     if (!title || !body) {
       showToast("Vyplň nadpis i text aktuality.", "error");
       return;
     }
+    const municipality = payload.municipality || activeLocation?.municipality || "Jesenice";
     const item = {
       id: `an-${Date.now()}`,
       type: "info",
-      municipality: activeLocation?.municipality ?? "Jesenice",
+      municipality,
       locationIds: [activeLocationId],
       title,
       body,
-      author: "Obec Jesenice",
+      author: user?.name || "Obec",
       time: "právě teď",
       role: "urad",
+      scope: payload.scope || "municipality",
+      streets: payload.streets || [],
+      address: payload.address || "",
+      mapPos: payload.mapPos || null,
     };
     setAreaNewsList((prev) => [item, ...prev]);
     setAreaNewsTitleDraft("");
     setAreaNewsBodyDraft("");
-    showToast("Plošná aktualita publikována na domovskou zeď.", "success");
-  }, [areaNewsTitleDraft, areaNewsBodyDraft, activeLocation, activeLocationId, showToast]);
+    showToast("Aktualita je na Domů u sousedů.", "success");
+  }, [areaNewsTitleDraft, areaNewsBodyDraft, activeLocation, activeLocationId, showToast, user?.name]);
 
-  const publishCrisisAlert = useCallback(() => {
-    const title = crisisTitleDraft.trim();
-    const body = crisisBodyDraft.trim();
+  const publishCrisisAlert = useCallback((payload = {}) => {
+    const title = String(payload.title ?? crisisTitleDraft).trim();
+    const body = String(payload.body ?? crisisBodyDraft).trim();
     if (!title || !body) {
       showToast("Vyplň nadpis i text krizového hlášení.", "error");
       return;
     }
+    const municipality = payload.municipality || activeLocation?.municipality || "Jesenice";
     const item = {
       id: `cr-${Date.now()}`,
       type: "crisis",
-      municipality: activeLocation?.municipality ?? "Jesenice",
+      municipality,
       locationIds: [activeLocationId],
       title,
       body,
-      author: "Obec Jesenice · SOS",
+      author: `${user?.name || "Obec"} · SOS`,
       time: "právě teď",
       role: "urad",
       active: true,
+      scope: payload.scope || "municipality",
+      streets: payload.streets || [],
+      address: payload.address || "",
+      mapPos: payload.mapPos || null,
     };
     setAreaNewsList((prev) => [item, ...prev.map((n) => (n.type === "crisis" ? { ...n, active: false } : n))]);
     setCrisisTitleDraft("");
     setCrisisBodyDraft("");
     triggerSos({ title: item.title, body: item.body });
-    showToast("Krizové SOS aktivováno — zobrazeno nad domovskou obrazovkou.", "error");
-  }, [crisisTitleDraft, crisisBodyDraft, activeLocation, activeLocationId, showToast, triggerSos]);
+    showToast("Mimořádné oznámení je v SOS pruhu u sousedů.", "error");
+  }, [crisisTitleDraft, crisisBodyDraft, activeLocation, activeLocationId, showToast, triggerSos, user?.name]);
 
-  const createOfficePrompt = useCallback(() => {
-    const title = officePromptTitleDraft.trim();
-    const body = officePromptBodyDraft.trim();
+  const createOfficePrompt = useCallback((payload = {}) => {
+    const title = String(payload.title ?? officePromptTitleDraft).trim();
+    const body = String(payload.body ?? officePromptBodyDraft).trim();
     if (!title || !body) {
       showToast("Vyplň nadpis i text podnětu.", "error");
       return;
@@ -5234,13 +5273,16 @@ export function AppProvider({ children }) {
       status: "new",
       statusLabel: getPromptStatusLabel("new"),
       authorId: user?.id ?? "urad",
-      authorName: user?.name ?? "Městský úřad Jesenice",
+      authorName: user?.name ?? "Městský úřad",
       authorRole: "urad",
       fromOffice: true,
       time: "právě teď",
       callId: null,
-      mapPos: null,
+      mapPos: payload.mapPos || null,
       distance: null,
+      scope: payload.scope || "municipality",
+      streets: payload.streets || [],
+      address: payload.address || "",
     };
     setMunicipalityPrompts((prev) => [prompt, ...prev]);
     setOfficePromptTitleDraft("");
@@ -7990,6 +8032,7 @@ export function AppProvider({ children }) {
       notifyInterested,
       hostedActivityId = null,
       placeId = null,
+      partners = [],
       silent = false,
       skipNavigate = false,
     }) => {
@@ -8063,6 +8106,7 @@ export function AppProvider({ children }) {
           user.role === "urad",
         hostedActivityId: hostedActivityId || null,
         placeId: placeId || null,
+        partners: normalizeEventPartners(partners),
         participants: 1,
         participantIds: [],
         attendees: [{
@@ -8091,8 +8135,14 @@ export function AppProvider({ children }) {
         return nextJoined;
       });
       if (!skipNavigate) {
-        setPendingNeighborsSection("akce");
-        setActiveTab("neighbors");
+        const stayOnWork =
+          user.accountType === "urad" ||
+          user.accountType === "instituce" ||
+          user.accountType === "podnik";
+        if (!stayOnWork) {
+          setPendingNeighborsSection("akce");
+          setActiveTab("neighbors");
+        }
         setSelectedEventId(id);
       }
       if (!silent) {
@@ -8570,6 +8620,44 @@ export function AppProvider({ children }) {
       )
     ) ?? null;
   }, [user, institutionsSorted, institutionClaims]);
+
+  const joinEventAsPartner = useCallback(
+    (eventId) => {
+      const place = ownedInstitution;
+      const partner =
+        partnerFromPlace(place) ||
+        (user
+          ? {
+              id: user.id || "me",
+              kind: "podnik",
+              name: user.name || "Podnik",
+              placeId: place?.id ?? null,
+            }
+          : null);
+      if (!partner) {
+        showToast("Nejdřív doplň název podniku.", "error");
+        return false;
+      }
+      const event = events.find((e) => e.id === eventId);
+      if (!event) return false;
+      if (eventHasPartner(event, partner)) {
+        showToast("Už jsi na programu téhle akce.", "info");
+        return true;
+      }
+      setEvents((prev) => {
+        const next = prev.map((ev) =>
+          ev.id === eventId
+            ? { ...ev, partners: upsertEventPartner(ev.partners, partner) }
+            : ev
+        );
+        if (user?.id) persistUserEvents(user.id, next);
+        return next;
+      });
+      showToast(`Jsi na programu: ${event.title}.`, "success");
+      return true;
+    },
+    [ownedInstitution, user, events, showToast]
+  );
 
   const ownedService = useMemo(() => {
     if (!user) return null;
@@ -9094,6 +9182,7 @@ export function AppProvider({ children }) {
         selectedHostedActivityId,
         postEventChat,
         createEvent,
+        joinEventAsPartner,
         createHostedActivity,
         publishHostedActivityDates,
         deleteHostedActivity,

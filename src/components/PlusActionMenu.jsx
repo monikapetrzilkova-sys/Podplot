@@ -112,9 +112,16 @@ const BUSINESS_ACTIONS = [
   {
     id: "menu",
     label: "Polední menu",
-    hint: "Otevře Provoz — publikace menu",
+    hint: "Zveřejni menu nebo pošli push",
     icon: IconShop,
-    action: "business-note",
+    action: "business-menu",
+  },
+  {
+    id: "event",
+    label: "Nová akce",
+    hint: "Ochutnávka, jarmark, den otevřených dveří",
+    icon: IconTabCalendar,
+    action: "event",
   },
 ];
 
@@ -236,6 +243,10 @@ export default function PlusActionMenu() {
     }
     if (item.action === "business-hours") {
       openBusinessComposer?.("hours");
+      return;
+    }
+    if (item.action === "business-menu") {
+      openBusinessComposer?.("menu");
       return;
     }
     if (item.action === "invoice") {

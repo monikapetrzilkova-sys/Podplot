@@ -12,6 +12,7 @@ import PhotoUpload from "./PhotoUpload.jsx";
 import CzechTimeInput from "./CzechTimeInput.jsx";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
 import AppPanelPortal from "./AppPanelPortal.jsx";
+import EventPartnersPicker from "./EventPartnersPicker.jsx";
 
 const EMPTY_FORM = {
   title: "",
@@ -36,6 +37,7 @@ export default function CreateEventModal() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [draftPin, setDraftPin] = useState(null);
   const [eventPhotos, setEventPhotos] = useState([]);
+  const [partners, setPartners] = useState([]);
   const [pinError, setPinError] = useState("");
   const [formError, setFormError] = useState("");
   const manualPinRef = useRef(false);
@@ -44,6 +46,7 @@ export default function CreateEventModal() {
     setForm(EMPTY_FORM);
     setDraftPin(null);
     setEventPhotos([]);
+    setPartners([]);
     setPinError("");
     setFormError("");
     manualPinRef.current = false;
@@ -148,6 +151,7 @@ export default function CreateEventModal() {
       ...form,
       mapPos: pin,
       photo,
+      partners,
     });
     if (!createdId) return;
     close();
@@ -171,7 +175,7 @@ export default function CreateEventModal() {
             </button>
           </div>
           <p className="text-xs text-stone-500">
-            Místo a mapa patří jen k akci — nepropisují se do hlášení z ulice.
+            Můžeš označit podniky, kroužky a sdružení, které budou na programu.
           </p>
         </div>
 
@@ -303,6 +307,8 @@ export default function CreateEventModal() {
               className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm resize-none"
             />
           </div>
+
+          <EventPartnersPicker value={partners} onChange={setPartners} />
 
           <PhotoUpload
             photos={eventPhotos}

@@ -20,6 +20,7 @@ import { DoodleCheckIcon, DoodleJoinIcon } from "../components/doodle/doodleIcon
 import { DoodleSousedskaAkceScene } from "../components/doodle/doodleIllustrations.jsx";
 import SampleBadge from "../components/SampleBadge.jsx";
 import { isSampleContent } from "../data/sampleContent.js";
+import { eventPartnersOf } from "../data/eventPartners.js";
 
 /** Pod seznamem — větší doodle, hlavně když je málo akcí (1–3). Prázdný stav řeší ListView. */
 function EventsSparseDoodle({ count }) {
@@ -40,7 +41,10 @@ function EventsSparseDoodle({ count }) {
 function matchesEventSearch(event, query) {
   const q = String(query ?? "").trim().toLowerCase();
   if (!q) return true;
-  return [event.title, event.address, event.location, event.organizer, event.categoryLabel, event.date, event.hostedActivityId ? "krouzek lekce" : ""]
+  const partnerNames = eventPartnersOf(event)
+    .map((p) => p.name)
+    .join(" ");
+  return [event.title, event.address, event.location, event.organizer, event.categoryLabel, event.date, partnerNames, event.hostedActivityId ? "krouzek lekce" : ""]
     .filter(Boolean)
     .some((v) => String(v).toLowerCase().includes(q));
 }
@@ -49,7 +53,16 @@ function EventListRow({ event, selected, onShowOnMap, onOpen, onJoin, joined, on
   const creator = displayCreatorLabel(event.organizer, event.accountType, {
     mine: event.organizer === "Vy",
   });
-  const meta = [creator, event.date, event.address ?? event.location, event.categoryLabel, `${event.participants ?? 0} účastníků`]
+  const partners = eventPartnersOf(event);
+  const meta = [
+    creator,
+    event.date,
+    event.address ?? event.location,
+    event.categoryLabel,
+    partners.length
+      ? `${partners.length} na programu`
+      : `${event.participants ?? 0} účastníků`,
+  ]
     .filter(Boolean)
     .join(" · ");
 

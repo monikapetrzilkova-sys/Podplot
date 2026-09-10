@@ -6,10 +6,6 @@ export default function BusinessEntityManagement() {
   const {
     ownedInstitution,
     updateOwnedInstitution,
-    publishLunchMenu,
-    lunchMenuDraft,
-    setLunchMenuDraft,
-    lunchSubscribersCount,
     showToast,
   } = useApp();
 
@@ -122,25 +118,6 @@ export default function BusinessEntityManagement() {
       >
         Uložit profil
       </button>
-
-      {ownedInstitution.accountType === "podnik" && (
-        <div className="border-t border-stone-100 pt-3">
-          <h4 className="text-xs font-bold text-stone-700 mb-2">🍴 Polední menu</h4>
-          <textarea
-            value={lunchMenuDraft}
-            onChange={(e) => setLunchMenuDraft(e.target.value)}
-            rows={3}
-            className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm mb-2"
-          />
-          <button
-            type="button"
-            onClick={() => publishLunchMenu("free")}
-            className="w-full py-2 text-xs font-semibold bg-emerald-600 text-white rounded-xl"
-          >
-            Publikovat menu · {lunchSubscribersCount} odběratelů
-          </button>
-        </div>
-      )}
     </section>
   );
 }

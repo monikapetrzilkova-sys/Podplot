@@ -20,28 +20,16 @@ import {
   formatFullAddress,
   parseStoredAddress,
 } from "../data/addressValidation.js";
-import { IconMapPin } from "../data/icons.jsx";
 import CraftCategoryPicker from "./CraftCategoryPicker.jsx";
 import StructuredAddressFields from "./StructuredAddressFields.jsx";
 
-export function OverviewRow({ label, value, onEdit }) {
+export function OverviewRow({ label, value }) {
   return (
-    <div className="flex items-start justify-between gap-3 py-2.5 border-b border-stone-100 last:border-0">
-      <div className="min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-wide text-stone-400">{label}</p>
-        <p className="text-sm text-stone-800 mt-0.5 whitespace-pre-wrap break-words">
-          {value || "—"}
-        </p>
-      </div>
-      {onEdit && (
-        <button
-          type="button"
-          onClick={onEdit}
-          className="shrink-0 text-[11px] font-semibold text-[#3D7A68] pt-0.5"
-        >
-          Upravit
-        </button>
-      )}
+    <div className="py-2.5 border-b border-stone-100 last:border-0">
+      <p className="text-[10px] font-bold uppercase tracking-wide text-stone-400">{label}</p>
+      <p className="text-sm text-stone-800 mt-0.5 whitespace-pre-wrap break-words">
+        {value || "—"}
+      </p>
     </div>
   );
 }
@@ -356,32 +344,44 @@ export default function CraftsmanProfilePanel() {
       <section className="rounded-2xl border border-[#C5DDD4] bg-white p-4">
         <div className="flex items-center justify-between gap-2 mb-1">
           <h3 className="text-sm font-bold text-stone-900">Mobilní služba</h3>
-          <button
-            type="button"
-            onClick={openEdit}
-            className="text-[11px] font-semibold text-[#3D7A68]"
-          >
-            Upravit profil
-          </button>
+          {ownedService ? (
+            <button
+              type="button"
+              onClick={openEdit}
+              className="shrink-0 px-3 py-1.5 rounded-xl text-[11px] font-semibold border border-[#C5DDD4] text-[#1B4D3E] bg-[#F1F6F5]"
+            >
+              Upravit profil
+            </button>
+          ) : null}
         </div>
+
+        {!ownedService ? (
+          <div className="mt-3 mb-1 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3">
+            <p className="text-sm font-semibold text-amber-950">Katalogový profil ještě není hotový</p>
+            <p className="text-xs text-amber-900/80 mt-1 leading-relaxed">
+              Doplň jméno, adresu působnosti a obor, ať tě sousedé najdou v katalogu.
+            </p>
+            <button
+              type="button"
+              onClick={openEdit}
+              className="mt-3 w-full py-2.5 rounded-xl text-sm font-semibold text-white bg-[#3D7A68]"
+            >
+              Doplnit profil
+            </button>
+          </div>
+        ) : null}
 
         <OverviewRow
           label="Katalogové jméno"
           value={ownedService?.name || user?.businessName}
-          onEdit={openEdit}
         />
-        <OverviewRow label="Výchozí adresa" value={displayAddress} onEdit={openEdit} />
-        <OverviewRow
-          label="Popis služeb"
-          value={ownedService?.serviceDescription}
-          onEdit={openEdit}
-        />
+        <OverviewRow label="Výchozí adresa" value={displayAddress} />
+        <OverviewRow label="Popis služeb" value={ownedService?.serviceDescription} />
         <OverviewRow
           label="Kapacita a dojezd"
           value={`${craftsmanAcceptsOrders ? "Přijímám zakázky" : "Kapacita plná"} · ${formatCraftsmanRadiusLabel(craftsmanRadius)}`}
-          onEdit={openEdit}
         />
-        <OverviewRow label="Obor" value={focusLabel || ownedService?.profession} onEdit={openEdit} />
+        <OverviewRow label="Obor" value={focusLabel || ownedService?.profession} />
 
         <button
           type="button"
@@ -428,12 +428,6 @@ export default function CraftsmanProfilePanel() {
         </div>
       </details>
 
-      {!ownedService && (
-        <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 flex items-start gap-2">
-          <IconMapPin className="w-4 h-4 shrink-0 mt-0.5" />
-          Katalogový profil ještě není hotový — doplň údaje přes Upravit profil.
-        </p>
-      )}
     </div>
   );
 }

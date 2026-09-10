@@ -5,7 +5,14 @@ import { IconBulb } from "../data/icons.jsx";
 /**
  * Stejná žárovka jako u hlášení — delší vysvětlení až po klepnutí.
  */
-export default function InfoTip({ title, children, className = "", label = "Více informací" }) {
+export default function InfoTip({
+  title,
+  children,
+  className = "",
+  label = "Více informací",
+  /** Vedle textu / lišty — ne absolutně vpravo nahoře jako u dlaždice Hlášení */
+  inline = false,
+}) {
   const [open, setOpen] = useState(false);
   const titleId = useId();
 
@@ -22,7 +29,7 @@ export default function InfoTip({ title, children, className = "", label = "Víc
     <span className={`inline-flex items-center ${className}`.trim()}>
       <button
         type="button"
-        className={`pp-map-tab-info-btn ${open ? "pp-map-tab-info-btn--open" : ""}`}
+        className={`pp-map-tab-info-btn ${inline ? "pp-map-tab-info-btn--inline" : ""} ${open ? "pp-map-tab-info-btn--open" : ""}`}
         onClick={() => setOpen(true)}
         aria-expanded={open}
         aria-haspopup="dialog"

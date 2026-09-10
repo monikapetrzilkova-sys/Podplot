@@ -1,4 +1,4 @@
-import { DOODLE_EMPTY_ILLUSTRATIONS } from "./doodleIllustrations.jsx";
+import { DOODLE_EMPTY_ILLUSTRATIONS, DOODLE_EMPTY_LARGE } from "./doodleIllustrations.jsx";
 
 /** Prázdný stav s doodle panáčky / ilustrací */
 export default function DoodleEmptyState({
@@ -9,7 +9,7 @@ export default function DoodleEmptyState({
   onAction = null,
 }) {
   const Illustration = DOODLE_EMPTY_ILLUSTRATIONS[illustration] ?? DOODLE_EMPTY_ILLUSTRATIONS.chat;
-  const large = illustration === "neighborEvent";
+  const large = DOODLE_EMPTY_LARGE.has(illustration);
 
   return (
     <div className={`pp-doodle-empty flex flex-col items-center justify-center py-8 px-4 ${className}`}>

@@ -13,6 +13,7 @@ import { isSameAppUser } from "../data/listingSales.js";
 import { displayCreatorLabel } from "../data/accountTypes.js";
 import SampleBadge from "./SampleBadge.jsx";
 import { isSampleContent } from "../data/sampleContent.js";
+import { eventPartnersOf, partnerKindLabel } from "../data/eventPartners.js";
 import {
   DoodleCheckIcon,
   DoodleJoinIcon,
@@ -154,6 +155,23 @@ export default function EventDetailModal() {
         {ev.description && (
           <p className="text-sm text-stone-700 leading-relaxed mt-4 whitespace-pre-wrap">{ev.description}</p>
         )}
+
+        {eventPartnersOf(ev).length > 0 ? (
+          <section className="mt-4">
+            <h3 className="text-sm font-bold text-stone-800 mb-2">Na programu</h3>
+            <ul className="flex flex-wrap gap-1.5">
+              {eventPartnersOf(ev).map((p) => (
+                <li
+                  key={p.id}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#F1F6F5] border border-[#C5DDD4] text-[11px]"
+                >
+                  <span className="font-semibold text-stone-800">{p.name}</span>
+                  <span className="text-stone-400">{partnerKindLabel(p.kind)}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         {ev.mapPos && (
           <div className="mt-4">
