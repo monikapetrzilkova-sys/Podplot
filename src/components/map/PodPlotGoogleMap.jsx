@@ -9,7 +9,14 @@ import {
   formatMapRadiusKm,
 } from "../../data/mapRadiusSettings.js";
 import MapPickHint from "./MapPickHint.jsx";
-import { MAP_PICK_CURSOR } from "../../utils/mapPickCursor.js";
+import { mapElementHasGoogleError, markMapsRuntimeFailed } from "../../utils/googleMapsLoader.js";
+
+function pickCursorForDevice() {
+  if (typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches) {
+    return null;
+  }
+  return "crosshair";
+}
 
 /** Skryje nativní Google POI — místa ukazujeme jen našimi špendlíky z Places API. */
 const HIDE_GOOGLE_POI_STYLES = [
@@ -172,6 +179,8 @@ export default function PodPlotGoogleMap({
       fullscreenControl: false,
       clickableIcons: false,
       gestureHandling: pickMode || isTouch ? "greedy" : "cooperative",
+      draggableCursor: pickMode && !isTouch ? "crosshair" : null,
+      draggingCursor: pickMode && !isTouch ? "crosshair" : null,
       styles: mapMode === "institutions" ? HIDE_GOOGLE_POI_STYLES : undefined,
     });
     mapRef.current = map;
@@ -203,7 +212,19 @@ export default function PodPlotGoogleMap({
       if (wrap) ro.observe(wrap);
     }
 
+    const checkGoogleError = () => {
+      if (mapElementHasGoogleError(el)) {
+        markMapsRuntimeFailed("Mapa se teď nenačetla. Používám záložní mapu — špendlík můžeš položit i tak.");
+      }
+    };
+    const errTimer = window.setTimeout(checkGoogleError, 1200);
+    const idleListener = window.google.maps.event.addListenerOnce(map, "idle", () => {
+      window.setTimeout(checkGoogleError, 400);
+    });
+
     return () => {
+      window.clearTimeout(errTimer);
+      if (idleListener) window.google.maps.event.removeListener(idleListener);
       ro?.disconnect();
       clustererRef.current?.setMap(null);
       clustererRef.current = null;
@@ -291,14 +312,17 @@ export default function PodPlotGoogleMap({
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    map.setOptions({
-      gestureHandling: pickMode ? "greedy" : "cooperative",
-      draggableCursor: pickMode ? MAP_PICK_CURSOR : null,
-      draggingCursor: pickMode ? MAP_PICK_CURSOR : null,
-      // V Průvodci schovej Google „obrázky“ podniků — zůstanou jen naše špendlíky
-      styles: mapMode === "institutions" ? HIDE_GOOGLE_POI_STYLES : [],
-      clickableIcons: false,
-    });
+    try {
+      map.setOptions({
+        gestureHandling: pickMode ? "greedy" : "cooperative",
+        draggableCursor: pickMode ? pickCursorForDevice() : null,
+        draggingCursor: pickMode ? pickCursorForDevice() : null,
+        styles: mapMode === "institutions" ? HIDE_GOOGLE_POI_STYLES : [],
+        clickableIcons: false,
+      });
+    } catch {
+      /* vlastní kurzor umí Google Maps shodit — mapa zůstane použitelná */
+    }
   }, [pickMode, mapMode]);
 
   useEffect(() => {

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
 import AppPanelPortal from "./AppPanelPortal.jsx";
+import CharCount from "./CharCount.jsx";
+import { POST_BODY_MAX, POST_TITLE_MAX, clampPostText } from "../data/postTextLimits.js";
 
 /** Jednoduchá úprava nadpisu + textu (hlášení, oznámení úřadu) */
 export default function ContentEditModal({
@@ -11,6 +13,8 @@ export default function ContentEditModal({
   initialBody = "",
   titleLabel = "Nadpis",
   bodyLabel = "Text",
+  titleMax = POST_TITLE_MAX,
+  bodyMax = POST_BODY_MAX,
   onSave,
 }) {
   const [title, setTitle] = useState(initialTitle);
@@ -39,18 +43,22 @@ export default function ContentEditModal({
             <input
               type="text"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => setTitle(clampPostText(e.target.value, titleMax))}
+              maxLength={titleMax}
               className="mt-1 w-full border border-stone-200 rounded-xl px-3 py-2 text-sm"
             />
+            <CharCount value={title} max={titleMax} />
           </label>
           <label className="block mb-4">
             <span className="text-[11px] font-semibold text-stone-600">{bodyLabel}</span>
             <textarea
               value={body}
-              onChange={(e) => setBody(e.target.value)}
+              onChange={(e) => setBody(clampPostText(e.target.value, bodyMax))}
+              maxLength={bodyMax}
               rows={4}
               className="mt-1 w-full border border-stone-200 rounded-xl px-3 py-2 text-sm resize-none"
             />
+            <CharCount value={body} max={bodyMax} />
           </label>
           <div className="flex gap-2">
             <button

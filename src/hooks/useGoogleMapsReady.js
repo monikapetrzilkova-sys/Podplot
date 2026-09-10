@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import { fetchMapsConfig, loadGoogleMaps, didMapsAuthFail } from "../utils/googleMapsLoader.js";
+import {
+  fetchMapsConfig,
+  loadGoogleMaps,
+  didMapsAuthFail,
+  subscribeMapsRuntimeFailed,
+} from "../utils/googleMapsLoader.js";
+
 export function useGoogleMapsReady() {
   const [state, setState] = useState({
     ready: false,
@@ -9,6 +15,15 @@ export function useGoogleMapsReady() {
   });
   useEffect(() => {
     let cancelled = false;
+    const unsub = subscribeMapsRuntimeFailed((reason) => {
+      if (cancelled) return;
+      setState({
+        ready: false,
+        enabled: false,
+        loading: false,
+        error: reason || "Mapa se nepodařila načíst. Používám záložní mapu.",
+      });
+    });
     (async () => {
       try {
         const config = await fetchMapsConfig();
@@ -42,6 +57,7 @@ export function useGoogleMapsReady() {
     })();
     return () => {
       cancelled = true;
+      unsub();
     };
   }, []);
   return state;

@@ -5,12 +5,15 @@ import {
   filterLendingItemTypeSuggestions,
   resolveLendingItemTypeLabel,
 } from "../data/lendingItemTypes.js";
+import CharCount from "./CharCount.jsx";
+import { POST_TITLE_MAX } from "../data/postTextLimits.js";
 
 export default function LendingItemTypeField({
   value,
   onChange,
   categoryId = null,
   disabled = false,
+  maxLength = POST_TITLE_MAX,
 }) {
   const listId = useId();
   const wrapRef = useRef(null);
@@ -52,9 +55,10 @@ export default function LendingItemTypeField({
         aria-autocomplete="list"
         value={value}
         disabled={disabled}
+        maxLength={maxLength}
         autoComplete="off"
         onChange={(e) => {
-          onChange(e.target.value);
+          onChange(e.target.value.slice(0, maxLength));
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
@@ -62,6 +66,7 @@ export default function LendingItemTypeField({
         placeholder="Začněte psát — např. Aku vrtačka"
         className="w-full px-4 py-3 rounded-2xl border border-stone-200 text-sm focus:outline-none focus:border-[#1B4332] focus:ring-2 focus:ring-[#D8F3DC] disabled:bg-[#FAF9F6]"
       />
+      <CharCount value={value} max={maxLength} />
       {open && !disabled && suggestions.length > 0 && (
         <ul
           id={`${listId}-list`}

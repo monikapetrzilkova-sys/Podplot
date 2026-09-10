@@ -26,6 +26,8 @@ import {
   DEFAULT_LISTING_PAYMENT_METHOD,
 } from "../data/listingPayment.js";
 import { DoodlePackageIcon, DoodleScalesIcon, DoodleSellIcon } from "./doodle/doodleIcons.jsx";
+import CharCount from "./CharCount.jsx";
+import { POST_BODY_MAX, POST_TITLE_MAX, clampPostText } from "../data/postTextLimits.js";
 
 function resolvePresetCategory(createCategory, feedMainMode, feedSubFilter) {
   if (createCategory) return createCategory;
@@ -91,8 +93,8 @@ export default function CreateListingModal() {
       setItemCategoryId(
         editingPost.marketCategory || editingPost.lendingCategory || ""
       );
-      setTitle(editingPost.title ?? "");
-      setBody(editingPost.body ?? "");
+      setTitle(clampPostText(editingPost.title ?? "", POST_TITLE_MAX));
+      setBody(clampPostText(editingPost.body ?? "", POST_BODY_MAX));
       setPrice(
         editingPost.listingPrice != null && editingPost.listingPrice > 0
           ? String(editingPost.listingPrice)
@@ -194,8 +196,8 @@ export default function CreateListingModal() {
       categoryId,
       marketCategory: needsItemCategory ? itemCategoryId : null,
       lendingCategory: isLending ? itemCategoryId : null,
-      title: resolvedTitle,
-      body,
+      title: clampPostText(resolvedTitle, POST_TITLE_MAX),
+      body: clampPostText(body, POST_BODY_MAX),
       price,
       groupId: groupIds[0] || null,
       groupIds,
@@ -217,8 +219,8 @@ export default function CreateListingModal() {
         ? resolveLendingItemTypeLabel(title, itemCategoryId) || title.trim()
         : title.trim();
       updateUserPost(editingPost.id, {
-        title: resolvedTitle,
-        body: body.trim(),
+        title: clampPostText(resolvedTitle, POST_TITLE_MAX),
+        body: clampPostText(body.trim(), POST_BODY_MAX),
         listingPrice: cat?.priceField ? Number(price) || 0 : editingPost.listingPrice,
         listingPriceUnit: showUnitPicker ? priceUnit : editingPost.listingPriceUnit,
         listingQuantity: variablePrice && parsedAvailable > 0 ? parsedAvailable : null,
@@ -364,9 +366,10 @@ export default function CreateListingModal() {
           {categoryId === "pujcovna" ? (
             <LendingItemTypeField
               value={title}
-              onChange={setTitle}
+              onChange={(next) => setTitle(clampPostText(next, POST_TITLE_MAX))}
               categoryId={itemCategoryId || null}
               disabled={!categoryId || !categoryDetailReady}
+              maxLength={POST_TITLE_MAX}
             />
           ) : (
             <div>
@@ -380,7 +383,8 @@ export default function CreateListingModal() {
                 id="listing-title"
                 type="text"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => setTitle(clampPostText(e.target.value, POST_TITLE_MAX))}
+                maxLength={POST_TITLE_MAX}
                 disabled={!categoryId || !categoryDetailReady}
                 placeholder={
                   categoryId
@@ -389,6 +393,7 @@ export default function CreateListingModal() {
                 }
                 className="w-full px-4 py-3 rounded-2xl border border-stone-200 text-sm focus:outline-none focus:border-[#1B4332] focus:ring-2 focus:ring-[#D8F3DC] disabled:bg-[#FAF9F6]"
               />
+              <CharCount value={title} max={POST_TITLE_MAX} />
             </div>
           )}
 
@@ -399,7 +404,8 @@ export default function CreateListingModal() {
             <textarea
               id="listing-body"
               value={body}
-              onChange={(e) => setBody(e.target.value)}
+              onChange={(e) => setBody(clampPostText(e.target.value, POST_BODY_MAX))}
+              maxLength={POST_BODY_MAX}
               rows={4}
               disabled={!categoryId || !categoryDetailReady}
               placeholder={
@@ -409,6 +415,7 @@ export default function CreateListingModal() {
               }
               className="w-full px-4 py-3 rounded-2xl border border-stone-200 text-sm resize-none focus:outline-none focus:border-[#1B4332] focus:ring-2 focus:ring-[#D8F3DC] disabled:bg-[#FAF9F6]"
             />
+            <CharCount value={body} max={POST_BODY_MAX} />
           </div>
 
           {cat?.priceField && (

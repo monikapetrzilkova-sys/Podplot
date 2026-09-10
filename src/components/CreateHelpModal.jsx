@@ -3,6 +3,8 @@ import { useApp } from "../context/AppContext.jsx";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
 import AppPanelPortal from "./AppPanelPortal.jsx";
 import PillFilterRow from "./PillFilterRow.jsx";
+import CharCount from "./CharCount.jsx";
+import { POST_BODY_MAX, POST_TITLE_MAX, clampPostText } from "../data/postTextLimits.js";
 
 const TYPE_OPTIONS = [
   { id: "hledam", label: "Hledám pomoc" },
@@ -53,7 +55,11 @@ export default function CreateHelpModal() {
       return;
     }
     setError("");
-    addNeighborHelpPost({ type, title, body });
+    addNeighborHelpPost({
+      type,
+      title: clampPostText(title.trim(), POST_TITLE_MAX),
+      body: clampPostText(body.trim(), POST_BODY_MAX),
+    });
     closeCreateHelp();
   };
 
@@ -101,12 +107,14 @@ export default function CreateHelpModal() {
                 id="help-title"
                 type="text"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => setTitle(clampPostText(e.target.value, POST_TITLE_MAX))}
+                maxLength={POST_TITLE_MAX}
                 placeholder={titlePlaceholder}
                 className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm"
                 required
                 autoFocus
               />
+              <CharCount value={title} max={POST_TITLE_MAX} />
             </div>
 
             <div>
@@ -116,12 +124,14 @@ export default function CreateHelpModal() {
               <textarea
                 id="help-body"
                 value={body}
-                onChange={(e) => setBody(e.target.value)}
+                onChange={(e) => setBody(clampPostText(e.target.value, POST_BODY_MAX))}
+                maxLength={POST_BODY_MAX}
                 placeholder={bodyPlaceholder}
                 rows={4}
                 className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm resize-none"
                 required
               />
+              <CharCount value={body} max={POST_BODY_MAX} />
             </div>
 
             <div className="flex gap-2 pt-2 pb-1">

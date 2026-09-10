@@ -55,8 +55,33 @@ export async function fetchMapsConfig() {
   return cachedConfig;
 }
 
+const runtimeFailListeners = new Set();
+
 export function didMapsAuthFail() {
-  return Boolean(window.__podplotMapsAuthFailed);
+  return Boolean(typeof window !== "undefined" && window.__podplotMapsAuthFailed);
+}
+
+/** Google do mapy vypíše anglické „Oops! Something went wrong.“ — přepneme na záložní mapu. */
+export function markMapsRuntimeFailed(reason = "Google Maps selhala") {
+  if (typeof window === "undefined") return;
+  window.__podplotMapsAuthFailed = true;
+  loadPromise = null;
+  runtimeFailListeners.forEach((fn) => {
+    try {
+      fn(reason);
+    } catch {
+      /* ignore */
+    }
+  });
+}
+
+export function subscribeMapsRuntimeFailed(fn) {
+  runtimeFailListeners.add(fn);
+  return () => runtimeFailListeners.delete(fn);
+}
+
+export function mapElementHasGoogleError(el) {
+  return Boolean(el?.querySelector?.(".gm-err-container, .gm-err-message"));
 }
 
 export async function loadGoogleMaps() {
@@ -70,7 +95,7 @@ export async function loadGoogleMaps() {
   window.__podplotMapsAuthFailed = false;
   const prevAuthFailure = window.gm_authFailure;
   window.gm_authFailure = () => {
-    window.__podplotMapsAuthFailed = true;
+    markMapsRuntimeFailed("Google Maps klíč odmítnut (referrer / mobilní IP)");
     if (typeof prevAuthFailure === "function") prevAuthFailure();
   };
 
