@@ -286,6 +286,7 @@ import {
   authUpdatePassword,
   validatePassword,
   subscribeAuth,
+  EMAIL_TAKEN_CODE,
 } from "../data/authApi.js";
 import {
   isGroupProposalPost,
@@ -2359,12 +2360,14 @@ export function AppProvider({ children }) {
         },
       });
       if (!auth.ok && !auth.localOnly) {
-        showToast(auth.error, "error");
-        return { ok: false, error: auth.error };
+        if (auth.code !== EMAIL_TAKEN_CODE) {
+          showToast(auth.error, "error");
+        }
+        return { ok: false, error: auth.error, code: auth.code };
       }
       if (auth.ok && auth.needsEmailConfirm) {
         showToast(
-          "Poslali jsme potvrzovací e-mail. Po kliknutí na odkaz se přihlas heslem.",
+          "Poslali jsme potvrzovací e-mail. Po kliknutí na odkaz se přihlaš heslem.",
           "info"
         );
         return { ok: false, needsEmailConfirm: true };
@@ -2771,7 +2774,7 @@ export function AppProvider({ children }) {
     setSearchHelpCounts({ ...DEFAULT_SEARCH_HELP_COUNTS });
     setSearchHighlightedPosts([...DEFAULT_SEARCH_HIGHLIGHTED_POSTS]);
     setActiveTab("home");
-    showToast("Odhlášeno. Pro vstup se znovu přihlas nebo zaregistruj.", "info");
+    showToast("Odhlášeno. Pro vstup se znovu přihlaš nebo zaregistruj.", "info");
   }, [showToast]);
 
   /** Odhlásit a otevřít registraci odděleného účtu (úřad ↔ soused). */
@@ -7837,7 +7840,7 @@ export function AppProvider({ children }) {
       skipNavigate = false,
     }) => {
       if (!user) {
-        if (!silent) showToast("Pro vytvoření akce se nejdřív přihlas.", "error");
+        if (!silent) showToast("Pro vytvoření akce se nejdřív přihlaš.", "error");
         return null;
       }
       const cat = INTEREST_OPTIONS.find((i) => i.id === category);
@@ -8034,7 +8037,7 @@ export function AppProvider({ children }) {
       dates = [],
     }) => {
       if (!user) {
-        showToast("Pro vytvoření kroužku se nejdřív přihlas.", "error");
+        showToast("Pro vytvoření kroužku se nejdřív přihlaš.", "error");
         return null;
       }
       const id = `act-${Date.now()}`;

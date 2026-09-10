@@ -33,6 +33,10 @@ describe("buildAddressSearchQuery", () => {
       "Hlavní 12 142 00 Praha 4"
     );
     assert.equal(buildAddressSearchQuery({ street: "Hl", psc: "142 00" }), "Hl 142 00");
+    assert.equal(
+      buildAddressSearchQuery({ street: "Platanová 1568", psc: "252 42", city: "Jesenice" }),
+      "Platanová 1568 252 42 Jesenice"
+    );
     assert.equal(normalizeHouseNumber(" 12 A "), "12a");
   });
 

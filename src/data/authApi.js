@@ -6,6 +6,10 @@ import { ensureSupabase } from "../lib/supabaseClient.js";
 
 export const MIN_PASSWORD_LENGTH = 6;
 
+export const EMAIL_TAKEN_CODE = "email_taken";
+export const EMAIL_TAKEN_MESSAGE =
+  "Tento e-mail už je registrovaný. Přihlaš se, nebo si nech poslat odkaz na nové heslo.";
+
 export function validatePassword(password, confirm) {
   if (!password || String(password).length < MIN_PASSWORD_LENGTH) {
     return { ok: false, error: `Heslo musí mít alespoň ${MIN_PASSWORD_LENGTH} znaků.` };
@@ -16,11 +20,39 @@ export function validatePassword(password, confirm) {
   return { ok: true };
 }
 
+/** Síla hesla pro lištu v registraci — 0 prázdné, 1 slabé … 4 velmi silné. */
+export function getPasswordStrength(password) {
+  const p = String(password ?? "");
+  if (!p) return { score: 0, label: "", tone: "empty" };
+  if (p.length < MIN_PASSWORD_LENGTH) {
+    return { score: 1, label: "Slabé", tone: "weak" };
+  }
+  let points = 1;
+  if (p.length >= 8) points += 1;
+  if (p.length >= 12) points += 1;
+  if (/[a-z]/.test(p) && /[A-Z]/.test(p)) points += 1;
+  if (/\d/.test(p)) points += 1;
+  if (/[^A-Za-z0-9]/.test(p)) points += 1;
+  const score = points <= 2 ? 1 : points <= 3 ? 2 : points <= 4 ? 3 : 4;
+  const labels = { 1: "Slabé", 2: "Střední", 3: "Silné", 4: "Velmi silné" };
+  const tones = { 1: "weak", 2: "fair", 3: "good", 4: "strong" };
+  return { score, label: labels[score], tone: tones[score] };
+}
+
+export function isExistingAccountSignUp(data, error) {
+  const msg = `${error?.message ?? ""} ${error?.code ?? ""}`;
+  if (/already registered|user already registered|user_already_exists|already been registered/i.test(msg)) {
+    return true;
+  }
+  const identities = data?.user?.identities;
+  return Array.isArray(identities) && identities.length === 0;
+}
+
 function mapAuthError(error) {
   const msg = error?.message ?? "Něco se nepovedlo.";
   if (/Invalid login|invalid credentials/i.test(msg)) return "Nesprávný e-mail nebo heslo.";
-  if (/already registered|User already registered/i.test(msg)) {
-    return "Tento e-mail už je registrovaný — přihlas se.";
+  if (/already registered|User already registered|user_already_exists/i.test(msg)) {
+    return EMAIL_TAKEN_MESSAGE;
   }
   if (/Email not confirmed/i.test(msg)) {
     return "Nejdřív potvrď e-mail z odkazu, který jsme poslali.";
@@ -53,6 +85,9 @@ export async function authSignUp({ email, password, metadata = {} }) {
       emailRedirectTo: redirectOrigin(),
     },
   });
+  if (isExistingAccountSignUp(data, error)) {
+    return { ok: false, error: EMAIL_TAKEN_MESSAGE, code: EMAIL_TAKEN_CODE };
+  }
   if (error) return { ok: false, error: mapAuthError(error) };
   return {
     ok: true,

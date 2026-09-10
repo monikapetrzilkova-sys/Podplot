@@ -9,6 +9,7 @@ import { refineLocalityFromPsc } from "../data/czechCityDistricts.js";
 import {
   createAddressAutocomplete,
   formatSuggestionAddress,
+  parseStreetAndHouseNumber,
   ADDRESS_SEARCH_HINT,
 } from "../data/addressAutocomplete.js";
 
@@ -50,6 +51,7 @@ export default function StructuredAddressFields({
   const autocompleteRef = useRef(null);
   const suggestWrapRef = useRef(null);
   const suggestListRef = useRef(null);
+  const houseInputRef = useRef(null);
   const pscReady = pscDigits(psc).length === 5;
 
   useEffect(() => {
@@ -110,6 +112,14 @@ export default function StructuredAddressFields({
     setSuggestions([]);
   };
 
+  const splitStreetIfNeeded = (value = street) => {
+    const parsed = parseStreetAndHouseNumber(value);
+    if (!parsed.houseNumber) return parsed;
+    if (parsed.street !== value) onStreetChange?.(parsed.street);
+    if (!String(houseNumber ?? "").trim()) onHouseNumberChange?.(parsed.houseNumber);
+    return parsed;
+  };
+
   const applySuggestion = (item) => {
     if (item.street) onStreetChange?.(item.street);
     if (item.houseNumber) onHouseNumberChange?.(item.houseNumber);
@@ -129,6 +139,7 @@ export default function StructuredAddressFields({
     onClearError?.("psc");
     onClearError?.("city");
     if (item.street && !item.houseNumber) {
+      houseInputRef.current?.focus();
       runSearch(item.street, "", item.city || city, item.psc || psc);
     }
   };
@@ -190,12 +201,12 @@ export default function StructuredAddressFields({
         ) : null}
       </div>
 
-      <div ref={suggestWrapRef}>
-        <label className="block text-[11px] text-stone-500 mb-1">
-          Ulice
-          {required ? <ReqStar /> : null}
-        </label>
+      <div ref={suggestWrapRef} className="space-y-3">
         <div>
+          <label className="block text-[11px] text-stone-500 mb-1">
+            Ulice
+            {required ? <ReqStar /> : null}
+          </label>
           <input
             type="text"
             value={street}
@@ -206,60 +217,64 @@ export default function StructuredAddressFields({
               runSearch(value, houseNumber, city, psc);
             }}
             onFocus={() => runSearch(street, houseNumber, city, psc)}
-            placeholder={pscReady ? "Stačí P — nabídneme ulice i č.p. v obci" : "Nejdřív zadej PSČ"}
+            onBlur={() => splitStreetIfNeeded()}
+            placeholder={pscReady ? "Začněte psát" : "Nejdřív zadej PSČ"}
             autoComplete="off"
             className={inputClass(fieldErrors.street)}
           />
-          {suggestions.length > 0 ? (
-            <ul
-              ref={suggestListRef}
-              className="pp-address-suggest-list"
-              onWheel={(event) => event.stopPropagation()}
-              onTouchMove={(event) => event.stopPropagation()}
-            >
-              {suggestions.map((item) => (
-                <li key={item.id}>
-                  <button
-                    type="button"
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => applySuggestion(item)}
-                    className="w-full text-left px-3 py-2 text-xs text-stone-700 hover:bg-[#E8F3EF] border-b border-stone-100 last:border-0"
-                  >
-                    {formatSuggestionAddress(item)}
-                  </button>
-                </li>
-              ))}
-            </ul>
+          {fieldErrors.street ? <p className="mt-1 text-xs text-red-600">{fieldErrors.street}</p> : null}
+        </div>
+
+        <div>
+          <label className="block text-[11px] text-stone-500 mb-1">
+            Číslo popisné
+            {required ? <ReqStar /> : null}
+          </label>
+          <input
+            ref={houseInputRef}
+            type="text"
+            inputMode="numeric"
+            value={houseNumber}
+            onChange={(e) => {
+              const value = e.target.value;
+              onHouseNumberChange?.(value);
+              onClearError?.("houseNumber");
+              runSearch(street, value, city, psc);
+            }}
+            onFocus={() => runSearch(street, houseNumber, city, psc)}
+            placeholder={pscReady ? "Začněte psát číslo" : "12"}
+            autoComplete="off"
+            className={inputClass(fieldErrors.houseNumber)}
+          />
+          {fieldErrors.houseNumber ? (
+            <p className="mt-1 text-xs text-red-600">{fieldErrors.houseNumber}</p>
           ) : null}
         </div>
-        {fieldErrors.street ? <p className="mt-1 text-xs text-red-600">{fieldErrors.street}</p> : null}
+
+        {suggestions.length > 0 ? (
+          <ul
+            ref={suggestListRef}
+            className="pp-address-suggest-list"
+            onWheel={(event) => event.stopPropagation()}
+            onTouchMove={(event) => event.stopPropagation()}
+          >
+            {suggestions.map((item) => (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => applySuggestion(item)}
+                  className="w-full text-left px-3 py-2 text-xs text-stone-700 hover:bg-[#E8F3EF] border-b border-stone-100 last:border-0"
+                >
+                  {formatSuggestionAddress(item)}
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         {!fieldErrors.street ? <p className="mt-1 text-[10px] text-stone-400">{ADDRESS_SEARCH_HINT}</p> : null}
         {suggestLoading ? <p className="mt-1 text-[11px] text-stone-400">Hledám adresy…</p> : null}
         {suggestError ? <p className="mt-1 text-[11px] text-amber-700">{suggestError}</p> : null}
-      </div>
-
-      <div>
-        <label className="block text-[11px] text-stone-500 mb-1">
-          Číslo popisné
-          {required ? <ReqStar /> : null}
-        </label>
-        <input
-          type="text"
-          inputMode="numeric"
-          value={houseNumber}
-          onChange={(e) => {
-            const value = e.target.value;
-            onHouseNumberChange?.(value);
-            onClearError?.("houseNumber");
-            runSearch(street, value, city, psc);
-          }}
-          placeholder={pscReady ? "Doplní se z nabídky, nebo zadej ručně" : "12"}
-          autoComplete="off"
-          className={inputClass(fieldErrors.houseNumber)}
-        />
-        {fieldErrors.houseNumber ? (
-          <p className="mt-1 text-xs text-red-600">{fieldErrors.houseNumber}</p>
-        ) : null}
       </div>
 
       {privacyNote ? (

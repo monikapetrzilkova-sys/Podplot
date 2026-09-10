@@ -259,7 +259,7 @@ export default function EventDetailModal() {
         )}
 
         {!past && !canChat && (
-          <p className="mt-6 text-xs text-stone-400 text-center">Přihlas se k účasti pro přístup do chatu.</p>
+          <p className="mt-6 text-xs text-stone-400 text-center">Přihlaš se k účasti pro přístup do chatu.</p>
         )}
       </div>
     </div>

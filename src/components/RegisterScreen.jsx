@@ -27,8 +27,9 @@ import {
   verifyWorkEmailForInstitution,
   lookupMunicipalityEmailDomain,
 } from "../data/institutions/index.js";
-import { MIN_PASSWORD_LENGTH, validatePassword } from "../data/authApi.js";
+import { EMAIL_TAKEN_CODE, EMAIL_TAKEN_MESSAGE, MIN_PASSWORD_LENGTH, validatePassword } from "../data/authApi.js";
 import { readRegisterIntent, clearRegisterIntent } from "../data/registrationIntent.js";
+import PasswordField from "./PasswordField.jsx";
 
 const AUTH_INPUT =
   "w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-700/30";
@@ -70,6 +71,7 @@ export default function RegisterScreen() {
   const [emailError, setEmailError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [submitError, setSubmitError] = useState("");
+  const [emailTaken, setEmailTaken] = useState(false);
   const [busy, setBusy] = useState(false);
   const [allowPublicAreaLabel, setAllowPublicAreaLabel] = useState(false);
   const [publicAreaLabel, setPublicAreaLabel] = useState("");
@@ -152,9 +154,16 @@ export default function RegisterScreen() {
     }
   }, [selectedInstitution?.id]);
 
+  const switchAuthMode = (mode) => {
+    setSubmitError("");
+    setEmailTaken(false);
+    setAuthMode(mode);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitError("");
+    setEmailTaken(false);
 
     const emailResult = validateEmail(email);
     const addressResult = validateAddressFields({ street, houseNumber, psc, city });
@@ -218,7 +227,7 @@ export default function RegisterScreen() {
 
     setBusy(true);
     try {
-      await register({
+      const result = await register({
         name: name.trim(),
         email: email.trim(),
         password,
@@ -244,6 +253,12 @@ export default function RegisterScreen() {
         institutionId: isUrad ? selectedInstitution?.id ?? null : null,
         institutionRole: isUrad ? "admin" : null,
       });
+      if (result?.code === EMAIL_TAKEN_CODE) {
+        setEmailTaken(true);
+        setSubmitError(result.error || EMAIL_TAKEN_MESSAGE);
+      } else if (!result?.ok && result?.error) {
+        setSubmitError(result.error);
+      }
     } finally {
       setBusy(false);
     }
@@ -326,27 +341,22 @@ export default function RegisterScreen() {
       "Nové heslo",
       "Zadej nové heslo pro svůj účet (odkaz z e-mailu).",
       <form onSubmit={handleRecovery} noValidate className="space-y-4">
-        <div>
-          <label className="block text-xs font-semibold text-stone-600 mb-1.5">Nové heslo</label>
-          <input
-            type="password"
-            autoComplete="new-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder={`Alespoň ${MIN_PASSWORD_LENGTH} znaků`}
-            className={AUTH_INPUT}
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-stone-600 mb-1.5">Potvrzení hesla</label>
-          <input
-            type="password"
-            autoComplete="new-password"
-            value={passwordConfirm}
-            onChange={(e) => setPasswordConfirm(e.target.value)}
-            className={AUTH_INPUT}
-          />
-        </div>
+        <PasswordField
+          id="recovery-password"
+          label="Nové heslo"
+          value={password}
+          onChange={setPassword}
+          autoComplete="new-password"
+          placeholder={`Alespoň ${MIN_PASSWORD_LENGTH} znaků`}
+          showStrength
+        />
+        <PasswordField
+          id="recovery-password-confirm"
+          label="Potvrzení hesla"
+          value={passwordConfirm}
+          onChange={setPasswordConfirm}
+          autoComplete="new-password"
+        />
         {submitError && (
           <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">{submitError}</p>
         )}
@@ -381,16 +391,13 @@ export default function RegisterScreen() {
             />
             {emailError && <p className="mt-1.5 text-xs text-red-600">{emailError}</p>}
           </div>
-          <div>
-            <label className="block text-xs font-semibold text-stone-600 mb-1.5">Heslo</label>
-            <input
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={AUTH_INPUT}
-            />
-          </div>
+          <PasswordField
+            id="login-password"
+            label="Heslo"
+            value={password}
+            onChange={setPassword}
+            autoComplete="current-password"
+          />
           {submitError && (
             <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">{submitError}</p>
           )}
@@ -403,10 +410,10 @@ export default function RegisterScreen() {
           </button>
         </form>
         <div className="mt-4 flex flex-col gap-2 text-center text-sm">
-          <button type="button" className="text-teal-800 font-semibold" onClick={() => { setSubmitError(""); setAuthMode("forgot"); }}>
+          <button type="button" className="text-teal-800 font-semibold" onClick={() => switchAuthMode("forgot")}>
             Zapomenuté heslo
           </button>
-          <button type="button" className="text-stone-500" onClick={() => { setSubmitError(""); setAuthMode("register"); }}>
+          <button type="button" className="text-stone-500" onClick={() => switchAuthMode("register")}>
             Nemáš účet? Zaregistruj se
           </button>
         </div>
@@ -446,7 +453,7 @@ export default function RegisterScreen() {
           </button>
         </form>
         <div className="mt-4 text-center text-sm">
-          <button type="button" className="text-stone-500" onClick={() => { setSubmitError(""); setAuthMode("login"); }}>
+          <button type="button" className="text-stone-500" onClick={() => switchAuthMode("login")}>
             Zpět na přihlášení
           </button>
         </div>
@@ -472,8 +479,8 @@ export default function RegisterScreen() {
           ) : null}
           <p className="text-sm text-stone-500 mb-4">
             Už máš účet?{" "}
-            <button type="button" className="text-teal-800 font-semibold" onClick={() => { setSubmitError(""); setAuthMode("login"); }}>
-              Přihlas se
+            <button type="button" className="text-teal-800 font-semibold" onClick={() => switchAuthMode("login")}>
+              Přihlaš se
             </button>
           </p>
           <p className="text-[11px] text-stone-400 mb-6">
@@ -509,6 +516,7 @@ export default function RegisterScreen() {
                 onChange={(e) => {
                   setEmail(e.target.value);
                   if (emailError) setEmailError("");
+                  if (emailTaken) setEmailTaken(false);
                 }}
                 onBlur={() => {
                   if (email.trim()) setEmailError(validateEmail(email).error || "");
@@ -594,37 +602,34 @@ export default function RegisterScreen() {
               )}
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-stone-600 mb-1.5">
-                Heslo
-                <ReqStar />
-              </label>
-              <input
-                type="password"
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={`Alespoň ${MIN_PASSWORD_LENGTH} znaků`}
-                required
-                aria-required="true"
-                className={AUTH_INPUT}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-stone-600 mb-1.5">
-                Potvrzení hesla
-                <ReqStar />
-              </label>
-              <input
-                type="password"
-                autoComplete="new-password"
-                value={passwordConfirm}
-                onChange={(e) => setPasswordConfirm(e.target.value)}
-                required
-                aria-required="true"
-                className={AUTH_INPUT}
-              />
-            </div>
+            <PasswordField
+              id="register-password"
+              label={
+                <>
+                  Heslo
+                  <ReqStar />
+                </>
+              }
+              value={password}
+              onChange={setPassword}
+              autoComplete="new-password"
+              placeholder={`Alespoň ${MIN_PASSWORD_LENGTH} znaků`}
+              required
+              showStrength
+            />
+            <PasswordField
+              id="register-password-confirm"
+              label={
+                <>
+                  Potvrzení hesla
+                  <ReqStar />
+                </>
+              }
+              value={passwordConfirm}
+              onChange={setPasswordConfirm}
+              autoComplete="new-password"
+              required
+            />
 
             {isUrad ? (
               <InstitutionAutocomplete
@@ -666,6 +671,7 @@ export default function RegisterScreen() {
               onRadiusChange={setRadiusKm}
               pin={areaPin}
               onPinChange={setAreaPin}
+              laterEditNote
             />
 
             <fieldset className="space-y-3 pt-1 border-t border-stone-100">
@@ -842,11 +848,31 @@ export default function RegisterScreen() {
               </div>
             )}
 
-            {submitError && (
+            {emailTaken ? (
+              <div className="text-sm text-amber-950 bg-amber-50 border border-amber-200 rounded-xl px-3 py-3 space-y-3">
+                <p className="leading-snug">{submitError || EMAIL_TAKEN_MESSAGE}</p>
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => switchAuthMode("login")}
+                    className="w-full py-2.5 bg-teal-700 text-white font-semibold rounded-xl hover:bg-teal-800"
+                  >
+                    Přihlásit se
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => switchAuthMode("forgot")}
+                    className="w-full py-2.5 bg-white text-teal-800 font-semibold rounded-xl border border-teal-200 hover:bg-teal-50"
+                  >
+                    Poslat odkaz na nové heslo
+                  </button>
+                </div>
+              </div>
+            ) : submitError ? (
               <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
                 {submitError}
               </p>
-            )}
+            ) : null}
 
             <button
               type="submit"

@@ -4,7 +4,9 @@
 
 import { officialMunicipalityMatch } from "./geoFilter.js";
 import { refineLocalityFromPsc } from "./czechCityDistricts.js";
-import { searchRuianAddresses } from "../../lib/ruianAddress.mjs";
+import { parseStreetAndHouseNumber, searchRuianAddresses } from "../../lib/ruianAddress.mjs";
+
+export { parseStreetAndHouseNumber };
 
 const MIN_QUERY_LENGTH = 3;
 const DEBOUNCE_MS = 450;
@@ -116,9 +118,21 @@ export function houseNumberMatches(candidate, filter) {
   return c.startsWith(f);
 }
 
+export function normalizeAddressSearchParts({ street = "", houseNumber = "", city = "", psc = "" } = {}) {
+  const parsed = parseStreetAndHouseNumber(street);
+  return {
+    street: parsed.street,
+    houseNumber: String(houseNumber ?? "").trim() || parsed.houseNumber,
+    city: String(city ?? "").trim(),
+    psc: String(psc ?? "").replace(/\D/g, ""),
+  };
+}
+
 export function buildAddressSearchQuery({ street = "", houseNumber = "", city = "", psc = "" } = {}) {
-  return [street, houseNumber, psc, city]
-    .map((part) => String(part ?? "").trim())
+  const parts = normalizeAddressSearchParts({ street, houseNumber, city, psc });
+  const pscLabel =
+    parts.psc.length === 5 ? `${parts.psc.slice(0, 3)} ${parts.psc.slice(3)}` : String(psc ?? "").trim();
+  return [parts.street, parts.houseNumber, pscLabel, parts.city]
     .filter(Boolean)
     .join(" ")
     .replace(/\s+/g, " ")
@@ -181,10 +195,16 @@ export function filterSuggestionsByLocality(items, { psc = "", city = "" } = {})
 }
 
 export async function fetchAddressSuggestions(query, { houseNumber, psc, city, street } = {}) {
-  const streetQ = String(street ?? query ?? "").trim();
-  const cityQ = String(city ?? "").trim();
-  const pscQ = String(psc ?? "").replace(/\D/g, "");
-  const hnQ = String(houseNumber ?? "").trim();
+  const normalized = normalizeAddressSearchParts({
+    street: street ?? query ?? "",
+    houseNumber,
+    city,
+    psc,
+  });
+  const streetQ = normalized.street;
+  const cityQ = normalized.city;
+  const pscQ = normalized.psc;
+  const hnQ = normalized.houseNumber;
   const q = String(query ?? "").trim();
 
   const params = new URLSearchParams();
@@ -298,12 +318,12 @@ export function createAddressAutocomplete(onResults, onLoading, onError) {
   let requestId = 0;
 
   const search = (streetOrQuery, context = {}) => {
-    const parts = {
+    const parts = normalizeAddressSearchParts({
       street: streetOrQuery,
       houseNumber: context.houseNumber ?? "",
       city: context.city ?? "",
       psc: context.psc ?? "",
-    };
+    });
     const q = buildAddressSearchQuery(parts);
     lastQuery = q;
     clearTimeout(timer);
@@ -350,6 +370,6 @@ export function createAddressAutocomplete(onResults, onLoading, onError) {
 }
 
 export const ADDRESS_SEARCH_HINT =
-  "Stačí začít psát ulici — nabídneme ulice i čísla popisná v této obci.";
+  "Začněte psát ulici a číslo popisné dopište do pole níže. V nabídce jsou jen některá čísla — to vaše najdeme, jakmile ho napíšete.";
 
 export { MIN_QUERY_LENGTH, DEBOUNCE_MS };

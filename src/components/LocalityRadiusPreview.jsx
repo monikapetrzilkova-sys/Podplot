@@ -20,6 +20,7 @@ export default function LocalityRadiusPreview({
   onRadiusChange,
   pin,
   onPinChange,
+  laterEditNote = false,
 }) {
   const [status, setStatus] = useState("idle");
 
@@ -98,7 +99,11 @@ export default function LocalityRadiusPreview({
       <MapRadiusControl
         id="neighbor-radius"
         label="Nastav si okruh, který tě zajímá."
-        hint="Uvidíš příspěvky sousedů v tomto okruhu."
+        hint={
+          laterEditNote
+            ? "Uvidíš příspěvky sousedů v tomto okruhu. Později ho můžeš kdykoli upravit v profilu."
+            : "Uvidíš příspěvky sousedů v tomto okruhu."
+        }
         value={radiusKm}
         min={MIN_NEIGHBOR_RADIUS_KM}
         max={MAX_NEIGHBOR_RADIUS_KM}
