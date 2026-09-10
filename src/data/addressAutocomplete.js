@@ -118,6 +118,16 @@ export function houseNumberMatches(candidate, filter) {
   return c.startsWith(f);
 }
 
+/** Při psaní č.p. 156 sedí i 1568 — na rozdíl od hotového „12“ vs „120“. */
+export function houseNumberSuggests(candidate, filter) {
+  const c = normalizeHouseNumber(candidate);
+  const f = normalizeHouseNumber(filter);
+  if (!f) return true;
+  if (!c) return false;
+  if (houseNumberMatches(candidate, filter)) return true;
+  return c.startsWith(f);
+}
+
 export function normalizeAddressSearchParts({ street = "", houseNumber = "", city = "", psc = "" } = {}) {
   const parsed = parseStreetAndHouseNumber(street);
   return {
@@ -154,7 +164,7 @@ export function rankAddressSuggestions(items, houseNumber) {
   const matched = [];
   const rest = [];
   for (const item of list) {
-    if (houseNumberMatches(item.houseNumber, filter)) matched.push(item);
+    if (houseNumberSuggests(item.houseNumber, filter)) matched.push(item);
     else rest.push(item);
   }
   matched.sort((a, b) => {
@@ -249,7 +259,9 @@ export async function fetchAddressSuggestions(query, { houseNumber, psc, city, s
     }
   }
 
-  return filterSuggestionsByLocality(rankAddressSuggestions(items, houseNumber), { psc, city }).slice(0, 12);
+  const ranked = filterSuggestionsByLocality(rankAddressSuggestions(items, houseNumber), { psc, city });
+  const houseCount = ranked.filter((item) => item.houseNumber).length;
+  return ranked.slice(0, houseCount > 12 ? 250 : 12);
 }
 
 function pickBestGeocodeHit(results, preferredCity = null) {
@@ -370,6 +382,6 @@ export function createAddressAutocomplete(onResults, onLoading, onError) {
 }
 
 export const ADDRESS_SEARCH_HINT =
-  "Začněte psát ulici a číslo popisné dopište do pole níže. V nabídce jsou jen některá čísla — to vaše najdeme, jakmile ho napíšete.";
+  "Začněte psát ulici — po jejím výběru nabídneme všechna čísla popisná v tomto PSČ.";
 
 export { MIN_QUERY_LENGTH, DEBOUNCE_MS };

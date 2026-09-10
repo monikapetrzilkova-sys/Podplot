@@ -37,6 +37,7 @@ import MyProfilesPanel, {
 } from "./RoleProfileScreens.jsx";
 import ProfilePhotoEditor from "./ProfilePhotoEditor.jsx";
 import LegalPages, { LegalLinksSection } from "./LegalPages.jsx";
+import FeedbackModal from "./FeedbackModal.jsx";
 import HomeAddressForm from "./profile/HomeAddressForm.jsx";
 import {
   LOCATION_DOODLE_ICONS,
@@ -333,6 +334,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
 
   const [photoEditorOpen, setPhotoEditorOpen] = useState(false);
   const [legalPage, setLegalPage] = useState(null);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [editingHomeAddress, setEditingHomeAddress] = useState(false);
   const [editingLocationId, setEditingLocationId] = useState(null);
   const [addingLocation, setAddingLocation] = useState(false);
@@ -1415,7 +1417,8 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
       )}
 
       <div className="mt-4 mb-2">
-        <LegalLinksSection onOpen={setLegalPage} />
+        <LegalLinksSection onOpen={setLegalPage} onFeedback={() => setFeedbackOpen(true)} />
+        <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
       </div>
 
       {ENABLE_DEV_ROLE_SWITCH && showWorkRoleViews && testRoleId !== "soused" && testRoleId !== "urad" && (

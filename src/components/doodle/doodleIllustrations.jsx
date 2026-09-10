@@ -439,6 +439,56 @@ export function DoodleSousedskaAkceScene({ className = "w-full max-w-[320px] h-a
   );
 }
 
+/**
+ * Tip na appku — soused u plotu píše nápad, nad ním žárovka.
+ * Do prázdného místa ve full-page formuláři (stejný jazyk jako Katalog / Sousedé).
+ */
+export function DoodleFeedbackScene({ className = "w-full max-w-[240px] h-auto" }) {
+  return (
+    <svg
+      viewBox="0 0 240 120"
+      fill="none"
+      className={`pp-doodle-characters text-[#3D7A68] ${className}`}
+      aria-hidden
+    >
+      <path
+        {...s}
+        stroke={DOODLE_OLIVE}
+        strokeWidth={1.5}
+        d="M8 104c24-7 48-5 72 2 26 7 46 5 68-2 24-7 46-5 68 3 10 4 18 2 24-1"
+        opacity={0.6}
+      />
+
+      <path {...s} d="M22 98V62l22-18 22 18v36" />
+      <path {...s} d="M36 98V80h16v18" />
+      <path {...s} stroke={DOODLE_OLIVE} d="M28 70h10M28 78h8" strokeWidth={1.35} opacity={0.5} />
+
+      <path
+        {...s}
+        d="M86 98V72M83.4 74L86 64L88.6 74M94 98V70M91.4 72L94 62L96.6 72M102 98V68M99.4 70L102 60L104.6 70M110 98V70M107.4 72L110 62L112.6 72"
+      />
+      <path {...s} d="M84 78h28M84 88h28" />
+
+      <circle cx="148" cy="48" r="7" {...s} />
+      <path {...s} d="M148 55v22M148 64l-10 8M148 64l12 2" />
+      <path {...s} d="M148 77l-5 16M148 77l6 16" />
+
+      <path {...s} d="M160 66h26v20H160z" />
+      <path {...s} stroke={DOODLE_OLIVE} d="M166 74h14M166 80h10" strokeWidth={1.3} opacity={0.65} />
+
+      <path
+        {...s}
+        stroke={DOODLE_OLIVE}
+        d="M176 28c-7 0-12 5.2-12 11 0 4.2 2.2 7.8 5.6 9.8V54c0 .8.6 1.4 1.4 1.4h10c.8 0 1.4-.6 1.4-1.4v-5.2c3.4-2 5.6-5.6 5.6-9.8 0-5.8-5-11-12-11z"
+      />
+      <path {...s} stroke={DOODLE_OLIVE} d="M171 58h10M172.5 62h7" strokeWidth={1.35} opacity={0.7} />
+      <path {...s} stroke={DOODLE_OLIVE} d="M188 22l4-6M196 30l7-2M164 22l-4-6M156 30l-7-2" strokeWidth={1.3} opacity={0.55} />
+
+      <DoodleSun cx={214} cy={22} r={6.4} />
+    </svg>
+  );
+}
+
 export const DOODLE_EMPTY_ILLUSTRATIONS = {
   chat: DoodleEmptyChat,
   hands: DoodleEmptyHands,

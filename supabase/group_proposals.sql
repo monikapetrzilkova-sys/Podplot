@@ -33,14 +33,4 @@ create table if not exists public.group_proposal_votes (
 alter table public.group_proposals enable row level security;
 alter table public.group_proposal_votes enable row level security;
 
-drop policy if exists "group_proposals_select_public" on public.group_proposals;
-drop policy if exists "group_proposals_insert_public" on public.group_proposals;
-drop policy if exists "group_proposals_update_public" on public.group_proposals;
-drop policy if exists "group_proposal_votes_select_public" on public.group_proposal_votes;
-drop policy if exists "group_proposal_votes_insert_public" on public.group_proposal_votes;
-
-create policy "group_proposals_select_public" on public.group_proposals for select using (true);
-create policy "group_proposals_insert_public" on public.group_proposals for insert with check (true);
-create policy "group_proposals_update_public" on public.group_proposals for update using (true) with check (true);
-create policy "group_proposal_votes_select_public" on public.group_proposal_votes for select using (true);
-create policy "group_proposal_votes_insert_public" on public.group_proposal_votes for insert with check (true);
+-- Politiky: spusť supabase/rls_secure.sql

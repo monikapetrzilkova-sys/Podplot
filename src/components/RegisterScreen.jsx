@@ -22,13 +22,15 @@ import { useApp } from "../context/AppContext.jsx";
 import AccountTypeIcon from "./AccountTypeIcon.jsx";
 import { BUSINESS_SUBTYPE_DOODLE_ICONS, DoodleSousedIcon } from "./doodle/doodleIcons.jsx";
 import CraftCategoryPicker from "./CraftCategoryPicker.jsx";
-import InstitutionAutocomplete from "./InstitutionAutocomplete.jsx";
+import OfficeByPscPicker from "./OfficeByPscPicker.jsx";
 import {
   verifyWorkEmailForInstitution,
   lookupMunicipalityEmailDomain,
 } from "../data/institutions/index.js";
 import { EMAIL_TAKEN_CODE, EMAIL_TAKEN_MESSAGE, MIN_PASSWORD_LENGTH, validatePassword } from "../data/authApi.js";
 import { readRegisterIntent, clearRegisterIntent } from "../data/registrationIntent.js";
+import { lookupCompanyByIco, isValidIco, normalizeIco } from "../data/aresLookup.js";
+import { findOrgMembers } from "../data/orgMembers.js";
 import PasswordField from "./PasswordField.jsx";
 
 const AUTH_INPUT =
@@ -78,6 +80,12 @@ export default function RegisterScreen() {
   const [selectedInstitution, setSelectedInstitution] = useState(null);
   const [municipalityLookup, setMunicipalityLookup] = useState(null);
   const [municipalityLookupBusy, setMunicipalityLookupBusy] = useState(false);
+  const [regStep, setRegStep] = useState("type");
+  const [contactName, setContactName] = useState("");
+  const [ico, setIco] = useState("");
+  const [icoBusy, setIcoBusy] = useState(false);
+  const [icoError, setIcoError] = useState("");
+  const [orgPeers, setOrgPeers] = useState([]);
 
   const selectedType = getAccountType(accountType);
   const registrationFields = getRegistrationFields(accountType, businessSubtype);
@@ -103,6 +111,7 @@ export default function RegisterScreen() {
     if (!intent) return;
     setAuthMode("register");
     setAccountType(intent.accountType);
+    setRegStep("form");
     if (intent.notice) setLinkNotice(intent.notice);
     clearRegisterIntent();
   }, []);
@@ -133,6 +142,63 @@ export default function RegisterScreen() {
       cancelled = true;
     };
   }, [isUrad, selectedInstitution?.id]);
+
+  useEffect(() => {
+    if (accountType !== "podnik") {
+      setIcoError("");
+      return undefined;
+    }
+    const digits = ico.replace(/\D/g, "");
+    if (digits.length !== 8) {
+      setIcoError("");
+      return undefined;
+    }
+    if (!isValidIco(digits)) {
+      setIcoError("IČO nemá platný kontrolní součet.");
+      return undefined;
+    }
+    let cancelled = false;
+    setIcoBusy(true);
+    lookupCompanyByIco(digits).then((result) => {
+      if (cancelled) return;
+      setIcoBusy(false);
+      if (!result.ok) {
+        setIcoError(result.error);
+        return;
+      }
+      setIcoError("");
+      const company = result.company;
+      if (company.name) setName(company.name);
+      if (company.psc) setPsc(company.psc);
+      if (company.city) setCity(company.city);
+      if (company.street) setStreet(company.street);
+      if (company.houseNumber) setHouseNumber(company.houseNumber);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [accountType, ico]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      if (isUrad && selectedInstitution?.id) {
+        const rows = await findOrgMembers({ institutionId: selectedInstitution.id });
+        if (!cancelled) setOrgPeers(rows);
+        return;
+      }
+      if (accountType === "podnik" && ico.replace(/\D/g, "").length === 8) {
+        const rows = await findOrgMembers({ businessIco: ico });
+        if (!cancelled) setOrgPeers(rows);
+        return;
+      }
+      if (!cancelled) setOrgPeers([]);
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [isUrad, selectedInstitution?.id, accountType, ico]);
 
   useEffect(() => {
     if (!selectedInstitution) return;
@@ -166,14 +232,41 @@ export default function RegisterScreen() {
     setEmailTaken(false);
 
     const emailResult = validateEmail(email);
-    const addressResult = validateAddressFields({ street, houseNumber, psc, city });
+    const officeAddress =
+      isUrad && selectedInstitution
+        ? selectedInstitution.seatAddress ||
+          formatFullAddress({
+            street: street || selectedInstitution.seatCity || selectedInstitution.name,
+            houseNumber: houseNumber || "1",
+            psc: selectedInstitution.psc || psc,
+            city: selectedInstitution.seatCity || city,
+          })
+        : null;
+    const addressResult = officeAddress
+      ? { valid: true, errors: {} }
+      : validateAddressFields({ street, houseNumber, psc, city });
     const pwdCheck = validatePassword(password, passwordConfirm);
 
     setEmailError(emailResult.valid ? "" : emailResult.error);
     setFieldErrors(addressResult.errors);
 
+    if (accountType === "podnik") {
+      const digits = ico.replace(/\D/g, "");
+      if (!isValidIco(digits)) {
+        setSubmitError("Zadej platné IČO — podle něj ověříme podnik v ARES.");
+        return;
+      }
+    }
+
+    if (isUrad || accountType === "podnik") {
+      if (!contactName.trim()) {
+        setSubmitError("Vyplň jméno člověka, který bude účet spravovat.");
+        return;
+      }
+    }
+
     if (!name.trim()) {
-      setSubmitError("Vyplň prosím jméno.");
+      setSubmitError(isUrad || accountType === "podnik" ? "Chybí název úřadu / podniku." : "Vyplň prosím jméno.");
       return;
     }
     if (!emailResult.valid) return;
@@ -219,7 +312,7 @@ export default function RegisterScreen() {
       }
     }
 
-    const fullAddress = formatFullAddress({ street, houseNumber, psc, city });
+    const fullAddress = officeAddress || formatFullAddress({ street, houseNumber, psc, city });
     const keywordList = customKeywords
       .split(/[,;]+/)
       .map((k) => k.trim())
@@ -235,10 +328,10 @@ export default function RegisterScreen() {
         accountType,
         businessSubtype: accountType === "podnik" ? businessSubtype : null,
         geo: {
-          city: city.trim(),
+          city: (selectedInstitution?.seatCity || city).trim(),
           street: street.trim(),
           houseNumber: houseNumber.trim(),
-          psc: pscDigits(psc),
+          psc: pscDigits(selectedInstitution?.psc || psc),
           lat: areaPin?.lat ?? null,
           lng: areaPin?.lng ?? areaPin?.lon ?? null,
         },
@@ -252,6 +345,8 @@ export default function RegisterScreen() {
         serviceKeywords: isMobilniCraft ? keywordList : [],
         institutionId: isUrad ? selectedInstitution?.id ?? null : null,
         institutionRole: isUrad ? "admin" : null,
+        contactName: isUrad || accountType === "podnik" ? contactName.trim() : "",
+        businessIco: accountType === "podnik" ? normalizeIco(ico) : null,
       });
       if (result?.code === EMAIL_TAKEN_CODE) {
         setEmailTaken(true);
@@ -461,6 +556,93 @@ export default function RegisterScreen() {
     );
   }
 
+  if (regStep === "type") {
+    return (
+      <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center px-4 py-8">
+        <div className="w-full max-w-md">
+          <div className="flex items-center justify-center gap-3 mb-8">
+            <PodplotLogo size={48} />
+            <span className="text-2xl font-bold text-stone-900">Podplot</span>
+          </div>
+          <div className="bg-white border border-stone-200 rounded-2xl p-6 shadow-sm">
+            <h1 className="text-lg font-bold text-stone-900 mb-1">Kdo bude účet používat?</h1>
+            <p className="text-sm text-stone-500 mb-4">
+              Typ zvol hned — podle něj se změní povinné údaje. Už máš účet?{" "}
+              <button type="button" className="text-teal-800 font-semibold" onClick={() => switchAuthMode("login")}>
+                Přihlaš se
+              </button>
+            </p>
+            <div className="space-y-2">
+              {ACCOUNT_TYPE_LIST.map((type) => (
+                <button
+                  key={type.id}
+                  type="button"
+                  onClick={() => {
+                    setAccountType(type.id);
+                    if (type.id !== "podnik") setBusinessSubtype("fyzicka");
+                  }}
+                  className={`w-full text-left p-3.5 rounded-2xl border transition-colors ${
+                    accountType === type.id
+                      ? "border-teal-700 bg-teal-50 ring-1 ring-teal-700"
+                      : "border-stone-200 hover:border-stone-300"
+                  }`}
+                >
+                  <span className="text-sm font-semibold text-stone-800 inline-flex items-center gap-2">
+                    <span className="w-8 h-8 rounded-xl bg-[#F1F6F5] border border-[#C5DDD4] text-[#3D7A68] inline-flex items-center justify-center shrink-0">
+                      <AccountTypeIcon accountType={type.id} className="w-4 h-4" />
+                    </span>
+                    {type.label}
+                    {type.id === "soused" ? (
+                      <span className="text-[10px] font-bold uppercase tracking-wide text-[#3D7A68] bg-[#E8F3EF] px-1.5 py-0.5 rounded-md">
+                        doporučeno
+                      </span>
+                    ) : null}
+                  </span>
+                  <p className="text-xs text-stone-500 mt-0.5">{type.hint}</p>
+                </button>
+              ))}
+            </div>
+            {accountType === "podnik" ? (
+              <div className="mt-4 space-y-2">
+                <p className="text-xs font-semibold text-stone-600">Jak podnik funguje?</p>
+                {Object.values(BUSINESS_SUBTYPES).map((sub) => (
+                  <button
+                    key={sub.id}
+                    type="button"
+                    onClick={() => setBusinessSubtype(sub.id)}
+                    className={`w-full text-left p-3 rounded-2xl border transition-colors ${
+                      businessSubtype === sub.id
+                        ? "border-[#3D7A68] bg-[#F1F6F5] ring-1 ring-[#3D7A68]"
+                        : "border-stone-200 hover:border-stone-300"
+                    }`}
+                  >
+                    <span className="text-sm font-semibold text-stone-800 inline-flex items-center gap-2">
+                      <span className="w-8 h-8 rounded-xl bg-white border border-[#C5DDD4] text-[#3D7A68] inline-flex items-center justify-center shrink-0">
+                        {(() => {
+                          const SubIcon = BUSINESS_SUBTYPE_DOODLE_ICONS[sub.id];
+                          return SubIcon ? <SubIcon className="w-4 h-4" /> : null;
+                        })()}
+                      </span>
+                      {sub.label}
+                    </span>
+                    <p className="text-xs text-stone-500 mt-0.5">{sub.hint}</p>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => setRegStep("form")}
+              className="mt-5 w-full py-3.5 bg-teal-700 text-white font-semibold rounded-2xl hover:bg-teal-800"
+            >
+              Pokračovat
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
@@ -470,8 +652,21 @@ export default function RegisterScreen() {
         </div>
 
         <div className="bg-white border border-stone-200 rounded-2xl p-6 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setRegStep("type")}
+            className="text-xs font-semibold text-teal-800 mb-3"
+          >
+            ← Změnit typ účtu ({selectedType.label})
+          </button>
           <h1 className="text-lg font-bold text-stone-900 mb-1">Vytvoř si účet</h1>
-          <p className="text-sm text-stone-500 mb-4">Registrace je povinná. Účet zůstane uložený v tomto telefonu i po aktualizaci.</p>
+          <p className="text-sm text-stone-500 mb-4">
+            {isUrad
+              ? "Úřad vyberu z katalogu po PSČ. E-mail musí být z oficiálního webu obce. Spravovat ho může víc lidí."
+              : accountType === "podnik"
+                ? "Podnik ověříme podle IČO v ARES. Firemní e-mail účet rovnou ověří; osobní e-mail stačí na start, bez odznaku."
+                : "Registrace je povinná. Účet zůstane uložený v tomto telefonu i po aktualizaci."}
+          </p>
           {linkNotice ? (
             <p className="text-[12px] font-medium text-[#1B4D3E] bg-[#E8F3EF] border border-[#C5DDD4] rounded-xl px-3 py-2 mb-4 leading-snug">
               {linkNotice}
@@ -488,21 +683,119 @@ export default function RegisterScreen() {
           </p>
 
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-stone-600 mb-1.5">
-                {registrationFields.nameLabel}
-                <ReqStar />
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={registrationFields.namePlaceholder}
+            {isUrad ? (
+              <OfficeByPscPicker
+                psc={psc}
+                onPscChange={setPsc}
+                value={selectedInstitution}
+                onChange={setSelectedInstitution}
                 required
-                aria-required="true"
-                className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-700/30"
               />
-            </div>
+            ) : null}
+
+            {isUrad && selectedInstitution ? (
+              <div className="space-y-1.5">
+                {municipalityLookupBusy ? (
+                  <p className="text-xs rounded-xl px-3 py-2 bg-stone-50 text-stone-600 border border-stone-200">
+                    Dohledávám oficiální web obce a e-mailovou doménu…
+                  </p>
+                ) : null}
+                {!municipalityLookupBusy && municipalityLookup?.ok ? (
+                  <p className="text-xs rounded-xl px-3 py-2 bg-teal-50 text-teal-900 border border-teal-200 leading-snug">
+                    Oficiální doména z webu obce
+                    {municipalityLookup.website ? (
+                      <>
+                        {" "}
+                        (<span className="font-semibold break-all">{municipalityLookup.website}</span>)
+                      </>
+                    ) : null}
+                    : registrace jen na @{municipalityLookup.domain}.
+                  </p>
+                ) : null}
+                {!municipalityLookupBusy && municipalityLookup && !municipalityLookup.ok ? (
+                  <p className="text-xs rounded-xl px-3 py-2 bg-amber-50 text-amber-900 border border-amber-200">
+                    Oficiální e-mailovou doménu obce se nepodařilo dohledat. Zkus jiný úřad v seznamu.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
+            {accountType === "podnik" ? (
+              <div>
+                <label className="block text-xs font-semibold text-stone-600 mb-1.5">
+                  IČO
+                  <ReqStar />
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={ico}
+                  onChange={(e) => setIco(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                  placeholder="12345678"
+                  maxLength={8}
+                  className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-700/30"
+                />
+                {icoBusy ? <p className="mt-1.5 text-xs text-stone-500">Ověřuji v ARES…</p> : null}
+                {icoError ? <p className="mt-1.5 text-xs text-red-600">{icoError}</p> : null}
+                {!icoError && !icoBusy && name && ico.replace(/\D/g, "").length === 8 ? (
+                  <p className="mt-1.5 text-xs text-teal-800">Nalezeno v ARES: {name}</p>
+                ) : null}
+                <p className="mt-1 text-[10px] text-stone-400 leading-relaxed">
+                  IČO je veřejné. Podle něj poznáme firmu a umožníme, aby stejný podnik spravovalo víc lidí.
+                </p>
+              </div>
+            ) : null}
+
+            {isUrad || accountType === "podnik" ? (
+              <div>
+                <label className="block text-xs font-semibold text-stone-600 mb-1.5">
+                  Tvoje jméno (správce)
+                  <ReqStar />
+                </label>
+                <input
+                  type="text"
+                  value={contactName}
+                  onChange={(e) => setContactName(e.target.value)}
+                  placeholder="Jan Novák"
+                  className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-700/30"
+                />
+                <p className="mt-1 text-[10px] text-stone-400">
+                  Účet je společný. Další kolega se zaregistruje stejným způsobem a připojí se k vám.
+                </p>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-xs font-semibold text-stone-600 mb-1.5">
+                  {registrationFields.nameLabel}
+                  <ReqStar />
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={registrationFields.namePlaceholder}
+                  required
+                  aria-required="true"
+                  className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-700/30"
+                />
+              </div>
+            )}
+
+            {accountType === "podnik" ? (
+              <div>
+                <label className="block text-xs font-semibold text-stone-600 mb-1.5">
+                  {registrationFields.nameLabel}
+                  <ReqStar />
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={registrationFields.namePlaceholder}
+                  className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-700/30"
+                />
+              </div>
+            ) : null}
 
             <div>
               <label className="block text-xs font-semibold text-stone-600 mb-1.5">
@@ -521,13 +814,25 @@ export default function RegisterScreen() {
                 onBlur={() => {
                   if (email.trim()) setEmailError(validateEmail(email).error || "");
                 }}
-                placeholder={canVerifyAccountType(accountType) ? "info@obec.cz" : "vas@email.cz"}
+                placeholder={
+                  isUrad && municipalityLookup?.domain
+                    ? `podatelna@${municipalityLookup.domain}`
+                    : canVerifyAccountType(accountType)
+                      ? "info@firma.cz"
+                      : "vas@email.cz"
+                }
+                disabled={isUrad && !municipalityLookup?.ok}
                 required
                 aria-required="true"
-                className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-700/30 ${
+                className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-700/30 disabled:bg-stone-50 disabled:text-stone-400 ${
                   emailError ? "border-red-300 bg-red-50/50" : "border-stone-200"
                 }`}
               />
+              {isUrad && !municipalityLookup?.ok && !emailError ? (
+                <p className="mt-1.5 text-[11px] text-stone-400">
+                  Nejdřív vyber úřad — e-mail musí být z jeho oficiální, veřejně dohledatelné domény.
+                </p>
+              ) : null}
               {emailError && <p className="mt-1.5 text-xs text-red-600">{emailError}</p>}
               {!emailError && isUrad && selectedInstitution && (
                 <div className="mt-2 space-y-1.5">
@@ -631,49 +936,74 @@ export default function RegisterScreen() {
               required
             />
 
-            {isUrad ? (
-              <InstitutionAutocomplete
-                value={selectedInstitution}
-                onChange={setSelectedInstitution}
-                required
-              />
+            {isUrad && selectedInstitution ? (
+              <div className="text-xs rounded-xl px-3 py-2.5 bg-stone-50 border border-stone-200 text-stone-600 leading-snug">
+                <p className="font-semibold text-stone-800">Sídlo úřadu</p>
+                <p className="mt-0.5">{selectedInstitution.seatAddress || selectedInstitution.seatCity}</p>
+              </div>
             ) : null}
 
-            <StructuredAddressFields
-              street={street}
-              houseNumber={houseNumber}
-              psc={psc}
-              city={city}
-              onStreetChange={setStreet}
-              onHouseNumberChange={setHouseNumber}
-              onPscChange={setPsc}
-              onCityChange={setCity}
-              onSuggestionPick={(item) => {
-                if (item.lat != null && (item.lon != null || item.lng != null)) {
-                  const lat = Number(item.lat);
-                  const lng = Number(item.lon ?? item.lng);
-                  setAreaPin(buildMapPickResult(lat, lng, { lat, lng }, radiusKm));
-                }
-              }}
-              fieldErrors={fieldErrors}
-              onClearError={(key) => setFieldErrors((prev) => ({ ...prev, [key]: "" }))}
-              onFieldError={(key, message) => setFieldErrors((prev) => ({ ...prev, [key]: message }))}
-              legend={registrationFields.addressLabel}
-              required
-            />
+            {!isUrad ? (
+              <>
+                <StructuredAddressFields
+                  street={street}
+                  houseNumber={houseNumber}
+                  psc={psc}
+                  city={city}
+                  onStreetChange={setStreet}
+                  onHouseNumberChange={setHouseNumber}
+                  onPscChange={setPsc}
+                  onCityChange={setCity}
+                  onSuggestionPick={(item) => {
+                    if (item.lat != null && (item.lon != null || item.lng != null)) {
+                      const lat = Number(item.lat);
+                      const lng = Number(item.lon ?? item.lng);
+                      setAreaPin(buildMapPickResult(lat, lng, { lat, lng }, radiusKm));
+                    }
+                  }}
+                  fieldErrors={fieldErrors}
+                  onClearError={(key) => setFieldErrors((prev) => ({ ...prev, [key]: "" }))}
+                  onFieldError={(key, message) => setFieldErrors((prev) => ({ ...prev, [key]: message }))}
+                  legend={registrationFields.addressLabel}
+                  required
+                />
 
-            <LocalityRadiusPreview
-              street={street}
-              houseNumber={houseNumber}
-              psc={psc}
-              city={city}
-              radiusKm={radiusKm}
-              onRadiusChange={setRadiusKm}
-              pin={areaPin}
-              onPinChange={setAreaPin}
-              laterEditNote
-            />
+                <LocalityRadiusPreview
+                  street={street}
+                  houseNumber={houseNumber}
+                  psc={psc}
+                  city={city}
+                  radiusKm={radiusKm}
+                  onRadiusChange={setRadiusKm}
+                  pin={areaPin}
+                  onPinChange={setAreaPin}
+                  laterEditNote
+                />
+              </>
+            ) : null}
 
+            {orgPeers.length > 0 ? (
+              <div className="text-xs text-teal-900 bg-teal-50 border border-teal-200 rounded-xl px-3 py-2.5 leading-snug space-y-1">
+                <p className="font-semibold">
+                  Tento {isUrad ? "úřad" : "podnik"} už spravuje{" "}
+                  {orgPeers.length === 1 ? "1 člověk" : `${orgPeers.length} lidí`}.
+                </p>
+                <p>
+                  {orgPeers
+                    .map((peer) => peer.contact_name || peer.name)
+                    .filter(Boolean)
+                    .slice(0, 6)
+                    .join(", ")}
+                  . Připojíš se jako další správce — uvidíte se navzájem ve správě týmu.
+                </p>
+              </div>
+            ) : isUrad || accountType === "podnik" ? (
+              <p className="text-[11px] text-stone-400 leading-relaxed">
+                Účet je společný. Další kolega se zaregistruje stejným {isUrad ? "úřadem a oficiálním e-mailem" : "IČO"} a uvidíte se ve správě týmu.
+              </p>
+            ) : null}
+
+            {accountType === "soused" ? (
             <fieldset className="space-y-3 pt-1 border-t border-stone-100">
               <legend className="text-xs font-semibold text-stone-600 mb-1">Rozlišení u stejného jména (volitelné)</legend>
               <label className="flex items-start gap-3 cursor-pointer p-3 rounded-xl border border-stone-200 bg-stone-50/50">
@@ -711,112 +1041,7 @@ export default function RegisterScreen() {
                 </p>
               )}
             </fieldset>
-
-            <div>
-              <label className="block text-xs font-semibold text-stone-600 mb-2">
-                Typ účtu
-                <ReqStar />
-              </label>
-              <p className="text-[11px] text-stone-500 mb-2 leading-relaxed">
-                Většina lidí volí Soused — ostatní typy až když máš podnik nebo úřad.
-              </p>
-              <div className="space-y-2">
-                {ACCOUNT_TYPE_LIST.filter((t) => t.id === "soused").map((type) => (
-                  <button
-                    key={type.id}
-                    type="button"
-                    onClick={() => {
-                      setAccountType(type.id);
-                      setBusinessSubtype("fyzicka");
-                    }}
-                    className={`w-full text-left p-3.5 rounded-2xl border transition-colors ${
-                      accountType === type.id
-                        ? "border-teal-700 bg-teal-50 ring-1 ring-teal-700"
-                        : "border-stone-200 hover:border-stone-300"
-                    }`}
-                  >
-                    <span className="text-sm font-semibold text-stone-800 inline-flex items-center gap-2">
-                      <span className="w-8 h-8 rounded-xl bg-[#F1F6F5] border border-[#C5DDD4] text-[#3D7A68] inline-flex items-center justify-center shrink-0">
-                        <AccountTypeIcon accountType={type.id} className="w-4 h-4" />
-                      </span>
-                      {type.label}
-                      <span className="text-[10px] font-bold uppercase tracking-wide text-[#3D7A68] bg-[#E8F3EF] px-1.5 py-0.5 rounded-md">
-                        doporučeno
-                      </span>
-                    </span>
-                    <p className="text-xs text-stone-500 mt-0.5">{type.hint}</p>
-                  </button>
-                ))}
-                <details
-                  className="rounded-2xl border border-stone-200 open:border-[#C5DDD4] open:bg-[#FAFCFA]"
-                  open={accountType !== "soused"}
-                >
-                  <summary className="cursor-pointer list-none p-3 text-xs font-semibold text-stone-600 flex items-center justify-between">
-                    Jiné typy (podnik, úřad…)
-                    <span className="text-stone-400 font-normal">rozbalit</span>
-                  </summary>
-                  <div className="px-2 pb-2 space-y-2">
-                    {ACCOUNT_TYPE_LIST.filter((t) => t.id !== "soused").map((type) => (
-                      <button
-                        key={type.id}
-                        type="button"
-                        onClick={() => {
-                          setAccountType(type.id);
-                          if (type.id !== "podnik") setBusinessSubtype("fyzicka");
-                        }}
-                        className={`w-full text-left p-3 rounded-2xl border transition-colors ${
-                          accountType === type.id
-                            ? "border-teal-700 bg-teal-50 ring-1 ring-teal-700"
-                            : "border-stone-200 hover:border-stone-300 bg-white"
-                        }`}
-                      >
-                        <span className="text-sm font-semibold text-stone-800 inline-flex items-center gap-2">
-                          <span className="w-8 h-8 rounded-xl bg-[#F1F6F5] border border-[#C5DDD4] text-[#3D7A68] inline-flex items-center justify-center shrink-0">
-                            <AccountTypeIcon accountType={type.id} className="w-4 h-4" />
-                          </span>
-                          {type.label}
-                        </span>
-                        <p className="text-xs text-stone-500 mt-0.5">{type.hint}</p>
-                      </button>
-                    ))}
-                  </div>
-                </details>
-              </div>
-            </div>
-
-            {accountType === "podnik" && (
-              <div>
-                <label className="block text-xs font-semibold text-stone-600 mb-2">
-                  Formát fungování
-                  <ReqStar />
-                </label>
-                <div className="space-y-2">
-                  {Object.values(BUSINESS_SUBTYPES).map((sub) => (
-                    <button
-                      key={sub.id}
-                      type="button"
-                      onClick={() => setBusinessSubtype(sub.id)}
-                      className={`w-full text-left p-3 rounded-2xl border transition-colors ${
-                        businessSubtype === sub.id
-                          ? "border-[#3D7A68] bg-[#F1F6F5] ring-1 ring-[#3D7A68]"
-                          : "border-stone-200 hover:border-stone-300"
-                      }`}
-                    >
-                      <span className="text-sm font-semibold text-stone-800 inline-flex items-center gap-2">
-                        <span className="w-8 h-8 rounded-xl bg-white border border-[#C5DDD4] text-[#3D7A68] inline-flex items-center justify-center shrink-0">
-                          {(() => {
-                            const SubIcon = BUSINESS_SUBTYPE_DOODLE_ICONS[sub.id];
-                            return SubIcon ? <SubIcon className="w-4 h-4" /> : null;
-                          })()}
-                        </span>
-                        {sub.label}
-                      </span>
-                      <p className="text-xs text-stone-500 mt-0.5">{sub.hint}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            ) : null}
 
             {isMobilniCraft && (
               <div className="space-y-3 rounded-2xl border border-[#C5DDD4] bg-[#F7FAF9] p-3">

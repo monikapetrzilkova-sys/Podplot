@@ -22,13 +22,6 @@ create index if not exists direct_messages_conversation_idx
   on public.direct_messages (conversation_id, created_at);
 
 alter table public.direct_messages enable row level security;
-
-drop policy if exists "direct_messages_select_public" on public.direct_messages;
-drop policy if exists "direct_messages_insert_public" on public.direct_messages;
-drop policy if exists "direct_messages_update_public" on public.direct_messages;
-
-create policy "direct_messages_select_public" on public.direct_messages for select using (true);
-create policy "direct_messages_insert_public" on public.direct_messages for insert with check (true);
-create policy "direct_messages_update_public" on public.direct_messages for update using (true) with check (true);
+-- Politiky: spusť supabase/rls_secure.sql
 
 -- Volitelně Realtime: Database → Publications → zapni tabulku direct_messages

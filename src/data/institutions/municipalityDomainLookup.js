@@ -57,9 +57,30 @@ export function resolveMunicipalityEmailDomain(institution) {
 }
 
 /**
- * „Dohledání na webu obce“ — krátká async fáze + výsledek pro UI registrace.
+ * Dohledání oficiální domény: nejdřív registr / web úřadu, jinak veřejné zdroje.
  */
 export async function lookupMunicipalityEmailDomain(institution) {
-  await new Promise((r) => setTimeout(r, 320));
-  return resolveMunicipalityEmailDomain(institution);
+  const local = resolveMunicipalityEmailDomain(institution);
+  if (local.ok) return local;
+  try {
+    const params = new URLSearchParams();
+    if (institution?.officialWebsite) params.set("website", institution.officialWebsite);
+    if (institution?.psc) params.set("psc", institution.psc);
+    if (institution?.seatCity) params.set("city", institution.seatCity);
+    if (institution?.name) params.set("name", institution.name);
+    if (institution?.ico) params.set("ico", institution.ico);
+    const res = await fetch(`/api/municipality-domain?${params}`);
+    const data = await res.json();
+    if (data?.ok && data.domain && !isPublicEmailDomain(data.domain)) {
+      return {
+        ok: true,
+        domain: normalizeEmailDomain(data.domain),
+        website: data.website || local.website,
+        source: data.source || "public_lookup",
+      };
+    }
+  } catch {
+    /* zůstane lokální výsledek */
+  }
+  return local;
 }

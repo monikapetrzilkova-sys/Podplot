@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { searchInstitutions, INSTITUTION_KINDS } from "../data/institutions/index.js";
+import { searchInstitutions, listInstitutionsByPsc, INSTITUTION_KINDS } from "../data/institutions/index.js";
 
 /**
  * Autocomplete výběru obecního / městského úřadu z číselníku.
@@ -9,6 +9,7 @@ export default function InstitutionAutocomplete({
   onChange,
   disabled = false,
   required = false,
+  pscFilter = "",
   placeholder = "Hledejte úřad — název, PSČ nebo obec…",
 }) {
   const listId = useId();
@@ -24,23 +25,30 @@ export default function InstitutionAutocomplete({
 
   useEffect(() => {
     const q = query.trim();
+    const pscDigits = String(pscFilter ?? "").replace(/\D/g, "");
     if (value && q === value.name) {
-      setResults([]);
-      return undefined;
-    }
-    if (q.length < 2) {
       setResults([]);
       return undefined;
     }
 
     let cancelled = false;
-    setLoading(true);
     const t = window.setTimeout(() => {
-      searchInstitutions(q, { limit: 10 }).then((rows) => {
+      setLoading(true);
+      const request =
+        pscDigits.length === 5 && q.length < 2
+          ? listInstitutionsByPsc(pscDigits, { limit: 20 })
+          : q.length >= 2
+            ? searchInstitutions(q, { limit: 10 })
+            : Promise.resolve([]);
+      request.then((rows) => {
         if (cancelled) return;
-        setResults(rows);
+        const filtered =
+          pscDigits.length === 5 && q.length >= 2
+            ? rows.filter((row) => row.psc === pscDigits)
+            : rows;
+        setResults(filtered);
         setLoading(false);
-        setOpen(true);
+        setOpen(filtered.length > 0 || q.length >= 2 || pscDigits.length === 5);
       });
     }, 180);
 
@@ -48,7 +56,7 @@ export default function InstitutionAutocomplete({
       cancelled = true;
       window.clearTimeout(t);
     };
-  }, [query, value]);
+  }, [query, value, pscFilter]);
 
   useEffect(() => {
     const onDoc = (e) => {
@@ -111,7 +119,9 @@ export default function InstitutionAutocomplete({
         ) : null}
       </div>
       <p className="mt-1 text-[10px] text-stone-400 leading-relaxed">
-        Jen obecní a městské úřady (ne stavební úřady ani jiné orgány státní správy).
+        {String(pscFilter ?? "").replace(/\D/g, "").length === 5
+          ? "Nabízím úřady v zadaném PSČ. Můžeš i přepsat název."
+          : "Nejdřív zadej PSČ výše — nabídnu úřady v obci. Můžeš hledat i názvem."}
       </p>
 
       {open && (loading || results.length > 0) ? (

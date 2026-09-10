@@ -1,4 +1,5 @@
 import { DoodleSousedstviScene } from "./doodle/doodleIllustrations.jsx";
+import { FEEDBACK_TITLE } from "../data/appFeedback.js";
 
 const PAGES = {
   terms: {
@@ -25,7 +26,7 @@ const PAGES = {
     content: [
       "Podplot propojuje sousedy, místní podnikatele a instituce v jedné aplikaci.",
       "Verze: 1.0 (demo)",
-      "Kontakt: podpora@podplot.cz",
+      "Kontakt: podpora@podplot.cz · nápady na zlepšení: tipy@podplot.cz",
       "Podplot — sousedská síť pro tvůj kousek světa.",
     ],
   },
@@ -119,7 +120,7 @@ export default function LegalPages({ page }) {
   );
 }
 
-export function LegalLinksSection({ onOpen }) {
+export function LegalLinksSection({ onOpen, onFeedback }) {
   const links = [
     { id: "story", label: "Příběh" },
     { id: "terms", label: "Obchodní podmínky" },
@@ -131,6 +132,16 @@ export function LegalLinksSection({ onOpen }) {
     <section className="pp-card p-4">
       <h3 className="pp-text-title mb-3">Podplot</h3>
       <div className="space-y-1">
+        {onFeedback ? (
+          <button
+            type="button"
+            onClick={onFeedback}
+            className="w-full flex items-center justify-between py-2.5 px-1 text-left pp-text-body hover:text-[#3D7A68] transition-colors border-b border-stone-100"
+          >
+            {FEEDBACK_TITLE}
+            <span className="pp-text-meta">›</span>
+          </button>
+        ) : null}
         {links.map((link) => (
           <button
             key={link.id}

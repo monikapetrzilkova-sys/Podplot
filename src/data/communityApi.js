@@ -119,13 +119,21 @@ export async function upsertRemoteProfile(user) {
     municipality: user.geo?.city ?? user.location ?? null,
     updated_at: new Date().toISOString(),
   };
+  if (user.institutionId) payload.institution_id = user.institutionId;
+  if (user.businessIco) payload.business_ico = user.businessIco;
+  if (user.orgRole) payload.org_role = user.orgRole;
+  if (user.contactName) payload.contact_name = user.contactName;
   // volitelný sloupec — pokud v DB ještě není, zkusíme bez něj
   if (user.profilePhoto) {
     payload.profile_photo = user.profilePhoto;
   }
   let { error } = await sb.from("profiles").upsert(payload, { onConflict: "id" });
-  if (error && String(error.message || "").includes("profile_photo")) {
+  if (error && /profile_photo|institution_id|business_ico|org_role|contact_name/.test(String(error.message || ""))) {
     delete payload.profile_photo;
+    delete payload.institution_id;
+    delete payload.business_ico;
+    delete payload.org_role;
+    delete payload.contact_name;
     ({ error } = await sb.from("profiles").upsert(payload, { onConflict: "id" }));
   }
   if (error) {
@@ -184,7 +192,7 @@ export async function fetchRemoteNeighbors({
 
   const { data, error } = await sb
     .from("profiles")
-    .select("*")
+    .select("id, name, initials, municipality, account_type, profile_photo, created_at")
     .order("created_at", { ascending: false })
     .limit(200);
 
@@ -458,6 +466,11 @@ export function profileToAppUser(row, authUser, fallback = {}) {
     accountType,
     initials,
     location: municipality,
+    institutionId: row?.institution_id ?? fallback.institutionId ?? null,
+    businessIco: row?.business_ico ?? fallback.businessIco ?? null,
+    orgRole: row?.org_role ?? fallback.orgRole ?? null,
+    institutionRole: row?.org_role ?? fallback.institutionRole ?? fallback.orgRole ?? null,
+    contactName: row?.contact_name ?? fallback.contactName ?? null,
     geo: {
       ...(fallback.geo ?? {}),
       city: municipality,
@@ -579,7 +592,6 @@ export async function deleteRemotePost(postId, userId = null) {
   const { error } = await query;
   if (!error) return true;
 
-  // Fallback bez author filtru (RLS stejně omezí na vlastní)
   const { error: err2 } = await sb.from("posts").delete().eq("id", postId);
   if (!err2) return true;
 
@@ -749,56 +761,21 @@ export async function fetchRemoteGroupProposals({
     .filter(Boolean);
 }
 
-/** Podpora návrhu — zapíše hlas a zvýší počet (atomicky dle DB stavu). */
+/** Podpora návrhu — hlas přes RLS-safe RPC `cast_group_proposal_vote`. */
 export async function voteRemoteGroupProposal(proposalId, user) {
   if (!proposalId || !user?.id) return null;
   const sb = await ensureSupabase();
   if (!sb) return null;
 
-  const { error: voteErr } = await sb.from("group_proposal_votes").insert({
-    proposal_id: proposalId,
-    voter_id: user.id,
-  });
-  if (voteErr) {
-    // už hlasoval
-    if (String(voteErr.code) === "23505" || /duplicate|unique/i.test(voteErr.message || "")) {
-      return { alreadyVoted: true };
-    }
-    console.warn("[supabase] vote group proposal", voteErr.message);
+  const { data, error } = await sb.rpc("cast_group_proposal_vote", { p_proposal_id: proposalId });
+  if (error) {
+    console.warn("[supabase] vote group proposal", error.message);
     return null;
   }
-
-  const { data: row, error: getErr } = await sb
-    .from("group_proposals")
-    .select("*")
-    .eq("id", proposalId)
-    .maybeSingle();
-  if (getErr || !row) {
-    console.warn("[supabase] read proposal after vote", getErr?.message);
-    return null;
-  }
-
-  const nextVotes = (Number(row.votes) || 0) + 1;
-  const activated = nextVotes >= (Number(row.required) || 5);
-  const { data: updated, error: updErr } = await sb
-    .from("group_proposals")
-    .update({
-      votes: nextVotes,
-      active: activated,
-      status: activated ? "aktivni" : row.status,
-    })
-    .eq("id", proposalId)
-    .select("*")
-    .maybeSingle();
-
-  if (updErr) {
-    console.warn("[supabase] update proposal votes", updErr.message);
-    return null;
-  }
-
-  return rowToGroupProposal(updated ?? { ...row, votes: nextVotes, active: activated }, {
-    voted: true,
-  });
+  if (data?.alreadyVoted) return { alreadyVoted: true };
+  const proposal = data?.proposal;
+  if (!proposal) return null;
+  return rowToGroupProposal(proposal, { voted: true });
 }
 
 /** Realtime nové / aktualizované návrhy skupin */

@@ -1,5 +1,7 @@
 export {
   searchInstitutions,
+  listInstitutionsByPsc,
+  listLocalInstitutionsByPsc,
   getInstitutionById,
   listRegistrableInstitutions,
   verifyWorkEmailForInstitution,

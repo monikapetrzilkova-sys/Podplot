@@ -266,7 +266,9 @@ export default function StructuredAddressFields({
                   onClick={() => applySuggestion(item)}
                   className="w-full text-left px-3 py-2 text-xs text-stone-700 hover:bg-[#E8F3EF] border-b border-stone-100 last:border-0"
                 >
-                  {formatSuggestionAddress(item)}
+                  {item.houseNumber
+                    ? `${item.street} ${item.houseNumber}`.trim()
+                    : formatSuggestionAddress(item)}
                 </button>
               </li>
             ))}

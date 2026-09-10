@@ -17,6 +17,12 @@ import {
   mockNearbyPlaces,
   handleAddressSearch,
 } from "./lib/podplotBackend.mjs";
+import { lookupAresCompany } from "./lib/aresLookup.mjs";
+import {
+  lookupMunicipalityOfficesByPsc,
+  lookupMunicipalityOfficeByIco,
+  lookupOfficialMunicipalityDomain,
+} from "./lib/municipalityLookup.mjs";
 
 const ROOT = fileURLToPath(new URL(".", import.meta.url));
 const PORT = 5173;
@@ -101,6 +107,55 @@ const server = createServer(async (req, res) => {
       } catch {
         res.writeHead(200, { "Content-Type": MIME[".json"] });
         res.end(JSON.stringify({ city: null, psc: `${psc.slice(0, 3)} ${psc.slice(3)}` }));
+      }
+      return;
+    }
+
+    if (url === "/api/ares-lookup") {
+      const ico = new URL(req.url, "http://localhost").searchParams.get("ico") ?? "";
+      try {
+        const data = await lookupAresCompany(ico);
+        jsonResponse(res, data.ok ? 200 : 400, data);
+      } catch (err) {
+        jsonResponse(res, 500, { ok: false, error: err.message || "ARES lookup failed" });
+      }
+      return;
+    }
+
+    if (url === "/api/municipality-offices") {
+      const params = new URL(req.url, "http://localhost").searchParams;
+      const ico = params.get("ico")?.replace(/\D/g, "") ?? "";
+      const psc = params.get("psc")?.replace(/\D/g, "") ?? "";
+      try {
+        if (ico.length === 8) {
+          const office = await lookupMunicipalityOfficeByIco(ico);
+          jsonResponse(res, 200, { ok: Boolean(office), offices: office ? [office] : [] });
+          return;
+        }
+        if (psc.length !== 5) {
+          jsonResponse(res, 400, { ok: false, offices: [], error: "Zadej pětimístné PSČ." });
+          return;
+        }
+        jsonResponse(res, 200, await lookupMunicipalityOfficesByPsc(psc));
+      } catch (err) {
+        jsonResponse(res, 500, { ok: false, offices: [], error: err.message || "Lookup failed" });
+      }
+      return;
+    }
+
+    if (url === "/api/municipality-domain") {
+      const params = new URL(req.url, "http://localhost").searchParams;
+      try {
+        const data = await lookupOfficialMunicipalityDomain({
+          website: params.get("website"),
+          city: params.get("city"),
+          psc: params.get("psc"),
+          name: params.get("name"),
+          ico: params.get("ico"),
+        });
+        jsonResponse(res, data.ok ? 200 : 404, data);
+      } catch (err) {
+        jsonResponse(res, 500, { ok: false, domain: null, error: err.message || "Lookup failed" });
       }
       return;
     }

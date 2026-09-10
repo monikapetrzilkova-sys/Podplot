@@ -33,6 +33,7 @@ import StructuredAddressFields from "./StructuredAddressFields.jsx";
 import { IconMapPin } from "../data/icons.jsx";
 import AccountTypeIcon from "./AccountTypeIcon.jsx";
 import { AddOfficeAccountCard, AddNeighborAccountCard } from "./LinkedAccountCards.jsx";
+import OrgTeamPanel from "./OrgTeamPanel.jsx";
 
 /** Osobní profily uživatele — bez institucionálních účtů (úřad). */
 const PERSONAL_ROLE_IDS = ["soused", "podnik", "remeslnik"];
@@ -850,10 +851,18 @@ function CraftsmanAccountSettings() {
 }
 
 export function CraftsmanRoleView() {
-  const { craftsmanInvoices } = useApp();
+  const { craftsmanInvoices, user } = useApp();
 
   return (
     <div className="space-y-4">
+      {user?.businessIco ? (
+        <OrgTeamPanel
+          businessIco={user.businessIco}
+          userId={user.id}
+          displayName={user.contactName || user.name}
+          title="Správa služby"
+        />
+      ) : null}
       <CraftsmanProfilePanel />
       <CraftsmanOrdersSection />
       {craftsmanInvoices?.length > 0 && (
@@ -954,6 +963,15 @@ export function BusinessRoleView() {
         </div>
       </section>
 
+      {user?.businessIco ? (
+        <OrgTeamPanel
+          businessIco={user.businessIco}
+          userId={user.id}
+          displayName={user.contactName || user.name}
+          title="Správa podniku"
+        />
+      ) : null}
+
       <BusinessEntityManagement />
     </div>
   );
@@ -1002,6 +1020,13 @@ export function MunicipalityRoleView() {
           Nové oznámení, výzva nebo akce — tlačítko + ve spodní liště.
         </p>
       </section>
+
+      <OrgTeamPanel
+        institutionId={user?.institutionId || persona.institutionId}
+        userId={user?.id}
+        displayName={user?.contactName || user?.name || "Úředník"}
+        title="Správa úřadu"
+      />
 
       <button
         type="button"

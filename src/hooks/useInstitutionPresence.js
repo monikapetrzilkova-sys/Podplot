@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { getSupabase } from "../lib/supabaseClient.js";
+import { normalizeIco } from "../data/aresLookup.js";
 
 /**
- * Live Presence kolegů v administraci instituce.
+ * Live Presence kolegů ve správě úřadu nebo podniku.
  * Preferuje Supabase Realtime Presence; fallback = BroadcastChannel + heartbeat v localStorage.
  *
  * @param {{
- *   institutionId: string | null | undefined,
+ *   institutionId?: string | null,
+ *   businessIco?: string | null,
  *   userId: string | null | undefined,
  *   displayName: string,
  *   editingRecordKey?: string | null,
@@ -14,7 +16,8 @@ import { getSupabase } from "../lib/supabaseClient.js";
  * }} opts
  */
 export function useInstitutionPresence({
-  institutionId,
+  institutionId = null,
+  businessIco = null,
   userId,
   displayName,
   editingRecordKey = null,
@@ -22,7 +25,11 @@ export function useInstitutionPresence({
 }) {
   const [peers, setPeers] = useState([]);
 
-  const roomKey = institutionId ? `institution:${institutionId}` : null;
+  const roomKey = institutionId
+    ? `institution:${institutionId}`
+    : businessIco
+      ? `business:${normalizeIco(businessIco)}`
+      : null;
 
   useEffect(() => {
     if (!enabled || !roomKey || !userId) {

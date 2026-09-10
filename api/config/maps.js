@@ -1,7 +1,13 @@
 /**
  * Vercel serverless — Maps config pro produkci.
- * Nastavte GOOGLE_MAPS_API_KEY (nebo VITE_GOOGLE_MAPS_API_KEY) v Vercel → Settings → Environment Variables.
- * V Google Cloud přidejte HTTP referrer: https://podplot.vercel.app/*
+ *
+ * Dva klíče v Google Cloud Console:
+ * - GOOGLE_MAPS_API_KEY / VITE_GOOGLE_MAPS_API_KEY
+ *   Maps JavaScript API, HTTP referrers: https://podplot.vercel.app/* a localhost:5173/*
+ * - GOOGLE_MAPS_SERVER_API_KEY
+ *   Places API, bez HTTP referrer omezení (serverový klíč).
+ *
+ * „Oops! Something went wrong.“ = špatný referrer, vypnuté API, nebo billing.
  */
 export default function handler(req, res) {
   const key = (

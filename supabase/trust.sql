@@ -13,13 +13,7 @@ create index if not exists neighbor_confirmations_neighbor_idx
 
 alter table public.neighbor_confirmations enable row level security;
 
-drop policy if exists "neighbor_confirmations_select_public" on public.neighbor_confirmations;
-drop policy if exists "neighbor_confirmations_insert_public" on public.neighbor_confirmations;
-
-create policy "neighbor_confirmations_select_public"
-  on public.neighbor_confirmations for select using (true);
-create policy "neighbor_confirmations_insert_public"
-  on public.neighbor_confirmations for insert with check (true);
+-- Politiky: spusť supabase/rls_secure.sql
 
 -- Realtime: Database → Publications → supabase_realtime → zapni
 --   profiles

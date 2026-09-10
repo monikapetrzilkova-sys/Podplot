@@ -27,7 +27,7 @@ export const INSTITUTIONS_SEED = [
   {
     id: "inst-jesenice",
     name: "Městský úřad Jesenice",
-    ico: "00241301",
+    ico: "00241318",
     psc: "25242",
     seatCity: "Jesenice",
     seatAddress: "Budějovická 97, 252 42 Jesenice",

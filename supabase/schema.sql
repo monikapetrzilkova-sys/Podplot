@@ -42,23 +42,7 @@ create index if not exists posts_municipality_idx on public.posts (municipality)
 alter table public.profiles enable row level security;
 alter table public.posts enable row level security;
 
--- MVP: otevřené čtení/zápis pro anon klíč (pouze pro testování kamarády).
--- Později nahradit Supabase Auth + přísnější RLS.
-drop policy if exists "profiles_select_public" on public.profiles;
-drop policy if exists "profiles_insert_public" on public.profiles;
-drop policy if exists "profiles_update_public" on public.profiles;
-drop policy if exists "posts_select_public" on public.posts;
-drop policy if exists "posts_insert_public" on public.posts;
-drop policy if exists "posts_update_public" on public.posts;
-
-create policy "profiles_select_public" on public.profiles for select using (true);
-create policy "profiles_insert_public" on public.profiles for insert with check (true);
-create policy "profiles_update_public" on public.profiles for update using (true) with check (true);
-
-create policy "posts_select_public" on public.posts for select using (true);
-create policy "posts_insert_public" on public.posts for insert with check (true);
-drop policy if exists "posts_update_public" on public.posts;
-create policy "posts_update_public" on public.posts for update using (true) with check (true);
+-- Politiky: spusť supabase/rls_secure.sql (bez něj RLS všechno zakáže — to je záměr).
 
 -- Realtime (volitelné): Database → Replication → posts
 -- nebo:
@@ -90,14 +74,7 @@ create index if not exists direct_messages_conversation_idx
   on public.direct_messages (conversation_id, created_at);
 
 alter table public.direct_messages enable row level security;
-
-drop policy if exists "direct_messages_select_public" on public.direct_messages;
-drop policy if exists "direct_messages_insert_public" on public.direct_messages;
-drop policy if exists "direct_messages_update_public" on public.direct_messages;
-
-create policy "direct_messages_select_public" on public.direct_messages for select using (true);
-create policy "direct_messages_insert_public" on public.direct_messages for insert with check (true);
-create policy "direct_messages_update_public" on public.direct_messages for update using (true) with check (true);
+-- Politiky: supabase/rls_secure.sql
 
 -- Realtime: Database → Publications → supabase_realtime → zapni direct_messages
 -- nebo:
@@ -123,8 +100,7 @@ create index if not exists neighbor_confirmations_neighbor_idx
 
 alter table public.neighbor_confirmations enable row level security;
 
-drop policy if exists "neighbor_confirmations_select_public" on public.neighbor_confirmations;
-drop policy if exists "neighbor_confirmations_insert_public" on public.neighbor_confirmations;
+-- Politiky: supabase/rls_secure.sql
 
 -- Realtime: Database → Publications → supabase_realtime → zapni neighbor_confirmations
 -- nebo:
@@ -166,17 +142,7 @@ create table if not exists public.group_proposal_votes (
 alter table public.group_proposals enable row level security;
 alter table public.group_proposal_votes enable row level security;
 
-drop policy if exists "group_proposals_select_public" on public.group_proposals;
-drop policy if exists "group_proposals_insert_public" on public.group_proposals;
-drop policy if exists "group_proposals_update_public" on public.group_proposals;
-drop policy if exists "group_proposal_votes_select_public" on public.group_proposal_votes;
-drop policy if exists "group_proposal_votes_insert_public" on public.group_proposal_votes;
-
-create policy "group_proposals_select_public" on public.group_proposals for select using (true);
-create policy "group_proposals_insert_public" on public.group_proposals for insert with check (true);
-create policy "group_proposals_update_public" on public.group_proposals for update using (true) with check (true);
-create policy "group_proposal_votes_select_public" on public.group_proposal_votes for select using (true);
-create policy "group_proposal_votes_insert_public" on public.group_proposal_votes for insert with check (true);
+-- Politiky: supabase/rls_secure.sql
 
 -- Realtime: zapni group_proposals (+ volitelně group_proposal_votes)
 -- alter publication supabase_realtime add table public.group_proposals;

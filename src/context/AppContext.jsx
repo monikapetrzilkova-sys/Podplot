@@ -229,6 +229,8 @@ import {
   verifyWorkEmailForInstitution,
   lookupMunicipalityEmailDomain,
 } from "../data/institutions/index.js";
+import { findOrgMembers, nextOrgRole } from "../data/orgMembers.js";
+import { normalizeIco } from "../data/aresLookup.js";
 import {
   loadUserSession,
   persistUserSession,
@@ -284,6 +286,7 @@ import {
   authSignOut,
   authResetPassword,
   authUpdatePassword,
+  authGetSession,
   validatePassword,
   subscribeAuth,
   EMAIL_TAKEN_CODE,
@@ -1123,14 +1126,33 @@ export function AppProvider({ children }) {
     };
   }, [user?.id, locations]);
 
-  // Obnova hesla z e-mailového odkazu (Supabase Auth)
+  // Bez platné Supabase session nenechávat „přihlášení“ jen z localStorage.
   useEffect(() => {
     if (SKIP_REGISTRATION) return undefined;
-    return subscribeAuth((event) => {
+    let cancelled = false;
+    (async () => {
+      const sb = await ensureSupabase();
+      if (cancelled || !sb) return;
+      const session = await authGetSession();
+      if (cancelled) return;
+      if (!session) {
+        setUser(null);
+        clearUserSession();
+      }
+    })();
+    const unsub = subscribeAuth((event) => {
       if (event === "PASSWORD_RECOVERY") {
         setPasswordRecovery(true);
       }
+      if (event === "SIGNED_OUT") {
+        setUser(null);
+        clearUserSession();
+      }
     });
+    return () => {
+      cancelled = true;
+      unsub();
+    };
   }, []);
 
   const [moduleViewModes, setModuleViewModes] = useState({
@@ -2301,6 +2323,8 @@ export function AppProvider({ children }) {
       serviceKeywords = [],
       institutionId = null,
       institutionRole = null,
+      contactName = "",
+      businessIco = null,
       radiusKm = DEFAULT_NEIGHBOR_RADIUS_KM,
     }) => {
       const pwdCheck = validatePassword(password, null);
@@ -2426,6 +2450,13 @@ export function AppProvider({ children }) {
         );
       }
 
+      let resolvedOrgRole = institutionRole ?? null;
+      if (normalizedType === "urad" && institutionId) {
+        resolvedOrgRole = nextOrgRole(await findOrgMembers({ institutionId }));
+      } else if (normalizedType === "podnik" && businessIco) {
+        resolvedOrgRole = nextOrgRole(await findOrgMembers({ businessIco }));
+      }
+
       const nextUser = {
         id: userId,
         name,
@@ -2463,7 +2494,10 @@ export function AppProvider({ children }) {
         serviceSubcategories: resolvedSubtype === "mobilni" ? subIds : [],
         serviceKeywords: resolvedSubtype === "mobilni" ? serviceKeywords : [],
         institutionId: normalizedType === "urad" ? institutionId : null,
-        institutionRole: normalizedType === "urad" ? institutionRole ?? "editor" : null,
+        institutionRole: normalizedType === "urad" ? resolvedOrgRole : null,
+        businessIco: normalizedType === "podnik" && businessIco ? normalizeIco(businessIco) : null,
+        orgRole: resolvedOrgRole,
+        contactName: String(contactName ?? "").trim() || null,
       };
       setUser(nextUser);
       void upsertRemoteProfile(nextUser);

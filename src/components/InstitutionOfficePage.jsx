@@ -9,6 +9,7 @@ import OfficePromptCard from "./OfficePromptCard.jsx";
 import PrimaryAddButton from "./PrimaryAddButton.jsx";
 import AccountTypeIcon from "./AccountTypeIcon.jsx";
 import InstitutionPresenceBar from "./InstitutionPresenceBar.jsx";
+import OrgTeamPanel from "./OrgTeamPanel.jsx";
 import { useInstitutionPresence } from "../hooks/useInstitutionPresence.js";
 import { AGENDA_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
 import { isOfficeOrganizedEvent } from "../utils/categoryAccents.js";
@@ -241,6 +242,14 @@ export default function InstitutionOfficePage() {
             </div>
 
             <InstitutionPresenceBar peers={peers} conflictPeers={conflictPeers} />
+
+            <OrgTeamPanel
+              institutionId={institutionId}
+              userId={user?.id}
+              displayName={user?.contactName || user?.name || "Úředník"}
+              title="Kdo teď spravuje úřad"
+              peers={peers}
+            />
 
             {latestItems.length === 0 ? (
               <p className="pp-feed-card px-4 py-3 text-xs text-stone-500">

@@ -13,6 +13,39 @@ import { INSTITUTIONS_SEED } from "./registrySeed.js";
 import { mergeInstitutionsImport, parseInstitutionsCsv } from "./institutionsImport.js";
 
 let localCache = INSTITUTIONS_SEED.map(normalizeRecord);
+const discoveredById = new Map();
+
+function rememberInstitution(inst) {
+  if (!inst?.id) return null;
+  const rec = normalizeRecord(inst);
+  discoveredById.set(rec.id, rec);
+  if (!localCache.some((row) => row.id === rec.id)) {
+    localCache = [...localCache, rec];
+  }
+  return rec;
+}
+
+function mergeOfficeLists(...lists) {
+  const map = new Map();
+  lists.flat().forEach((inst) => {
+    if (!inst) return;
+    const rec = normalizeRecord(inst);
+    const key = rec.ico || rec.id;
+    const prev = map.get(key);
+    if (!prev) {
+      map.set(key, rec);
+      return;
+    }
+    map.set(key, {
+      ...rec,
+      ...prev,
+      officialWebsite: prev.officialWebsite || rec.officialWebsite,
+      allowedEmailDomain: prev.allowedEmailDomain || rec.allowedEmailDomain,
+      seatAddress: prev.seatAddress || rec.seatAddress,
+    });
+  });
+  return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, "cs"));
+}
 
 function normalizeRecord(row) {
   return {
@@ -76,12 +109,27 @@ export async function listRegistrableInstitutions() {
 
 export async function getInstitutionById(id) {
   if (!id) return null;
+  const remembered = discoveredById.get(id);
+  if (remembered) return remembered;
   const sb = getSupabase();
   if (sb) {
     const { data, error } = await sb.from("institutions").select("*").eq("id", id).maybeSingle();
     if (!error && data) return mapDbRow(data);
   }
-  return localCache.find((i) => i.id === id) ?? null;
+  const local = localCache.find((i) => i.id === id);
+  if (local) return local;
+  if (String(id).startsWith("inst-ico-")) {
+    const ico = String(id).slice("inst-ico-".length);
+    try {
+      const res = await fetch(`/api/municipality-offices?ico=${encodeURIComponent(ico)}`);
+      const data = await res.json();
+      const office = data?.offices?.[0];
+      if (office) return rememberInstitution(office);
+    } catch {
+      /* veřejné dohledání selhalo */
+    }
+  }
+  return null;
 }
 
 /**
@@ -116,6 +164,31 @@ export async function searchInstitutions(query, opts = {}) {
     .sort((a, b) => b.score - a.score || a.inst.name.localeCompare(b.inst.name, "cs"));
 
   return scored.slice(0, limit).map((x) => x.inst);
+}
+
+export function listLocalInstitutionsByPsc(psc) {
+  const digits = String(psc ?? "").replace(/\D/g, "");
+  if (digits.length !== 5) return [];
+  return localCache.filter((inst) => inst.psc === digits && isRegistrable(inst));
+}
+
+/** Úřady v daném PSČ — katalog + veřejné dohledání (RÚIAN / ARES / web obce). */
+export async function listInstitutionsByPsc(psc, opts = {}) {
+  const limit = opts.limit ?? 30;
+  const digits = String(psc ?? "").replace(/\D/g, "");
+  if (digits.length !== 5) return [];
+  const local = (await listRegistrableInstitutions()).filter((inst) => inst.psc === digits);
+  let remote = [];
+  try {
+    const res = await fetch(`/api/municipality-offices?psc=${encodeURIComponent(digits)}`);
+    const data = await res.json();
+    remote = Array.isArray(data?.offices) ? data.offices : [];
+  } catch {
+    /* zůstanou lokální úřady */
+  }
+  const merged = mergeOfficeLists(local, remote);
+  merged.forEach(rememberInstitution);
+  return merged.slice(0, limit);
 }
 
 /**

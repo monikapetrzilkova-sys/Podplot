@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   normalizeHouseNumber,
   houseNumberMatches,
+  houseNumberSuggests,
   buildAddressSearchQuery,
   canSearchAddress,
   rankAddressSuggestions,
@@ -23,6 +24,13 @@ describe("houseNumberMatches", () => {
   it("treats empty filter as match-all", () => {
     assert.equal(houseNumberMatches("12", ""), true);
     assert.equal(houseNumberMatches("", "12"), false);
+  });
+
+  it("suggests longer house numbers while typing", () => {
+    assert.equal(houseNumberSuggests("1568", "15"), true);
+    assert.equal(houseNumberSuggests("1568", "156"), true);
+    assert.equal(houseNumberSuggests("1568", "1568"), true);
+    assert.equal(houseNumberSuggests("835", "156"), false);
   });
 });
 
@@ -64,7 +72,7 @@ describe("rankAddressSuggestions", () => {
     );
     assert.deepEqual(
       ranked.map((i) => `${i.street} ${i.houseNumber}`),
-      ["Hlavní 12", "Lípová 12a"]
+      ["Hlavní 12", "Lípová 12a", "Na Louce 120"]
     );
   });
 });
