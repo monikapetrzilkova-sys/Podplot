@@ -223,9 +223,10 @@ import {
 } from "../data/hostedActivities.js";
 import { inferLendingMeta } from "../data/lendingCategories.js";
 import { lendingCategoryToMarket } from "../data/marketCategories.js";
-import { SKIP_REGISTRATION, ENABLE_DEV_ROLE_SWITCH, getDevTestUser } from "../data/devConfig.js";
+import { SKIP_REGISTRATION, ENABLE_DEV_ROLE_SWITCH, ENABLE_TEST_PROFILE_ENTRY, getDevTestUser } from "../data/devConfig.js";
 import {
   getInstitutionById,
+  getDefaultDemoInstitution,
   verifyWorkEmailForInstitution,
   lookupMunicipalityEmailDomain,
 } from "../data/institutions/index.js";
@@ -2600,6 +2601,125 @@ export function AppProvider({ children }) {
       setShowDiscoveryWall(true);
       setHomeModule(null);
       setExpandedPillar(null);
+      return { ok: true };
+    },
+    [showToast]
+  );
+
+  /** Dočasný testovací vstup — jen jméno, bez ověření. Před ostrou verzí vypni ENABLE_TEST_PROFILE_ENTRY. */
+  const enterTestProfile = useCallback(
+    ({ name, accountType, businessSubtype = null }) => {
+      if (!ENABLE_TEST_PROFILE_ENTRY) {
+        return { ok: false, error: "Testovací vstup je vypnutý." };
+      }
+      const displayName = String(name ?? "").trim();
+      if (!displayName) {
+        showToast("Napiš jméno, pod kterým chceš vstoupit.", "error");
+        return { ok: false, error: "missing_name" };
+      }
+
+      const normalizedType = normalizeAccountType(accountType);
+      const acc = getAccountType(normalizedType);
+      const resolvedSubtype =
+        normalizedType === "podnik" ? businessSubtype ?? resolveBusinessSubtype(accountType) ?? "fyzicka" : null;
+      const demoOffice = getDefaultDemoInstitution();
+      const userId = `test-${normalizedType}-${Date.now().toString(36)}`;
+      const municipality = demoOffice?.seatCity || "Jesenice";
+      const address =
+        normalizedType === "urad"
+          ? demoOffice?.seatAddress || "Budějovická 97, 252 42 Jesenice"
+          : "Lípová 12, 252 42 Jesenice";
+      const interestRadius = DEFAULT_NEIGHBOR_RADIUS_KM;
+      const homeLat = USER_LOCATIONS[0]?.lat ?? 49.966;
+      const homeLng = USER_LOCATIONS[0]?.lng ?? 14.512;
+      const primarySub = resolvedSubtype === "mobilni" ? "instalater" : null;
+
+      const nextUser = {
+        id: userId,
+        name: displayName,
+        email: `test.${normalizedType}@podplot.test`,
+        address,
+        accountType: normalizedType,
+        businessSubtype: resolvedSubtype,
+        businessName: normalizedType === "podnik" ? displayName : null,
+        initials: initialsFromName(displayName),
+        role: acc.role,
+        location: municipality,
+        radius:
+          normalizedType === "podnik" && resolvedSubtype === "mobilni"
+            ? "15 km"
+            : formatMapRadiusKm(interestRadius),
+        isVerified: false,
+        verifiedDomain: null,
+        isTestEntry: true,
+        geo: {
+          city: municipality,
+          lat: homeLat,
+          lng: homeLng,
+          psc: "25242",
+          radiusKm: interestRadius,
+        },
+        geolocVerified: true,
+        neighborhoodConfirmations: 0,
+        isPremium: false,
+        profilePhoto: null,
+        allowPublicAreaLabel: false,
+        publicAreaLabel: "",
+        notificationPrefs: { ...DEFAULT_NOTIFICATION_PREFS },
+        serviceHomeGroup: resolvedSubtype === "mobilni" ? "domov-zahrada" : null,
+        serviceSubcategory: primarySub,
+        primarySubcategory: primarySub,
+        serviceSubcategories: primarySub ? [primarySub] : [],
+        serviceKeywords: [],
+        institutionId: normalizedType === "urad" ? demoOffice?.id ?? null : null,
+        institutionRole: normalizedType === "urad" ? "admin" : null,
+        businessIco: normalizedType === "podnik" ? "00000000" : null,
+        orgRole: normalizedType === "urad" || normalizedType === "podnik" ? "admin" : null,
+        contactName: displayName,
+      };
+
+      setUser(nextUser);
+      if (normalizedType === "urad") {
+        setTestRoleId("urad");
+        setUserProfileIds(["urad"]);
+      } else if (normalizedType === "podnik" && resolvedSubtype === "mobilni") {
+        setTestRoleId("remeslnik");
+        setUserProfileIds(["soused", "remeslnik"]);
+      } else if (normalizedType === "podnik") {
+        setTestRoleId("podnik");
+        setUserProfileIds(["soused", "podnik"]);
+      } else {
+        setTestRoleId("soused");
+        setUserProfileIds(["soused"]);
+      }
+      setLocations([
+        buildHomeLocation({
+          address,
+          municipality,
+          shortLabel: municipality,
+          lat: homeLat,
+          lng: homeLng,
+          radiusKm: interestRadius,
+          psc: "25242",
+        }),
+      ]);
+      setActiveLocationId("domov");
+      setJoinedGroupIds([]);
+      persistJoinedGroupIds(userId, []);
+      setCommunityGroups(
+        mergeCommunityGroups(
+          getGroupsForLocation("domov", municipality),
+          filterUserGroupsForMunicipality(loadStoredUserGroups(), municipality)
+        )
+      );
+      setCredits(CURRENT_USER.credits);
+      setActiveTab("home");
+      setFeedMainMode("komunita");
+      setFeedSubFilter("veci");
+      setShowDiscoveryWall(true);
+      setHomeModule(null);
+      setExpandedPillar(null);
+      showToast("Testovací vstup — před ostrou verzí se vypne.", "info");
       return { ok: true };
     },
     [showToast]
@@ -8748,6 +8868,7 @@ export function AppProvider({ children }) {
         getPersonPhoto,
         personNameIndex,
         register,
+        enterTestProfile,
         login,
         logout,
         logoutAndRegisterAs,

@@ -16,6 +16,12 @@ export const ENABLE_DEV_ROLE_SWITCH =
   import.meta.env?.VITE_ENABLE_DEV_ROLE_SWITCH === "1" ||
   (import.meta.env?.PROD ? false : SKIP_REGISTRATION);
 
+/**
+ * Dočasný vstup do profilů (soused / úřad / podnik) jen se jménem — bez ověření e-mailu a IČO.
+ * Zapnuto pro testerskou verzi. Před ostrou verzí nastav na false.
+ */
+export const ENABLE_TEST_PROFILE_ENTRY = true;
+
 export function getDevTestUser() {
   const accountType = "soused";
   const acc = getAccountType(accountType);

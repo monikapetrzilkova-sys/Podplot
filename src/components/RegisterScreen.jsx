@@ -28,6 +28,7 @@ import {
   lookupMunicipalityEmailDomain,
 } from "../data/institutions/index.js";
 import { EMAIL_TAKEN_CODE, EMAIL_TAKEN_MESSAGE, MIN_PASSWORD_LENGTH, validatePassword } from "../data/authApi.js";
+import { ENABLE_TEST_PROFILE_ENTRY } from "../data/devConfig.js";
 import { readRegisterIntent, clearRegisterIntent } from "../data/registrationIntent.js";
 import { lookupCompanyByIco, isValidIco, normalizeIco } from "../data/aresLookup.js";
 import { findOrgMembers } from "../data/orgMembers.js";
@@ -47,6 +48,7 @@ function ReqStar() {
 export default function RegisterScreen() {
   const {
     register,
+    enterTestProfile,
     login,
     requestPasswordReset,
     completePasswordRecovery,
@@ -86,6 +88,7 @@ export default function RegisterScreen() {
   const [icoBusy, setIcoBusy] = useState(false);
   const [icoError, setIcoError] = useState("");
   const [orgPeers, setOrgPeers] = useState([]);
+  const [testEntryName, setTestEntryName] = useState("");
 
   const selectedType = getAccountType(accountType);
   const registrationFields = getRegistrationFields(accountType, businessSubtype);
@@ -682,6 +685,47 @@ export default function RegisterScreen() {
             <span className="text-teal-800">*</span> povinné údaje
           </p>
 
+          {ENABLE_TEST_PROFILE_ENTRY ? (
+            <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-3.5 space-y-2">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-amber-800">
+                Jen pro testovací verzi
+              </p>
+              <p className="text-xs text-amber-900 leading-snug">
+                Chceš si jen prohlédnout profil {selectedType.shortLabel.toLowerCase()}? Stačí jméno. Před ostrou
+                verzí se to vypne.
+              </p>
+              <label className="block">
+                <span className="text-[11px] font-semibold text-amber-900">Jméno pro test</span>
+                <input
+                  type="text"
+                  value={testEntryName}
+                  onChange={(e) => setTestEntryName(e.target.value)}
+                  placeholder={
+                    isUrad
+                      ? "např. Městský úřad Jesenice"
+                      : accountType === "podnik"
+                        ? registrationFields.namePlaceholder
+                        : "Jan Novák"
+                  }
+                  className="mt-1 w-full px-3 py-2.5 border border-amber-200 bg-white rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() =>
+                  enterTestProfile({
+                    name: testEntryName,
+                    accountType,
+                    businessSubtype: accountType === "podnik" ? businessSubtype : null,
+                  })
+                }
+                className="w-full py-2.5 text-sm font-semibold text-amber-950 bg-white border border-amber-300 rounded-xl hover:bg-amber-100"
+              >
+                Vstoupit bez ověření
+              </button>
+            </div>
+          ) : null}
+
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
             {isUrad ? (
               <OfficeByPscPicker
@@ -760,7 +804,7 @@ export default function RegisterScreen() {
                   className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-700/30"
                 />
                 <p className="mt-1 text-[10px] text-stone-400">
-                  Účet je společný. Další kolega se zaregistruje stejným způsobem a připojí se k vám.
+                  Účet může spravovat více lidí. Sem napiš svoje jméno, ať tě kolegové poznají.
                 </p>
               </div>
             ) : (
@@ -999,7 +1043,9 @@ export default function RegisterScreen() {
               </div>
             ) : isUrad || accountType === "podnik" ? (
               <p className="text-[11px] text-stone-400 leading-relaxed">
-                Účet je společný. Další kolega se zaregistruje stejným {isUrad ? "úřadem a oficiálním e-mailem" : "IČO"} a uvidíte se ve správě týmu.
+                {isUrad
+                  ? "Účet může spravovat více lidí. Kolega si vytvoří vlastní účet pod svým pracovním e-mailem obce."
+                  : "Účet může spravovat více lidí. Kolega si vytvoří vlastní účet se stejným IČO."}
               </p>
             ) : null}
 
