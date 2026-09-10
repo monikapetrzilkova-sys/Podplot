@@ -7,6 +7,7 @@ import {
   DEFAULT_REPORTS_MAP_RADIUS_KM,
   DEFAULT_THINGS_MAP_RADIUS_KM,
   formatMapRadiusKm,
+  radiusKmToMeters,
 } from "../../data/mapRadiusSettings.js";
 import MapPickHint from "./MapPickHint.jsx";
 import { mapElementHasGoogleError, markMapsRuntimeFailed } from "../../utils/googleMapsLoader.js";
@@ -177,6 +178,7 @@ export default function PodPlotGoogleMap({
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: false,
+      scaleControl: true,
       clickableIcons: false,
       gestureHandling: pickMode || isTouch ? "greedy" : "cooperative",
       draggableCursor: pickMode && !isTouch ? "crosshair" : null,
@@ -414,7 +416,7 @@ export default function PodPlotGoogleMap({
       circleRef.current = new window.google.maps.Circle({
         map,
         center: circleCenter,
-        radius: effectiveRadiusKm * 1000,
+        radius: radiusKmToMeters(effectiveRadiusKm),
         fillColor: mapMode === "events" ? "#40916C" : "#2D6A4F",
         fillOpacity: 0.06,
         strokeColor: mapMode === "events" ? "#40916C" : "#2D6A4F",
@@ -483,7 +485,7 @@ export default function PodPlotGoogleMap({
     if (showRadiusCircle && window.google?.maps?.Circle) {
       const bounds = new window.google.maps.Circle({
         center: draftLatLng,
-        radius: Math.max(effectiveRadiusKm, 0.8) * 1000,
+        radius: radiusKmToMeters(effectiveRadiusKm),
       }).getBounds();
       if (bounds) {
         map.fitBounds(bounds, 36);
@@ -508,7 +510,7 @@ export default function PodPlotGoogleMap({
       window.clearTimeout(t1);
       window.clearTimeout(t2);
     };
-  }, [draftPin, focusDraftPin, center, refRadius, mapReady]);
+  }, [draftPin, focusDraftPin, center, refRadius, mapReady, effectiveRadiusKm, showRadiusCircle]);
 
   useEffect(() => {
     const map = mapRef.current;

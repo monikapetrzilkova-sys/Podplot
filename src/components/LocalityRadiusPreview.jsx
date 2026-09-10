@@ -101,8 +101,8 @@ export default function LocalityRadiusPreview({
         label="Nastav si okruh, který tě zajímá."
         hint={
           laterEditNote
-            ? "Uvidíš příspěvky sousedů v tomto okruhu. Později ho můžeš kdykoli upravit v profilu."
-            : "Uvidíš příspěvky sousedů v tomto okruhu."
+            ? "Kruh na mapě je skutečný poloměr v kilometrech — posuň ho tak, aby pokryl tvoji obec nebo městskou část. Později ho kdykoli upravíš v profilu."
+            : "Kruh na mapě je skutečný poloměr v kilometrech — posuň ho tak, aby pokryl tvoji obec nebo městskou část, ne celé velké město."
         }
         value={radiusKm}
         min={MIN_NEIGHBOR_RADIUS_KM}

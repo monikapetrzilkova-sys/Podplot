@@ -16,7 +16,8 @@ const PSC_NEIGHBORHOOD = {
   14300: "Modřany",
   14700: "Braník",
   14800: "Kunratice",
-  14900: "Chodov",
+  14900: "Újezd u Průhonic",
+  14941: "Chodov",
   15000: "Smíchov",
   15500: "Řeporyje",
   16000: "Dejvice",
@@ -50,6 +51,107 @@ function stripDiacritics(value) {
   return String(value ?? "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
+}
+
+/**
+ * Přesné PSČ → městská část (ne 3 číslice).
+ * 149 00 je Újezd u Průhonic, ne úřad Prahy 11 (ten sídlí na 149 41).
+ */
+const PSC_PRAHA_MESTSKA_CAST = {
+  14900: "Praha-Újezd",
+  14941: "Praha 11",
+};
+
+export function prahaMunicipalPartFromPsc(psc) {
+  const digits = pscDigits(String(psc ?? ""));
+  if (digits.length !== 5) return null;
+  return PSC_PRAHA_MESTSKA_CAST[Number(digits)] || null;
+}
+
+/** Sjednotí pomlčky a mezery, ať „Praha-Újezd“ sedí i na „Praha – Újezd“. */
+export function foldMunicipalName(value) {
+  return String(value ?? "")
+    .toLocaleLowerCase("cs")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[—–−]/g, "-")
+    .replace(/-/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function officeBelongsToMunicipalPart(officeOrName, partName) {
+  const target = foldMunicipalName(partName);
+  if (!target) return false;
+  const blob = foldMunicipalName(
+    [
+      officeOrName?.name,
+      officeOrName?.seatCity,
+      officeOrName?.seatAddress,
+      officeOrName?.obchodniJmeno,
+      officeOrName?.sidlo?.nazevMestskeCastiObvodu,
+      officeOrName?.sidlo?.nazevMestskehoObvodu,
+      typeof officeOrName === "string" ? officeOrName : "",
+    ]
+      .filter(Boolean)
+      .join(" ")
+  );
+  return blob.includes(target);
+}
+
+/** Praha-Újezd / Brno-střed — pojmenovaná městská část, ne číslovaná Praha 11. */
+export function isNamedMunicipalPart(name) {
+  return /^(praha|brno|ostrava|plzen)\s+[a-z]/.test(foldMunicipalName(name));
+}
+
+/**
+ * Když sídlí víc úřadů na stejném PSČ, dej dopředu ten, který k němu patří
+ * jako vlastní městská část — ne velkou číslovanou MČ, která PSČ jen sdílí.
+ */
+export function scoreOfficeForPsc(office, psc, units = {}) {
+  const digits = pscDigits(String(psc ?? ""));
+  const seat = pscDigits(String(office?.psc ?? ""));
+  const districts = units.districts ?? [];
+  const obce = units.obce ?? [];
+  let value = 0;
+  if (districts.some((name) => officeBelongsToMunicipalPart(office, name))) value += 30;
+  if (obce.some((name) => officeBelongsToMunicipalPart(office, name))) value += 30;
+  const counts = { ...(units.districtCounts || {}), ...(units.obecCounts || {}) };
+  const matched = [...districts, ...obce].filter((name) => officeBelongsToMunicipalPart(office, name));
+  const bestCount = matched.reduce((max, name) => Math.max(max, Number(counts[name]) || 0), 0);
+  if (bestCount) value += Math.min(20, Math.round(Math.log10(bestCount + 1) * 8));
+  if (seat && seat === digits) value += 20;
+  if (seat && seat === digits && isNamedMunicipalPart(office?.seatCity || office?.name)) value += 50;
+  if (office?.kind === "mestska_cast") value += 8;
+  if (office?.kind === "magistrat") value -= 30;
+  return value;
+}
+
+export function rankOfficesForPsc(offices, psc, units = {}) {
+  const list = Array.isArray(offices) ? [...offices] : [];
+  return list.sort(
+    (a, b) =>
+      scoreOfficeForPsc(b, psc, units) - scoreOfficeForPsc(a, psc, units) ||
+      String(a?.name ?? "").localeCompare(String(b?.name ?? ""), "cs")
+  );
+}
+
+/** Praha-Újezd + část obce Újezd u Průhonic → Praha-Újezd u Průhonic. */
+export function decorateNamedDistrictLabel(part, hood) {
+  const official = String(part ?? "").trim();
+  const neighborhood = String(hood ?? "").trim();
+  if (!official || !neighborhood) return official;
+  const partFold = foldMunicipalName(official);
+  const hoodFold = foldMunicipalName(neighborhood);
+  const stem = partFold.replace(/^(praha|brno|ostrava|plzen)\s+/, "");
+  if (!stem || !/^[a-z]/.test(stem)) return official;
+  if (hoodFold === partFold || hoodFold === stem) return official;
+  if (!hoodFold.startsWith(stem) && !hoodFold.includes(` ${stem} `) && !hoodFold.includes(stem)) {
+    return official;
+  }
+  const cityPrefix = official.match(/^(Praha|Brno|Ostrava|Plzeň)/i)?.[0];
+  if (cityPrefix && official.includes("-")) return `${cityPrefix}-${neighborhood}`;
+  return official;
 }
 
 export function isBareStatutoryCity(name) {
@@ -123,9 +225,14 @@ export function pscLocalityKey(psc) {
  */
 export function refineLocalityFromPsc(psc, fallbackCity = "", suburb = "") {
   const digits = pscDigits(String(psc ?? ""));
-  const district = prahaDistrictFromPsc(digits) || brnoDistrictFromPsc(digits);
+  const district = prahaMunicipalPartFromPsc(digits) || prahaDistrictFromPsc(digits) || brnoDistrictFromPsc(digits);
   const hood = String(suburb ?? "").trim() || PSC_NEIGHBORHOOD[Number(digits)] || "";
   if (district && hood && !hood.startsWith("Praha") && !hood.startsWith("Brno")) {
+    const districtKey = stripDiacritics(normalizeMun(district)).replace(/^praha-/, "");
+    const hoodKey = stripDiacritics(normalizeMun(hood));
+    if (hoodKey.includes(districtKey) || districtKey.includes(hoodKey.split(" ")[0])) {
+      return district;
+    }
     return `${district} — ${hood}`;
   }
   if (district) return district;

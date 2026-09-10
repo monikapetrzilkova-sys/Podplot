@@ -37,6 +37,18 @@ export const INSTITUTIONS_SEED = [
     region: "Středočeský",
   },
   {
+    id: "inst-praha-ujezd",
+    name: "Úřad městské části Praha-Újezd u Průhonic",
+    ico: "00241784",
+    psc: "14900",
+    seatCity: "Praha-Újezd",
+    seatAddress: "Kateřinské náměstí 465/1, 149 00 Praha-Újezd",
+    allowedEmailDomain: "praha-ujezd.cz",
+    officialWebsite: "https://www.praha-ujezd.cz",
+    kind: "mestska_cast",
+    region: "Hlavní město Praha",
+  },
+  {
     id: "inst-prichovice",
     name: "Obecní úřad Průhonice",
     ico: "00241522",

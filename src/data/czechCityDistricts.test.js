@@ -2,10 +2,14 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   prahaDistrictFromPsc,
+  prahaMunicipalPartFromPsc,
   refineLocalityFromPsc,
   parseCityDistrict,
   isBareStatutoryCity,
   localityShortLabel,
+  rankOfficesForPsc,
+  isNamedMunicipalPart,
+  decorateNamedDistrictLabel,
 } from "./czechCityDistricts.js";
 import {
   municipalitiesMatch,
@@ -19,6 +23,9 @@ describe("prahaDistrictFromPsc", () => {
     assert.equal(prahaDistrictFromPsc("110 00"), "Praha 1");
     assert.equal(prahaDistrictFromPsc("14200"), "Praha 4");
     assert.equal(prahaDistrictFromPsc("15000"), "Praha 5");
+    assert.equal(prahaDistrictFromPsc("14900"), "Praha 11");
+    assert.equal(prahaDistrictFromPsc("14941"), "Praha 11");
+    assert.equal(prahaMunicipalPartFromPsc("149 00"), "Praha-Újezd");
     assert.equal(prahaDistrictFromPsc("60200"), null);
   });
 });
@@ -29,10 +36,53 @@ describe("refineLocalityFromPsc", () => {
     assert.equal(refineLocalityFromPsc("11000", "Praha"), "Praha 1 — Staré Město");
     assert.equal(refineLocalityFromPsc("60200", "Brno"), "Brno-střed");
     assert.equal(refineLocalityFromPsc("25222", "Jesenice u Prahy"), "Jesenice u Prahy");
+    assert.equal(refineLocalityFromPsc("14900", "Praha"), "Praha-Újezd");
+    assert.equal(refineLocalityFromPsc("14941", "Praha"), "Praha 11 — Chodov");
   });
 
   it("prefers an explicit ARES suburb over the coarse ZIP map", () => {
     assert.equal(refineLocalityFromPsc("14000", "Praha 4", "Michle"), "Praha 4 — Michle");
+  });
+});
+
+describe("rankOfficesForPsc", () => {
+  it("puts a named city district before a numbered one that only shares the ZIP", () => {
+    assert.equal(isNamedMunicipalPart("Praha-Újezd"), true);
+    assert.equal(isNamedMunicipalPart("Praha 11"), false);
+    assert.equal(decorateNamedDistrictLabel("Praha-Újezd", "Újezd u Průhonic"), "Praha-Újezd u Průhonic");
+    const ranked = rankOfficesForPsc(
+      [
+        { name: "Úřad městské části Praha 11", seatCity: "Praha 11", psc: "14900", kind: "mestska_cast" },
+        { name: "Úřad městské části Praha-Újezd u Průhonic", seatCity: "Praha-Újezd", psc: "14900", kind: "mestska_cast" },
+      ],
+      "14900",
+      { districts: ["Praha 11", "Praha-Újezd", "Praha-Šeberov"] }
+    );
+    assert.equal(ranked[0].seatCity, "Praha-Újezd");
+  });
+
+  it("among numbered districts prefers the one with more addresses in that ZIP", () => {
+    const ranked = rankOfficesForPsc(
+      [
+        { name: "Úřad městské části Praha 11", seatCity: "Praha 11", psc: "14900", kind: "mestska_cast" },
+        { name: "Úřad městské části Praha 4", seatCity: "Praha 4", psc: "14000", kind: "mestska_cast" },
+      ],
+      "14100",
+      { districts: ["Praha 4", "Praha 11"], districtCounts: { "Praha 4": 4200, "Praha 11": 40 } }
+    );
+    assert.equal(ranked[0].seatCity, "Praha 4");
+  });
+
+  it("does the same for Kunratice vs Praha 4 on 148 00", () => {
+    const ranked = rankOfficesForPsc(
+      [
+        { name: "Úřad městské části Praha 4", seatCity: "Praha 4", psc: "14000", kind: "mestska_cast" },
+        { name: "Úřad městské části Praha-Kunratice", seatCity: "Praha-Kunratice", psc: "14800", kind: "mestska_cast" },
+      ],
+      "14800",
+      { districts: ["Praha-Kunratice"] }
+    );
+    assert.equal(ranked[0].seatCity, "Praha-Kunratice");
   });
 });
 

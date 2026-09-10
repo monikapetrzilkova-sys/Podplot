@@ -26,6 +26,13 @@ export function clampNeighborRadius(km) {
   return Math.min(MAX_NEIGHBOR_RADIUS_KM, Math.max(MIN_NEIGHBOR_RADIUS_KM, Math.round(n * 10) / 10));
 }
 
+/** Google Maps Circle bere metry — 1 km na posuvníku = 1000 m ve skutečnosti. */
+export function radiusKmToMeters(km) {
+  const n = Number(km);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return n * 1000;
+}
+
 /** Poloměr elipsy na mapě při výchozím rádiusu daného režimu (procenta). */
 export const BASE_MAP_ELLIPSE_PERCENT = 42;
 export const MAX_MAP_ELLIPSE_PERCENT = 48;

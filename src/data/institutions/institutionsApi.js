@@ -9,6 +9,7 @@ import {
   normalizeEmailDomain,
 } from "./institutionTypes.js";
 import { isPublicEmailDomain } from "../domainVerification.js";
+import { rankOfficesForPsc } from "../czechCityDistricts.js";
 import { INSTITUTIONS_SEED } from "./registrySeed.js";
 import { mergeInstitutionsImport, parseInstitutionsCsv } from "./institutionsImport.js";
 
@@ -44,7 +45,7 @@ function mergeOfficeLists(...lists) {
       seatAddress: prev.seatAddress || rec.seatAddress,
     });
   });
-  return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, "cs"));
+  return [...map.values()];
 }
 
 function normalizeRecord(row) {
@@ -169,7 +170,10 @@ export async function searchInstitutions(query, opts = {}) {
 export function listLocalInstitutionsByPsc(psc) {
   const digits = String(psc ?? "").replace(/\D/g, "");
   if (digits.length !== 5) return [];
-  return localCache.filter((inst) => inst.psc === digits && isRegistrable(inst));
+  return rankOfficesForPsc(
+    localCache.filter((inst) => inst.psc === digits && isRegistrable(inst)),
+    digits
+  );
 }
 
 /** Úřady v daném PSČ — katalog + veřejné dohledání (RÚIAN / ARES / web obce). */
@@ -186,7 +190,7 @@ export async function listInstitutionsByPsc(psc, opts = {}) {
   } catch {
     /* zůstanou lokální úřady */
   }
-  const merged = mergeOfficeLists(local, remote);
+  const merged = rankOfficesForPsc(mergeOfficeLists(local, remote), digits);
   merged.forEach(rememberInstitution);
   return merged.slice(0, limit);
 }

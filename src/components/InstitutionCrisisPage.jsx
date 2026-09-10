@@ -9,6 +9,7 @@ import SampleBadge from "./SampleBadge.jsx";
 import { isSampleContent } from "../data/sampleContent.js";
 import InfoTip from "./InfoTip.jsx";
 import { formatAnnouncementScope } from "../data/officeAnnouncementScope.js";
+import { activePostsLabel } from "../data/officeAnnouncementCopy.js";
 import SparsePageDoodle from "./doodle/SparsePageDoodle.jsx";
 import { DoodleOznameniScene } from "./doodle/doodleIllustrations.jsx";
 
@@ -19,7 +20,10 @@ function SectionAddButton({ label, onClick }) {
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick?.();
+      }}
       className="pp-map-add-fab-btn shrink-0"
       aria-label={label}
       title={label}
@@ -29,8 +33,45 @@ function SectionAddButton({ label, onClick }) {
   );
 }
 
+function CategoryCard({ id, title, count, open, onToggle, onAdd, addLabel, children }) {
+  return (
+    <section className={`pp-card overflow-hidden ${open ? "ring-1 ring-[#C5DDD4]" : ""}`}>
+      <div className="flex items-stretch">
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={open}
+          aria-controls={`${id}-posts`}
+          className="flex-1 min-w-0 text-left px-4 py-3.5 flex items-center gap-2"
+        >
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-bold text-stone-900">{title}</span>
+            <span className="block text-[11px] text-stone-500 mt-0.5">{activePostsLabel(count)}</span>
+          </span>
+          <span
+            className={`shrink-0 text-stone-400 transition-transform ${open ? "rotate-180" : ""}`}
+            aria-hidden
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </span>
+        </button>
+        <div className="flex items-center pr-3">
+          <SectionAddButton label={addLabel} onClick={onAdd} />
+        </div>
+      </div>
+      {open ? (
+        <div id={`${id}-posts`} className="px-3 pb-3 pt-3 space-y-2 border-t border-stone-100">
+          {children}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 /**
- * Oznámení úřadu — přehled vydaných. Nové se přidá + vpravo nebo z dolního plus.
+ * Oznámení úřadu — tři kategorie hned, seznam až po rozbalení.
  */
 export default function InstitutionCrisisPage() {
   const {
@@ -45,51 +86,67 @@ export default function InstitutionCrisisPage() {
   } = useApp();
 
   const [composeType, setComposeType] = useState(null);
+  const [openSection, setOpenSection] = useState(null);
   const [editTarget, setEditTarget] = useState(null);
   const municipality = activeLocation?.municipality || "obec";
 
+  const toggleSection = (id) => {
+    setOpenSection((prev) => (prev === id ? null : id));
+  };
+
+  const startCompose = (type) => {
+    setOpenSection(type);
+    setComposeType(type);
+  };
+
   useEffect(() => {
     if (pendingOfficeAction !== "announce" && pendingOfficeAction !== "crisis") return;
-    setComposeType(pendingOfficeAction === "crisis" ? "crisis" : "news");
+    const type = pendingOfficeAction === "crisis" ? "crisis" : "news";
+    setOpenSection(type);
+    setComposeType(type);
     clearPendingOfficeAction?.();
   }, [pendingOfficeAction, clearPendingOfficeAction]);
 
   const officeNews = useMemo(
-    () => areaNews.filter((n) => n.type !== "crisis").slice(0, 8),
+    () => areaNews.filter((n) => n.type !== "crisis" && (n.role === "urad" || n.fromOffice)),
     [areaNews]
   );
 
   const inactiveCrisis = useMemo(
-    () => areaNews.filter((n) => n.type === "crisis" && n.active === false).slice(0, 3),
+    () => areaNews.filter((n) => n.type === "crisis" && n.active === false),
     [areaNews]
   );
 
   const officePrompts = useMemo(
-    () =>
-      municipalityPrompts
-        .filter((p) => p.fromOffice || p.authorRole === "urad")
-        .slice(0, 6),
+    () => municipalityPrompts.filter((p) => p.fromOffice || p.authorRole === "urad"),
     [municipalityPrompts]
   );
 
+  const crisisCount = activeCrisis ? 1 : 0;
+
   return (
-    <div className="pp-page flex flex-col min-h-full px-4 pt-4 pb-8 gap-4">
+    <div className="pp-page flex flex-col min-h-full px-4 pt-4 pb-8 gap-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-semibold text-stone-900">Oznámení</p>
         <InfoTip title="Oznámení úřadu">
-          <p>Nové přidáš plusem vpravo u typu, nebo tlačítkem + dole.</p>
-          <p>Může platit pro celou obec, konkrétní místo, nebo vybrané ulice — třeba u blokového čištění.</p>
+          <p>Nejdřív vyber kategorii. Seznam příspěvků se otevře po klepnutí.</p>
+          <p>Nové přidáš plusem u kategorie, nebo tlačítkem + dole.</p>
+          <p>Může platit pro celou obec, konkrétní místo, nebo vybrané ulice.</p>
           <p>Mimořádné se sousedům ukáže v SOS pruhu.</p>
         </InfoTip>
       </div>
 
-      <section className="space-y-2">
-        <div className="flex items-center justify-between gap-2 px-0.5">
-          <h2 className="text-xs font-bold uppercase tracking-wide text-stone-500">Mimořádné</h2>
-          <SectionAddButton label="Nové mimořádné oznámení" onClick={() => setComposeType("crisis")} />
-        </div>
+      <CategoryCard
+        id="crisis"
+        title="Mimořádné"
+        count={crisisCount}
+        open={openSection === "crisis"}
+        onToggle={() => toggleSection("crisis")}
+        onAdd={() => startCompose("crisis")}
+        addLabel="Nové mimořádné oznámení"
+      >
         {activeCrisis ? (
-          <article className="rounded-2xl border border-[#C5DDD4] bg-[#F1F6F5] p-4">
+          <article className="rounded-2xl border border-[#C5DDD4] bg-[#F1F6F5] p-3.5">
             <div className="flex items-start gap-2.5">
               <span className="w-9 h-9 rounded-xl bg-[#1B4D3E] text-white flex items-center justify-center shrink-0">
                 <IconAlert className="w-4 h-4" />
@@ -120,20 +177,51 @@ export default function InstitutionCrisisPage() {
             </div>
           </article>
         ) : (
-          <p className="pp-card px-4 py-3 text-xs text-stone-500">Žádné aktivní mimořádné oznámení.</p>
+          <p className="px-1 py-2 text-xs text-stone-500">Žádné aktivní mimořádné oznámení.</p>
         )}
-      </section>
+        {inactiveCrisis.length > 0 ? (
+          <div className="space-y-2 pt-1">
+            <p className="px-0.5 text-[10px] font-bold uppercase tracking-wide text-stone-400">
+              Archiv mimořádných
+            </p>
+            {inactiveCrisis.map((n) => (
+              <article key={n.id} className="rounded-xl border border-stone-100 bg-stone-50 px-3.5 py-3 opacity-80">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-sm font-semibold text-stone-800">{n.title}</h3>
+                  {isSampleContent(n) ? <SampleBadge /> : null}
+                  <EditedBadge item={n} />
+                </div>
+                <p className="text-[11px] text-stone-400 mt-0.5">
+                  {formatAnnouncementScope(n, municipality)}
+                </p>
+                <p className="text-xs text-stone-500 mt-1 line-clamp-2">{n.body}</p>
+                <button
+                  type="button"
+                  onClick={() => setEditTarget({ kind: "news", item: n })}
+                  className={EDIT_BTN}
+                >
+                  Upravit
+                </button>
+              </article>
+            ))}
+          </div>
+        ) : null}
+      </CategoryCard>
 
-      <section className="space-y-2">
-        <div className="flex items-center justify-between gap-2 px-0.5">
-          <h2 className="text-xs font-bold uppercase tracking-wide text-stone-500">Běžné aktuality</h2>
-          <SectionAddButton label="Nová aktualita obce" onClick={() => setComposeType("news")} />
-        </div>
+      <CategoryCard
+        id="news"
+        title="Běžné aktuality"
+        count={officeNews.length}
+        open={openSection === "news"}
+        onToggle={() => toggleSection("news")}
+        onAdd={() => startCompose("news")}
+        addLabel="Nová aktualita obce"
+      >
         {officeNews.length === 0 ? (
-          <p className="pp-card px-4 py-3 text-xs text-stone-500">Zatím žádná aktualita.</p>
+          <p className="px-1 py-2 text-xs text-stone-500">Zatím žádná aktualita.</p>
         ) : (
           officeNews.map((n) => (
-            <article key={n.id} className="pp-card px-3.5 py-3">
+            <article key={n.id} className="rounded-xl border border-stone-100 bg-stone-50 px-3.5 py-3">
               <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-wide">
                 {n.author} · {n.time}
               </p>
@@ -156,18 +244,22 @@ export default function InstitutionCrisisPage() {
             </article>
           ))
         )}
-      </section>
+      </CategoryCard>
 
-      <section className="space-y-2">
-        <div className="flex items-center justify-between gap-2 px-0.5">
-          <h2 className="text-xs font-bold uppercase tracking-wide text-stone-500">Podněty úřadu</h2>
-          <SectionAddButton label="Nový podnět" onClick={() => setComposeType("prompt")} />
-        </div>
+      <CategoryCard
+        id="prompt"
+        title="Podněty úřadu"
+        count={officePrompts.length}
+        open={openSection === "prompt"}
+        onToggle={() => toggleSection("prompt")}
+        onAdd={() => startCompose("prompt")}
+        addLabel="Nový podnět"
+      >
         {officePrompts.length === 0 ? (
-          <p className="pp-card px-4 py-3 text-xs text-stone-500">Zatím žádný podnět v evidenci.</p>
+          <p className="px-1 py-2 text-xs text-stone-500">Zatím žádný podnět v evidenci.</p>
         ) : (
           officePrompts.map((p) => (
-            <article key={p.id} className="pp-card px-3.5 py-3">
+            <article key={p.id} className="rounded-xl border border-stone-100 bg-stone-50 px-3.5 py-3">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-sm font-semibold text-stone-900">{p.title}</h3>
                 <EditedBadge item={p} />
@@ -190,39 +282,11 @@ export default function InstitutionCrisisPage() {
             </article>
           ))
         )}
-      </section>
-
-      {inactiveCrisis.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="text-xs font-bold uppercase tracking-wide text-stone-500 px-0.5">
-            Archiv mimořádných
-          </h2>
-          {inactiveCrisis.map((n) => (
-            <article key={n.id} className="pp-card px-3.5 py-3 opacity-80">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-sm font-semibold text-stone-800">{n.title}</h3>
-                {isSampleContent(n) ? <SampleBadge /> : null}
-                <EditedBadge item={n} />
-              </div>
-              <p className="text-[11px] text-stone-400 mt-0.5">
-                {formatAnnouncementScope(n, municipality)}
-              </p>
-              <p className="text-xs text-stone-500 mt-1 line-clamp-2">{n.body}</p>
-              <button
-                type="button"
-                onClick={() => setEditTarget({ kind: "news", item: n })}
-                className={EDIT_BTN}
-              >
-                Upravit
-              </button>
-            </article>
-          ))}
-        </section>
-      )}
+      </CategoryCard>
 
       <SparsePageDoodle
         Scene={DoodleOznameniScene}
-        count={(activeCrisis ? 1 : 0) + officeNews.length + officePrompts.length}
+        count={crisisCount + officeNews.length + officePrompts.length}
         hideFrom={6}
       />
 
