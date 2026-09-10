@@ -33,6 +33,7 @@ export default function StructuredAddressFields({
   onHouseNumberChange,
   onPscChange,
   onCityChange,
+  localitySource = null,
   onSuggestionPick,
   fieldErrors = {},
   onClearError,
@@ -73,6 +74,10 @@ export default function StructuredAddressFields({
   }, [suggestions.length]);
 
   useEffect(() => {
+    if (localitySource === "ares") {
+      setCityManual(true);
+      return;
+    }
     const digits = pscDigits(psc);
     if (digits.length !== 5 || cityManual) return;
 
@@ -94,7 +99,7 @@ export default function StructuredAddressFields({
     return () => {
       cancelled = true;
     };
-  }, [psc, cityManual]); // eslint-disable-line react-hooks/exhaustive-deps -- sync city from PSC only
+  }, [psc, cityManual, localitySource]); // eslint-disable-line react-hooks/exhaustive-deps -- sync city from PSC only
 
   const runSearch = (nextStreet = street, nextHouse = houseNumber, nextCity = city, nextPsc = psc) => {
     autocompleteRef.current?.search(nextStreet, {
@@ -196,7 +201,9 @@ export default function StructuredAddressFields({
           }`}
         />
         {fieldErrors.city ? <p className="mt-1 text-xs text-red-600">{fieldErrors.city}</p> : null}
-        {city && !cityManual && !cityLoading ? (
+        {city && localitySource === "ares" && !cityLoading ? (
+          <p className="mt-1 text-[11px] text-[#3D7A68]">✓ Lokalita z ARES</p>
+        ) : city && !cityManual && !cityLoading ? (
           <p className="mt-1 text-[11px] text-[#3D7A68]">✓ Lokalita doplněna podle PSČ</p>
         ) : null}
       </div>

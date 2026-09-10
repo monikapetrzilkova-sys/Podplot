@@ -26,7 +26,7 @@ export default function InstitutionPresenceBar({ peers = [], conflictPeers = [],
         >
           <span className="font-bold">Pozor: </span>
           na tomto záznamu právě pracuje{" "}
-          {conflictPeers.map((p) => p.displayName || "kolega").join(", ")}. Uložte až po domluvě, ať
+          {conflictPeers.map((p) => p.displayName || "kolega").join(", ")}. Ulož až po domluvě, ať
           si nepřepíšete změny.
         </div>
       ) : null}

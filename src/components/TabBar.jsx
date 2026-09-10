@@ -8,7 +8,7 @@ import {
   IconTabStar,
   IconTabAd,
   IconAlert,
-  IconTabUser,
+  IconTabOffice,
 } from "../data/icons.jsx";
 
 const NEIGHBOR_TABS = [
@@ -45,7 +45,7 @@ const OFFICE_TABS = [
   { id: "reports", label: "Dění", icon: IconTabMap },
   { id: "crisis", label: "Oznámení", icon: IconAlert },
   { id: "plus", label: "", isPlus: true },
-  { id: "office", label: "Agenda", icon: IconTabUser },
+  { id: "office", label: "Agenda", icon: IconTabOffice },
   { id: "catalog", label: "Katalog", icon: IconTabCatalog },
 ];
 

@@ -6,6 +6,7 @@
 export const INSTITUTION_KINDS = {
   obecni_urad: { id: "obecni_urad", label: "Obecní úřad" },
   mestsky_urad: { id: "mestsky_urad", label: "Městský úřad" },
+  mestska_cast: { id: "mestska_cast", label: "Úřad městské části" },
   magistrat: { id: "magistrat", label: "Magistrát" },
 };
 

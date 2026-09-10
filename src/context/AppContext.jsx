@@ -2454,7 +2454,7 @@ export function AppProvider({ children }) {
       let resolvedOrgRole = institutionRole ?? null;
       if (normalizedType === "urad" && institutionId) {
         resolvedOrgRole = nextOrgRole(await findOrgMembers({ institutionId }));
-      } else if (normalizedType === "podnik" && businessIco) {
+      } else if (normalizedType === "podnik" && businessIco && resolvedSubtype !== "mobilni") {
         resolvedOrgRole = nextOrgRole(await findOrgMembers({ businessIco }));
       }
 
@@ -8355,20 +8355,28 @@ export function AppProvider({ children }) {
   }, [openProfile]);
 
   const openProfileActivity = useCallback(() => {
-    if (unreadGroupProposalSupportersCount > 0 && unreadTrustVerifiersCount === 0) {
-      openGroupProposalSupporters();
-      return;
-    }
-    if (unreadTrustVerifiersCount > 0) {
-      openTrustVerifiers();
-      return;
-    }
-    if (unreadGroupProposalSupportersCount > 0) {
-      openGroupProposalSupporters();
-      return;
+    const officeAccount =
+      testRoleId === "urad" ||
+      user?.accountType === "urad" ||
+      user?.accountType === "instituce";
+    if (!officeAccount) {
+      if (unreadGroupProposalSupportersCount > 0 && unreadTrustVerifiersCount === 0) {
+        openGroupProposalSupporters();
+        return;
+      }
+      if (unreadTrustVerifiersCount > 0) {
+        openTrustVerifiers();
+        return;
+      }
+      if (unreadGroupProposalSupportersCount > 0) {
+        openGroupProposalSupporters();
+        return;
+      }
     }
     openProfile();
   }, [
+    testRoleId,
+    user?.accountType,
     unreadGroupProposalSupportersCount,
     unreadTrustVerifiersCount,
     openGroupProposalSupporters,

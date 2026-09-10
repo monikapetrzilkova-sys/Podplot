@@ -5,6 +5,7 @@ import ContentEditModal from "./ContentEditModal.jsx";
 import { IconAlert } from "../data/icons.jsx";
 import SampleBadge from "./SampleBadge.jsx";
 import { isSampleContent } from "../data/sampleContent.js";
+import InfoTip from "./InfoTip.jsx";
 
 function ComposeRow({ id, title, summary, open, onToggle, children }) {
   return (
@@ -107,10 +108,12 @@ export default function InstitutionCrisisPage() {
 
   return (
     <div className="pp-page flex flex-col min-h-full px-4 pt-4 pb-8 gap-4">
-      <div>
-        <p className="text-xs text-stone-500">
-          Co vydává úřad — klepni na typ a doplň nadpis s textem
-        </p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-semibold text-stone-900">Oznámení</p>
+        <InfoTip title="Oznámení úřadu">
+          <p>Klepni na typ a doplň nadpis s textem.</p>
+          <p>Mimořádné oznámení se sousedům ukáže v SOS pruhu.</p>
+        </InfoTip>
       </div>
 
       {plusPicker && (

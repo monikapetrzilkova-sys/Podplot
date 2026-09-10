@@ -139,7 +139,11 @@ function Screen() {
           {activeTab === "crisis" && <InstitutionCrisisPage />}
           {activeTab === "catalog" && <CatalogPage />}
           {activeTab === "office" && <InstitutionOfficePage />}
-          {(activeTab === "home" || activeTab === "map" || activeTab === "neighbors" || activeTab === "messages") && (
+          {(activeTab === "home" ||
+            activeTab === "map" ||
+            activeTab === "neighbors" ||
+            activeTab === "messages" ||
+            activeTab === "profile") && (
             <MapPage lockedSection="reports" officeOverview />
           )}
         </>

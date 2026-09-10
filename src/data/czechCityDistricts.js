@@ -124,7 +124,7 @@ export function pscLocalityKey(psc) {
 export function refineLocalityFromPsc(psc, fallbackCity = "", suburb = "") {
   const digits = pscDigits(String(psc ?? ""));
   const district = prahaDistrictFromPsc(digits) || brnoDistrictFromPsc(digits);
-  const hood = PSC_NEIGHBORHOOD[Number(digits)] || String(suburb ?? "").trim();
+  const hood = String(suburb ?? "").trim() || PSC_NEIGHBORHOOD[Number(digits)] || "";
   if (district && hood && !hood.startsWith("Praha") && !hood.startsWith("Brno")) {
     return `${district} — ${hood}`;
   }

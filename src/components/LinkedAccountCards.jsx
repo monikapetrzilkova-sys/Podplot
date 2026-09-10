@@ -1,5 +1,6 @@
 import { useState } from "react";
 import AccountTypeIcon from "./AccountTypeIcon.jsx";
+import InfoTip from "./InfoTip.jsx";
 import { useApp } from "../context/AppContext.jsx";
 
 /** Kompaktní CTA: většina lidí úřad neřeší — info až po rozbalení. */
@@ -54,7 +55,6 @@ export function AddOfficeAccountCard({ className = "" }) {
 /** Kompaktní CTA z úřadu na oddělený sousedský účet. */
 export function AddNeighborAccountCard({ className = "" }) {
   const { logoutAndRegisterAs, closeProfile } = useApp();
-  const [open, setOpen] = useState(false);
 
   return (
     <section className={`mt-2 ${className}`}>
@@ -62,26 +62,22 @@ export function AddNeighborAccountCard({ className = "" }) {
         <span className="w-6 h-6 rounded-lg bg-[#E8F3EF] text-[#3D7A68] flex items-center justify-center shrink-0">
           <AccountTypeIcon roleId="soused" accountType="soused" className="w-3.5 h-3.5" />
         </span>
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          className="flex-1 min-w-0 text-left"
-        >
+        <div className="flex-1 min-w-0">
           <span className="block text-[11px] font-semibold text-stone-700 truncate">
             Sousedský účet
           </span>
-          <span className="block text-[10px] text-stone-400">
-            {open ? "Skrýt podrobnosti" : "Oddělené přihlášení · podrobnosti"}
-          </span>
-        </button>
+        </div>
+        <InfoTip title="Sousedský účet">
+          <p>Úřad a soused nejsou jeden účet — nejde je přepínat pod stejným přihlášením.</p>
+          <p>Osobní účet založíš soukromým e-mailem, nebo oficiálním mailem obce, pokud na něj souseda ještě nemáš.</p>
+        </InfoTip>
         <button
           type="button"
           onClick={() => {
             closeProfile?.();
             logoutAndRegisterAs?.("soused", {
               notice:
-                "Založte sousedský účet. Doporučujeme soukromý e-mail; oficiální mail obce lze použít, pokud na něj ještě souseda nemáte.",
+                "Založ sousedský účet. Doporučujeme soukromý e-mail; oficiální mail obce jde použít, pokud na něj souseda ještě nemáš.",
             });
           }}
           className="shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-semibold border border-stone-200 text-[#1B4D3E] bg-white hover:bg-[#F1F6F5]"
@@ -89,13 +85,6 @@ export function AddNeighborAccountCard({ className = "" }) {
           Přidat
         </button>
       </div>
-      {open ? (
-        <p className="mt-1.5 pl-8 text-[10px] text-stone-500 leading-snug">
-          Úřad a soused nejsou jeden účet — nelze je přepínat pod stejným přihlášením. Můžeš si
-          přidat osobní sousedský účet (soukromý e-mail, nebo oficiální mail obce, pokud ještě
-          nemáš sousedskou registraci).
-        </p>
-      ) : null}
     </section>
   );
 }

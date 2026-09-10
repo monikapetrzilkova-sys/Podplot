@@ -7,7 +7,7 @@ import {
   isSelfNeighborCandidate,
 } from "../data/listingSales.js";
 import { TRUST_COPY, trustPendingCountLabel, neighborLocalityCaption } from "../data/trustNetworkCopy.js";
-import { getAccountType, ADDRESS_PRIVACY_NOTE, getPodnikatelSubtypeLabel, isBusinessAccount, getRegistrationFields, resolveBusinessSubtype } from "../data/accountTypes.js";
+import { getAccountType, ADDRESS_PRIVACY_NOTE, getPodnikatelSubtypeLabel, isBusinessAccount, getRegistrationFields, resolveBusinessSubtype, isUradAccount } from "../data/accountTypes.js";
 import { isInjectedDemoPersona } from "../data/businessProfiles.js";
 import { getVerifiedLabel } from "../data/domainVerification.js";
 import { Avatar } from "./RoleBadge.jsx";
@@ -320,15 +320,11 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
     citizenProfile,
   } = useApp();
 
-  const isOfficeProfile = testRoleId === "urad";
+  const isOfficeProfile = (testRoleId === "urad" || isUradAccount(user)) && !viewAsNeighbor;
   const showNeighborProfile = testRoleId === "soused" || viewAsNeighbor;
   const showWorkRoleViews = !viewAsNeighbor;
-  /** Stejná horní karta (avatar, platby, místa, profily) i u mobilní služby / provozovny */
-  const showIdentityHeader =
-    testRoleId === "soused" ||
-    testRoleId === "remeslnik" ||
-    testRoleId === "podnik" ||
-    viewAsNeighbor;
+  /** Každý účet má nahoře jméno a fotku — u úřadu to dřív chybělo a overlay vypadal prázdně */
+  const showIdentityHeader = Boolean(user);
   const isWorkProfileMode =
     showWorkRoleViews && (testRoleId === "remeslnik" || testRoleId === "podnik");
 
@@ -426,6 +422,42 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
 
   if (legalPage) {
     return <LegalPages page={legalPage} />;
+  }
+
+  if (settingsOpen && isOfficeProfile) {
+    return (
+      <div className="px-4 py-4 pb-8 space-y-3">
+        <ProfileCollapsible
+          title="Upozornění"
+          icon={PROFILE_DOODLE_ICONS.alerts}
+          summary={notificationPrefs?.messageAlerts !== false ? "Zprávy zapnuté" : "Zprávy vypnuté"}
+          defaultOpen
+        >
+          <label className="flex items-start gap-3 p-3 rounded-xl border border-stone-200 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={Boolean(notificationPrefs?.messageAlerts !== false)}
+              onChange={(e) => toggleMessageAlerts(e.target.checked)}
+              className="mt-0.5 rounded accent-emerald-600"
+            />
+            <span className="text-xs text-stone-600 leading-relaxed">
+              <strong className="text-stone-800">Nové zprávy</strong>
+              <span className="block mt-0.5 text-stone-500">Když ti kolega nebo soused napíše.</span>
+            </span>
+          </label>
+        </ProfileCollapsible>
+        <ProfileCollapsible title="Heslo a odhlášení" summary="Změna hesla · odhlásit se" defaultOpen>
+          <PasswordChangeFields />
+          <button
+            type="button"
+            onClick={logout}
+            className="w-full py-3 text-sm font-semibold text-stone-600 border border-stone-200 rounded-2xl hover:bg-stone-50"
+          >
+            Odhlásit se
+          </button>
+        </ProfileCollapsible>
+      </div>
+    );
   }
 
   if (settingsOpen) {
@@ -728,6 +760,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                   </span>
                 )}
               </button>
+              {isOfficeProfile ? null : (
               <button
                 type="button"
                 onClick={() => {
@@ -751,36 +784,50 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
               >
                 {trustVerifiers.length}
               </button>
+              )}
             </div>
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                 <h2 className="text-sm font-bold text-stone-900 truncate">{displayName}</h2>
+                {isOfficeProfile ? (
+                  <span className="text-[9px] font-bold text-[#1B4D3E] bg-[#E8F3EF] px-1.5 py-0.5 rounded-md border border-[#C5DDD4]">
+                    Úřad
+                  </span>
+                ) : null}
                 {user.isVerified && <VerifiedBadge accountType={user.accountType} compact />}
-                {isCommunityVerified ? (
+                {!isOfficeProfile && isCommunityVerified ? (
                   <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200">
                     Ověřený
                   </span>
                 ) : null}
               </div>
               <p className="text-[11px] text-stone-500 truncate mt-0.5">{user.email}</p>
-              <p className="text-[11px] text-[#3D7A68] mt-1 leading-snug">
-                {user.isVerified || isCommunityVerified
-                  ? TRUST_COPY.verifiedHint
-                  : TRUST_COPY.unverifiedHint}
-              </p>
-              {!(user.isVerified || isCommunityVerified) ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    closeProfile?.();
-                    openMessages?.();
-                  }}
-                  className="mt-1 text-[10px] font-semibold text-[#3D7A68] hover:underline"
-                >
-                  Znáš někoho z okolí? Napsat zprávu
-                </button>
-              ) : null}
+              {isOfficeProfile ? (
+                user.contactName ? (
+                  <p className="text-[11px] text-stone-500 mt-0.5 truncate">{user.contactName}</p>
+                ) : null
+              ) : (
+                <>
+                  <p className="text-[11px] text-[#3D7A68] mt-1 leading-snug">
+                    {user.isVerified || isCommunityVerified
+                      ? TRUST_COPY.verifiedHint
+                      : TRUST_COPY.unverifiedHint}
+                  </p>
+                  {!(user.isVerified || isCommunityVerified) ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        closeProfile?.();
+                        openMessages?.();
+                      }}
+                      className="mt-1 text-[10px] font-semibold text-[#3D7A68] hover:underline"
+                    >
+                      Znáš někoho z okolí? Napsat zprávu
+                    </button>
+                  ) : null}
+                </>
+              )}
               <div className="flex flex-wrap items-center gap-2 mt-1.5">
                 <button
                   type="button"
@@ -802,7 +849,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
             </div>
           </div>
 
-          {trustInfoOpen ? (
+          {!isOfficeProfile && trustInfoOpen ? (
             <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50/70 p-2.5 text-left">
               <div className="flex items-center justify-between gap-2 mb-1.5">
                 <p className="text-[11px] font-bold text-stone-800">{TRUST_COPY.verifiersTitle}</p>
@@ -841,6 +888,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
             </div>
           ) : null}
 
+          {isOfficeProfile ? null : (
           <div id="profile-home-address" className="scroll-mt-4 mt-3">
             <div className="pp-profile-sec-head">
               <p className="pp-profile-sec-title">Místa</p>
@@ -996,6 +1044,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
               </div>
             ) : null}
           </div>
+          )}
 
           {!ENABLE_DEV_ROLE_SWITCH && !isOfficeProfile ? (
             <MyProfilesPanel embedded />
@@ -1403,6 +1452,9 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
         </ProfileCollapsible>
       )}
 
+        </>
+      )}
+
       {photoEditorOpen && (
         <ProfilePhotoEditor
           open
@@ -1412,8 +1464,6 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
           onRemove={removeProfilePhoto}
           title="Profilová fotka"
         />
-      )}
-        </>
       )}
 
       <div className="mt-4 mb-2">
@@ -1447,11 +1497,6 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
         </section>
       )}
 
-      {showWorkRoleViews && testRoleId === "urad" && (
-        <section className="bg-stone-50 border border-stone-200 rounded-2xl p-4 mb-4">
-          <p className="text-xs text-stone-500">Obecní úřad nemá placené služby — vše je zdarma.</p>
-        </section>
-      )}
 
       {detailReport && (
         <ReportDetailModal

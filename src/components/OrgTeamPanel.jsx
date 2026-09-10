@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { findOrgMembers } from "../data/orgMembers.js";
 import { INSTITUTION_MEMBER_ROLES } from "../data/institutions/institutionTypes.js";
 import { useInstitutionPresence } from "../hooks/useInstitutionPresence.js";
+import InfoTip from "./InfoTip.jsx";
 
 function roleLabel(role) {
   return INSTITUTION_MEMBER_ROLES[role]?.label ?? (role === "admin" ? "Správce" : "Editor");
@@ -20,8 +21,15 @@ export default function OrgTeamPanel({
   userId = null,
   displayName = "Ty",
   title = "Správa týmu",
-  emptyHint = "Zatím jsi tu sama. Další kolega se připojí stejnou registrací.",
+  emptyHint = "Zatím jsi tu sama.",
   peers: peersProp = null,
+  infoTitle = "Správa týmu",
+  infoText = (
+    <>
+      <p>Pod jedním účtem může pracovat víc lidí.</p>
+      <p>Tady vidíš, kdo je připojený a kdo je zrovna aktivní.</p>
+    </>
+  ),
 }) {
   const [members, setMembers] = useState([]);
   const enabled = Boolean((institutionId || businessIco) && userId) && peersProp == null;
@@ -66,11 +74,9 @@ export default function OrgTeamPanel({
 
   return (
     <section className="rounded-2xl border border-[#C5DDD4] bg-white p-4 space-y-3">
-      <div>
+      <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-bold text-stone-900">{title}</h3>
-        <p className="text-[11px] text-stone-500 mt-0.5 leading-snug">
-          Pod jedním účtem může pracovat víc lidí najednou. Tady vidíš, kdo je připojený a kdo je zrovna aktivní.
-        </p>
+        <InfoTip title={infoTitle}>{infoText}</InfoTip>
       </div>
 
       {rows.length === 0 ? (

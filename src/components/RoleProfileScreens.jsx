@@ -34,6 +34,7 @@ import { IconMapPin } from "../data/icons.jsx";
 import AccountTypeIcon from "./AccountTypeIcon.jsx";
 import { AddOfficeAccountCard, AddNeighborAccountCard } from "./LinkedAccountCards.jsx";
 import OrgTeamPanel from "./OrgTeamPanel.jsx";
+import InfoTip from "./InfoTip.jsx";
 
 /** Osobní profily uživatele — bez institucionálních účtů (úřad). */
 const PERSONAL_ROLE_IDS = ["soused", "podnik", "remeslnik"];
@@ -855,14 +856,6 @@ export function CraftsmanRoleView() {
 
   return (
     <div className="space-y-4">
-      {user?.businessIco ? (
-        <OrgTeamPanel
-          businessIco={user.businessIco}
-          userId={user.id}
-          displayName={user.contactName || user.name}
-          title="Správa služby"
-        />
-      ) : null}
       <CraftsmanProfilePanel />
       <CraftsmanOrdersSection />
       {craftsmanInvoices?.length > 0 && (
@@ -981,63 +974,54 @@ export function BusinessRoleView() {
 export function MunicipalityRoleView() {
   const { setActiveTab, closeProfile, municipalityPrompts, activeCrisis, user } = useApp();
   const persona = TEST_PERSONAS.urad;
-  const officeName = user?.name || persona.businessName || persona.name;
   const openPrompts = municipalityPrompts.filter((p) => p.status !== "done" && p.status !== "declined").length;
 
   return (
-    <div className="space-y-4 mb-4">
-      <section className="rounded-2xl border border-[#C5DDD4] bg-[#F7FAF9] p-4">
-        <div className="flex items-center gap-3">
-          <span
-            className="w-11 h-11 rounded-2xl bg-[#E8F3EF] text-[#3D7A68] flex items-center justify-center shrink-0"
-            aria-hidden
-          >
-            <AccountTypeIcon roleId="urad" accountType="urad" className="w-6 h-6" />
-          </span>
-          <div className="min-w-0">
-            <h3 className="text-sm font-bold text-stone-900">{officeName}</h3>
-            <p className="text-xs text-stone-500">
-              Institucionální profil
-              {user?.institutionRole ? ` · ${user.institutionRole}` : ""}
-              {user?.institutionId ? ` · ID ${user.institutionId}` : ""}
-            </p>
+    <div className="space-y-3 mb-4">
+      <section className="pp-card p-3.5">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[11px] font-semibold text-stone-500">Stav</p>
+          <InfoTip title="Účet úřadu">
+            <p>Nové oznámení, výzvu nebo akci přidáš tlačítkem + ve spodní liště.</p>
+            <p>Agendu otevřeš z tohoto profilu nebo ze záložky Agenda.</p>
+            <p>Kolega se připojí vlastní registrací na oficiální e-mail obce.</p>
+          </InfoTip>
+        </div>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <div className="rounded-xl bg-[#F7FAF9] border border-[#C5DDD4] px-3 py-2">
+            <p className="text-[10px] text-stone-400">Hlášení</p>
+            <p className="text-sm font-bold text-stone-900">{openPrompts}</p>
+          </div>
+          <div className="rounded-xl bg-[#F7FAF9] border border-[#C5DDD4] px-3 py-2">
+            <p className="text-[10px] text-stone-400">Mimořádné</p>
+            <p className="text-sm font-bold text-stone-900">{activeCrisis ? "aktivní" : "žádné"}</p>
           </div>
         </div>
-      </section>
-
-      <section className="pp-card p-3.5 space-y-2 text-xs text-stone-600">
-        <p>
-          Otevřená hlášení:{" "}
-          <span className="font-semibold text-stone-900">{openPrompts}</span>
-        </p>
-        <p>
-          Mimořádné oznámení:{" "}
-          <span className="font-semibold text-stone-900">
-            {activeCrisis ? "aktivní" : "žádné"}
-          </span>
-        </p>
-        <p className="text-[11px] text-stone-400 pt-1">
-          Nové oznámení, výzva nebo akce — tlačítko + ve spodní liště.
-        </p>
+        <button
+          type="button"
+          onClick={() => {
+            closeProfile();
+            setActiveTab("office");
+          }}
+          className="mt-3 w-full py-2.5 rounded-xl text-xs font-semibold border border-[#C5DDD4] text-[#1B4D3E] bg-[#F1F6F5]"
+        >
+          Otevřít Agendu
+        </button>
       </section>
 
       <OrgTeamPanel
         institutionId={user?.institutionId || persona.institutionId}
         userId={user?.id}
         displayName={user?.contactName || user?.name || "Úředník"}
-        title="Správa úřadu"
+        title="Tým"
+        infoTitle="Tým úřadu"
+        infoText={
+          <>
+            <p>Pod jedním úřadem může pracovat víc lidí. Každý se přihlásí svým oficiálním e-mailem obce.</p>
+            <p>Tady vidíš, kdo je připojený a kdo je zrovna aktivní.</p>
+          </>
+        }
       />
-
-      <button
-        type="button"
-        onClick={() => {
-          closeProfile();
-          setActiveTab("office");
-        }}
-        className="w-full py-2.5 rounded-xl text-xs font-semibold border border-[#C5DDD4] text-[#1B4D3E] bg-[#F1F6F5]"
-      >
-        Otevřít Agendu
-      </button>
 
       <AddNeighborAccountCard />
     </div>

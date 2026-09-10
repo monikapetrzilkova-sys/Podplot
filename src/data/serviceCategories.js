@@ -35,7 +35,7 @@ export const SUBCATEGORY_TO_HOME_GROUP = {
   fitness: "pece-krasa",
   hlidani: "deti-rodina",
   doucovani: "deti-rodina",
-  preklad: "deti-rodina",
+  preklad: "ostatni",
   pravo: "ostatni",
   ucetni: "ostatni",
   event: "ostatni",

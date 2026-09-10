@@ -9,7 +9,7 @@ import OfficePromptCard from "./OfficePromptCard.jsx";
 import PrimaryAddButton from "./PrimaryAddButton.jsx";
 import AccountTypeIcon from "./AccountTypeIcon.jsx";
 import InstitutionPresenceBar from "./InstitutionPresenceBar.jsx";
-import OrgTeamPanel from "./OrgTeamPanel.jsx";
+import InfoTip from "./InfoTip.jsx";
 import { useInstitutionPresence } from "../hooks/useInstitutionPresence.js";
 import { AGENDA_DOODLE_ICONS } from "./doodle/doodleIcons.jsx";
 import { isOfficeOrganizedEvent } from "../utils/categoryAccents.js";
@@ -235,21 +235,17 @@ export default function InstitutionOfficePage() {
               >
                 <AccountTypeIcon roleId="urad" accountType="urad" className="w-4 h-4" />
               </span>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-stone-900 truncate">{officeLabel}</p>
-                <p className="text-[11px] text-stone-500">Nejnovější z Agendy</p>
               </div>
+              <InfoTip title="Agenda">
+                <p>Tady jsou podněty občanů a akce v obci.</p>
+                <p>Nové oznámení nebo akci přidáš tlačítkem + dole.</p>
+                <p>Tým úřadu spravuješ v profilu — klepni na avatar nahoře.</p>
+              </InfoTip>
             </div>
 
             <InstitutionPresenceBar peers={peers} conflictPeers={conflictPeers} />
-
-            <OrgTeamPanel
-              institutionId={institutionId}
-              userId={user?.id}
-              displayName={user?.contactName || user?.name || "Úředník"}
-              title="Kdo teď spravuje úřad"
-              peers={peers}
-            />
 
             {latestItems.length === 0 ? (
               <p className="pp-feed-card px-4 py-3 text-xs text-stone-500">
@@ -306,7 +302,7 @@ export default function InstitutionOfficePage() {
         {activeSection === "prompts" && (
           <>
             <div className="flex items-center justify-between gap-2 px-0.5">
-              <p className="text-xs text-stone-500">Podněty občanů k řešení</p>
+              <p className="text-xs font-semibold text-stone-800">Hlášení</p>
               <button
                 type="button"
                 onClick={() => setActiveTab("reports")}
@@ -344,13 +340,6 @@ export default function InstitutionOfficePage() {
         {activeSection === "events" && (
           <>
             <PrimaryAddButton label="Nová akce" onClick={() => openCreateEvent?.()} />
-            <p className="text-xs text-stone-500 px-0.5">
-              {eventFilter === "office"
-                ? "Akce pořádané úřadem"
-                : eventFilter === "neighbors"
-                  ? "Akce od sousedů v obci"
-                  : "Všechny nadcházející akce"}
-            </p>
             {filteredEvents.length === 0 ? (
               <p className="pp-feed-card px-4 py-3 text-xs text-stone-500">
                 V tomto filtru zatím žádné akce.

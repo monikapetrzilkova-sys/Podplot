@@ -30,6 +30,10 @@ describe("refineLocalityFromPsc", () => {
     assert.equal(refineLocalityFromPsc("60200", "Brno"), "Brno-střed");
     assert.equal(refineLocalityFromPsc("25222", "Jesenice u Prahy"), "Jesenice u Prahy");
   });
+
+  it("prefers an explicit ARES suburb over the coarse ZIP map", () => {
+    assert.equal(refineLocalityFromPsc("14000", "Praha 4", "Michle"), "Praha 4 — Michle");
+  });
 });
 
 describe("municipalitiesMatch", () => {

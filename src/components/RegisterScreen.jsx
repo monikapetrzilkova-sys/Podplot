@@ -31,6 +31,7 @@ import { EMAIL_TAKEN_CODE, EMAIL_TAKEN_MESSAGE, MIN_PASSWORD_LENGTH, validatePas
 import { ENABLE_TEST_PROFILE_ENTRY } from "../data/devConfig.js";
 import { readRegisterIntent, clearRegisterIntent } from "../data/registrationIntent.js";
 import { lookupCompanyByIco, isValidIco, normalizeIco } from "../data/aresLookup.js";
+import { refineLocalityFromPsc } from "../data/czechCityDistricts.js";
 import { findOrgMembers } from "../data/orgMembers.js";
 import PasswordField from "./PasswordField.jsx";
 
@@ -89,6 +90,7 @@ export default function RegisterScreen() {
   const [icoError, setIcoError] = useState("");
   const [orgPeers, setOrgPeers] = useState([]);
   const [testEntryName, setTestEntryName] = useState("");
+  const [aresLocalityLock, setAresLocalityLock] = useState(false);
 
   const selectedType = getAccountType(accountType);
   const registrationFields = getRegistrationFields(accountType, businessSubtype);
@@ -154,6 +156,7 @@ export default function RegisterScreen() {
     const digits = ico.replace(/\D/g, "");
     if (digits.length !== 8) {
       setIcoError("");
+      setAresLocalityLock(false);
       return undefined;
     }
     if (!isValidIco(digits)) {
@@ -171,16 +174,31 @@ export default function RegisterScreen() {
       }
       setIcoError("");
       const company = result.company;
-      if (company.name) setName(company.name);
-      if (company.psc) setPsc(company.psc);
-      if (company.city) setCity(company.city);
+      if (company.name) {
+        if (businessSubtype === "mobilni") {
+          setContactName(company.name);
+          setName((prev) => (prev === company.name ? "" : prev));
+        } else {
+          setName(company.name);
+        }
+      }
+      if (company.psc) setPsc(formatPscInput(company.psc));
+      const locality = refineLocalityFromPsc(
+        company.psc,
+        company.district || company.city,
+        company.suburb
+      );
+      if (locality) {
+        setCity(locality);
+        setAresLocalityLock(true);
+      }
       if (company.street) setStreet(company.street);
-      if (company.houseNumber) setHouseNumber(company.houseNumber);
+      if (company.houseNumber) setHouseNumber(String(company.houseNumber));
     });
     return () => {
       cancelled = true;
     };
-  }, [accountType, ico]);
+  }, [accountType, businessSubtype, ico]);
 
   useEffect(() => {
     let cancelled = false;
@@ -190,7 +208,7 @@ export default function RegisterScreen() {
         if (!cancelled) setOrgPeers(rows);
         return;
       }
-      if (accountType === "podnik" && ico.replace(/\D/g, "").length === 8) {
+      if (accountType === "podnik" && businessSubtype !== "mobilni" && ico.replace(/\D/g, "").length === 8) {
         const rows = await findOrgMembers({ businessIco: ico });
         if (!cancelled) setOrgPeers(rows);
         return;
@@ -201,7 +219,7 @@ export default function RegisterScreen() {
     return () => {
       cancelled = true;
     };
-  }, [isUrad, selectedInstitution?.id, accountType, ico]);
+  }, [isUrad, selectedInstitution?.id, accountType, businessSubtype, ico]);
 
   useEffect(() => {
     if (!selectedInstitution) return;
@@ -263,13 +281,19 @@ export default function RegisterScreen() {
 
     if (isUrad || accountType === "podnik") {
       if (!contactName.trim()) {
-        setSubmitError("Vyplň jméno člověka, který bude účet spravovat.");
+        setSubmitError(isMobilniCraft ? "Chybí jméno z ARES — zkontroluj IČO." : "Vyplň svoje jméno.");
         return;
       }
     }
 
     if (!name.trim()) {
-      setSubmitError(isUrad || accountType === "podnik" ? "Chybí název úřadu / podniku." : "Vyplň prosím jméno.");
+      setSubmitError(
+        isMobilniCraft
+          ? "Doplň krátký název do katalogu služeb."
+          : isUrad || accountType === "podnik"
+            ? "Chybí název úřadu / podniku."
+            : "Vyplň prosím jméno."
+      );
       return;
     }
     if (!emailResult.valid) return;
@@ -290,6 +314,14 @@ export default function RegisterScreen() {
     if (accountType === "podnik" && businessSubtype === "mobilni" && !primarySubcategory) {
       setSubmitError("Vyber hlavní zaměření služby.");
       return;
+    }
+
+    if (isMobilniCraft) {
+      const existing = await findOrgMembers({ businessIco: ico });
+      if (existing.length > 0) {
+        setSubmitError("Toto IČO už v Podplotu někdo používá. Mobilní služba patří jen jednomu člověku.");
+        return;
+      }
     }
 
     if (isUrad && !selectedInstitution) {
@@ -666,7 +698,9 @@ export default function RegisterScreen() {
           <p className="text-sm text-stone-500 mb-4">
             {isUrad
               ? "Úřad vyberu z katalogu po PSČ. E-mail musí být z oficiálního webu obce. Spravovat ho může víc lidí."
-              : accountType === "podnik"
+              : isMobilniCraft
+                ? "Službu ověříme podle IČO — účet patří jednomu člověku. Do katalogu pak dáš krátký název, třeba Účetnictví."
+                : accountType === "podnik"
                 ? "Podnik ověříme podle IČO v ARES. Firemní e-mail účet rovnou ověří; osobní e-mail stačí na start, bez odznaku."
                 : "Registrace je povinná. Účet zůstane uložený v tomto telefonu i po aktualizaci."}
           </p>
@@ -781,11 +815,16 @@ export default function RegisterScreen() {
                 />
                 {icoBusy ? <p className="mt-1.5 text-xs text-stone-500">Ověřuji v ARES…</p> : null}
                 {icoError ? <p className="mt-1.5 text-xs text-red-600">{icoError}</p> : null}
-                {!icoError && !icoBusy && name && ico.replace(/\D/g, "").length === 8 ? (
-                  <p className="mt-1.5 text-xs text-teal-800">Nalezeno v ARES: {name}</p>
+                {!icoError && !icoBusy && ico.replace(/\D/g, "").length === 8 && (isMobilniCraft ? contactName : name) ? (
+                  <p className="mt-1.5 text-xs text-teal-800">
+                    Nalezeno v ARES: {isMobilniCraft ? contactName : name}
+                    {city ? ` · ${city}` : ""}
+                  </p>
                 ) : null}
                 <p className="mt-1 text-[10px] text-stone-400 leading-relaxed">
-                  IČO je veřejné. Podle něj poznáme firmu a umožníme, aby stejný podnik spravovalo víc lidí.
+                  {isMobilniCraft
+                    ? "IČO je veřejné. Poznáme podle něj konkrétního člověka — tenhle účet spravuje jen on."
+                    : "IČO je veřejné. Podle něj poznáme firmu a umožníme, aby stejný podnik spravovalo víc lidí."}
                 </p>
               </div>
             ) : null}
@@ -793,7 +832,7 @@ export default function RegisterScreen() {
             {isUrad || accountType === "podnik" ? (
               <div>
                 <label className="block text-xs font-semibold text-stone-600 mb-1.5">
-                  Tvoje jméno (správce)
+                  Tvoje jméno
                   <ReqStar />
                 </label>
                 <input
@@ -804,7 +843,9 @@ export default function RegisterScreen() {
                   className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-700/30"
                 />
                 <p className="mt-1 text-[10px] text-stone-400">
-                  Účet může spravovat více lidí. Sem napiš svoje jméno, ať tě kolegové poznají.
+                  {isMobilniCraft
+                    ? "Doplní se z ARES podle IČO. Můžeš ho ještě upravit, pokud nesedí."
+                    : "Sem napiš svoje jméno, ať tě kolegové v týmu poznají."}
                 </p>
               </div>
             ) : (
@@ -838,6 +879,12 @@ export default function RegisterScreen() {
                   placeholder={registrationFields.namePlaceholder}
                   className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-700/30"
                 />
+                {isMobilniCraft ? (
+                  <p className="mt-1 text-[10px] text-stone-400 leading-relaxed">
+                    Jen krátké pojmenování do katalogu služeb — jak tě uvidí sousedé. Třeba Účetnictví, Instalatér
+                    nebo Zahrada. Ne celý název z ARES.
+                  </p>
+                ) : null}
               </div>
             ) : null}
 
@@ -994,10 +1041,17 @@ export default function RegisterScreen() {
                   houseNumber={houseNumber}
                   psc={psc}
                   city={city}
+                  localitySource={aresLocalityLock ? "ares" : null}
                   onStreetChange={setStreet}
                   onHouseNumberChange={setHouseNumber}
-                  onPscChange={setPsc}
-                  onCityChange={setCity}
+                  onPscChange={(value) => {
+                    setAresLocalityLock(false);
+                    setPsc(value);
+                  }}
+                  onCityChange={(value) => {
+                    setAresLocalityLock(false);
+                    setCity(value);
+                  }}
                   onSuggestionPick={(item) => {
                     if (item.lat != null && (item.lon != null || item.lng != null)) {
                       const lat = Number(item.lat);
@@ -1041,7 +1095,7 @@ export default function RegisterScreen() {
                   . Připojíš se jako další správce — uvidíte se navzájem ve správě týmu.
                 </p>
               </div>
-            ) : isUrad || accountType === "podnik" ? (
+            ) : isUrad || (accountType === "podnik" && !isMobilniCraft) ? (
               <p className="text-[11px] text-stone-400 leading-relaxed">
                 {isUrad
                   ? "Účet může spravovat více lidí. Kolega si vytvoří vlastní účet pod svým pracovním e-mailem obce."

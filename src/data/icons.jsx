@@ -148,6 +148,15 @@ export function IconTabUser({ className = "w-5 h-5" }) {
   );
 }
 
+export function IconTabOffice({ className = "w-5 h-5" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" {...tabStroke}>
+      <rect x="4" y="3" width="16" height="18" rx="1.5" />
+      <path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h6" />
+    </svg>
+  );
+}
+
 export function IconTabNeighbors({ className = "w-5 h-5" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" {...tabStroke}>
