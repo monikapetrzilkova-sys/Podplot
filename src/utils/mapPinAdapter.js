@@ -145,7 +145,8 @@ export function buildMapMarkers({
 }
 
 export const PIN_COLORS = {
-  home: { bg: "#1B4332", border: "#40916C" },
+  /** Domov / aktuální poloha — vínová, ať vynikne mezi zelenými špendlíky */
+  home: { bg: "#722F37", border: "#4A1C24" },
   urgent: { bg: "#A85858", border: "#8F4545" },
   urgentMunicipality: { bg: "#8F4545", border: "#6B3333" },
   default: { bg: "#B7E4C7", border: "#2D6A4F" },

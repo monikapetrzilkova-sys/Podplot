@@ -83,7 +83,7 @@ export default function MapComponent(props) {
           {error}
         </p>
       ) : null}
-      <ReportsMap large legendCollapsible {...props} />
+      <ReportsMap large legendCollapsible {...props} mapCenter={mapCenter} />
     </>
   );
 }

@@ -94,13 +94,19 @@ export function addressToMapPos(address = "") {
 export function requestUserGeolocation() {
   return new Promise((resolve) => {
     if (!navigator.geolocation) {
-      resolve({ mode: "address", accuracy: null });
+      resolve({ mode: "address", accuracy: null, lat: null, lng: null });
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      () => resolve({ mode: "gps", accuracy: "high" }),
-      () => resolve({ mode: "address", accuracy: null }),
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+      (pos) =>
+        resolve({
+          mode: "gps",
+          accuracy: "high",
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        }),
+      () => resolve({ mode: "address", accuracy: null, lat: null, lng: null }),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
     );
   });
 }
@@ -108,6 +114,6 @@ export function requestUserGeolocation() {
 export const GEO_LABELS = {
   loading: "Načítám polohu…",
   gps: "Vaše poloha (GPS)",
-  address: "Vaše adresa (zafixovaná geolokace)",
-  default: "Vaše adresa · okruh 1,2 km",
+  address: "Vaše adresa",
+  default: "Vaše adresa",
 };

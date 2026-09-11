@@ -3341,8 +3341,9 @@ input[type="date"].pp-datetime-fields__control {
   background: #fff;
 }
 
-.pp-map-google-control-btn:active {
-  transform: scale(0.96);
+.pp-map-google-control-btn:disabled {
+  opacity: 0.55;
+  cursor: wait;
 }
 
 .pp-map-pick-hint {

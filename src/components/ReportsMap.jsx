@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useId, useMemo } from "react";
+import { useRef, useState, useEffect, useId, useMemo, useCallback } from "react";
 import { IconMapPin } from "../data/icons.jsx";
 import {
   MAP_CENTER,
@@ -14,6 +14,7 @@ import {
   formatMapRadiusKm,
   mapRadiusToEllipsePercent,
 } from "../data/mapRadiusSettings.js";
+import { latLngToMapPos } from "../utils/geoCoordinates.js";
 import { institutionPinVariant, INSTITUTION_LEGEND } from "../data/institutionsMapData.js";
 import {
   INSTITUTION_PIN_COLORS,
@@ -34,6 +35,8 @@ import MapPinPopover from "./module/MapPinPopover.jsx";
 import { PlaceIcon, ServicePlaceIcon } from "./module/placeIcons.jsx";
 import MapPickHint from "./map/MapPickHint.jsx";
 import { MAP_PIN_H, MAP_PIN_W, mapPinDisplaySize, mapPinTeardropPath } from "../utils/mapPinShape.js";
+
+const HOME_PIN_COLOR = "#722F37";
 
 /** Sleduje menší rozměr mapy — okruh radiusu zůstane kruh, ne elipsa. */
 function useMapMinDimension(mapRef) {
@@ -100,7 +103,7 @@ function MapPin({
   emphasize = false,
 }) {
   const colors = {
-    home: { bg: "#1B4332", border: "#40916C" },
+    home: { bg: "#722F37", border: "#4A1C24" },
     urgent: { bg: "#A85858", border: "#8F4545" },
     urgentMunicipality: { bg: "#8F4545", border: "#6B3333" },
     default: { bg: "#B7E4C7", border: "#2D6A4F" },
@@ -148,7 +151,10 @@ function MapPin({
         {pulse && (
           <span
             className="absolute left-1/2 bottom-1 -translate-x-1/2 w-10 h-10 rounded-full animate-ping pointer-events-none"
-            style={{ background: "rgba(64, 145, 108, 0.25)" }}
+            style={{
+              background:
+                variant === "home" ? "rgba(114, 47, 55, 0.28)" : "rgba(64, 145, 108, 0.25)",
+            }}
             aria-hidden
           />
         )}
@@ -230,6 +236,7 @@ export default function ReportsMap({
   compact = false,
   userAddress = "",
   userGeo = null,
+  mapCenter = null,
   areaLabel: areaLabelOverride = "",
   homeLabel = "Domov",
   urgentCount = 0,
@@ -260,19 +267,59 @@ export default function ReportsMap({
   const gridPatternId = useId().replace(/:/g, "");
   const [geoMode, setGeoMode] = useState("loading");
   const [areaLabel, setAreaLabel] = useState("");
+  const [homeMapPos, setHomeMapPos] = useState(MAP_CENTER);
+  const [geoLocating, setGeoLocating] = useState(false);
+  const geoLocatingRef = useRef(false);
+
+  const addressCenter = useMemo(() => {
+    if (mapCenter?.lat != null && mapCenter?.lng != null) {
+      return { lat: Number(mapCenter.lat), lng: Number(mapCenter.lng) };
+    }
+    return null;
+  }, [mapCenter?.lat, mapCenter?.lng]);
 
   useEffect(() => {
+    setHomeMapPos(MAP_CENTER);
+    setGeoMode("loading");
     let cancelled = false;
     requestUserGeolocation().then((result) => {
       if (cancelled) return;
       const fromAddr = centerFromAddress(userAddress, userGeo);
       setAreaLabel(areaLabelOverride || fromAddr.label);
-      setGeoMode(result.mode === "gps" ? "gps" : userAddress ? "address" : "default");
+      if (result.mode === "gps" && result.lat != null && result.lng != null && addressCenter) {
+        setHomeMapPos(latLngToMapPos(result.lat, result.lng, addressCenter, effectiveRadiusKm));
+        setGeoMode("gps");
+      } else {
+        setGeoMode(result.mode === "gps" ? "gps" : userAddress ? "address" : "default");
+      }
     });
     return () => {
       cancelled = true;
     };
-  }, [userAddress, userGeo, areaLabelOverride]);
+  }, [userAddress, userGeo, areaLabelOverride, addressCenter, effectiveRadiusKm]);
+
+  const locateHomeToGps = useCallback(async () => {
+    if (geoLocatingRef.current) return;
+    geoLocatingRef.current = true;
+    setGeoLocating(true);
+    try {
+      const result = await requestUserGeolocation();
+      if (result.mode === "gps" && result.lat != null && result.lng != null) {
+        setGeoMode("gps");
+        if (addressCenter) {
+          setHomeMapPos(latLngToMapPos(result.lat, result.lng, addressCenter, effectiveRadiusKm));
+        } else {
+          setHomeMapPos(MAP_CENTER);
+        }
+      } else {
+        setGeoMode(userAddress ? "address" : "default");
+        setHomeMapPos(MAP_CENTER);
+      }
+    } finally {
+      geoLocatingRef.current = false;
+      setGeoLocating(false);
+    }
+  }, [addressCenter, effectiveRadiusKm, userAddress]);
 
   const handleMapClick = (e) => {
     if (pickMode && onPickPin && mapRef.current) {
@@ -395,15 +442,21 @@ export default function ReportsMap({
         {showHomePin && !singleReportMode && (
           <>
             <MapPin
-              x={MAP_CENTER.x}
-              y={MAP_CENTER.y}
+              x={homeMapPos.x}
+              y={homeMapPos.y}
               variant="home"
-              label={GEO_LABELS[geoMode] ?? GEO_LABELS.default}
+              label={`${GEO_LABELS[geoMode] ?? GEO_LABELS.default}${geoLocating ? "…" : ""} — kliknutím obnovíte GPS`}
               pulse
+              onClick={locateHomeToGps}
             />
             <span
-              className="absolute z-10 text-[9px] font-bold px-2 py-0.5 rounded-full pp-badge-pill pp-badge-emerald shadow-sm"
-              style={{ left: `${MAP_CENTER.x}%`, top: `${MAP_CENTER.y + 5}%`, transform: "translateX(-50%)" }}
+              className="absolute z-10 text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm text-white"
+              style={{
+                left: `${homeMapPos.x}%`,
+                top: `${homeMapPos.y + 5}%`,
+                transform: "translateX(-50%)",
+                background: HOME_PIN_COLOR,
+              }}
             >
               {homeLabel}
             </span>
@@ -638,7 +691,7 @@ export default function ReportsMap({
                 ) : isEventsMode ? (
                   <>
                     <span className="flex items-center gap-1.5">
-                      <span className="w-3 h-3 rounded-full shrink-0" style={{ background: "#1B4332" }} /> {homeLabel}
+                      <span className="w-3 h-3 rounded-full shrink-0" style={{ background: HOME_PIN_COLOR }} /> {homeLabel}
                     </span>
                     <span className="flex items-center gap-1.5">
                       <span className="w-3 h-3 rounded-full shrink-0" style={{ background: "#40916C" }} /> Akce
@@ -654,7 +707,7 @@ export default function ReportsMap({
                 ) : isThingsMode ? (
                   <>
                     <span className="flex items-center gap-1.5">
-                      <span className="w-3 h-3 rounded-full shrink-0" style={{ background: "#1B4332" }} /> {homeLabel}
+                      <span className="w-3 h-3 rounded-full shrink-0" style={{ background: HOME_PIN_COLOR }} /> {homeLabel}
                     </span>
                     <span className="flex items-center gap-1.5">
                       <span className="w-3 h-3 rounded-full shrink-0" style={{ background: "#D95D39" }} /> Daruji / Prodám
@@ -669,7 +722,7 @@ export default function ReportsMap({
                 ) : (
                   <>
                     <span className="flex items-center gap-1.5">
-                      <span className="w-3 h-3 rounded-full shrink-0" style={{ background: "#1B4332" }} /> {homeLabel}
+                      <span className="w-3 h-3 rounded-full shrink-0" style={{ background: HOME_PIN_COLOR }} /> {homeLabel}
                     </span>
                     <span className="flex items-center gap-1.5">
                       <span className="w-3 h-3 rounded-full shrink-0" style={{ background: "#A85858" }} /> Urgentní · okolí
@@ -700,7 +753,7 @@ export default function ReportsMap({
             ) : isEventsMode ? (
               <>
                 <span className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-full" style={{ background: "#1B4332" }} /> {homeLabel}
+                  <span className="w-3 h-3 rounded-full" style={{ background: HOME_PIN_COLOR }} /> {homeLabel}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span className="w-3 h-3 rounded-full" style={{ background: "#40916C" }} /> Akce
@@ -709,7 +762,7 @@ export default function ReportsMap({
             ) : (
               <>
                 <span className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-full" style={{ background: "#1B4332" }} /> {homeLabel}
+                  <span className="w-3 h-3 rounded-full" style={{ background: HOME_PIN_COLOR }} /> {homeLabel}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span className="w-3 h-3 rounded-full" style={{ background: "#A85858" }} /> Urgentní · okolí

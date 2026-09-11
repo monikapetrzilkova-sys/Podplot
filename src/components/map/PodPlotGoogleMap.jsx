@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildMapMarkers, googleMapsPinIcon, markerIconSvg } from "../../utils/mapPinAdapter.js";
 import { buildMapPickResult, mapPosToLatLng } from "../../utils/geoCoordinates.js";
 import { loadMarkerClusterer, createPodPlotClusterRenderer } from "../../utils/markerClusterLoader.js";
@@ -9,6 +9,7 @@ import {
   formatMapRadiusKm,
   radiusKmToMeters,
 } from "../../data/mapRadiusSettings.js";
+import { GEO_LABELS, requestUserGeolocation } from "../../data/mapData.js";
 import MapPickHint from "./MapPickHint.jsx";
 import { mapElementHasGoogleError, markMapsRuntimeFailed } from "../../utils/googleMapsLoader.js";
 
@@ -26,9 +27,21 @@ const HIDE_GOOGLE_POI_STYLES = [
   { featureType: "transit", elementType: "labels.icon", stylers: [{ visibility: "off" }] },
 ];
 
-function MapZoomControls({ onZoomIn, onZoomOut }) {
+function MapZoomControls({ onZoomIn, onZoomOut, onLocate, locating = false }) {
   return (
-    <div className="pp-map-google-controls" aria-label="Ovládání přiblížení">
+    <div className="pp-map-google-controls" aria-label="Ovládání mapy">
+      {onLocate ? (
+        <button
+          type="button"
+          className="pp-map-google-control-btn"
+          onClick={onLocate}
+          disabled={locating}
+          aria-label="Moje poloha GPS"
+          title="Moje poloha (GPS)"
+        >
+          ⌖
+        </button>
+      ) : null}
       <button type="button" className="pp-map-google-control-btn" onClick={onZoomIn} aria-label="Přiblížit">
         +
       </button>
@@ -83,11 +96,15 @@ export default function PodPlotGoogleMap({
   const clustererRef = useRef(null);
   const circleRef = useRef(null);
   const homeMarkerRef = useRef(null);
+  const homeClickListenerRef = useRef(null);
   const draftMarkerRef = useRef(null);
   const handlersRef = useRef({});
   const centerRef = useRef(mapCenter ?? { lat: 49.966, lng: 14.512 });
   const viewCenterRef = useRef(centerRef.current);
   const [mapReady, setMapReady] = useState(false);
+  const [liveGps, setLiveGps] = useState(null);
+  const [geoLocating, setGeoLocating] = useState(false);
+  const geoLocatingRef = useRef(false);
 
   handlersRef.current = {
     onReportPinClick,
@@ -107,6 +124,33 @@ export default function PodPlotGoogleMap({
   const refRadius = referenceRadiusKm ?? defaultRadiusKm;
   const center = mapCenter ?? { lat: 49.966, lng: 14.512 };
   centerRef.current = center;
+  const homePosition = liveGps ?? center;
+  const homeTitle = liveGps ? GEO_LABELS.gps : homeLabel;
+
+  useEffect(() => {
+    setLiveGps(null);
+  }, [center.lat, center.lng]);
+
+  const locateToGps = useCallback(async () => {
+    if (geoLocatingRef.current) return;
+    geoLocatingRef.current = true;
+    setGeoLocating(true);
+    try {
+      const result = await requestUserGeolocation();
+      if (result.mode !== "gps" || result.lat == null || result.lng == null) return;
+      const pos = { lat: Number(result.lat), lng: Number(result.lng) };
+      setLiveGps(pos);
+      const map = mapRef.current;
+      if (map) {
+        viewCenterRef.current = pos;
+        map.panTo(pos);
+        if ((map.getZoom() ?? 14) < 16) map.setZoom(16);
+      }
+    } finally {
+      geoLocatingRef.current = false;
+      setGeoLocating(false);
+    }
+  }, []);
 
   const resolveDraftLatLng = (pin) => {
     if (pin?.lat != null && pin?.lng != null) return { lat: Number(pin.lat), lng: Number(pin.lng) };
@@ -435,18 +479,35 @@ export default function PodPlotGoogleMap({
     const map = mapRef.current;
     if (!map || !window.google?.maps) return;
 
-    if (homeMarkerRef.current) homeMarkerRef.current.setMap(null);
+    if (homeClickListenerRef.current) {
+      window.google.maps.event.removeListener(homeClickListenerRef.current);
+      homeClickListenerRef.current = null;
+    }
+    if (homeMarkerRef.current) {
+      homeMarkerRef.current.setMap(null);
+      homeMarkerRef.current = null;
+    }
     if (showHomePin && !singleReportMode) {
       homeMarkerRef.current = new window.google.maps.Marker({
         map,
-        position: center,
-        title: homeLabel,
+        position: homePosition,
+        title: `${homeTitle} — kliknutím obnovíte GPS`,
         icon: googleMapsPinIcon(window.google.maps, markerIconSvg("home")),
         zIndex: 3000,
-        clickable: false,
+        clickable: true,
+        cursor: "pointer",
+      });
+      homeClickListenerRef.current = homeMarkerRef.current.addListener("click", () => {
+        locateToGps();
       });
     }
-  }, [center, showHomePin, homeLabel, singleReportMode, mapReady]);
+    return () => {
+      if (homeClickListenerRef.current) {
+        window.google.maps.event.removeListener(homeClickListenerRef.current);
+        homeClickListenerRef.current = null;
+      }
+    };
+  }, [liveGps, center.lat, center.lng, showHomePin, homeTitle, singleReportMode, mapReady, locateToGps]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -556,7 +617,12 @@ export default function PodPlotGoogleMap({
           aria-hidden={!pickMode}
         />
         {pickMode && !hidePickHint && !draftPin && <MapPickHint />}
-        <MapZoomControls onZoomIn={() => zoomBy(1)} onZoomOut={() => zoomBy(-1)} />
+        <MapZoomControls
+          onZoomIn={() => zoomBy(1)}
+          onZoomOut={() => zoomBy(-1)}
+          onLocate={showHomePin && !singleReportMode ? locateToGps : undefined}
+          locating={geoLocating}
+        />
       </div>
       {!hideStats && (
         <p className="text-xs text-stone-500 mt-2 px-0.5">{statsTitle}</p>

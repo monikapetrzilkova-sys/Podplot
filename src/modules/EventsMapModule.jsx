@@ -59,6 +59,11 @@ export default function EventsMapModule({ showRadiusControl = true, large = true
           selectedEventId={selectedEventId}
           large={large}
           legendCollapsible
+          mapCenter={
+            activeLocation?.lat != null && activeLocation?.lng != null
+              ? { lat: activeLocation.lat, lng: activeLocation.lng }
+              : null
+          }
           userAddress={activeLocation?.address ?? user?.address ?? ""}
           userGeo={user?.geo ?? null}
           areaLabel={activeLocation?.shortLabel}
