@@ -268,9 +268,21 @@ export default function PodPlotGoogleMap({
       window.setTimeout(checkGoogleError, 400);
     });
 
+    const syncViewCenter = () => {
+      const c = mapRef.current?.getCenter?.();
+      if (!c) return;
+      viewCenterRef.current = { lat: c.lat(), lng: c.lng() };
+    };
+    const dragEndListener = map.addListener("dragend", syncViewCenter);
+    const zoomChangedListener = map.addListener("zoom_changed", syncViewCenter);
+    const idleSyncListener = map.addListener("idle", syncViewCenter);
+
     return () => {
       window.clearTimeout(errTimer);
       if (idleListener) window.google.maps.event.removeListener(idleListener);
+      if (dragEndListener) window.google.maps.event.removeListener(dragEndListener);
+      if (zoomChangedListener) window.google.maps.event.removeListener(zoomChangedListener);
+      if (idleSyncListener) window.google.maps.event.removeListener(idleSyncListener);
       ro?.disconnect();
       clustererRef.current?.setMap(null);
       clustererRef.current = null;
@@ -281,13 +293,10 @@ export default function PodPlotGoogleMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Jen při změně adresy / fitBounds — ne při zrušení výběru špendlíku (GPS pohled zůstane).
   useEffect(() => {
     if (!mapRef.current) return;
     if (focusDraftPin && draftPin) return;
-    // Při výběru špendlíku z feedu neresetovat střed na Domov
-    if (selectedReportId || selectedEventId || selectedInstitutionId || selectedThingId || selectedServiceId) {
-      return;
-    }
     if (fitBounds) {
       mapRef.current.fitBounds(fitBounds, 16);
       return;
@@ -303,11 +312,6 @@ export default function PodPlotGoogleMap({
     fitBounds?.east,
     focusDraftPin,
     draftPin,
-    selectedReportId,
-    selectedEventId,
-    selectedInstitutionId,
-    selectedThingId,
-    selectedServiceId,
   ]);
 
   const focusSelectionKey =
@@ -330,6 +334,15 @@ export default function PodPlotGoogleMap({
     const alreadyFocused = prevFocusSelectionRef.current === focusSelectionKey;
     prevFocusSelectionRef.current = focusSelectionKey;
     const pos = { lat: Number(marker.lat), lng: Number(marker.lng) };
+    const bounds = map.getBounds?.();
+    const inView =
+      bounds &&
+      typeof bounds.contains === "function" &&
+      bounds.contains(new window.google.maps.LatLng(pos.lat, pos.lng));
+
+    // Špendlík je už vidět (typicky po GPS) — mapu nechat, ať se po zavření náhledu nehne.
+    if (inView) return;
+
     viewCenterRef.current = pos;
     map.panTo(pos);
     if (!alreadyFocused) {
