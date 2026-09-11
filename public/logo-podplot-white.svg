@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" role="img" aria-label="Podplot">
+  <!-- Vector mark: house + picket fence + handshake. Stroke uses #ffffff. -->
+  <g
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="16"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <!-- roof -->
+    <path d="M104 206 L256 68 L408 206" />
+    <!-- chimney on the right slope -->
+    <path d="M312 132 L312 86 H350 L350 154" />
+    <!-- 2x2 window -->
+    <rect x="230" y="128" width="52" height="52" rx="2" />
+    <path d="M256 128 V180 M230 154 H282" />
+
+    <!-- 5 pickets -->
+    <path d="M126 276 V214 L148 188 L170 214 V276" />
+    <path d="M180 276 V214 L202 188 L224 214 V276" />
+    <path d="M234 276 V214 L256 190 L278 214 V276" />
+    <path d="M288 276 V214 L310 188 L332 214 V276" />
+    <path d="M342 276 V214 L364 188 L386 214 V276" />
+    <!-- fence rails -->
+    <path d="M126 236 H386" />
+    <path d="M126 258 H386" />
+
+    <!-- sleeves / cuffs -->
+    <path d="M72 422 V352 C72 338 84 328 98 324 L150 310" />
+    <path d="M108 422 V368" />
+    <path d="M72 374 L148 352" />
+    <path d="M440 422 V352 C440 338 428 328 414 324 L362 310" />
+    <path d="M404 422 V368" />
+    <path d="M440 374 L364 352" />
+
+    <!-- clasped hands -->
+    <path d="M150 310 C176 292 214 286 248 302 C256 292 268 286 280 292 C312 276 356 292 362 310" />
+    <path d="M168 392 C188 418 226 432 256 424 C286 432 324 418 344 392" />
+    <!-- thumb on top (right hand) -->
+    <path d="M292 300 C274 284 246 286 240 312" />
+    <!-- four fingers underneath (left hand) -->
+    <path d="M198 348 C210 338 224 338 232 350" />
+    <path d="M224 354 C234 344 246 344 254 356" />
+    <path d="M250 356 C260 344 272 344 282 354" />
+    <path d="M278 350 C288 338 302 338 314 348" />
+  </g>
+</svg>
