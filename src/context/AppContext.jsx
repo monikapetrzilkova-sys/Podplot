@@ -229,6 +229,12 @@ import {
 } from "../data/hostedActivities.js";
 import { inferLendingMeta } from "../data/lendingCategories.js";
 import { lendingCategoryToMarket } from "../data/marketCategories.js";
+import {
+  expandReportedIds,
+  isReportedContent,
+  loadReportedPosts,
+  persistReportedPosts,
+} from "../data/reportedContent.js";
 import { SKIP_REGISTRATION, ENABLE_DEV_ROLE_SWITCH, ENABLE_TEST_PROFILE_ENTRY, getDevTestUser } from "../data/devConfig.js";
 import {
   DEMO_JOINED_GROUP_IDS,
@@ -669,7 +675,14 @@ export function AppProvider({ children }) {
   );
   const [activeGroupId, setActiveGroupId] = useState(null);
   const [groupFilter, setGroupFilter] = useState(null);
-  const [reportedPosts, setReportedPosts] = useState([]);
+  const [reportedPosts, setReportedPosts] = useState(() => {
+    try {
+      const uid = SKIP_REGISTRATION ? getDevTestUser().id : loadUserSession()?.user?.id;
+      return uid ? loadReportedPosts(uid) : [];
+    } catch {
+      return [];
+    }
+  });
   const [reportedReports, setReportedReports] = useState([]);
   /** eventId → pole id nahlásivších (po 3 se akce smaže) */
   const [eventReporterIds, setEventReporterIds] = useState({});
@@ -920,11 +933,13 @@ export function AppProvider({ children }) {
       setMySearchHelpPosts([...DEFAULT_MY_SEARCH_HELP_POSTS]);
       setSearchHelpCounts({ ...DEFAULT_SEARCH_HELP_COUNTS });
       setSearchHighlightedPosts([...DEFAULT_SEARCH_HIGHLIGHTED_POSTS]);
+      setReportedPosts([]);
       skipNextUserContentPersist.current = true;
       return;
     }
     skipNextUserContentPersist.current = true;
     const deleted = loadDeletedContent(user.id);
+    setReportedPosts(loadReportedPosts(user.id));
     const posts = loadUserPosts(user.id).filter((p) => !isDeletedPost(p, deleted));
     setUserPosts(posts);
     setUserLendingItems(posts.map(lendingItemFromPost).filter(Boolean));
@@ -3107,7 +3122,15 @@ export function AppProvider({ children }) {
 
   const reportPost = useCallback(
     (postId, reason) => {
-      setReportedPosts((prev) => (prev.includes(postId) ? prev : [...prev, postId]));
+      if (!postId) return;
+      const ids = expandReportedIds(postId);
+      setReportedPosts((prev) => {
+        const next = new Set((prev ?? []).map(String));
+        ids.forEach((id) => next.add(id));
+        const list = [...next];
+        if (user?.id) persistReportedPosts(user.id, list);
+        return list;
+      });
       const labels = {
         spam: "Spam",
         offensive: "Urážlivé",
@@ -3116,7 +3139,12 @@ export function AppProvider({ children }) {
       };
       showToast(`Příspěvek nahlášen (${labels[reason] ?? reason}) — pro tebe je skrytý.`, "info");
     },
-    [showToast]
+    [showToast, user?.id]
+  );
+
+  const isPostReported = useCallback(
+    (...candidates) => isReportedContent(reportedPosts, ...candidates),
+    [reportedPosts]
   );
 
   /** Smazání vlastního příspěvku (inzerát, hlášení, výpomoc, akce…) — ~5 s Zpět. */
@@ -3440,6 +3468,16 @@ export function AppProvider({ children }) {
 
       setEventReporterIds((prev) => ({ ...prev, [eventId]: nextReporters }));
 
+      // Pro nahlásivšího akci rovnou skryj (stejně jako u příspěvků)
+      setReportedPosts((prev) => {
+        const ids = expandReportedIds(eventId, `event-${eventId}`);
+        const next = new Set((prev ?? []).map(String));
+        ids.forEach((id) => next.add(id));
+        const list = [...next];
+        if (user?.id) persistReportedPosts(user.id, list);
+        return list;
+      });
+
       if (count >= EVENT_REPORT_DELETE_THRESHOLD) {
         setEvents((prev) => prev.filter((e) => e.id !== eventId));
         setJoinedEventIds((prev) => prev.filter((id) => id !== eventId));
@@ -3456,7 +3494,7 @@ export function AppProvider({ children }) {
       }
 
       showToast(
-        `Akce nahlášena (${reasonLabel}) — ${count}/${EVENT_REPORT_DELETE_THRESHOLD}. Po ${EVENT_REPORT_DELETE_THRESHOLD} nahlášeních bude smazána.`,
+        `Akce nahlášena (${reasonLabel}) — pro tebe je skrytá. Po ${EVENT_REPORT_DELETE_THRESHOLD} nahlášeních bude smazána (${count}/${EVENT_REPORT_DELETE_THRESHOLD}).`,
         "info"
       );
       return true;
@@ -9211,6 +9249,7 @@ export function AppProvider({ children }) {
         setGroupFilter,
         reportedPosts,
         reportPost,
+        isPostReported,
         deleteOwnPost,
         reportEvent,
         eventReporterIds,

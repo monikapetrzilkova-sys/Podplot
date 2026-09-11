@@ -12,6 +12,10 @@ import { feedItemNeedsExpand } from "./feed/feedExpand.js";
 import { formatContentAge } from "../data/czechDateTime.js";
 import { getActiveListingSale, isActiveListingSaleStatus } from "../data/listingSales.js";
 import { isSampleContent } from "../data/sampleContent.js";
+import {
+  isReportedContent,
+  reportCandidatesFromFeedItem,
+} from "../data/reportedContent.js";
 
 const SECTION_LABELS = {
   veci: "Věci",
@@ -55,6 +59,8 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
     hasOfferedHelp,
     reportPost,
     deleteOwnPost,
+    reportedPosts,
+    reportEvent,
   } = useApp();
 
   const [nowTick, setNowTick] = useState(() => Date.now());
@@ -163,7 +169,9 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
       };
     });
 
-    const ordered = [...veci, ...vypomoc, ...skupiny, ...akce];
+    const ordered = [...veci, ...vypomoc, ...skupiny, ...akce].filter(
+      (item) => !isReportedContent(reportedPosts, ...reportCandidatesFromFeedItem(item))
+    );
     const fresh = ordered
       .filter((item) => item.mine)
       .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
@@ -182,6 +190,7 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
     communityGroups,
     getHelpOffers,
     listingSaleOrders,
+    reportedPosts,
   ]);
 
   if (items.length === 0) {
@@ -255,6 +264,11 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
                 timeLabel={formatContentAge(item.help || item, nowTick)}
                 expandable={helpNeedsExpand}
                 mine={Boolean(item.mine)}
+                onReport={
+                  item.mine
+                    ? undefined
+                    : (reason) => reportPost(item.help?.helpId || item.help?.id, reason)
+                }
                 onDelete={
                   item.mine
                     ? () => deleteOwnPost(item.help?.helpId || item.help?.id, { kind: "help" })
@@ -293,6 +307,11 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
                 editedItem={item.post}
                 priceLabel={item.price}
                 mine={Boolean(item.post?.mine || item.mine)}
+                onReport={
+                  item.post?.mine || item.mine
+                    ? undefined
+                    : (reason) => reportPost(item.post.id, reason)
+                }
                 onDelete={
                   item.post?.mine || item.mine
                     ? () => deleteOwnPost(item.post.id)
@@ -320,6 +339,9 @@ export default function NeighborsLatestFeed({ onSelectSection }) {
                 timeLabel={formatContentAge(item.event || item, nowTick)}
                 ctaLabel="Detail akce"
                 mine={Boolean(item.mine)}
+                onReport={
+                  item.mine ? undefined : (reason) => reportEvent(item.event.id, reason)
+                }
                 onDelete={
                   item.mine
                     ? () => deleteOwnPost(item.event.id, { kind: "event" })

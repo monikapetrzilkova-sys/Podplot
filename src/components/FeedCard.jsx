@@ -6,6 +6,7 @@ import { PostPhotos } from "./PhotoUpload.jsx";
 import ReportMenu from "./ReportMenu.jsx";
 import SampleBadge from "./SampleBadge.jsx";
 import { isSampleContent } from "../data/sampleContent.js";
+import { isReportedContent } from "../data/reportedContent.js";
 import VerifiedBadge from "./VerifiedBadge.jsx";
 import { useApp } from "../context/AppContext.jsx";
 import { canTopCategory, TOP_PLANS, calculateTopCost } from "../data/pricing.js";
@@ -105,7 +106,7 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
   const showTopButton =
     post.mine && !post.topped && canTopCategory(post.categoryId) && !isReserved;
   const topDays = post.topDays ?? 7;
-  const isReported = reportedPosts.includes(post.id);
+  const isReported = isReportedContent(reportedPosts, post.id, post.fromSecurityReportId);
   const acc = post.accountType ? getAccountType(post.accountType) : null;
   const accRole = acc ? getRole(acc.role) : null;
   const authorLabel = formatAuthorName(post.author, post.accountType);
@@ -169,6 +170,7 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
   );
 
   if (detailsOnly) {
+    if (isReported) return null;
     const bodyText = String(post.body ?? "").trim();
     const titleText = String(post.title ?? "").trim();
     const showBody = !bodyInParent && bodyText && bodyText !== titleText;
@@ -254,11 +256,11 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
     );
   }
 
+  if (isReported) return null;
+
   return (
     <article
       className={`pp-card overflow-hidden transition-all ${
-        isReported ? "opacity-45 grayscale pointer-events-none" : ""
-      } ${
         searchHighlight
           ? "ring-2 ring-amber-400"
           : isReserved
@@ -277,13 +279,7 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
         </div>
       )}
 
-      {isReported && (
-        <div className="px-4 py-1.5 bg-stone-200 border-b border-stone-300">
-          <span className="text-[10px] font-bold uppercase text-stone-600">Nahlášeno · skryto pro vás</span>
-        </div>
-      )}
-
-      {post.topped && !isReported && !isReserved && (
+      {post.topped && !isReserved && (
         <div className="px-4 py-1.5 bg-amber-200 border-b border-amber-300">
           <span className="text-[10px] font-bold uppercase tracking-wider text-amber-900">
             TOP boost · {topDays} dní

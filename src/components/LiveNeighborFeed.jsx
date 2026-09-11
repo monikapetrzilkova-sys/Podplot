@@ -28,6 +28,10 @@ import { isReportActive, normalizeReportValidity } from "../data/reportExpiry.js
 import { SECURITY_REPORTS } from "../data/mockData.js";
 import { filterSecurityReportsByLocation } from "../data/geoFilter.js";
 import { isSampleContent } from "../data/sampleContent.js";
+import {
+  isReportedContent,
+  reportCandidatesFromFeedItem,
+} from "../data/reportedContent.js";
 
 function listingPreview(post, title) {
   const body = String(post?.body ?? "").trim();
@@ -98,6 +102,8 @@ export default function LiveNeighborFeed() {
     openGroup,
     activeLocation,
     activeLocationId,
+    reportedPosts,
+    reportEvent,
   } = useApp();
 
   const [showSkeleton, setShowSkeleton] = useState(true);
@@ -110,8 +116,6 @@ export default function LiveNeighborFeed() {
     const timer = window.setInterval(() => setNowTick(Date.now()), 60_000);
     return () => window.clearInterval(timer);
   }, []);
-
-  const reportGeneric = () => showToast("Děkujeme za nahlášení.", "info");
 
   const ageFor = (source) => formatContentAge(source, nowTick);
 
@@ -372,15 +376,18 @@ export default function LiveNeighborFeed() {
   ]);
 
   const filteredItems = useMemo(() => {
+    const visible = (items ?? []).filter(
+      (item) => !isReportedContent(reportedPosts, ...reportCandidatesFromFeedItem(item))
+    );
     const q = globalSearchQuery.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter(
+    if (!q) return visible;
+    return visible.filter(
       (item) =>
         item.title?.toLowerCase().includes(q) ||
         item.subtitle?.toLowerCase().includes(q) ||
         item.body?.toLowerCase().includes(q)
     );
-  }, [items, globalSearchQuery]);
+  }, [items, globalSearchQuery, reportedPosts]);
 
   if (filteredItems.length === 0) {
     if (showSkeleton) {
@@ -436,7 +443,9 @@ export default function LiveNeighborFeed() {
                 title={item.title}
                 preview={item.subtitle || null}
                 timeLabel={ageFor(item)}
-                onReport={reportGeneric}
+                onReport={
+                  item.mine ? undefined : (reason) => reportPost(item.eventId || item.activityId, reason)
+                }
                 expandable={false}
                 onSummaryClick={() => openEventGalleryFromFeed(item.activityId, item.eventId)}
               />
@@ -460,6 +469,9 @@ export default function LiveNeighborFeed() {
                 preview={item.subtitle || null}
                 timeLabel={ageFor(ev || item)}
                 mine={Boolean(item.mine)}
+                onReport={
+                  item.mine ? undefined : (reason) => reportEvent(item.eventId, reason)
+                }
                 onDelete={
                   item.mine
                     ? () => deleteOwnPost(item.eventId, { kind: "event" })
@@ -518,7 +530,11 @@ export default function LiveNeighborFeed() {
                 preview={item.body}
                 timeLabel={ageFor(item.newsItem || item)}
                 editedItem={item.newsItem}
-                onReport={reportGeneric}
+                onReport={
+                  item.mine
+                    ? undefined
+                    : (reason) => reportPost(item.newsId || item.id, reason)
+                }
                 expandable={newsNeedsExpand}
               >
                 {newsNeedsExpand ? (
@@ -546,7 +562,11 @@ export default function LiveNeighborFeed() {
                 })}
                 preview={item.body}
                 timeLabel={ageFor(item)}
-                onReport={item.mine ? undefined : reportGeneric}
+                onReport={
+                  item.mine
+                    ? undefined
+                    : (reason) => reportPost(item.helpId || item.id, reason)
+                }
                 onDelete={
                   item.mine ? () => deleteOwnPost(item.helpId, { kind: "help" }) : undefined
                 }
