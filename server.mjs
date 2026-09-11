@@ -11,6 +11,7 @@ import {
   getGoogleMapsApiKey,
   googlePlacesNearby,
   googlePlaceDetails,
+  resolveGooglePlacePhotoUrl,
   googlePlacesTextSearch,
   proxyAddressSearch,
   lookupPscCity,
@@ -229,6 +230,31 @@ const server = createServer(async (req, res) => {
       try {
         const data = await googlePlaceDetails(placeId);
         jsonResponse(res, 200, data ?? { error: "Místo nenalezeno" });
+      } catch (err) {
+        jsonResponse(res, 500, { error: err.message });
+      }
+      return;
+    }
+
+    if (url === "/api/places/photo") {
+      const params = new URL(req.url, "http://localhost").searchParams;
+      const ref = params.get("ref")?.trim() ?? "";
+      const maxwidth = Number(params.get("maxwidth")) || 800;
+      if (!ref || ref.length > 2048) {
+        jsonResponse(res, 400, { error: "Chybí photo reference" });
+        return;
+      }
+      try {
+        const location = await resolveGooglePlacePhotoUrl(ref, maxwidth);
+        if (!location) {
+          jsonResponse(res, 404, { error: "Fotka nenalezena" });
+          return;
+        }
+        res.writeHead(302, {
+          Location: location,
+          "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+        });
+        res.end();
       } catch (err) {
         jsonResponse(res, 500, { error: err.message });
       }

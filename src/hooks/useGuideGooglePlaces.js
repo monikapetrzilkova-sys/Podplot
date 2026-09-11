@@ -312,7 +312,7 @@ export function mergeInstitutionsWithGoogle(localPlaces, googlePlaces, { preferG
       isSponsored: match.isSponsored,
       isTop: match.isTop,
       extraInfo: match.extraInfo,
-      photos: match.photos,
+      photos: match.photos?.length ? match.photos : g.photos,
       accountType: match.accountType ?? g.accountType,
       isGooglePlace: true,
       googlePlaceId: g.googlePlaceId,

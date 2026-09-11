@@ -735,6 +735,7 @@ export function googlePlaceToInstitution(place, locationId = "domov") {
     googleRating: place.rating ?? null,
     googleReviewCount: place.userRatingsTotal ?? 0,
     googleReviews: place.reviews ?? [],
+    photos: place.photos ?? [],
     claimStatus: "unclaimed",
     isVerified: false,
     accountType: "podnik",
@@ -756,6 +757,7 @@ export function mergeGooglePlaceDetails(place, details) {
     googleRating: details.rating ?? place.googleRating,
     googleReviewCount: details.userRatingsTotal ?? place.googleReviewCount,
     googleReviews: details.reviews?.length ? details.reviews : place.googleReviews,
+    photos: details.photos?.length ? details.photos : place.photos,
     lat: details.lat ?? place.lat,
     lng: details.lng ?? place.lng,
   };

@@ -232,7 +232,8 @@ export default function InstitutionDetailCard({ place: placeProp, onClose }) {
   useEffect(() => {
     if (!placeProp?.isGooglePlace || !placeProp.googlePlaceId) return undefined;
     const hasReviewText = (placeProp.googleReviews ?? []).some((r) => String(r?.text ?? "").trim());
-    if (hasReviewText) return undefined;
+    const hasPhotos = (placeProp.photos ?? []).length > 0;
+    if (hasReviewText && hasPhotos) return undefined;
 
     let cancelled = false;
     setReviewsLoading(true);
@@ -328,8 +329,11 @@ export default function InstitutionDetailCard({ place: placeProp, onClose }) {
               )}
 
               {place.photos?.length > 0 && (
-                <div className="mt-3">
+                <div className="mt-3 -mx-1">
                   <PostPhotos photos={place.photos} compact />
+                  {place.isGooglePlace ? (
+                    <p className="text-[10px] text-stone-400 mt-1 px-3">Fotky z Google Maps</p>
+                  ) : null}
                 </div>
               )}
 
