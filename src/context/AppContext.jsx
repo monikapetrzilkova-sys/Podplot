@@ -1157,7 +1157,8 @@ export function AppProvider({ children }) {
     };
   }, [user?.id, locations]);
 
-  // Bez platné Supabase session nenechávat „přihlášení“ jen z localStorage.
+  // Bez platné Supabase session nenechávat „přihlášení“ jen z localStorage —
+  // výjimka: testovací vstup (isTestEntry), který JWT nikdy nemá.
   useEffect(() => {
     if (SKIP_REGISTRATION) return undefined;
     let cancelled = false;
@@ -1167,6 +1168,10 @@ export function AppProvider({ children }) {
       const session = await authGetSession();
       if (cancelled) return;
       if (!session) {
+        const localUser = loadUserSession()?.user;
+        if (ENABLE_TEST_PROFILE_ENTRY && localUser?.isTestEntry) {
+          return;
+        }
         setUser(null);
         clearUserSession();
       }
