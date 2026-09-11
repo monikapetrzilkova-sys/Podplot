@@ -3108,8 +3108,13 @@ export function AppProvider({ children }) {
   const reportPost = useCallback(
     (postId, reason) => {
       setReportedPosts((prev) => (prev.includes(postId) ? prev : [...prev, postId]));
-      const label = reason === "spam" ? "Spam" : "Urážlivé";
-      showToast(`Příspěvek nahlášen (${label}) — pro tebe je skrytý.`, "info");
+      const labels = {
+        spam: "Spam",
+        offensive: "Urážlivé",
+        misleading: "Zavádějící obsah",
+        inappropriate: "Nevhodná akce",
+      };
+      showToast(`Příspěvek nahlášen (${labels[reason] ?? reason}) — pro tebe je skrytý.`, "info");
     },
     [showToast]
   );
