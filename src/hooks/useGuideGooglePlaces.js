@@ -7,7 +7,8 @@ import {
 } from "../data/placesApi.js";
 import { institutionMatchesCategory } from "../data/institutionsMapData.js";
 import { latLngToMapPos } from "../utils/geoCoordinates.js";
-import { DEFAULT_REPORTS_MAP_RADIUS_KM } from "../data/mapRadiusSettings.js";
+import { DEFAULT_REPORTS_MAP_RADIUS_KM, resolveGuidePlacesRadiusM } from "../data/mapRadiusSettings.js";
+import { filterGuidePlacesByInterest, withGuidePlaceDistances } from "../data/geoFilter.js";
 
 /** Doplní mapPos z GPS (simulovaná mapa); na Google mapě rozhoduje lat/lng. */
 function withMapPos(place, activeLocation) {
@@ -98,14 +99,17 @@ export function dedupeNearbyPlaces(places, { maxDistanceM = 180 } = {}) {
 }
 
 function mapPlacesPayload(data, activeLocation) {
-  return dedupeNearbyPlaces(
-    (data.places ?? []).map((p) => {
-      const inst = googlePlaceToInstitution(p, activeLocation.id ?? "domov");
-      return withMapPos(
-        { ...inst, category: normalizeGuidePlaceCategory(inst.category) },
-        activeLocation
-      );
-    })
+  return withGuidePlaceDistances(
+    dedupeNearbyPlaces(
+      (data.places ?? []).map((p) => {
+        const inst = googlePlaceToInstitution(p, activeLocation.id ?? "domov");
+        return withMapPos(
+          { ...inst, category: normalizeGuidePlaceCategory(inst.category) },
+          activeLocation
+        );
+      })
+    ),
+    activeLocation
   );
 }
 
@@ -119,12 +123,7 @@ function mergePlaceLists(existing, incoming) {
 }
 
 function resolveNearbyRadiusM(activeLocation) {
-  const fromLocationKm = Number(activeLocation?.radiusKm);
-  const meters = Number.isFinite(fromLocationKm) && fromLocationKm > 0
-    ? Math.round(fromLocationKm * 1000)
-    : 7000;
-  // Min 5 km (Hrnčíře u Jesenice je ~4,3 km), max 15 km kvůli limitu Nearby API
-  return Math.min(15000, Math.max(5000, meters));
+  return resolveGuidePlacesRadiusM(activeLocation);
 }
 
 /**
@@ -262,7 +261,7 @@ export function useGuideGooglePlaces(activeCategory, activeLocation, searchQuery
   }, [activeCategory, locationKey, activeLocation?.lat, activeLocation?.lng, activeLocation?.id, activeLocation?.radiusKm]);
 
   const googlePlaces = useMemo(() => {
-    let items = allPlaces;
+    let items = filterGuidePlacesByInterest(allPlaces, activeLocation);
 
     if (activeCategory && activeCategory !== "vse") {
       items = items.filter((p) => institutionMatchesCategory(p, activeCategory));
@@ -277,8 +276,8 @@ export function useGuideGooglePlaces(activeCategory, activeLocation, searchQuery
       );
     }
 
-    return items;
-  }, [allPlaces, activeCategory, searchQuery]);
+    return withGuidePlaceDistances(items, activeLocation);
+  }, [allPlaces, activeCategory, searchQuery, activeLocation]);
 
   return { googlePlaces, loading, source, allGooglePlaces: allPlaces };
 }

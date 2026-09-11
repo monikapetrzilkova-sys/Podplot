@@ -26,6 +26,17 @@ export function clampNeighborRadius(km) {
   return Math.min(MAX_NEIGHBOR_RADIUS_KM, Math.max(MIN_NEIGHBOR_RADIUS_KM, Math.round(n * 10) / 10));
 }
 
+/**
+ * Poloměr pro Google Places Nearby / prefetch.
+ * Odpovídá okruhu zájmu (bez umělého minima 5 km, které tahalo Prahu do Jesenice).
+ * Fetch je mírně širší (1,15×), max 15 km — zobrazení se stejně filtruje přesně.
+ */
+export function resolveGuidePlacesRadiusM(activeLocation) {
+  const interestKm = clampNeighborRadius(activeLocation?.radiusKm ?? DEFAULT_NEIGHBOR_RADIUS_KM);
+  const fetchKm = Math.min(15, interestKm * 1.15);
+  return Math.round(fetchKm * 1000);
+}
+
 /** Google Maps Circle bere metry — 1 km na posuvníku = 1000 m ve skutečnosti. */
 export function radiusKmToMeters(km) {
   const n = Number(km);

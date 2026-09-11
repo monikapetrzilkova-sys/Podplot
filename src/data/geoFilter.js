@@ -2,7 +2,9 @@ import {
   DEFAULT_EVENTS_MAP_RADIUS_KM,
   DEFAULT_NEIGHBOR_RADIUS_KM,
   DEFAULT_REPORTS_MAP_RADIUS_KM,
+  clampNeighborRadius,
   filterByMapRadius,
+  formatMapRadiusKm,
   mapPosToDistanceKm,
 } from "./mapRadiusSettings.js";
 import { URGENT_SCOPE } from "./reportUrgency.js";
@@ -129,6 +131,55 @@ export function filterByRadius(items, location, radiusKm = location?.radiusKm ??
     }
     if (item.locationId) return item.locationId === location.id;
     return true;
+  });
+}
+
+function formatGuidePlaceDistance(km) {
+  if (!Number.isFinite(km)) return null;
+  if (km < 1) return `${Math.max(50, Math.round(km * 1000))} m`;
+  return formatMapRadiusKm(Math.round(km * 10) / 10);
+}
+
+/**
+ * Místa v Okolí / Průvodci — primárně okruh zájmu (GPS), jinak stejná obec.
+ * Vyloučí např. pražské zahradnictví při Domově v Jesenici.
+ */
+export function filterGuidePlacesByInterest(places, activeLocation) {
+  if (!activeLocation) return places ?? [];
+  const radiusKm = clampNeighborRadius(activeLocation.radiusKm ?? DEFAULT_NEIGHBOR_RADIUS_KM);
+  const activeMun = activeLocation.municipality ?? activeLocation.shortLabel ?? null;
+  const hasCenter = activeLocation.lat != null && activeLocation.lng != null;
+
+  return (places ?? []).filter((place) => {
+    if (place?.mine || place?.isPendingSuggestion) return true;
+
+    const point = inferItemCoords(place);
+    if (hasCenter && point) {
+      return distanceBetweenKm(activeLocation, point) <= radiusKm;
+    }
+
+    if (place?.municipality && place.municipality !== "all" && activeMun) {
+      return municipalitiesMatch(place.municipality, activeMun);
+    }
+
+    // Bez GPS u aktivní lokality neukazuj vzdálené mocky / Places bez souřadnic
+    if (hasCenter) return false;
+    return true;
+  });
+}
+
+/** Doplní distanceKm + čitelný label od středu aktivní lokality. */
+export function withGuidePlaceDistances(places, activeLocation) {
+  if (!activeLocation?.lat || !activeLocation?.lng) return places ?? [];
+  return (places ?? []).map((place) => {
+    const point = inferItemCoords(place);
+    if (!point) return place;
+    const distanceKm = Math.round(distanceBetweenKm(activeLocation, point) * 10) / 10;
+    return {
+      ...place,
+      distanceKm,
+      distance: formatGuidePlaceDistance(distanceKm),
+    };
   });
 }
 

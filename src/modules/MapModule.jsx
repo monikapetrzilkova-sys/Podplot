@@ -21,6 +21,7 @@ import {
   isGuideMapCategory,
   normalizeGuideCategoryId,
 } from "../data/institutionsMapData.js";
+import { filterGuidePlacesByInterest, withGuidePlaceDistances } from "../data/geoFilter.js";
 import { sortInstitutionsByPriority } from "../utils/thingsModule.js";
 import { mergeInstitutionsWithGoogle, useGuideGooglePlaces } from "../hooks/useGuideGooglePlaces.js";
 import { fetchPlaceDetails, mergeGooglePlaceDetails } from "../data/placesApi.js";
@@ -109,7 +110,10 @@ export default function MapModule({ provozovnaType = null }) {
         ...institutionsSorted.filter(matches),
         ...pendingPlaceSuggestions.filter(matches),
       ]);
-      return mergeInstitutionsWithGoogle(local, googlePlaces).filter(matches);
+      const merged = mergeInstitutionsWithGoogle(local, googlePlaces).filter(matches);
+      return sortInstitutionsByPriority(
+        withGuidePlaceDistances(filterGuidePlacesByInterest(merged, activeLocation), activeLocation)
+      );
     },
     [
       institutionsSorted,
@@ -119,6 +123,7 @@ export default function MapModule({ provozovnaType = null }) {
       localGuideSearchQuery,
       isProvozovny,
       provozovnaType,
+      activeLocation,
     ]
   );
 

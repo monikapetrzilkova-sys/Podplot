@@ -210,7 +210,9 @@ export function sortInstitutionsByPriority(items) {
       (x.isTop ? 2 : 0) +
       (x.isVerified ? 3 : 0) +
       (x.claimStatus === "claimed" ? 1 : 0);
-    return score(b) - score(a);
+    const diff = score(b) - score(a);
+    if (diff !== 0) return diff;
+    return (a.distanceKm ?? 999) - (b.distanceKm ?? 999);
   });
 }
 

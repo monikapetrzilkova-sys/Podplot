@@ -1,5 +1,7 @@
 /** Klient pro Google Places proxy (server.mjs). */
 
+import { DEFAULT_NEIGHBOR_RADIUS_KM, resolveGuidePlacesRadiusM } from "./mapRadiusSettings.js";
+
 /** Mapování Google Place types → kategorie Průvodce (vždy jedna z mapových kategorií). */
 const GOOGLE_TYPE_TO_CATEGORY = {
   // Gastro
@@ -546,7 +548,7 @@ export function formatGoogleHours(weekdayText = []) {
 /** In-memory cache — stejná lokalita po přepnutí Hlášení↔Místa bez nového čekání. */
 const nearbyPlacesMemoryCache = new Map();
 const SESSION_TTL_MS = 45 * 60 * 1000;
-const SESSION_PREFIX = "pp-places-v12:";
+const SESSION_PREFIX = "pp-places-v13:";
 
 function sessionKey({ lat, lng, radiusM, category }) {
   return `${SESSION_PREFIX}${Number(lat).toFixed(3)},${Number(lng).toFixed(3)},${radiusM},${category || "vse"}`;
@@ -641,12 +643,7 @@ export async function fetchNearbyPlaces({
 }
 
 function resolvePrefetchRadiusM(activeLocation) {
-  const fromLocationKm = Number(activeLocation?.radiusKm);
-  const meters =
-    Number.isFinite(fromLocationKm) && fromLocationKm > 0
-      ? Math.round(fromLocationKm * 1000)
-      : 7000;
-  return Math.min(15000, Math.max(5000, meters));
+  return resolveGuidePlacesRadiusM(activeLocation ?? { radiusKm: DEFAULT_NEIGHBOR_RADIUS_KM });
 }
 
 /** Přednačte místa: nejdřív fast (okamžité piny), pak doplnění vse. */
