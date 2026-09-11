@@ -9,7 +9,6 @@ import {
 } from "../data/serviceReviews.js";
 import AppPanelPortal from "./AppPanelPortal.jsx";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
-import DoodleEmptyState from "./doodle/DoodleEmptyState.jsx";
 import SparsePageDoodle from "./doodle/SparsePageDoodle.jsx";
 import { DoodleReviewsScene } from "./doodle/doodleIllustrations.jsx";
 
@@ -122,10 +121,11 @@ export default function CraftsmanReviewsPage() {
   if (!ownedService && !isFyzickaWorkMode) {
     return (
       <div className="pp-page flex flex-col min-h-full px-4 pt-4 pb-8">
-        <DoodleEmptyState
-          illustration="reviews"
-          message="Zatím nemáš katalogový profil služby. Doplň obor v Profilu — pak tady uvidíš hodnocení od zákazníků."
-        />
+        <p className="text-sm text-stone-500 leading-relaxed max-w-sm">
+          Zatím nemáš katalogový profil služby. Doplň obor v Profilu — pak tady uvidíš hodnocení od
+          zákazníků.
+        </p>
+        <SparsePageDoodle Scene={DoodleReviewsScene} count={0} />
       </div>
     );
   }
@@ -149,15 +149,11 @@ export default function CraftsmanReviewsPage() {
         </section>
 
         {reviews.length === 0 ? (
-          <DoodleEmptyState
-            className="flex-1"
-            illustration="reviews"
-            message={
-              isFyzickaWorkMode
-                ? "Zatím žádné recenze od zákazníků. Podezřelé hodnocení půjde nahlásit k moderaci."
-                : "Zatím žádné recenze. Po dokončených zakázkách se tady objeví hodnocení zákazníků."
-            }
-          />
+          <p className="text-sm text-stone-500 leading-relaxed max-w-sm">
+            {isFyzickaWorkMode
+              ? "Zatím žádné recenze od zákazníků. Podezřelé hodnocení půjde nahlásit k moderaci."
+              : "Zatím žádné recenze. Po dokončených zakázkách se tady objeví hodnocení zákazníků."}
+          </p>
         ) : (
           reviews.map((r) => {
             const pending = isReviewPendingModeration(r);
@@ -205,9 +201,7 @@ export default function CraftsmanReviewsPage() {
             );
           })
         )}
-        {reviews.length > 0 ? (
-          <SparsePageDoodle Scene={DoodleReviewsScene} count={reviews.length} />
-        ) : null}
+        <SparsePageDoodle Scene={DoodleReviewsScene} count={reviews.length} />
       </div>
 
       {reportTarget && (

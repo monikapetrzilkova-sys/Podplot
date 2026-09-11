@@ -5,7 +5,7 @@ export default function SparsePageDoodle({
   count = 0,
   hideFrom = 4,
   className = "",
-  maxWidthClass = "max-w-[220px]",
+  maxWidthClass = "max-w-[190px]",
 }) {
   if (count >= hideFrom) return null;
   if (!Scene) return null;

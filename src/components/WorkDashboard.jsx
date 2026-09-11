@@ -7,7 +7,6 @@ import {
   isNationwideRadius,
 } from "../data/craftsmanSettings.js";
 import { MOBILNI_PUSH_SUBSCRIPTION } from "../data/notificationPlans.js";
-import DoodleEmptyState from "./doodle/DoodleEmptyState.jsx";
 import SparsePageDoodle from "./doodle/SparsePageDoodle.jsx";
 import { DoodlePoptavkyScene } from "./doodle/doodleIllustrations.jsx";
 
@@ -133,24 +132,20 @@ export default function WorkDashboard() {
         )}
 
         {b2bInquiries.length === 0 ? (
-          <DoodleEmptyState
-            className="flex-1"
-            illustration="jobs"
-            message="V tomto okruhu a oboru zatím žádné poptávky. S push předplatným je uvidíš jako první."
-          />
+          <p className="text-sm text-stone-500 leading-relaxed pt-1 max-w-sm">
+            V tomto okruhu a oboru zatím žádné poptávky. S push předplatným je uvidíš jako první.
+          </p>
         ) : (
-          <>
-            {b2bInquiries.map((item) => (
-              <InquiryRow
-                key={item.id}
-                item={item}
-                onMarkRead={markB2bInquiryRead}
-                onExpressInterest={expressInterestInInquiry}
-              />
-            ))}
-            <SparsePageDoodle Scene={DoodlePoptavkyScene} count={b2bInquiries.length} />
-          </>
+          b2bInquiries.map((item) => (
+            <InquiryRow
+              key={item.id}
+              item={item}
+              onMarkRead={markB2bInquiryRead}
+              onExpressInterest={expressInterestInInquiry}
+            />
+          ))
         )}
+        <SparsePageDoodle Scene={DoodlePoptavkyScene} count={b2bInquiries.length} />
       </div>
     </div>
   );
