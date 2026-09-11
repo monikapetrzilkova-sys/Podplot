@@ -1,5 +1,6 @@
 import { entityLatLng } from "./geoCoordinates.js";
 import { institutionPinVariant } from "../data/institutionsMapData.js";
+import { INSTITUTION_PIN_COLORS } from "../data/institutionPinColors.js";
 import { thingPinVariant, thingPinEmoji } from "./thingsModule.js";
 import { servicePinVariant } from "./servicesModule.js";
 import {
@@ -96,7 +97,7 @@ export function buildMapMarkers({
         kind: "institution",
         lat: pos.lat,
         lng: pos.lng,
-        variant: place.isGooglePlace ? "google" : institutionPinVariant(place),
+        variant: institutionPinVariant(place),
         iconUrl: institutionMarkerIconSvg(place, selected),
         label: place.name,
         selected,
@@ -150,19 +151,9 @@ export const PIN_COLORS = {
   default: { bg: "#B7E4C7", border: "#2D6A4F" },
   draft: { bg: "#A85858", border: "#D95D39" },
   event: { bg: "#40916C", border: "#1B4332" },
-  google: { bg: "#4285F4", border: "#1a73e8" },
-  school: { bg: "#4361EE", border: "#3A0CA3" },
-  gastro: { bg: "#F4A261", border: "#E76F51" },
-  health: { bg: "#06D6A0", border: "#118AB2" },
-  shop: { bg: "#E9C46A", border: "#F4A261" },
-  beauty: { bg: "#F72585", border: "#B5179E" },
-  sport: { bg: "#52B788", border: "#2D6A4F" },
-  public: { bg: "#4895EF", border: "#4361EE" },
-  services: { bg: "#E76F51", border: "#D95D39" },
-  waste: { bg: "#2D6A4F", border: "#1B4332" },
-  leisure: { bg: "#52B788", border: "#2D6A4F" },
-  institution: { bg: "#7209B7", border: "#560BAD" },
-  institutionGastro: { bg: "#F4A261", border: "#E76F51" },
+  school: { bg: "#40916C", border: "#1B4332" },
+  beauty: { bg: "#4D9B86", border: "#1B4332" },
+  ...INSTITUTION_PIN_COLORS,
   reportDefault: { bg: "#95D5B2", border: "#40916C" },
   reportLoss: { bg: "#74C69D", border: "#2D6A4F" },
   reportAnimal: { bg: "#52B788", border: "#1B4332" },

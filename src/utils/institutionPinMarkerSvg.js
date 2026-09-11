@@ -1,25 +1,14 @@
 import { institutionPinVariant } from "../data/institutionsMapData.js";
 import {
+  INSTITUTION_PIN_SELECTED,
+  institutionPinColorsForVariant,
+} from "../data/institutionPinColors.js";
+import {
   MAP_PIN_ICON_CX,
   MAP_PIN_ICON_CY,
   mapPinSvgOpenTag,
   mapPinTeardropPath,
 } from "./mapPinShape.js";
-
-/** Barvy špendlíků průvodce — shodné s mapPinAdapter / ReportsMap */
-const PIN_COLORS = {
-  google: { bg: "#4285F4", border: "#1a73e8" },
-  gastro: { bg: "#F4A261", border: "#E76F51" },
-  services: { bg: "#E76F51", border: "#D95D39" },
-  shop: { bg: "#E9C46A", border: "#F4A261" },
-  health: { bg: "#06D6A0", border: "#118AB2" },
-  public: { bg: "#4895EF", border: "#4361EE" },
-  sport: { bg: "#52B788", border: "#2D6A4F" },
-  waste: { bg: "#2D6A4F", border: "#1B4332" },
-  leisure: { bg: "#ADB5BD", border: "#6C757D" },
-  institution: { bg: "#7209B7", border: "#560BAD" },
-  default: { bg: "#B7E4C7", border: "#2D6A4F" },
-};
 
 /**
  * SVG cesty ikon kategorií Průvodce — stejné symboly jako GuideCategoryIcon / PlaceIcon.
@@ -88,20 +77,19 @@ export function resolveInstitutionIconKey(place) {
   return "ostatni";
 }
 
-/** SVG ikona špendlíku místa v Průvodci pro Google Maps — kategorie uvnitř. */
+/** SVG ikona špendlíku místa v Průvodci — kategorie určuje barvu v paletě Podplotu. */
 export function institutionMarkerIconSvg(place, selected = false) {
-  const variant = place?.isGooglePlace ? "google" : institutionPinVariant(place);
-  const c = PIN_COLORS[variant] ?? PIN_COLORS.default;
-  // Vybraný špendlík: výrazná teplá barva + bílý okraj, ať vynikne mezi modrými Google piny
-  const bg = selected ? "#C45C26" : c.bg;
-  const border = selected ? "#FFFFFF" : c.border;
+  const variant = institutionPinVariant(place);
+  const c = institutionPinColorsForVariant(variant);
+  const bg = selected ? INSTITUTION_PIN_SELECTED.bg : c.bg;
+  const border = selected ? INSTITUTION_PIN_SELECTED.border : c.border;
   const strokeW = selected ? 2.6 : 1.6;
   const iconKey = resolveInstitutionIconKey(place);
   const paths = ICON_PATHS[iconKey] ?? ICON_PATHS.ostatni;
   const filledDots = iconKey === "ostatni";
 
   const halo = selected
-    ? `<circle cx="20" cy="17.5" r="15.2" fill="#FFF8F0" stroke="#C45C26" stroke-width="2.2"/>`
+    ? `<circle cx="20" cy="17.5" r="15.2" fill="${INSTITUTION_PIN_SELECTED.haloFill}" stroke="${INSTITUTION_PIN_SELECTED.haloStroke}" stroke-width="2.2"/>`
     : "";
 
   const svg = `${mapPinSvgOpenTag(selected)}

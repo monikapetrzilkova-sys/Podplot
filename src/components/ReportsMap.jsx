@@ -15,6 +15,10 @@ import {
   mapRadiusToEllipsePercent,
 } from "../data/mapRadiusSettings.js";
 import { institutionPinVariant, INSTITUTION_LEGEND } from "../data/institutionsMapData.js";
+import {
+  INSTITUTION_PIN_COLORS,
+  INSTITUTION_PIN_SELECTED,
+} from "../data/institutionPinColors.js";
 import { thingPinVariant, thingPinEmoji } from "../utils/thingsModule.js";
 import { servicePinVariant } from "../utils/servicesModule.js";
 import { isMunicipalityUrgent } from "../data/reportUrgency.js";
@@ -102,24 +106,15 @@ function MapPin({
     default: { bg: "#B7E4C7", border: "#2D6A4F" },
     draft: { bg: "#A85858", border: "#D95D39" },
     event: { bg: "#40916C", border: "#1B4332" },
-    school: { bg: "#4361EE", border: "#3A0CA3" },
-    gastro: { bg: "#F4A261", border: "#E76F51" },
-    health: { bg: "#06D6A0", border: "#118AB2" },
-    shop: { bg: "#E9C46A", border: "#F4A261" },
-    beauty: { bg: "#F72585", border: "#B5179E" },
-    sport: { bg: "#52B788", border: "#2D6A4F" },
-    public: { bg: "#4895EF", border: "#4361EE" },
-    services: { bg: "#E76F51", border: "#D95D39" },
-    waste: { bg: "#2D6A4F", border: "#1B4332" },
-    leisure: { bg: "#52B788", border: "#2D6A4F" },
-    institution: { bg: "#7209B7", border: "#560BAD" },
+    school: { bg: "#40916C", border: "#1B4332" },
+    beauty: { bg: "#4D9B86", border: "#1B4332" },
+    ...INSTITUTION_PIN_COLORS,
     thingDaruji: { bg: "#E9C46A", border: "#F4A261" },
     thingProdam: { bg: "#457B9D", border: "#1D3557" },
     thingShanim: { bg: "#F72585", border: "#B5179E" },
     thingPujcovna: { bg: "#2A9D8F", border: "#1B4332" },
     thingDefault: { bg: "#ADB5BD", border: "#495057" },
-    serviceCraft: { bg: "#E76F51", border: "#D95D39" },
-    institutionGastro: { bg: "#F4A261", border: "#E76F51" },
+    serviceCraft: { bg: "#3D7A68", border: "#1B4D3E" },
     reportDefault: { bg: "#95D5B2", border: "#40916C" },
     reportLoss: { bg: "#74C69D", border: "#2D6A4F" },
     reportAnimal: { bg: "#52B788", border: "#1B4332" },
@@ -165,7 +160,7 @@ function MapPin({
             width: mapPinDisplaySize(selected).w,
             height: mapPinDisplaySize(selected).h,
             filter: selected
-              ? "drop-shadow(0 0 0 2px #fff) drop-shadow(0 0 3px rgba(196,92,38,0.9))"
+              ? "drop-shadow(0 0 0 2px #fff) drop-shadow(0 0 3px rgba(61,122,104,0.85))"
               : undefined,
           }}
         >
@@ -176,8 +171,8 @@ function MapPin({
           >
             <path
               d={mapPinTeardropPath()}
-              fill={selected ? "#C45C26" : c.bg}
-              stroke={selected ? "#FFFFFF" : c.border}
+              fill={selected ? INSTITUTION_PIN_SELECTED.bg : c.bg}
+              stroke={selected ? INSTITUTION_PIN_SELECTED.border : c.border}
               strokeWidth={selected ? 2.6 : 1.6}
               strokeLinejoin="round"
             />

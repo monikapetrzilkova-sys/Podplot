@@ -1,6 +1,6 @@
 /** Veřejná místa a podniky — kategorie mapy institucí */
 
-
+import { INSTITUTION_CATEGORY_LEGEND_COLORS } from "./institutionPinColors.js";
 
 /** Místní průvodce — kategorie katalogu míst (vázáno na provozovnu) */
 
@@ -1315,14 +1315,6 @@ export function institutionPinEmoji(place) {
 export const INSTITUTION_LEGEND = GUIDE_GRID_CATEGORIES.filter((c) => c.id !== REMESLICI_CATEGORY_ID).map(
   (c) => ({
     label: c.label,
-    color: {
-      gastro: "#F4A261",
-      obchody: "#E9C46A",
-      sluzby: "#E76F51",
-      zdravi: "#06D6A0",
-      instituce: "#4895EF",
-      "verejny-prostor": "#2D6A4F",
-      ostatni: "#ADB5BD",
-    }[c.id],
+    color: INSTITUTION_CATEGORY_LEGEND_COLORS[c.id],
   })
 );
