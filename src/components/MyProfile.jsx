@@ -950,9 +950,9 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                   );
                   return (
                     <MapRadiusControl
+                      compact
                       id="profile-neighbor-interest-radius"
-                      label="Okruh, který tě zajímá"
-                      hint={`Pro místo „${locationChipLabel(activeLoc)}“ (${formatMapRadiusKm(radiusValue)}). Podle něj uvidíš příspěvky, skupiny, výpomoc i místa v okolí.`}
+                      label={`Okruh zájmu · ${locationChipLabel(activeLoc)}`}
                       value={radiusValue}
                       min={MIN_NEIGHBOR_RADIUS_KM}
                       max={MAX_NEIGHBOR_RADIUS_KM}

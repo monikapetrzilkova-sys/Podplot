@@ -9,7 +9,38 @@ export default function MapRadiusControl({
   step = 1,
   onChange,
   id,
+  compact = false,
 }) {
+  if (compact) {
+    return (
+      <div className="rounded-lg border border-stone-200/90 bg-[#F7FAF9] px-2.5 py-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <label htmlFor={id} className="text-[11px] font-semibold text-stone-600 truncate">
+            {label}
+          </label>
+          <span className="text-[11px] font-bold text-[#1B4D3E] tabular-nums shrink-0">
+            {formatMapRadiusKm(value)}
+          </span>
+        </div>
+        <input
+          id={id}
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="w-full h-1.5 mt-1 accent-[#3D7A68]"
+          aria-valuetext={formatMapRadiusKm(value)}
+        />
+        <div className="flex justify-between text-[9px] text-stone-400 leading-none mt-0.5">
+          <span>{formatMapRadiusKm(min)}</span>
+          <span>{formatMapRadiusKm(max)}</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="pp-card p-3 mb-3">
       <div className="flex items-center justify-between gap-2 mb-1">
