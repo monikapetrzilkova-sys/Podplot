@@ -25,6 +25,8 @@ export default function MapReportsToolbar({ activeCategory, onCategoryChange }) 
           badgeById={{ vyzvy: activeCallsCount }}
         />
       </div>
+      {/* Stejná rezervovaná výška jako u Míst (řádek provozoven) */}
+      <div className="pp-map-toolbar-subfilter" aria-hidden="true" />
     </div>
   );
 }
