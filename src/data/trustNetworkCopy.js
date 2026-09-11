@@ -51,6 +51,7 @@ export const TRUST_COPY = {
 
   profileEmpty:
     "Teď tu nikdo nový nečeká. Až se v lokalitě objeví nový člověk, uvidíš ho tady. Potvrď ho jen pokud ho znáš z okolí — jinak stačí přeskočit.",
+  inviteHint: "Chceš sem pozvat někoho, koho znáš? Pošli mu odkaz na Podplot.",
 
   settingsTitle: "Noví lidé v lokalitě na Domů",
   settingsHint:

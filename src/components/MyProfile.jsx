@@ -39,6 +39,7 @@ import ProfilePhotoEditor from "./ProfilePhotoEditor.jsx";
 import LegalPages, { LegalLinksSection } from "./LegalPages.jsx";
 import FeedbackModal from "./FeedbackModal.jsx";
 import HomeAddressForm from "./profile/HomeAddressForm.jsx";
+import InviteToPodplotButton from "./InviteToPodplotButton.jsx";
 import {
   DEFAULT_NEIGHBOR_RADIUS_KM,
   formatMapRadiusKm,
@@ -267,7 +268,6 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
     userGroupPosts,
     reportSecurityReport,
     closeProfile,
-    openMessages,
     selectMainTab,
     setPendingNeighborsSection,
     setPendingThingsItemId,
@@ -821,16 +821,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                       : TRUST_COPY.unverifiedHint}
                   </p>
                   {!(user.isVerified || isCommunityVerified) ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        closeProfile?.();
-                        openMessages?.();
-                      }}
-                      className="mt-1 text-[10px] font-semibold text-[#3D7A68] hover:underline"
-                    >
-                      Znáš někoho z okolí? Napsat zprávu
-                    </button>
+                    <InviteToPodplotButton className="mt-1" label="Poslat odkaz na Podplot" />
                   ) : null}
                 </>
               )}
@@ -1118,21 +1109,11 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
           );
           if (pending.length === 0) {
             return (
-              <p className="text-xs text-stone-500 leading-relaxed">
-                {TRUST_COPY.profileEmpty}{" "}
-                Znáš někoho jménem?{" "}
-                <button
-                  type="button"
-                  onClick={() => {
-                    closeProfile?.();
-                    openMessages?.();
-                  }}
-                  className="font-semibold text-[#3D7A68] hover:underline"
-                >
-                  Napiš mu ve Zprávách
-                </button>
-                .
-              </p>
+              <div className="space-y-2">
+                <p className="text-xs text-stone-500 leading-relaxed">{TRUST_COPY.profileEmpty}</p>
+                <p className="text-[11px] text-stone-500 leading-snug">{TRUST_COPY.inviteHint}</p>
+                <InviteToPodplotButton label="Poslat odkaz na Podplot" />
+              </div>
             );
           }
           return (

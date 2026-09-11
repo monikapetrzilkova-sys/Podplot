@@ -17,6 +17,7 @@ import PostInteractions from "./PostInteractions.jsx";
 import EditedBadge from "./EditedBadge.jsx";
 import AccountTypeIcon from "./AccountTypeIcon.jsx";
 import ContentEditModal from "./ContentEditModal.jsx";
+import SharePostToChatModal from "./SharePostToChatModal.jsx";
 import {
   getActiveListingSale,
   isActiveListingSaleStatus,
@@ -99,6 +100,7 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
   } = useApp();
   const [topTarget, setTopTarget] = useState(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const { isReserved } = useListingSaleState(post);
   const authorId = post.authorId ?? post.id?.replace(/^f/, "user-") ?? post.author?.toLowerCase().replace(/\s/g, "-");
   const isSponsor = post.sponsored;
@@ -370,6 +372,13 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
         >
           {editControls}
           {!isGroupDiscussion && !post.mine && !isReserved && <PostInteractions post={post} />}
+          <button
+            type="button"
+            onClick={() => setShareOpen(true)}
+            className={`${ACTION_BTN} text-[#1B4D3E] bg-[#F1F6F5] border-[#C5DDD4] hover:bg-[#E8F3EF]`}
+          >
+            Poslat
+          </button>
           {!post.mine && (
             <>
               <MessageButton
@@ -389,6 +398,7 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
         </div>
       )}
 
+      <SharePostToChatModal post={post} open={shareOpen} onClose={() => setShareOpen(false)} />
       {!compact && !isReported && !isGroupDiscussion && isReserved ? (
         <div className="px-4 pb-3">
           <ListingSaleStatusPanel post={post} />
