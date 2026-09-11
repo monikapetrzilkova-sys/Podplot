@@ -45,7 +45,6 @@ import {
   MIN_NEIGHBOR_RADIUS_KM,
   MAX_NEIGHBOR_RADIUS_KM,
   clampNeighborRadius,
-  formatMapRadiusKm,
 } from "../data/mapRadiusSettings.js";
 import {
   LOCATION_DOODLE_ICONS,
