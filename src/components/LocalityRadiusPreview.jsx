@@ -21,6 +21,8 @@ export default function LocalityRadiusPreview({
   pin,
   onPinChange,
   laterEditNote = false,
+  focusRadius = false,
+  radiusSectionId = "neighbor-radius-section",
 }) {
   const [status, setStatus] = useState("idle");
 
@@ -65,6 +67,23 @@ export default function LocalityRadiusPreview({
     };
   }, [street, houseNumber, psc, city, canGeocode]); // eslint-disable-line react-hooks/exhaustive-deps -- geocode from address only
 
+  useEffect(() => {
+    if (!focusRadius) return undefined;
+    const timer = window.setTimeout(() => {
+      const el = document.getElementById(radiusSectionId);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      const input = el?.querySelector?.("input[type='range']");
+      if (input && typeof input.focus === "function") {
+        try {
+          input.focus({ preventScroll: true });
+        } catch {
+          input.focus();
+        }
+      }
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [focusRadius, radiusSectionId]);
+
   return (
     <div className="space-y-2">
       <p className="text-xs font-semibold text-stone-600">Tvoje okolí na mapě</p>
@@ -96,20 +115,22 @@ export default function LocalityRadiusPreview({
           profilu.
         </p>
       ) : null}
-      <MapRadiusControl
-        id="neighbor-radius"
-        label="Nastav si okruh, který tě zajímá."
-        hint={
-          laterEditNote
-            ? "Kruh na mapě je skutečný poloměr v kilometrech — posuň ho tak, aby pokryl tvoji obec nebo městskou část. Později ho kdykoli upravíš v profilu."
-            : "Kruh na mapě je skutečný poloměr v kilometrech — posuň ho tak, aby pokryl tvoji obec nebo městskou část, ne celé velké město."
-        }
-        value={radiusKm}
-        min={MIN_NEIGHBOR_RADIUS_KM}
-        max={MAX_NEIGHBOR_RADIUS_KM}
-        step={0.5}
-        onChange={(km) => onRadiusChange?.(clampNeighborRadius(km))}
-      />
+      <div id={radiusSectionId} className="scroll-mt-4">
+        <MapRadiusControl
+          id={`${radiusSectionId}-input`}
+          label="Nastav si okruh, který tě zajímá."
+          hint={
+            laterEditNote
+              ? "Kruh na mapě je skutečný poloměr v kilometrech — posuň ho tak, aby pokryl tvoji obec nebo městskou část. Později ho kdykoli upravíš v profilu."
+              : "Kruh na mapě je skutečný poloměr v kilometrech — posuň ho tak, aby pokryl tvoji obec nebo městskou část, ne celé velké město."
+          }
+          value={radiusKm}
+          min={MIN_NEIGHBOR_RADIUS_KM}
+          max={MAX_NEIGHBOR_RADIUS_KM}
+          step={0.5}
+          onChange={(km) => onRadiusChange?.(clampNeighborRadius(km))}
+        />
+      </div>
     </div>
   );
 }

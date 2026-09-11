@@ -39,11 +39,9 @@ import ProfilePhotoEditor from "./ProfilePhotoEditor.jsx";
 import LegalPages, { LegalLinksSection } from "./LegalPages.jsx";
 import FeedbackModal from "./FeedbackModal.jsx";
 import HomeAddressForm from "./profile/HomeAddressForm.jsx";
-import MapRadiusControl from "./map/MapRadiusControl.jsx";
 import {
   DEFAULT_NEIGHBOR_RADIUS_KM,
-  MIN_NEIGHBOR_RADIUS_KM,
-  MAX_NEIGHBOR_RADIUS_KM,
+  formatMapRadiusKm,
   clampNeighborRadius,
 } from "../data/mapRadiusSettings.js";
 import {
@@ -315,7 +313,6 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
     showTrustHomePrompt,
     updateHomeAddress,
     updateUserLocation,
-    setNeighborInterestRadius,
     addUserLocation,
     removeUserLocation,
     myHelpOffers,
@@ -342,6 +339,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
   const [editingHomeAddress, setEditingHomeAddress] = useState(false);
   const [editingLocationId, setEditingLocationId] = useState(null);
   const [addingLocation, setAddingLocation] = useState(false);
+  const [focusRadiusOnEdit, setFocusRadiusOnEdit] = useState(false);
   const [trustInfoOpen, setTrustInfoOpen] = useState(false);
   const [allowPublicAreaLabel, setAllowPublicAreaLabel] = useState(Boolean(user?.allowPublicAreaLabel));
   const [publicAreaLabel, setPublicAreaLabel] = useState(user?.publicAreaLabel ?? "");
@@ -906,6 +904,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                   onClick={() => {
                     setEditingLocationId(null);
                     setEditingHomeAddress(false);
+                    setFocusRadiusOnEdit(false);
                     setAddingLocation(true);
                   }}
                   className="pp-profile-sec-btn"
@@ -947,32 +946,36 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                   const radiusValue = clampNeighborRadius(
                     activeLoc.radiusKm ?? DEFAULT_NEIGHBOR_RADIUS_KM
                   );
-                  return (
-                    <MapRadiusControl
-                      compact
-                      id="profile-neighbor-interest-radius"
-                      label={`Okruh zájmu · ${locationChipLabel(activeLoc)}`}
-                      value={radiusValue}
-                      min={MIN_NEIGHBOR_RADIUS_KM}
-                      max={MAX_NEIGHBOR_RADIUS_KM}
-                      step={0.5}
-                      onChange={(km) => setNeighborInterestRadius?.(km)}
-                    />
-                  );
-                })()}
-                <button
-                  type="button"
-                  onClick={() => {
+                  const openEdit = ({ focusRadius = false } = {}) => {
                     const targetId = activeLocationId || locations[0]?.id;
                     if (!targetId) return;
                     setAddingLocation(false);
+                    setFocusRadiusOnEdit(focusRadius);
                     setEditingLocationId(targetId);
                     if (targetId === "domov") setEditingHomeAddress(true);
-                  }}
-                  className="pp-profile-sec-edit"
-                >
-                  Upravit vybrané místo
-                </button>
+                  };
+                  return (
+                    <div className="flex flex-col items-start gap-1.5 pt-0.5">
+                      <p className="text-[10px] text-stone-400 leading-snug">
+                        Okruh zájmu u „{locationChipLabel(activeLoc)}“: {formatMapRadiusKm(radiusValue)}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => openEdit({ focusRadius: false })}
+                        className="pp-profile-sec-edit"
+                      >
+                        Upravit vybrané místo
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openEdit({ focusRadius: true })}
+                        className="pp-profile-sec-edit"
+                      >
+                        Upravit okruh zájmu
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
             ) : null}
 
@@ -982,26 +985,32 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                   if (!loc) return null;
                   const isHome = loc.id === "domov";
                   const LocIcon = locationIconFor(loc);
+                  const clearEdit = () => {
+                    setEditingLocationId(null);
+                    setEditingHomeAddress(false);
+                    setFocusRadiusOnEdit(false);
+                  };
                   return (
                     <div className="rounded-xl border border-[#C5DDD4] bg-[#F7FAF9] p-2.5 space-y-2">
                       <div className="flex items-center gap-2">
                         <LocIcon className="w-4 h-4 text-[#3D7A68] shrink-0" aria-hidden />
                         <p className="text-[11px] font-semibold text-stone-800 flex-1 min-w-0">
-                          {isHome ? addressLabel : `Upravit · ${loc.label}`}
+                          {focusRadiusOnEdit
+                            ? `Okruh zájmu · ${locationChipLabel(loc)}`
+                            : isHome
+                              ? addressLabel
+                              : `Upravit · ${loc.label}`}
                         </p>
                         <button
                           type="button"
-                          onClick={() => {
-                            setEditingLocationId(null);
-                            setEditingHomeAddress(false);
-                          }}
+                          onClick={clearEdit}
                           className="text-[10px] font-semibold text-stone-500"
                         >
                           Zavřít
                         </button>
                       </div>
                       <HomeAddressForm
-                        key={`edit-${loc.id}`}
+                        key={`edit-${loc.id}-${focusRadiusOnEdit ? "radius" : "place"}`}
                         compact
                         initialAddress={loc.address}
                         initialLabel={loc.label}
@@ -1011,18 +1020,14 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                         showLabel={!isHome}
                         labelRequired={!isHome}
                         submitLabel="Uložit"
+                        focusRadius={focusRadiusOnEdit}
+                        radiusSectionId="profile-edit-interest-radius"
                         onSave={async (payload) => {
                           const ok = await updateUserLocation(loc.id, payload);
-                          if (ok) {
-                            setEditingLocationId(null);
-                            if (isHome) setEditingHomeAddress(false);
-                          }
+                          if (ok) clearEdit();
                           return ok;
                         }}
-                        onCancel={() => {
-                          setEditingLocationId(null);
-                          if (isHome) setEditingHomeAddress(false);
-                        }}
+                        onCancel={clearEdit}
                       />
                       {!isHome ? (
                         <button
@@ -1030,7 +1035,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                           onClick={() => {
                             if (window.confirm(`Odstranit místo „${loc.label}“?`)) {
                               removeUserLocation(loc.id);
-                              setEditingLocationId(null);
+                              clearEdit();
                             }
                           }}
                           className="text-[11px] font-semibold text-red-600"

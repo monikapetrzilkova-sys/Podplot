@@ -22,6 +22,8 @@ export default function HomeAddressForm({
   initialRadiusKm = DEFAULT_NEIGHBOR_RADIUS_KM,
   initialLat = null,
   initialLng = null,
+  focusRadius = false,
+  radiusSectionId = "neighbor-radius-section",
 }) {
   const parsed = parseStoredAddress(initialAddress);
   const [placeLabel, setPlaceLabel] = useState(initialLabel);
@@ -127,6 +129,8 @@ export default function HomeAddressForm({
         onRadiusChange={setRadiusKm}
         pin={pickedCoords}
         onPinChange={setPickedCoords}
+        focusRadius={focusRadius}
+        radiusSectionId={radiusSectionId}
       />
 
       {submitError && <p className="text-xs text-red-600">{submitError}</p>}
