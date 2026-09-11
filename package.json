@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node server.mjs",
     "build": "node ./node_modules/vite/bin/vite.js build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test \"lib/**/*.test.js\" \"src/**/*.test.js\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",

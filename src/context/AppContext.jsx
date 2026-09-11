@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { CURRENT_USER } from "../data/mockData.js";
 import { getCategory } from "../data/listingCategories.js";
-import { getGroup, isGroupBoardDiscussionPost, mergePostsById } from "../data/groups.js";
+import { getGroup, isGroupBoardDiscussionPost, mergePostsById, GROUP_POSTS } from "../data/groups.js";
 import {
   SEED_GROUP_POST_COMMENTS,
   SEED_GROUP_POST_COMMENT_IDS,
@@ -231,6 +231,16 @@ import { inferLendingMeta } from "../data/lendingCategories.js";
 import { lendingCategoryToMarket } from "../data/marketCategories.js";
 import { SKIP_REGISTRATION, ENABLE_DEV_ROLE_SWITCH, ENABLE_TEST_PROFILE_ENTRY, getDevTestUser } from "../data/devConfig.js";
 import {
+  DEMO_JOINED_GROUP_IDS,
+  buildDemoNeighborPack,
+  buildDemoCraftsmanInquiries,
+  buildDemoLunchMenu,
+  buildDemoOwnedService,
+  buildDemoOfficeAnnouncements,
+  replaceDemoItems,
+  isDemoClickthroughId,
+} from "../data/demoClickthroughSeed.js";
+import {
   getInstitutionById,
   getDefaultDemoInstitution,
   verifyWorkEmailForInstitution,
@@ -326,7 +336,6 @@ import {
 } from "../data/notificationPlans.js";
 import {
   TEST_PERSONAS,
-  CRAFTSMAN_NEARBY_REQUESTS,
   isInjectedDemoPersona,
   identitySnapshotFromUser,
   mergeCitizenIdentity,
@@ -2612,6 +2621,59 @@ export function AppProvider({ children }) {
     [showToast]
   );
 
+  const applyDemoClickthroughSeed = useCallback((nextUser, roleId = "soused") => {
+    if (!nextUser?.id) return;
+    if (!ENABLE_TEST_PROFILE_ENTRY && !SKIP_REGISTRATION && !ENABLE_DEV_ROLE_SWITCH) return;
+
+    const pack = buildDemoNeighborPack(nextUser);
+    const officeExtra =
+      roleId === "urad" || nextUser.accountType === "urad" || nextUser.accountType === "instituce"
+        ? buildDemoOfficeAnnouncements(nextUser)
+        : [];
+
+    setUserPosts((prev) => replaceDemoItems(prev, [...pack.posts, ...officeExtra]));
+    setUserGroupPosts((prev) => replaceDemoItems(prev, pack.groupPosts));
+    setNeighborHelp((prev) => replaceDemoItems(prev, pack.help));
+    setEvents((prev) => replaceDemoItems(prev, pack.events));
+    setUserReports((prev) => replaceDemoItems(prev, pack.reports));
+    setJoinedGroupIds((prev) => {
+      const merged = new Set([...(prev ?? []), ...DEMO_JOINED_GROUP_IDS]);
+      return [...merged];
+    });
+
+    const isMobilni = roleId === "remeslnik" || nextUser.businessSubtype === "mobilni";
+    const isPodnik =
+      roleId === "podnik" ||
+      (nextUser.accountType === "podnik" && nextUser.businessSubtype !== "mobilni");
+
+    if (isMobilni) {
+      const owned = buildDemoOwnedService(nextUser);
+      setB2bInquiries(buildDemoCraftsmanInquiries());
+      setServicesCatalog((prev) => replaceDemoItems(prev, owned));
+      setServiceReviews((prev) => {
+        const kept = (prev ?? []).filter(
+          (r) => !isDemoClickthroughId(r?.serviceId) && !isDemoClickthroughId(r?.id)
+        );
+        return [...kept, ...initReviewsFromCatalog(owned)];
+      });
+    } else {
+      setB2bInquiries((prev) => (prev ?? []).filter((i) => !isDemoClickthroughId(i?.id)));
+    }
+
+    if (isPodnik) {
+      setLunchMenus((prev) => replaceDemoItems(prev, buildDemoLunchMenu(nextUser)));
+      setBusinessIsOpen(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    if (!(SKIP_REGISTRATION || user.isTestEntry || ENABLE_DEV_ROLE_SWITCH)) return;
+    applyDemoClickthroughSeed(user, testRoleId);
+    // jen při změně uživatele — role řeší switchTestRole / enterTestProfile
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- seed once per user id
+  }, [user?.id]);
+
   /** Dočasný testovací vstup — jen jméno, bez ověření. Před ostrou verzí vypni ENABLE_TEST_PROFILE_ENTRY. */
   const enterTestProfile = useCallback(
     ({ name, accountType, businessSubtype = null }) => {
@@ -2710,8 +2772,8 @@ export function AppProvider({ children }) {
         }),
       ]);
       setActiveLocationId("domov");
-      setJoinedGroupIds([]);
-      persistJoinedGroupIds(userId, []);
+      setJoinedGroupIds([...DEMO_JOINED_GROUP_IDS]);
+      persistJoinedGroupIds(userId, DEMO_JOINED_GROUP_IDS);
       setCommunityGroups(
         mergeCommunityGroups(
           getGroupsForLocation("domov", municipality),
@@ -2719,16 +2781,27 @@ export function AppProvider({ children }) {
         )
       );
       setCredits(CURRENT_USER.credits);
-      setActiveTab("home");
+      setActiveTab(normalizedType === "urad" ? "reports" : "home");
       setFeedMainMode("komunita");
       setFeedSubFilter("veci");
       setShowDiscoveryWall(true);
       setHomeModule(null);
       setExpandedPillar(null);
+
+      const seedRoleId =
+        normalizedType === "urad"
+          ? "urad"
+          : normalizedType === "podnik" && resolvedSubtype === "mobilni"
+            ? "remeslnik"
+            : normalizedType === "podnik"
+              ? "podnik"
+              : "soused";
+      applyDemoClickthroughSeed(nextUser, seedRoleId);
+
       showToast("Testovací vstup — před ostrou verzí se vypne.", "info");
       return { ok: true };
     },
-    [showToast]
+    [showToast, applyDemoClickthroughSeed]
   );
 
   const login = useCallback(
@@ -4854,11 +4927,23 @@ export function AppProvider({ children }) {
         setBusinessIsOpen(true);
       }
 
+      applyDemoClickthroughSeed(
+        {
+          ...user,
+          accountType: role.accountType,
+          businessSubtype: role.businessSubtype ?? null,
+          businessName: businessName || user.businessName,
+          primarySubcategory: primarySub,
+          serviceSubcategory: primarySub,
+        },
+        roleId
+      );
+
       setActiveTab("home");
       showToast(`Profil „${role.label}“ je připravený — stejné přihlášení, nová role.`, "success");
       return { ok: true };
     },
-    [user, citizenProfile, showToast]
+    [user, citizenProfile, showToast, applyDemoClickthroughSeed]
   );
 
   const openOfficePromptCall = useCallback(() => {
@@ -4952,27 +5037,31 @@ export function AppProvider({ children }) {
         setBusinessIsOpen(true);
       }
 
-      // Demo poptávky jen ve vývojovém přepínači — ne v ostré verzi
-      if (ENABLE_DEV_ROLE_SWITCH && isMobilniTestRole(roleId)) {
-        setB2bInquiries(
-          CRAFTSMAN_NEARBY_REQUESTS.map((r) => ({
-            id: `bi-seed-${r.id}`,
-            type: "service_request",
-            title: r.title,
-            text: r.text,
-            author: r.author,
-            authorId: r.authorId,
-            time: r.time,
-            distanceKm: r.distanceKm,
-            categoryLabel: r.categoryLabel,
-            profession: r.profession,
-            read: false,
-            priority: "immediate",
-            visibleAt: Date.now(),
-          }))
+      // Demo poptávky / ukázkový obsah pro proklikání všech typů
+      if (isMobilniTestRole(roleId) || role.businessSubtype === "mobilni") {
+        applyDemoClickthroughSeed(
+          {
+            ...user,
+            accountType: role.accountType,
+            businessSubtype: role.businessSubtype ?? null,
+            businessName: user.businessName || TEST_PERSONAS.remeslnik?.businessName,
+          },
+          "remeslnik"
         );
-      } else if (ENABLE_DEV_ROLE_SWITCH && (roleId === "podnik" || roleId === "urad")) {
-        setB2bInquiries([]);
+      } else if (roleId === "podnik" || role.businessSubtype === "fyzicka") {
+        applyDemoClickthroughSeed(
+          {
+            ...user,
+            accountType: role.accountType,
+            businessSubtype: role.businessSubtype ?? "fyzicka",
+            businessName: user.businessName || TEST_PERSONAS.podnik?.businessName,
+          },
+          "podnik"
+        );
+      } else if (roleId === "urad" || role.accountType === "urad" || role.accountType === "instituce") {
+        applyDemoClickthroughSeed(user, "urad");
+      } else {
+        applyDemoClickthroughSeed(user, "soused");
       }
 
       if (roleId === "urad" || role.accountType === "urad" || role.accountType === "instituce") {
@@ -4984,7 +5073,7 @@ export function AppProvider({ children }) {
       }
       showToast(`Přepnuto: ${role.label}`, "info");
     },
-    [user, citizenProfile, showToast, testRoleId]
+    [user, citizenProfile, showToast, testRoleId, applyDemoClickthroughSeed]
   );
 
   const acknowledgeNews = useCallback((id) => {
@@ -8452,7 +8541,11 @@ export function AppProvider({ children }) {
   );
 
   const feedPostsForLocation = useMemo(() => {
-    const base = filterByActiveLocation(FEED_POSTS, activeLocationId, activeLocation);
+    const withGroupWall = [
+      ...FEED_POSTS,
+      ...GROUP_POSTS.map((p) => (p.boardPost === true ? p : { ...p, boardPost: true })),
+    ];
+    const base = filterByActiveLocation(withGroupWall, activeLocationId, activeLocation);
     return applyListingSaleVisibility(base, listingSaleOrders, user?.id ?? "me");
   }, [activeLocationId, activeLocation, listingSaleOrders, user?.id]);
 
@@ -8665,6 +8758,7 @@ export function AppProvider({ children }) {
     const mine =
       servicesCatalog.find((s) => s.ownerUserId === uid) ??
       servicesCatalog.find((s) => s.id === "svc-mine") ??
+      servicesCatalog.find((s) => s.id === "demo-svc-mine") ??
       null;
     if (mine) return mine;
     // Demo katalog (Tomáš/Libor) jen ve vývojovém přepínači rolí
