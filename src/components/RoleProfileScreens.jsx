@@ -38,6 +38,8 @@ import InfoTip from "./InfoTip.jsx";
 
 /** Osobní profily uživatele — bez institucionálních účtů (úřad). */
 const PERSONAL_ROLE_IDS = ["soused", "podnik", "remeslnik"];
+/** Pořadí při „+ Přidat“ — mobilní služba první, pak podnik. */
+const ADD_PROFILE_ORDER = ["remeslnik", "podnik", "soused"];
 
 function ProfileRoleChip({ role, active, onClick }) {
   return (
@@ -128,9 +130,15 @@ export default function MyProfilesPanel({ embedded = false }) {
   const activeProfiles = activeIds
     .map((id) => TEST_ROLES.find((r) => r.id === id))
     .filter(Boolean);
-  const addableProfiles = SKIP_REGISTRATION
-    ? []
-    : TEST_ROLES.filter((r) => PERSONAL_ROLE_IDS.includes(r.id) && !activeIds.includes(r.id));
+  const addableProfiles = (
+    SKIP_REGISTRATION
+      ? []
+      : TEST_ROLES.filter((r) => PERSONAL_ROLE_IDS.includes(r.id) && !activeIds.includes(r.id))
+  ).sort(
+    (a, b) =>
+      (ADD_PROFILE_ORDER.indexOf(a.id) === -1 ? 99 : ADD_PROFILE_ORDER.indexOf(a.id)) -
+      (ADD_PROFILE_ORDER.indexOf(b.id) === -1 ? 99 : ADD_PROFILE_ORDER.indexOf(b.id))
+  );
   const canOfferOfficeAccount = !SKIP_REGISTRATION;
   const canOpenAddMenu = addableProfiles.length > 0 || canOfferOfficeAccount;
 
@@ -262,23 +270,26 @@ export default function MyProfilesPanel({ embedded = false }) {
       </div>
 
       {adding && !setupRole && (
-        <div className="mt-2 space-y-2">
-          {addableProfiles.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-1.5">
-              {addableProfiles.map((r) => (
-                <button
-                  key={r.id}
-                  type="button"
-                  onClick={() => startSetup(r.id)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-dashed border-[#3D7A68]/50 text-[11px] font-semibold text-[#1B4D3E] bg-[#F1F6F5]"
-                >
-                  <AccountTypeIcon roleId={r.id} accountType={r.accountType} className="w-3.5 h-3.5" />
-                  {r.label}
-                </button>
-              ))}
-            </div>
+        <div className="mt-2 space-y-1.5">
+          <div className="flex flex-wrap items-stretch gap-1.5">
+            {addableProfiles.map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => startSetup(r.id)}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-dashed border-[#3D7A68]/50 text-[11px] font-semibold text-[#1B4D3E] bg-[#F1F6F5]"
+              >
+                <AccountTypeIcon roleId={r.id} accountType={r.accountType} className="w-3.5 h-3.5" />
+                {r.label}
+              </button>
+            ))}
+            {canOfferOfficeAccount ? <AddOfficeAccountCard variant="chip" /> : null}
+          </div>
+          {canOfferOfficeAccount ? (
+            <p className="text-[9px] text-stone-400 leading-snug px-0.5">
+              Úřední účet obce je jen pro zastupitele — založíš ho oficiálním e-mailem úřadu (ne Gmail).
+            </p>
           ) : null}
-          {canOfferOfficeAccount ? <AddOfficeAccountCard /> : null}
           <button
             type="button"
             onClick={() => setAdding(false)}

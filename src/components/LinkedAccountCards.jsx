@@ -3,10 +3,32 @@ import AccountTypeIcon from "./AccountTypeIcon.jsx";
 import InfoTip from "./InfoTip.jsx";
 import { useApp } from "../context/AppContext.jsx";
 
-/** Kompaktní CTA: většina lidí úřad neřeší — info až po rozbalení. */
-export function AddOfficeAccountCard({ className = "" }) {
+/** Kompaktní CTA: většina lidí úřad neřeší — info až po rozbalení / u chipu krátká poznámka. */
+export function AddOfficeAccountCard({ className = "", variant = "card" }) {
   const { logoutAndRegisterAs, closeProfile } = useApp();
   const [open, setOpen] = useState(false);
+
+  const startOfficeRegistration = () => {
+    closeProfile?.();
+    logoutAndRegisterAs?.("urad", {
+      notice:
+        "Zvol obec a zadej oficiální e-mail úřadu. Soukromý e-mail (Gmail apod.) úřad neumožní.",
+    });
+  };
+
+  if (variant === "chip") {
+    return (
+      <button
+        type="button"
+        onClick={startOfficeRegistration}
+        title="Jen pro zastupitele obce · oficiální e-mail úřadu"
+        className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-dashed border-[#3D7A68]/50 text-[11px] font-semibold text-[#1B4D3E] bg-[#F1F6F5] ${className}`.trim()}
+      >
+        <AccountTypeIcon roleId="urad" accountType="urad" className="w-3.5 h-3.5" />
+        Úřední účet obce
+      </button>
+    );
+  }
 
   return (
     <section className={`mt-2 ${className}`}>
@@ -29,13 +51,7 @@ export function AddOfficeAccountCard({ className = "" }) {
         </button>
         <button
           type="button"
-          onClick={() => {
-            closeProfile?.();
-            logoutAndRegisterAs?.("urad", {
-              notice:
-                "Zvol obec a zadej oficiální e-mail úřadu. Soukromý e-mail (Gmail apod.) úřad neumožní.",
-            });
-          }}
+          onClick={startOfficeRegistration}
           className="shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-semibold border border-stone-200 text-[#1B4D3E] bg-white hover:bg-[#F1F6F5]"
         >
           Založit
