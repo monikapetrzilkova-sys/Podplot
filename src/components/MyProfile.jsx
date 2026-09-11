@@ -39,6 +39,14 @@ import ProfilePhotoEditor from "./ProfilePhotoEditor.jsx";
 import LegalPages, { LegalLinksSection } from "./LegalPages.jsx";
 import FeedbackModal from "./FeedbackModal.jsx";
 import HomeAddressForm from "./profile/HomeAddressForm.jsx";
+import MapRadiusControl from "./map/MapRadiusControl.jsx";
+import {
+  DEFAULT_NEIGHBOR_RADIUS_KM,
+  MIN_NEIGHBOR_RADIUS_KM,
+  MAX_NEIGHBOR_RADIUS_KM,
+  clampNeighborRadius,
+  formatMapRadiusKm,
+} from "../data/mapRadiusSettings.js";
 import {
   LOCATION_DOODLE_ICONS,
   INTEREST_DOODLE_ICONS,
@@ -308,6 +316,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
     showTrustHomePrompt,
     updateHomeAddress,
     updateUserLocation,
+    setNeighborInterestRadius,
     addUserLocation,
     removeUserLocation,
     myHelpOffers,
@@ -908,7 +917,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
             </div>
 
             {!addingLocation && !editingLocationId ? (
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-1.5">
                   {locations.map((loc) => {
                     const LocIcon = locationIconFor(loc);
@@ -932,6 +941,26 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                     );
                   })}
                 </div>
+                {(() => {
+                  const activeLoc =
+                    locations.find((l) => l.id === activeLocationId) ?? locations[0];
+                  if (!activeLoc) return null;
+                  const radiusValue = clampNeighborRadius(
+                    activeLoc.radiusKm ?? DEFAULT_NEIGHBOR_RADIUS_KM
+                  );
+                  return (
+                    <MapRadiusControl
+                      id="profile-neighbor-interest-radius"
+                      label="Okruh, který tě zajímá"
+                      hint={`Pro místo „${locationChipLabel(activeLoc)}“ (${formatMapRadiusKm(radiusValue)}). Podle něj uvidíš příspěvky, skupiny, výpomoc i místa v okolí.`}
+                      value={radiusValue}
+                      min={MIN_NEIGHBOR_RADIUS_KM}
+                      max={MAX_NEIGHBOR_RADIUS_KM}
+                      step={0.5}
+                      onChange={(km) => setNeighborInterestRadius?.(km)}
+                    />
+                  );
+                })()}
                 <button
                   type="button"
                   onClick={() => {

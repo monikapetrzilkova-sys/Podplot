@@ -8033,6 +8033,30 @@ export function AppProvider({ children }) {
     [locations, resolveLocationCoords, applyActiveLocationRemap, showToast]
   );
 
+  /** Okruh aktivního místa — určuje viditelnost příspěvků, skupin, výpomoci a míst. */
+  const setNeighborInterestRadius = useCallback(
+    (km) => {
+      const nextRadius = clampNeighborRadius(km);
+      const locId = activeLocationId || locations[0]?.id;
+      if (!locId) return;
+      setLocations((prev) =>
+        prev.map((loc) => (loc.id === locId ? { ...loc, radiusKm: nextRadius } : loc))
+      );
+      if (locId === "domov") {
+        setUser((u) =>
+          u
+            ? {
+                ...u,
+                radius: formatMapRadiusKm(nextRadius),
+                geo: { ...(u.geo ?? {}), radiusKm: nextRadius },
+              }
+            : u
+        );
+      }
+    },
+    [activeLocationId, locations]
+  );
+
   const addUserLocation = useCallback(
     async ({ street, houseNumber, psc, city, fullAddress, lat, lng, label, radiusKm } = {}) => {
       const placeLabel = String(label ?? "").trim();
@@ -9310,6 +9334,7 @@ export function AppProvider({ children }) {
         updateAccountProfile,
         updateHomeAddress,
         updateUserLocation,
+        setNeighborInterestRadius,
         addUserLocation,
         removeUserLocation,
         openEventDetail,
