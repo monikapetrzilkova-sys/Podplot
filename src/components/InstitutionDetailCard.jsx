@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MessageButton } from "./MessagesPage.jsx";
 import VerifiedBadge from "./VerifiedBadge.jsx";
 import ClaimProfileModal from "./entity/ClaimProfileModal.jsx";
@@ -11,7 +11,7 @@ import AppPanelPortal from "./AppPanelPortal.jsx";
 import { CLAIM_STATUS } from "../data/entityManagement.js";
 import PlaceReviewList from "./entity/PlaceReviewList.jsx";
 import { canWritePlaceReview } from "../data/placeReviews.js";
-import { formatGoogleHours } from "../data/placesApi.js";
+import { fetchPlaceDetails, formatGoogleHours, mergeGooglePlaceDetails } from "../data/placesApi.js";
 import { activitiesForPlace } from "../data/hostedActivities.js";
 import HostedActivityCard from "./HostedActivityCard.jsx";
 import MapComponent from "./module/MapComponent.jsx";
@@ -219,10 +219,41 @@ function PlaceActivitiesSection({ placeId }) {
   );
 }
 
-export default function InstitutionDetailCard({ place, onClose }) {
+export default function InstitutionDetailCard({ place: placeProp, onClose }) {
   const { user, institutionClaims, institutionPlaceOverrides } = useApp();
   const [claimOpen, setClaimOpen] = useState(false);
+  const [enrichedPlace, setEnrichedPlace] = useState(placeProp);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
 
+  useEffect(() => {
+    setEnrichedPlace(placeProp);
+  }, [placeProp]);
+
+  useEffect(() => {
+    if (!placeProp?.isGooglePlace || !placeProp.googlePlaceId) return undefined;
+    const hasReviewText = (placeProp.googleReviews ?? []).some((r) => String(r?.text ?? "").trim());
+    if (hasReviewText) return undefined;
+
+    let cancelled = false;
+    setReviewsLoading(true);
+    fetchPlaceDetails(placeProp.googlePlaceId)
+      .then((details) => {
+        if (cancelled || !details || details.error) return;
+        setEnrichedPlace((prev) => mergeGooglePlaceDetails(prev ?? placeProp, details));
+      })
+      .catch(() => {
+        /* ponech základní údaje */
+      })
+      .finally(() => {
+        if (!cancelled) setReviewsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [placeProp?.id, placeProp?.googlePlaceId, placeProp?.isGooglePlace]);
+
+  const place = enrichedPlace ?? placeProp;
   if (!place) return null;
 
   const uid = user?.id ?? "me";
@@ -364,7 +395,12 @@ export default function InstitutionDetailCard({ place, onClose }) {
 
               {canCommunityEdit && <PlaceCommunityEdit place={place} />}
 
-              <PlaceReviewList place={place} showComposer={canReview} compact />
+              <PlaceReviewList
+                place={place}
+                showComposer={canReview}
+                compact
+                reviewsLoading={reviewsLoading}
+              />
 
               <div className="mt-4 flex gap-2 flex-wrap">
                 <MessageButton

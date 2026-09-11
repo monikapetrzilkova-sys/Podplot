@@ -9,7 +9,12 @@ import {
 } from "../../data/placeReviews.js";
 import { isVerifiedNeighbor } from "../../data/serviceReviews.js";
 
-export default function PlaceReviewList({ place, showComposer = null, compact = false }) {
+export default function PlaceReviewList({
+  place,
+  showComposer = null,
+  compact = false,
+  reviewsLoading = false,
+}) {
   const {
     placeReviews,
     addPlaceReview,
@@ -22,6 +27,7 @@ export default function PlaceReviewList({ place, showComposer = null, compact = 
   const [text, setText] = useState("");
   const [stars, setStars] = useState(5);
   const [composerOpen, setComposerOpen] = useState(false);
+  const [expandedGoogle, setExpandedGoogle] = useState({});
 
   const key = placeReviewKey(place);
   if (!key) return null;
@@ -35,7 +41,7 @@ export default function PlaceReviewList({ place, showComposer = null, compact = 
     community.length
   );
 
-  const googleReviews = place.googleReviews ?? [];
+  const googleReviews = (place.googleReviews ?? []).filter((r) => String(r?.text ?? "").trim());
   const canReview =
     typeof showComposer === "boolean"
       ? showComposer
@@ -137,21 +143,59 @@ export default function PlaceReviewList({ place, showComposer = null, compact = 
         </div>
       )}
 
+      {reviewsLoading && googleReviews.length === 0 ? (
+        <p className="text-xs text-stone-500">Načítám textové recenze z Google…</p>
+      ) : null}
+
       {googleReviews.length > 0 && (
         <div className="space-y-2">
           <p className="text-[10px] font-bold uppercase text-stone-500">Z Google Maps</p>
-          {googleReviews.slice(0, 2).map((r, i) => (
-            <div key={`g-${i}`} className="bg-blue-50/60 rounded-lg p-2.5 text-xs border border-blue-100">
-              <p className="text-amber-600 font-semibold mb-0.5">{"★".repeat(r.rating ?? 5)}</p>
-              <p className="text-stone-700 line-clamp-3">{r.text}</p>
-              <p className="text-[10px] text-stone-400 mt-1">
-                {r.author}
-                {r.time ? ` · ${r.time}` : ""}
-              </p>
-            </div>
-          ))}
+          {googleReviews.slice(0, 5).map((r, i) => {
+            const body = String(r.text).trim();
+            const long = body.length > 220;
+            const open = Boolean(expandedGoogle[i]);
+            return (
+              <div key={`g-${i}`} className="bg-blue-50/60 rounded-lg p-2.5 text-xs border border-blue-100">
+                <p className="text-amber-600 font-semibold mb-0.5">
+                  {"★".repeat(Math.min(5, Number(r.rating) || 5))}
+                  {r.rating != null ? (
+                    <span className="text-stone-500 font-normal ml-1">{r.rating}/5</span>
+                  ) : null}
+                </p>
+                <p
+                  className={`text-stone-700 leading-relaxed whitespace-pre-wrap ${
+                    open || !long ? "" : "line-clamp-5"
+                  }`}
+                >
+                  {body}
+                </p>
+                {long ? (
+                  <button
+                    type="button"
+                    onClick={() => setExpandedGoogle((prev) => ({ ...prev, [i]: !open }))}
+                    className="mt-1 text-[10px] font-semibold text-[#3D7A68] hover:underline"
+                  >
+                    {open ? "Zobrazit méně" : "Zobrazit celou recenzi"}
+                  </button>
+                ) : null}
+                <p className="text-[10px] text-stone-400 mt-1">
+                  {r.author || "Google uživatel"}
+                  {r.time ? ` · ${r.time}` : ""}
+                </p>
+              </div>
+            );
+          })}
         </div>
       )}
+
+      {!reviewsLoading &&
+      place.isGooglePlace &&
+      (place.googleReviewCount ?? 0) > 0 &&
+      googleReviews.length === 0 ? (
+        <p className="text-xs text-stone-500 leading-snug">
+          Google uvádí {place.googleReviewCount} hodnocení, ale textové recenze teď nejsou k dispozici.
+        </p>
+      ) : null}
 
       {community.length > 0 && (
         <div className="space-y-2">
@@ -159,7 +203,7 @@ export default function PlaceReviewList({ place, showComposer = null, compact = 
           {community.map((r) => (
             <div key={r.id} className="bg-stone-50 rounded-lg p-2.5 text-xs">
               <p className="text-amber-600 font-semibold mb-0.5">{"★".repeat(r.stars ?? 5)}</p>
-              <p className="text-stone-700">{r.text}</p>
+              <p className="text-stone-700 leading-relaxed whitespace-pre-wrap">{r.text}</p>
               <p className="text-[10px] text-stone-400 mt-1 flex flex-wrap items-center gap-2">
                 <span>{r.authorName}</span>
                 {r.verified ? (
@@ -182,12 +226,17 @@ export default function PlaceReviewList({ place, showComposer = null, compact = 
         </div>
       )}
 
-      {community.length === 0 && !googleReviews.length && !hybrid && !canReview && (
+      {community.length === 0 && !googleReviews.length && !hybrid && !canReview && !reviewsLoading && (
         <p className="text-xs text-stone-500">Zatím žádná hodnocení.</p>
       )}
-      {community.length === 0 && !googleReviews.length && !hybrid && canReview && !composerOpen && (
-        <p className="text-xs text-stone-500">Zatím žádná hodnocení — napište první recenzi.</p>
-      )}
+      {community.length === 0 &&
+        !googleReviews.length &&
+        !hybrid &&
+        canReview &&
+        !composerOpen &&
+        !reviewsLoading && (
+          <p className="text-xs text-stone-500">Zatím žádná hodnocení — napište první recenzi.</p>
+        )}
     </div>
   );
 }
