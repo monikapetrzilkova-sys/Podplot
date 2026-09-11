@@ -92,12 +92,21 @@ export function resolveInstitutionIconKey(place) {
 export function institutionMarkerIconSvg(place, selected = false) {
   const variant = place?.isGooglePlace ? "google" : institutionPinVariant(place);
   const c = PIN_COLORS[variant] ?? PIN_COLORS.default;
+  // Vybraný špendlík: výrazná teplá barva + bílý okraj, ať vynikne mezi modrými Google piny
+  const bg = selected ? "#C45C26" : c.bg;
+  const border = selected ? "#FFFFFF" : c.border;
+  const strokeW = selected ? 2.6 : 1.6;
   const iconKey = resolveInstitutionIconKey(place);
   const paths = ICON_PATHS[iconKey] ?? ICON_PATHS.ostatni;
   const filledDots = iconKey === "ostatni";
 
+  const halo = selected
+    ? `<circle cx="20" cy="17.5" r="15.2" fill="#FFF8F0" stroke="#C45C26" stroke-width="2.2"/>`
+    : "";
+
   const svg = `${mapPinSvgOpenTag(selected)}
-    <path d="${mapPinTeardropPath()}" fill="${c.bg}" stroke="${c.border}" stroke-width="1.6" stroke-linejoin="round"/>
+    ${halo}
+    <path d="${mapPinTeardropPath()}" fill="${bg}" stroke="${border}" stroke-width="${strokeW}" stroke-linejoin="round"/>
     <g transform="translate(${MAP_PIN_ICON_CX} ${MAP_PIN_ICON_CY}) scale(0.46) translate(-12 -12)" fill="${
       filledDots ? "white" : "none"
     }" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</g>

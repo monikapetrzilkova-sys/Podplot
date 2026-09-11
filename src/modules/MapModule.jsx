@@ -239,8 +239,14 @@ export default function MapModule({ provozovnaType = null }) {
                     key={place.id}
                     place={place}
                     selected={selectedId === place.id}
-                    onOpen={setDetailPlace}
-                    onShowOnMap={() => showModuleItemOnMap(moduleId, place.id)}
+                    onOpen={(p) => {
+                      selectModuleItem(moduleId, p.id);
+                      setDetailPlace(p);
+                    }}
+                    onShowOnMap={() => {
+                      setPreviewPlace(place);
+                      showModuleItemOnMap(moduleId, place.id);
+                    }}
                   />
                 )}
               />

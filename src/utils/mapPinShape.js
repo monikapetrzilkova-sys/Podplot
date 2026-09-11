@@ -3,7 +3,7 @@ export const MAP_PIN_W = 40;
 export const MAP_PIN_H = 54;
 
 export function mapPinDisplaySize(selected = false) {
-  return selected ? { w: 46, h: 62 } : { w: 36, h: 49 };
+  return selected ? { w: 54, h: 73 } : { w: 36, h: 49 };
 }
 
 /**

@@ -14,6 +14,50 @@ import { canWritePlaceReview } from "../data/placeReviews.js";
 import { formatGoogleHours } from "../data/placesApi.js";
 import { activitiesForPlace } from "../data/hostedActivities.js";
 import HostedActivityCard from "./HostedActivityCard.jsx";
+import MapComponent from "./module/MapComponent.jsx";
+
+function placeHasMapPosition(place) {
+  if (!place) return false;
+  if (place.lat != null && place.lng != null) return true;
+  if (place.mapPos?.lat != null && place.mapPos?.lng != null) return true;
+  if (place.mapPos?.x != null && place.mapPos?.y != null) return true;
+  return false;
+}
+
+function PlaceDetailMap({ place }) {
+  const { activeLocation, user } = useApp();
+  if (!placeHasMapPosition(place)) return null;
+
+  const mapCenter =
+    place.lat != null && place.lng != null
+      ? { lat: Number(place.lat), lng: Number(place.lng) }
+      : place.mapPos?.lat != null && place.mapPos?.lng != null
+        ? { lat: Number(place.mapPos.lat), lng: Number(place.mapPos.lng) }
+        : null;
+
+  return (
+    <div className="pp-report-detail-map shrink-0 -mx-5 mb-3 border-y border-stone-100">
+      <MapComponent
+        mapMode="institutions"
+        institutions={[place]}
+        selectedInstitutionId={place.id}
+        showHomePin={false}
+        hideLegend
+        hideStats
+        hidePickHint
+        mapCenter={mapCenter}
+        userAddress={place.address || activeLocation?.address || user?.address || ""}
+        areaLabel={
+          place.address
+            ? place.address.split(",").pop()?.trim()
+            : activeLocation?.shortLabel
+        }
+        homeLabel={activeLocation?.label ?? "Domov"}
+        className="h-full w-full"
+      />
+    </div>
+  );
+}
 
 function PlaceCommunityEdit({ place, onSaved }) {
   const { updatePlaceCommunityDetails } = useApp();
@@ -243,6 +287,8 @@ export default function InstitutionDetailCard({ place, onClose }) {
                   </button>
                 </div>
               </div>
+
+              <PlaceDetailMap place={place} />
 
               {place.accountType && <VerifiedBadge accountType={place.accountType} />}
 

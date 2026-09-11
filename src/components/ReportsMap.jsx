@@ -88,6 +88,7 @@ function MapPin({
   pulse = false,
   onClick,
   selected,
+  dimmed = false,
   iconNode,
   emoji,
   pinLabel,
@@ -141,7 +142,7 @@ function MapPin({
       }}
       className={`absolute focus:outline-none ${onClick ? "cursor-pointer" : "cursor-default"} ${
         selected ? "z-[18]" : emphasize ? "z-[16]" : showPinLabel ? "z-[14]" : "z-10"
-      }`}
+      } ${dimmed && !selected ? "opacity-40" : ""}`}
       style={{
         left: `${x}%`,
         top: `${y}%`,
@@ -158,11 +159,14 @@ function MapPin({
         )}
         <span
           className={`relative shrink-0 overflow-visible transition-transform ${
-            selected ? "scale-110" : emphasize ? "scale-105" : ""
+            selected ? "scale-[1.28]" : emphasize ? "scale-105" : ""
           }`}
           style={{
             width: mapPinDisplaySize(selected).w,
             height: mapPinDisplaySize(selected).h,
+            filter: selected
+              ? "drop-shadow(0 0 0 2px #fff) drop-shadow(0 0 3px rgba(196,92,38,0.9))"
+              : undefined,
           }}
         >
           <svg
@@ -172,9 +176,9 @@ function MapPin({
           >
             <path
               d={mapPinTeardropPath()}
-              fill={c.bg}
-              stroke={c.border}
-              strokeWidth="1.6"
+              fill={selected ? "#C45C26" : c.bg}
+              stroke={selected ? "#FFFFFF" : c.border}
+              strokeWidth={selected ? 2.6 : 1.6}
               strokeLinejoin="round"
             />
           </svg>
@@ -459,6 +463,7 @@ export default function ReportsMap({
                 iconNode={<PlaceIcon place={place} className="w-4 h-4" pin />}
                 label={place.name}
                 selected={selectedInstitutionId === place.id}
+                dimmed={Boolean(selectedInstitutionId) && selectedInstitutionId !== place.id}
                 onClick={onInstitutionPinClick ? () => onInstitutionPinClick(place) : undefined}
               />
             );

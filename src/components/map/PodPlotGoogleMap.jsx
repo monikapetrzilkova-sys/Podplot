@@ -290,7 +290,8 @@ export default function PodPlotGoogleMap({
     map.panTo(pos);
     if (!alreadyFocused) {
       const zoom = map.getZoom() ?? 14;
-      if (zoom < 15) map.setZoom(15);
+      const targetZoom = mapMode === "institutions" ? 16 : 15;
+      if (zoom < targetZoom) map.setZoom(targetZoom);
     }
 
     const t1 = window.setTimeout(() => {
@@ -305,7 +306,7 @@ export default function PodPlotGoogleMap({
       window.clearTimeout(t1);
       window.clearTimeout(t2);
     };
-  }, [focusSelectionKey, markers, mapReady, focusDraftPin]);
+  }, [focusSelectionKey, markers, mapReady, focusDraftPin, mapMode]);
 
   useEffect(() => {
     if (!focusSelectionKey) prevFocusSelectionRef.current = null;
@@ -345,6 +346,8 @@ export default function PodPlotGoogleMap({
 
     if (markers.length === 0) return () => { cancelled = true; };
 
+    const hasSelected = markers.some((m) => m.selected);
+
     const gMarkers = markers.map((marker) => {
       const gMarker = new window.google.maps.Marker({
         map: null,
@@ -353,6 +356,7 @@ export default function PodPlotGoogleMap({
         clickable: true,
         optimized: false,
         cursor: "pointer",
+        opacity: hasSelected && !marker.selected ? 0.4 : 1,
         icon: googleMapsPinIcon(
           window.google.maps,
           marker.iconUrl ?? markerIconSvg(marker.variant, marker.emoji, marker.selected),

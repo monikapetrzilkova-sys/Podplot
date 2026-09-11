@@ -397,7 +397,10 @@ export default function GuideModule() {
 
                     selected={selectedId === place.id}
 
-                    onOpen={setDetailPlace}
+                    onOpen={(p) => {
+                      selectModuleItem(moduleId, p.id);
+                      setDetailPlace(p);
+                    }}
 
                     onShowOnMap={() => showModuleItemOnMap(moduleId, place.id)}
 
