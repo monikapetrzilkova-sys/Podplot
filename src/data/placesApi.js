@@ -252,6 +252,16 @@ const NAME_CATEGORY_RULES = [
       /\bobi\b/i,
       /\bbauhaus\b/i,
       /\bbauhaus\b/i,
+      /\březnic/i,
+      /\bmasn[áa]/i,
+      /\buzenin/i,
+      /\buzenář/i,
+      /\buzenar/i,
+      /\bprodej\s*masa\b/i,
+      /\bbutcher\b/i,
+      /\bradev\b/i,
+      /\bvečerk/i,
+      /\bvecerk/i,
     ],
   },
   {
@@ -275,6 +285,10 @@ const NAME_CATEGORY_RULES = [
       /\bburger\b/i,
       /\bsushi\b/i,
       /\bpekar\b/i,
+      /\bjídeln/i,
+      /\bjideln/i,
+      /\bvývařov/i,
+      /\bvyvarov/i,
     ],
   },
   {
@@ -532,7 +546,7 @@ export function formatGoogleHours(weekdayText = []) {
 /** In-memory cache — stejná lokalita po přepnutí Hlášení↔Místa bez nového čekání. */
 const nearbyPlacesMemoryCache = new Map();
 const SESSION_TTL_MS = 45 * 60 * 1000;
-const SESSION_PREFIX = "pp-places-v11:";
+const SESSION_PREFIX = "pp-places-v12:";
 
 function sessionKey({ lat, lng, radiusM, category }) {
   return `${SESSION_PREFIX}${Number(lat).toFixed(3)},${Number(lng).toFixed(3)},${radiusM},${category || "vse"}`;
@@ -685,11 +699,14 @@ export function googlePlaceToInstitution(place, locationId = "domov") {
   const byName = matchNameRule(name);
 
   let category = normalizeGuidePlaceCategory(googleTypesToCategory(types, name));
-  // Název má přednost u jasných provozoven (pneuservis často přijde jako „store“)
+  // Název má přednost u jasných provozoven (pneuservis / řeznictví často bez správného typu)
   if (byName?.provozovnaType) {
     category = "sluzby";
-  } else if (category === "ostatni" && byName) {
-    category = byName.category;
+  } else if (byName?.category) {
+    // Preferuj přesnější kategorii z názvu (řeznictví / jídelna často bez správného Google typu)
+    if (category === "ostatni" || byName.category !== category) {
+      category = byName.category;
+    }
   }
 
   const provozovnaType =
