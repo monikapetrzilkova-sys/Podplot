@@ -849,37 +849,23 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                   <p className="text-[11px] text-stone-500 mt-0.5 truncate">{user.contactName}</p>
                 ) : null
               ) : (
-                <>
-                  <p className="text-[11px] text-[#3D7A68] mt-1 leading-snug">
-                    {user.isVerified || isCommunityVerified
-                      ? TRUST_COPY.verifiedHint
-                      : TRUST_COPY.unverifiedHint}
-                  </p>
-                  {!(user.isVerified || isCommunityVerified) ? (
-                    <InviteToPodplotButton className="mt-1" label="Poslat odkaz na Podplot" />
-                  ) : null}
-                </>
+                <p className="text-[11px] text-[#3D7A68] mt-1 leading-snug">
+                  {user.isVerified || isCommunityVerified
+                    ? TRUST_COPY.verifiedHint
+                    : TRUST_COPY.unverifiedHint}
+                </p>
               )}
-              <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                <button
-                  type="button"
-                  onClick={() => setPhotoEditorOpen(true)}
-                  className="text-[10px] font-semibold text-[#3D7A68]"
-                >
-                  {user.profilePhoto ? "Fotka" : "+ Fotka"}
-                </button>
-                {user.profilePhoto ? (
-                  <button
-                    type="button"
-                    onClick={removeProfilePhoto}
-                    className="text-[10px] font-semibold text-stone-400"
-                  >
-                    Smazat
-                  </button>
-                ) : null}
-              </div>
             </div>
           </div>
+
+          {!isOfficeProfile ? (
+            <div className="mt-3 pt-2.5 border-t border-stone-100">
+              <InviteToPodplotButton
+                label="Pozvi sousedy do Podplotu"
+                className="block"
+              />
+            </div>
+          ) : null}
 
           {!isOfficeProfile && trustInfoOpen ? (
             <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50/70 p-2.5 text-left">
