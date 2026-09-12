@@ -1159,11 +1159,6 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
         countLabel={profileActivityLabels.groupProposals(myGroupProposals.length)}
         open={openNeighborSection === "profile-my-group-proposals"}
         onToggle={() => toggleNeighborSection("profile-my-group-proposals")}
-        onAdd={() => {
-          closeProfile?.();
-          openCreateGroupModal?.();
-        }}
-        addLabel="Navrhnout novou skupinu"
       >
         {myGroupProposals.length === 0 ? (
           <div className="space-y-3">
