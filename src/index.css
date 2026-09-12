@@ -1942,9 +1942,10 @@ body,
 }
 
 .pp-map-toolbar-subfilter {
-  flex: 0 0 2.85rem;
-  min-height: 2.85rem;
-  max-height: 2.85rem;
+  /* Ikony bez popisků — nižší rezervovaná výška, mapa pořád nebliká */
+  flex: 0 0 2.4rem;
+  min-height: 2.4rem;
+  max-height: 2.4rem;
   display: flex;
   align-items: center;
   overflow-x: auto;
