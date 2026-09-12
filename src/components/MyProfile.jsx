@@ -126,82 +126,57 @@ function ProfileCollapsible({
   );
 }
 
-/** Sbalený seznam sousedů čekajících na potvrzení (bez už potvrzených). */
-function TrustPendingAccordion({ pending, confirmNeighbor, dismissTrustNeighbor, getPersonPhoto }) {
+/** Seznam sousedů čekajících na potvrzení — hned viditelný po rozbalení sekce. */
+function TrustPendingList({ pending, confirmNeighbor, dismissTrustNeighbor, getPersonPhoto }) {
   const { activeLocation } = useApp();
-  const [expanded, setExpanded] = useState(false);
-  const countLabel = trustPendingCountLabel(pending.length);
 
   return (
-    <div>
-      <button
-        type="button"
-        onClick={() => setExpanded((v) => !v)}
-        aria-expanded={expanded}
-        className="w-full flex items-center gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-left hover:bg-emerald-100/70 transition-colors"
-      >
-        <span className="relative shrink-0 w-8 h-8 rounded-lg bg-white text-[#3D7A68] flex items-center justify-center border border-emerald-100">
-          <span className="text-xs font-bold tabular-nums">{pending.length}</span>
-        </span>
-        <span className="flex-1 min-w-0">
-          <span className="block text-sm font-semibold text-stone-900">{TRUST_COPY.pendingTitle(countLabel)}</span>
-          <span className="block text-[11px] text-stone-500 mt-0.5">
-            {TRUST_COPY.pendingHint}
-          </span>
-        </span>
-        <span className="text-[11px] font-semibold text-[#3D7A68] shrink-0">
-          {expanded ? "Sbalit ▲" : "Rozbalit ▼"}
-        </span>
-      </button>
-
-      {expanded && (
-        <div className="space-y-2 mt-3">
-          {pending.map((n) => {
-            const photo = getPersonPhoto?.(n.id) || n.profilePhoto || null;
-            return (
-              <div
-                key={n.id}
-                className="flex items-center justify-between gap-2 p-3 rounded-xl bg-emerald-50 border border-emerald-200"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <Avatar
-                    initials={n.initials}
-                    name={n.name}
-                    roleId="soused"
-                    size="sm"
-                    photo={photo}
-                  />
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-stone-800 truncate">
-                      <PersonLabel personId={n.id} name={n.name} />
-                    </p>
-                    <p className="text-xs text-stone-500">
-                      {(n.confirmations ?? 0) > 0 ? `${n.confirmations} potvrzení · ` : ""}
-                      {neighborLocalityCaption(n, activeLocation)}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => confirmNeighbor(n.id)}
-                    className="text-[10px] font-semibold text-emerald-700 bg-white px-2 py-1 rounded-lg border border-emerald-200"
-                  >
-                    {TRUST_COPY.confirmAction}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => dismissTrustNeighbor(n.id)}
-                    className="text-[10px] font-semibold text-stone-500 bg-white px-2 py-1 rounded-lg border border-stone-200"
-                  >
-                    {TRUST_COPY.skipAction}
-                  </button>
-                </div>
+    <div className="space-y-2">
+      <p className="text-[11px] text-stone-500 leading-snug px-0.5">{TRUST_COPY.pendingHint}</p>
+      {pending.map((n) => {
+        const photo = getPersonPhoto?.(n.id) || n.profilePhoto || null;
+        return (
+          <div
+            key={n.id}
+            className="flex items-center justify-between gap-2 p-3 rounded-xl bg-emerald-50 border border-emerald-200"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Avatar
+                initials={n.initials}
+                name={n.name}
+                roleId="soused"
+                size="sm"
+                photo={photo}
+              />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-stone-800 truncate">
+                  <PersonLabel personId={n.id} name={n.name} />
+                </p>
+                <p className="text-xs text-stone-500">
+                  {(n.confirmations ?? 0) > 0 ? `${n.confirmations} potvrzení · ` : ""}
+                  {neighborLocalityCaption(n, activeLocation)}
+                </p>
               </div>
-            );
-          })}
-        </div>
-      )}
+            </div>
+            <div className="flex flex-col gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => confirmNeighbor(n.id)}
+                className="text-[10px] font-semibold text-emerald-700 bg-white px-2 py-1 rounded-lg border border-emerald-200"
+              >
+                {TRUST_COPY.confirmAction}
+              </button>
+              <button
+                type="button"
+                onClick={() => dismissTrustNeighbor(n.id)}
+                className="text-[10px] font-semibold text-stone-500 bg-white px-2 py-1 rounded-lg border border-stone-200"
+              >
+                {TRUST_COPY.skipAction}
+              </button>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
