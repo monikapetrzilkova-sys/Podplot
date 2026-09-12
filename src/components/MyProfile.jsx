@@ -6,7 +6,7 @@ import {
   isCurrentUserRef,
   isSelfNeighborCandidate,
 } from "../data/listingSales.js";
-import { TRUST_COPY, trustPendingCountLabel, neighborLocalityCaption } from "../data/trustNetworkCopy.js";
+import { TRUST_COPY, neighborLocalityCaption } from "../data/trustNetworkCopy.js";
 import { getAccountType, ADDRESS_PRIVACY_NOTE, getPodnikatelSubtypeLabel, isBusinessAccount, getRegistrationFields, resolveBusinessSubtype, isUradAccount } from "../data/accountTypes.js";
 import { isInjectedDemoPersona } from "../data/businessProfiles.js";
 import { getVerifiedLabel } from "../data/domainVerification.js";
@@ -26,7 +26,6 @@ import { getReportLifecycleBadge, isReportVisibleInOwnerProfile, normalizeReport
 import { formatContentAge } from "../data/czechDateTime.js";
 import FeedCard from "./FeedCard.jsx";
 import GroupProposalCard from "./GroupProposalCard.jsx";
-import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
 import AppPanelPortal from "./AppPanelPortal.jsx";
 import MyProfilesPanel, {
   ProfileTypeTestSwitcher,
@@ -178,6 +177,40 @@ function TrustPendingList({ pending, confirmNeighbor, dismissTrustNeighbor, getP
         );
       })}
     </div>
+  );
+}
+
+/** Kompaktní středový detail z profilu — bez spodního pruhu a prázdného místa nahoře. */
+function ProfileDetailSheet({ title, onClose, children, ariaLabel }) {
+  return (
+    <AppPanelPortal>
+      <div className="pp-app-sheet-overlay pp-app-sheet-overlay--center">
+        <button
+          type="button"
+          className="absolute inset-0 bg-stone-900/45 border-0 p-0 cursor-pointer pointer-events-auto"
+          onClick={onClose}
+          aria-label="Zavřít"
+        />
+        <div
+          className="pp-app-sheet !max-h-[85%] !rounded-2xl w-full max-w-md mx-auto shadow-xl overflow-hidden flex flex-col"
+          role="dialog"
+          aria-label={ariaLabel || title}
+        >
+          <div className="flex items-start justify-between gap-2 px-4 py-3 border-b border-stone-100 shrink-0">
+            <h2 className="text-base font-bold text-stone-900 leading-snug pr-2">{title}</h2>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-8 h-8 shrink-0 flex items-center justify-center rounded-full text-stone-500 hover:bg-stone-100 text-xl leading-none"
+              aria-label="Zavřít"
+            >
+              ×
+            </button>
+          </div>
+          <div className="overflow-y-auto p-4">{children}</div>
+        </div>
+      </div>
+    </AppPanelPortal>
   );
 }
 
@@ -1107,7 +1140,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
             <InviteToPodplotButton label="Poslat odkaz na Podplot" />
           </div>
         ) : (
-          <TrustPendingAccordion
+          <TrustPendingList
             pending={trustPendingNeighbors}
             confirmNeighbor={confirmNeighbor}
             dismissTrustNeighbor={dismissTrustNeighbor}
@@ -1525,119 +1558,70 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
       )}
 
       {detailListing && (
-        <AppPanelPortal>
-          <div className="pp-app-sheet-overlay">
-            <div className="absolute inset-0 pointer-events-auto">
-              <ModalDoodleBackdrop onClose={() => setDetailListing(null)} />
-            </div>
-            <div className="pp-app-sheet flex flex-col overflow-hidden" role="dialog" aria-label="Detail inzerátu">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-stone-200 shrink-0">
-                <h2 className="text-base font-bold text-stone-900">Detail inzerátu</h2>
-                <button
-                  type="button"
-                  onClick={() => setDetailListing(null)}
-                  className="w-8 h-8 flex items-center justify-center rounded-full text-stone-500 hover:bg-stone-100 text-xl leading-none"
-                  aria-label="Zavřít"
-                >
-                  ×
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-4">
-                <FeedCard post={detailListing} detailsOnly />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const post = detailListing;
-                    setDetailListing(null);
-                    openListingOnMap(post);
-                  }}
-                  className="mt-3 w-full py-2.5 text-sm font-semibold rounded-xl border border-[#C5DDD4] text-[#3D7A68]"
-                >
-                  Otevřít v sekci Věci
-                </button>
-              </div>
-            </div>
-          </div>
-        </AppPanelPortal>
+        <ProfileDetailSheet
+          title={detailListing.title || "Detail inzerátu"}
+          ariaLabel="Detail inzerátu"
+          onClose={() => setDetailListing(null)}
+        >
+          <FeedCard post={detailListing} detailsOnly bodyInParent />
+          <button
+            type="button"
+            onClick={() => {
+              const post = detailListing;
+              setDetailListing(null);
+              openListingOnMap(post);
+            }}
+            className="mt-3 w-full py-2.5 text-sm font-semibold rounded-xl border border-[#C5DDD4] text-[#3D7A68]"
+          >
+            Otevřít v sekci Věci
+          </button>
+        </ProfileDetailSheet>
       )}
 
       {detailLending && (
-        <AppPanelPortal>
-          <div className="pp-app-sheet-overlay">
-            <div className="absolute inset-0 pointer-events-auto">
-              <ModalDoodleBackdrop onClose={() => setDetailLending(null)} />
-            </div>
-            <div className="pp-app-sheet p-5" role="dialog" aria-label="Detail půjčení">
-              <div className="flex items-start justify-between gap-2 mb-3">
-                <div>
-                  <p className="text-xs font-semibold text-emerald-700">Nabízím k půjčení</p>
-                  <h2 className="text-lg font-bold text-stone-900 mt-0.5">{detailLending.item}</h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setDetailLending(null)}
-                  className="text-stone-400 text-xl px-1"
-                  aria-label="Zavřít"
-                >
-                  ×
-                </button>
-              </div>
-              <p className="text-sm text-stone-600">
-                {detailLending.credits} Kč / {detailLending.period}
-              </p>
-              {detailLending.description && (
-                <p className="text-sm text-stone-600 mt-2 leading-relaxed">{detailLending.description}</p>
-              )}
-              <button
-                type="button"
-                onClick={() => {
-                  const item = detailLending;
-                  setDetailLending(null);
-                  openListingOnMap(item);
-                }}
-                className="mt-4 w-full py-2.5 text-sm font-semibold rounded-xl border border-[#C5DDD4] text-[#3D7A68]"
-              >
-                Otevřít v sekci Věci
-              </button>
-            </div>
-          </div>
-        </AppPanelPortal>
+        <ProfileDetailSheet
+          title={detailLending.item || "Detail půjčení"}
+          ariaLabel="Detail půjčení"
+          onClose={() => setDetailLending(null)}
+        >
+          <p className="text-xs font-semibold text-emerald-700 mb-1">Nabízím k půjčení</p>
+          <p className="text-sm text-stone-600">
+            {detailLending.credits} Kč / {detailLending.period}
+          </p>
+          {detailLending.description ? (
+            <p className="text-sm text-stone-600 mt-2 leading-relaxed">{detailLending.description}</p>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => {
+              const item = detailLending;
+              setDetailLending(null);
+              openListingOnMap(item);
+            }}
+            className="mt-4 w-full py-2.5 text-sm font-semibold rounded-xl border border-[#C5DDD4] text-[#3D7A68]"
+          >
+            Otevřít v sekci Věci
+          </button>
+        </ProfileDetailSheet>
       )}
 
       {detailPrompt && (
-        <AppPanelPortal>
-          <div className="pp-app-sheet-overlay">
-            <div className="absolute inset-0 pointer-events-auto">
-              <ModalDoodleBackdrop onClose={() => setDetailPrompt(null)} />
-            </div>
-            <div className="pp-app-sheet p-5" role="dialog" aria-label="Detail podnětu">
-              <div className="flex items-start justify-between gap-2 mb-3">
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-stone-500">Podnět úřadu</p>
-                  <h2 className="text-lg font-bold text-stone-900 mt-0.5">{detailPrompt.title}</h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setDetailPrompt(null)}
-                  className="text-stone-400 text-xl px-1"
-                  aria-label="Zavřít"
-                >
-                  ×
-                </button>
-              </div>
-              <span
-                className={`inline-block text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg border mb-3 ${getPromptStatusStyle(detailPrompt.status)}`}
-              >
-                {detailPrompt.statusLabel}
-              </span>
-              <p className="text-sm text-stone-600 leading-relaxed">{detailPrompt.body}</p>
-              {detailPrompt.callTitle && (
-                <p className="text-xs text-blue-700 mt-3">Výzva: {detailPrompt.callTitle}</p>
-              )}
-              <p className="text-xs text-stone-400 mt-3">{detailPrompt.time}</p>
-            </div>
-          </div>
-        </AppPanelPortal>
+        <ProfileDetailSheet
+          title={detailPrompt.title || "Podnět úřadu"}
+          ariaLabel="Detail podnětu"
+          onClose={() => setDetailPrompt(null)}
+        >
+          <span
+            className={`inline-block text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg border mb-3 ${getPromptStatusStyle(detailPrompt.status)}`}
+          >
+            {detailPrompt.statusLabel}
+          </span>
+          <p className="text-sm text-stone-600 leading-relaxed">{detailPrompt.body}</p>
+          {detailPrompt.callTitle ? (
+            <p className="text-xs text-blue-700 mt-3">Výzva: {detailPrompt.callTitle}</p>
+          ) : null}
+          <p className="text-xs text-stone-400 mt-3">{detailPrompt.time}</p>
+        </ProfileDetailSheet>
       )}
     </div>
   );

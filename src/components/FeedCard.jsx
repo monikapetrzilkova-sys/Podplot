@@ -175,9 +175,12 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
     if (isReported) return null;
     const bodyText = String(post.body ?? "").trim();
     const titleText = String(post.title ?? "").trim();
-    const showBody = !bodyInParent && bodyText && bodyText !== titleText;
+    const showBody = Boolean(bodyText) && bodyText !== titleText;
     return (
       <div className="space-y-2">
+        {titleText && !bodyInParent ? (
+          <h3 className="text-base font-bold text-stone-900 leading-snug">{titleText}</h3>
+        ) : null}
         {!bodyInParent && <EditedBadge item={post} />}
         {showBody ? <p className="pp-text-body">{post.body}</p> : null}
         <PostPhotos photos={post.photos} compact />
