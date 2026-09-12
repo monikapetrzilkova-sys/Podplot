@@ -8,6 +8,7 @@ import MapPage from "./components/MapPage.jsx";
 import NeighborsPage from "./components/NeighborsPage.jsx";
 import CatalogPage from "./components/CatalogPage.jsx";
 import MyProfile from "./components/MyProfile.jsx";
+import ProfileErrorBoundary from "./components/ProfileErrorBoundary.jsx";
 import MessagesPage from "./components/MessagesPage.jsx";
 import CalendarPage from "./components/CalendarPage.jsx";
 import CraftsmanReviewsPage from "./components/CraftsmanReviewsPage.jsx";
@@ -228,7 +229,9 @@ function ProfileOverlay() {
         )
       }
     >
-      <MyProfile registerLegalBack={registerLegalBack} settingsOpen={settingsOpen} />
+      <ProfileErrorBoundary>
+        <MyProfile registerLegalBack={registerLegalBack} settingsOpen={settingsOpen} />
+      </ProfileErrorBoundary>
     </AppPanelOverlay>
   );
 }

@@ -281,8 +281,14 @@ const server = createServer(async (req, res) => {
 
     if (url === "/") url = "/index.html";
 
-    const filepath = join(ROOT, url.replace(/\.\./g, ""));
-    await stat(filepath);
+    const cleanUrl = url.replace(/\.\./g, "");
+    let filepath = join(ROOT, cleanUrl);
+    try {
+      await stat(filepath);
+    } catch {
+      filepath = join(ROOT, "public", cleanUrl.replace(/^\//, ""));
+      await stat(filepath);
+    }
 
     const ext = extname(filepath);
 

@@ -9,19 +9,20 @@ const PRESETS = [
 
 export default function LendingAvailabilityPanel({ offerCount }) {
   const { lendingAvailability, updateLendingAvailability } = useApp();
+  const availability = lendingAvailability ?? { onVacation: false, availabilityMessage: "" };
   const [open, setOpen] = useState(false);
-  const [onVacation, setOnVacation] = useState(Boolean(lendingAvailability.onVacation));
-  const [message, setMessage] = useState(lendingAvailability.availabilityMessage ?? "");
+  const [onVacation, setOnVacation] = useState(Boolean(availability.onVacation));
+  const [message, setMessage] = useState(availability.availabilityMessage ?? "");
   const [savedFlash, setSavedFlash] = useState(false);
 
   useEffect(() => {
-    setOnVacation(Boolean(lendingAvailability.onVacation));
-    setMessage(lendingAvailability.availabilityMessage ?? "");
-  }, [lendingAvailability.onVacation, lendingAvailability.availabilityMessage]);
+    setOnVacation(Boolean(availability.onVacation));
+    setMessage(availability.availabilityMessage ?? "");
+  }, [availability.onVacation, availability.availabilityMessage]);
 
   const dirty =
-    onVacation !== Boolean(lendingAvailability.onVacation) ||
-    message.trim() !== (lendingAvailability.availabilityMessage ?? "").trim();
+    onVacation !== Boolean(availability.onVacation) ||
+    message.trim() !== (availability.availabilityMessage ?? "").trim();
 
   const save = () => {
     updateLendingAvailability({
@@ -32,9 +33,9 @@ export default function LendingAvailabilityPanel({ offerCount }) {
     window.setTimeout(() => setSavedFlash(false), 1800);
   };
 
-  const summary = lendingAvailability.onVacation
+  const summary = availability.onVacation
     ? "Dovolená — rezervace vypnuté"
-    : lendingAvailability.availabilityMessage?.trim()
+    : availability.availabilityMessage?.trim()
       ? "Zpráva k předání nastavená"
       : "Nastavit dovolenou a předání";
 

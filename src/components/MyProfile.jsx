@@ -437,7 +437,11 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
     markGroupProposalSupportersSeen,
   ]);
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <p className="px-4 py-8 text-sm text-stone-500 text-center">Načítám profil…</p>
+    );
+  }
 
   if (legalPage) {
     return <LegalPages page={legalPage} />;
@@ -654,9 +658,19 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
       : null) || user.initials;
   const podnikatelSubtype = getPodnikatelSubtypeLabel(user);
   const registrationFields = getRegistrationFields(user.accountType, resolveBusinessSubtype(user));
-  const myOffers = userLendingItems.filter((i) => i.mine);
+  const safeLendingItems = userLendingItems ?? [];
+  const safeUserPosts = userPosts ?? [];
+  const safeUserGroupPosts = userGroupPosts ?? [];
+  const safeUserReports = userReports ?? [];
+  const safeReservations = reservations ?? [];
+  const safeLocations = locations ?? [];
+  const safeHelpOffers = myHelpOffers ?? [];
+  const safeTrustVerifiers = trustVerifiers ?? [];
+  const safeNeighbors = neighbors ?? [];
+
+  const myOffers = safeLendingItems.filter((i) => i.mine);
   // Jen skutečné inzeráty / půjčovna — hlášení z mapy sem nepatří
-  const myListings = [...userPosts, ...userGroupPosts].filter(
+  const myListings = [...safeUserPosts, ...safeUserGroupPosts].filter(
     (p) => p.mine && isThingsModuleListing(p)
   );
   const myReportItems = (() => {
@@ -665,7 +679,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
       if (!id || byId.has(id)) return;
       byId.set(id, item);
     };
-    for (const r of userReports) {
+    for (const r of safeUserReports) {
       remember(r.id, {
         id: r.id,
         type: r.type,
@@ -684,7 +698,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
         report: normalizeReportValidity(r),
       });
     }
-    for (const p of userPosts) {
+    for (const p of safeUserPosts) {
       if (!p.mine) continue;
       const isReport =
         Boolean(p.fromSecurityReportId) ||
@@ -729,7 +743,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
 
   const trustPendingNeighbors = (() => {
     const dismissed = trustDismissedIds ?? [];
-    return neighbors.filter(
+    return safeNeighbors.filter(
       (n) =>
         n?.id &&
         !isSelfNeighborCandidate(n, user) &&
@@ -750,7 +764,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
 
   const marketplaceItemCount =
     myOffers.length +
-    reservations.length +
+    safeReservations.length +
     myListings.filter((p) => !myOffers.some((o) => o.id === p.id)).length;
 
   const toggleNeighborSection = (id) => {
@@ -817,21 +831,21 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                   markTrustVerifiersSeen?.();
                 }}
                 title={
-                  trustVerifiers.length === 0
+                  safeTrustVerifiers.length === 0
                     ? "Zatím bez potvrzení z okolí"
-                    : `${trustVerifiers.length} potvrzení z okolí — klepni pro detail`
+                    : `${safeTrustVerifiers.length} potvrzení z okolí — klepni pro detail`
                 }
                 aria-expanded={trustInfoOpen}
-                aria-label={`${trustVerifiers.length} potvrzení z okolí`}
+                aria-label={`${safeTrustVerifiers.length} potvrzení z okolí`}
                 className={`absolute -bottom-1 -right-1 min-w-[1.35rem] h-[1.35rem] px-1 rounded-full text-[10px] font-bold tabular-nums flex items-center justify-center border-2 border-white shadow-sm ${
                   isCommunityVerified
                     ? "bg-[#1B4D3E] text-white"
-                    : trustVerifiers.length > 0
+                    : safeTrustVerifiers.length > 0
                       ? "bg-[#3D7A68] text-white"
                       : "bg-stone-200 text-stone-600"
                 }`}
               >
-                {trustVerifiers.length}
+                {safeTrustVerifiers.length}
               </button>
               )}
             </div>
@@ -887,7 +901,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                   Zavřít
                 </button>
               </div>
-              {trustVerifiers.length === 0 ? (
+              {safeTrustVerifiers.length === 0 ? (
                 <p className="text-[11px] text-stone-500 leading-snug">
                   {TRUST_COPY.verifiersEmpty}
                 </p>
@@ -896,9 +910,9 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                   <p className="text-[10px] text-stone-500 mb-1">
                     {isCommunityVerified
                       ? TRUST_COPY.verifiersDone
-                      : TRUST_COPY.verifiersRemaining(Math.max(0, 3 - trustVerifiers.length))}
+                      : TRUST_COPY.verifiersRemaining(Math.max(0, 3 - safeTrustVerifiers.length))}
                   </p>
-                  {trustVerifiers.map((v) => (
+                  {safeTrustVerifiers.map((v) => (
                     <li
                       key={v.confirmerId}
                       className="flex items-center gap-2 py-1 px-1.5 rounded-lg bg-white/80"
@@ -937,7 +951,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
             {!addingLocation && !editingLocationId ? (
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  {locations.map((loc) => {
+                  {safeLocations.map((loc) => {
                     const LocIcon = locationIconFor(loc);
                     const isActive = activeLocationId === loc.id;
                     const label = locationChipLabel(loc);
@@ -961,13 +975,13 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                 </div>
                 {(() => {
                   const activeLoc =
-                    locations.find((l) => l.id === activeLocationId) ?? locations[0];
+                    safeLocations.find((l) => l.id === activeLocationId) ?? safeLocations[0];
                   if (!activeLoc) return null;
                   const radiusValue = clampNeighborRadius(
                     activeLoc.radiusKm ?? DEFAULT_NEIGHBOR_RADIUS_KM
                   );
                   const openEdit = ({ focusRadius = false } = {}) => {
-                    const targetId = activeLocationId || locations[0]?.id;
+                    const targetId = activeLocationId || safeLocations[0]?.id;
                     if (!targetId) return;
                     setAddingLocation(false);
                     setFocusRadiusOnEdit(focusRadius);
@@ -1003,7 +1017,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
 
             {editingLocationId
               ? (() => {
-                  const loc = locations.find((l) => l.id === editingLocationId);
+                  const loc = safeLocations.find((l) => l.id === editingLocationId);
                   if (!loc) return null;
                   const isHome = loc.id === "domov";
                   const LocIcon = locationIconFor(loc);
@@ -1206,20 +1220,20 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
       <CollapsibleCategoryCard
         id="profile-my-help-offers"
         title="Moje nabídky pomoci"
-        countLabel={profileActivityLabels.helpOffers(myHelpOffers.length)}
+        countLabel={profileActivityLabels.helpOffers(safeHelpOffers.length)}
         open={openNeighborSection === "profile-my-help-offers"}
         onToggle={() => toggleNeighborSection("profile-my-help-offers")}
       >
         <p className="text-[11px] text-stone-500 mb-2 leading-snug px-0.5">
           Po kliknutí na „Nabízím pomoc“ se žadateli otevře konverzace ve zprávách. Nabídka tu zůstane 48 hodin.
         </p>
-        {myHelpOffers.length === 0 ? (
+        {safeHelpOffers.length === 0 ? (
           <p className="text-sm text-stone-500 leading-relaxed">
             Zatím žádná aktivní nabídka. Když u souseda kliknete „Nabízím pomoc“, objeví se tady.
           </p>
         ) : (
           <div className="space-y-2">
-            {myHelpOffers.map((offer) => (
+            {safeHelpOffers.map((offer) => (
               <div key={`${offer.postId}-${offer.createdAt}`} className="rounded-xl border border-stone-200 bg-[#FAFCFB] p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -1258,7 +1272,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
         onToggle={() => toggleNeighborSection("profile-my-lending-offers")}
       >
         {myOffers.length === 0 &&
-        reservations.length === 0 &&
+        safeReservations.length === 0 &&
         myListings.length === 0 ? (
           <p className="text-sm text-stone-500 leading-relaxed">
             Zatím nic — zkus přidat inzerát nebo půjčit věc na tržišti.
@@ -1278,17 +1292,17 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                 <p className="text-xs text-stone-500">
                   {item.credits} Kč / {item.period}
                 </p>
-                {lendingAvailability.onVacation && (
+                {lendingAvailability?.onVacation && (
                   <p className="text-[11px] font-semibold text-amber-800 mt-1.5">⏸ Dovolená — platí u této nabídky</p>
                 )}
-                {lendingAvailability.availabilityMessage?.trim() && (
+                {lendingAvailability?.availabilityMessage?.trim() && (
                   <p className="text-[11px] text-stone-500 mt-1">
                     Předání: {lendingAvailability.availabilityMessage.trim()}
                   </p>
                 )}
               </button>
             ))}
-            {reservations.map((item, i) => {
+            {safeReservations.map((item, i) => {
               const dateLabel =
                 item.startDate &&
                 (() => {
@@ -1454,7 +1468,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
         >
           <p className="text-xs text-stone-500 leading-relaxed">
             V katalogu a ve feedu poptávek se zobrazíš sousedům ve tvém dojezdu. Výchozí poloha odpovídá
-            aktivnímu místu ({locations.find((l) => l.id === activeLocationId)?.label ?? "Domov"}).
+            aktivnímu místu ({safeLocations.find((l) => l.id === activeLocationId)?.label ?? "Domov"}).
           </p>
           <label className="flex items-start gap-3 p-3 rounded-xl border border-stone-200 bg-[#F7FAF9] cursor-pointer">
             <input
