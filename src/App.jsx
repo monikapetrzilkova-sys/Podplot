@@ -36,6 +36,11 @@ import ReportSubmitSuccessSheet from "./components/ReportSubmitSuccessSheet.jsx"
 import BusinessAdsPage from "./components/BusinessAdsPage.jsx";
 import GlobalSearchResults from "./components/GlobalSearchResults.jsx";
 import SectionBackButton from "./components/SectionBackButton.jsx";
+import { PodplotStoryWelcome } from "./components/LegalPages.jsx";
+import {
+  clearPendingPodplotStory,
+  hasPendingPodplotStory,
+} from "./data/registrationOnboarding.js";
 
 import { LOCATION_DOODLE_ICONS, PROFILE_DOODLE_ICONS } from "./components/doodle/doodleIcons.jsx";
 import { APP_ROLES } from "./data/userRoles.js";
@@ -307,6 +312,11 @@ export default function AppShell() {
   const { user, passwordRecovery, openReportOnMapFromHome } = useApp();
   /** Telefonní rámeček jen na desktopu s myší — telefony/touch vždy full-bleed */
   const [desktopFrame, setDesktopFrame] = useState(false);
+  const [showPodplotStory, setShowPodplotStory] = useState(() => hasPendingPodplotStory());
+
+  useEffect(() => {
+    if (user && hasPendingPodplotStory()) setShowPodplotStory(true);
+  }, [user?.id]);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px) and (pointer: fine)");
@@ -370,6 +380,14 @@ export default function AppShell() {
         </div>
       </div>
       <Toast />
+      {showPodplotStory ? (
+        <PodplotStoryWelcome
+          onContinue={() => {
+            clearPendingPodplotStory();
+            setShowPodplotStory(false);
+          }}
+        />
+      ) : null}
     </>
   );
 }

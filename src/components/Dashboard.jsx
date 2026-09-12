@@ -7,6 +7,7 @@ import LunchMenuWidget from "./LunchMenuWidget.jsx";
 import WelcomeCard from "./WelcomeCard.jsx";
 import TrustNeighborHomePrompt from "./TrustNeighborHomePrompt.jsx";
 import NeighborOnboardingChecklist from "./NeighborOnboardingChecklist.jsx";
+import LocalityAwakeningCard from "./LocalityAwakeningCard.jsx";
 import OpenReportsReminder from "./OpenReportsReminder.jsx";
 
 export default function Dashboard() {
@@ -26,6 +27,7 @@ export default function Dashboard() {
 
   return (
     <div className="pp-page pp-page--doodle flex flex-col min-h-full bg-abstract-organic has-deco pb-20">
+      <LocalityAwakeningCard />
       <WelcomeCard />
       <NeighborOnboardingChecklist />
       <OpenReportsReminder />

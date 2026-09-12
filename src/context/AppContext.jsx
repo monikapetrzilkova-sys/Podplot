@@ -260,6 +260,7 @@ import {
   clearUserSession,
   createUserId,
 } from "../data/userSession.js";
+import { markPendingPodplotStory } from "../data/registrationOnboarding.js";
 import {
   upsertRemoteProfile,
   publishRemotePost,
@@ -871,6 +872,8 @@ export function AppProvider({ children }) {
   });
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
   const [neighbors, setNeighbors] = useState(MOCK_NEIGHBORS);
+  /** Počet reálných sousedů ve stejné obci (bez tebe) — null dokud nenačteme */
+  const [localityNeighborCount, setLocalityNeighborCount] = useState(null);
   const [adminReports, setAdminReports] = useState(ADMIN_REPORTS);
   const [blockedUserIds, setBlockedUserIds] = useState([]);
   const [isAdminMode, setIsAdminMode] = useState(false);
@@ -1294,12 +1297,16 @@ export function AppProvider({ children }) {
 
   // Síť důvěry: sousedi z lokality + výzva při novém sousedovi
   useEffect(() => {
-    if (!user?.id) return undefined;
+    if (!user?.id) {
+      setLocalityNeighborCount(null);
+      return undefined;
+    }
     let cancelled = false;
     let unsubscribe = () => {};
 
     const municipality =
       activeLocation?.municipality ?? user.geo?.city ?? user.location ?? null;
+    setLocalityNeighborCount(null);
 
     const persistLocalConfirmations = (ids) => {
       try {
@@ -1455,6 +1462,7 @@ export function AppProvider({ children }) {
         excludeName: user.name,
       });
       if (cancelled) return;
+      setLocalityNeighborCount(remoteNeighbors.length);
 
       const counts = await fetchNeighborConfirmationCounts(remoteNeighbors.map((n) => n.id));
       if (cancelled) return;
@@ -2536,6 +2544,7 @@ export function AppProvider({ children }) {
         contactName: String(contactName ?? "").trim() || null,
       };
       setUser(nextUser);
+      markPendingPodplotStory();
       void upsertRemoteProfile(nextUser);
       if (!isInjectedDemoPersona(nextUser)) {
         setCitizenProfile(identitySnapshotFromUser(nextUser));
@@ -9362,6 +9371,7 @@ export function AppProvider({ children }) {
         markNotificationRead,
         unreadCount,
         neighbors,
+        localityNeighborCount,
         confirmNeighbor,
         dismissTrustNeighbor,
         hideTrustHomePrompt,

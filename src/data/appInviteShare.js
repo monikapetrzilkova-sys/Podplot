@@ -26,6 +26,10 @@ export function messengerInviteUrl(appUrl = getPodplotAppUrl()) {
   return `fb-messenger://share/?link=${encodeURIComponent(appUrl)}`;
 }
 
+export function facebookShareUrl(appUrl = getPodplotAppUrl()) {
+  return `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(appUrl)}`;
+}
+
 export async function sharePodplotInvite({ name } = {}) {
   const url = getPodplotAppUrl();
   const text = getPodplotInviteText({ name });

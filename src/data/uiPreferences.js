@@ -11,6 +11,7 @@ export const UI_KEYS = {
   WELCOME_CARD_DISMISSED: "sections.welcomeCard.dismissed",
   ONBOARDING_CHECKLIST_DISMISSED: "sections.onboardingChecklist.dismissed",
   ONBOARDING_MAP_VISITED: "sections.onboardingChecklist.mapVisited",
+  LOCALITY_AWAKENING_DISMISSED: "sections.localityAwakening.dismissed",
   OPEN_REPORT_REMINDER_DISMISSED: "dismissed.openReportReminders",
   RECENT_REPORT_CATEGORIES: "reports.recentCategories",
   DISMISSED_PROMPT_CALLS: "dismissed.promptCalls",
