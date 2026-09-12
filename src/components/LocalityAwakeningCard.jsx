@@ -39,7 +39,7 @@ export default function LocalityAwakeningCard() {
           Tvá lokalita se právě probouzí k životu!
         </p>
         <p className="text-sm text-stone-700 leading-relaxed mt-1.5 pr-2">
-          Jsi mezi prvními průkopníky
+          Jsi mezi průkopníky
           {placeName ? (
             <>
               {" "}
