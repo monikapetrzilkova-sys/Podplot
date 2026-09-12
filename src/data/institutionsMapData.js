@@ -33,15 +33,15 @@ export const GUIDE_MAP_CATEGORY_IDS = ["vse", ...GUIDE_GRID_CATEGORIES.filter((c
   (c) => c.id
 )];
 
-/** Typy provozoven (filtr v kategorii Provozovny) — ikony bez textu */
+/** Typy provozoven (filtr v kategorii Provozovny) */
 export const PROVOZOVNY_TYPE_FILTERS = [
-  { id: "krasa", label: "Péče a krása" },
-  { id: "auto", label: "Auto" },
-  { id: "klicove", label: "Klíče" },
-  { id: "bankomat", label: "Bankomat" },
-  { id: "cistirna", label: "Čistírna" },
-  { id: "sport", label: "Sport" },
-  { id: "ostatni", label: "Ostatní" },
+  { id: "krasa", label: "Péče a krása", shortLabel: "Krása" },
+  { id: "auto", label: "Auto", shortLabel: "Auto" },
+  { id: "klicove", label: "Klíče", shortLabel: "Klíče" },
+  { id: "bankomat", label: "Bankomat", shortLabel: "ATM" },
+  { id: "cistirna", label: "Čistírna", shortLabel: "Praní" },
+  { id: "sport", label: "Sport", shortLabel: "Sport" },
+  { id: "ostatni", label: "Ostatní", shortLabel: "Jiné" },
 ];
 
 /** Starší / detailní typy → skupina filtru */

@@ -112,7 +112,7 @@ export function GuideCategoryIcon({ id, className }) {
 
 /* —— Sub-filtry Průvodce —— */
 
-const subS = { fill: "none", stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" };
+const subS = { fill: "none", stroke: "currentColor", strokeWidth: 1.75, strokeLinecap: "round", strokeLinejoin: "round" };
 
 /** Kadeřnické nůžky — Péče a krása */
 export function IconProvozovnaBeauty({ className = "w-3.5 h-3.5" }) {
@@ -125,15 +125,16 @@ export function IconProvozovnaBeauty({ className = "w-3.5 h-3.5" }) {
   );
 }
 
-/** Auto */
+/** Auto — boční silueta s koly (čitelné i v ~16px) */
 export function IconProvozovnaCar({ className = "w-3.5 h-3.5" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" {...subS}>
-      <path d="M4 14h16l-1.2-4.2A2 2 0 0 0 16.9 8H7.1a2 2 0 0 0-1.9 1.8L4 14z" />
-      <path d="M4 14v3.5h2.2M20 14v3.5h-2.2" />
-      <circle cx="7.5" cy="17.5" r="1.6" />
-      <circle cx="16.5" cy="17.5" r="1.6" />
-      <path d="M9 8.2l1.2-2.2h3.6L15 8.2" />
+      <path d="M3.5 14.5h17" />
+      <path d="M5 14.5l1.6-5.2A2 2 0 0 1 8.5 8h7a2 2 0 0 1 1.9 1.3L19 14.5" />
+      <path d="M8.2 8.2 9.5 5.5h5L16 8.2" />
+      <circle cx="7.2" cy="16.6" r="2.1" />
+      <circle cx="16.8" cy="16.6" r="2.1" />
+      <path d="M9.4 16.6h5.2" opacity="0.45" />
     </svg>
   );
 }
@@ -141,10 +142,11 @@ export function IconProvozovnaCar({ className = "w-3.5 h-3.5" }) {
 export function IconProvozovnaCarWash({ className = "w-3.5 h-3.5" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" {...subS}>
-      <path d="M3 11h18l-1-4H4l-1 4z" />
-      <circle cx="7" cy="16" r="2" />
-      <circle cx="17" cy="16" r="2" />
-      <path d="M12 7V4" />
+      <path d="M4 15h16l-1.4-4.5A2 2 0 0 0 16.7 9H7.3a2 2 0 0 0-1.9 1.5L4 15z" />
+      <circle cx="7.5" cy="17.2" r="1.7" />
+      <circle cx="16.5" cy="17.2" r="1.7" />
+      <path d="M9 6.2c.8-1.4 2-2.2 3-2.2s2.2.8 3 2.2" />
+      <path d="M10.2 7.8c.5-.8 1.2-1.3 1.8-1.3s1.3.5 1.8 1.3" opacity="0.7" />
     </svg>
   );
 }
@@ -163,36 +165,38 @@ export function IconProvozovnaKeys({ className = "w-3.5 h-3.5" }) {
   );
 }
 
-/** Bankomat */
+/** Bankomat — terminál + karta */
 export function IconProvozovnaAtm({ className = "w-3.5 h-3.5" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" {...subS}>
-      <rect x="4" y="3.5" width="16" height="17" rx="2" />
-      <rect x="7" y="6.5" width="10" height="5.5" rx="1" />
-      <path d="M8 15.5h8M8 18h5" />
+      <rect x="5" y="3" width="14" height="18" rx="2" />
+      <rect x="7.5" y="5.5" width="9" height="5" rx="1" />
+      <path d="M8.5 14h7M8.5 17h4.5" />
+      <path d="M15.5 12.2h3.2a1 1 0 0 1 1 1V15" opacity="0.85" />
     </svg>
   );
 }
 
-/** Čistírna / praní — věšák + kapka */
+/** Čistírna — pračka s bubnem */
 export function IconProvozovnaLaundry({ className = "w-3.5 h-3.5" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" {...subS}>
-      <path d="M8 5h8" />
-      <path d="M12 5v2.5" />
-      <path d="M7 8.5h10l-1.2 11.2a1.5 1.5 0 0 1-1.5 1.3H9.7a1.5 1.5 0 0 1-1.5-1.3L7 8.5z" />
-      <path d="M10.5 13.5c0-1.2 1.5-2.8 1.5-2.8s1.5 1.6 1.5 2.8a1.5 1.5 0 0 1-3 0z" />
+      <rect x="4.5" y="3.5" width="15" height="17" rx="2" />
+      <circle cx="12" cy="13" r="4.5" />
+      <circle cx="12" cy="13" r="1.6" />
+      <path d="M7.5 6.2h3M14.5 6.2h2" />
     </svg>
   );
 }
 
-/** Sport — míč */
+/** Sport — činka */
 export function IconProvozovnaSport({ className = "w-3.5 h-3.5" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" {...subS}>
-      <circle cx="12" cy="12" r="7.5" />
-      <path d="M12 4.5c2.2 2.8 2.2 12.2 0 15M12 4.5c-2.2 2.8-2.2 12.2 0 15" />
-      <path d="M4.8 12h14.4" />
+      <path d="M3.5 9.5v5M20.5 9.5v5" />
+      <path d="M6 8.2v7.6M18 8.2v7.6" />
+      <path d="M8.2 10.2h7.6v3.6H8.2z" />
+      <path d="M3.5 12h2.5M18 12h2.5" />
     </svg>
   );
 }
@@ -224,9 +228,10 @@ export function IconHomeServiceFamily({ className = "w-3.5 h-3.5" }) {
 export function IconGuideSubOther({ className = "w-3.5 h-3.5" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" {...subS}>
-      <circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none" />
-      <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
-      <circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none" />
+      <rect x="5" y="5" width="6" height="6" rx="1.2" />
+      <rect x="13" y="5" width="6" height="6" rx="1.2" />
+      <rect x="5" y="13" width="6" height="6" rx="1.2" />
+      <path d="M14.2 16h3.6M16 14.2v3.6" />
     </svg>
   );
 }

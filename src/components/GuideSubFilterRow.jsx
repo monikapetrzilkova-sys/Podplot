@@ -8,19 +8,26 @@ export default function GuideSubFilterRow({
   onChange,
   className = "",
   ariaLabel = "Podkategorie",
-  /** Jen ikony + title (Provozovny — ušetří místo na jeden řádek) */
+  /** Jen ikony + title (starší režim) */
   iconOnly = false,
+  /** Ikona + krátký popisek — čitelnější u Provozoven */
+  iconWithLabel = false,
 }) {
+  const compactIcons = iconOnly && !iconWithLabel;
+
   return (
     <div
       className={`flex gap-1.5 ${
-        iconOnly ? "pp-guide-sub-row--icons justify-between" : "flex-nowrap overflow-x-auto subfilter-scroll"
-      } ${className}`}
+        compactIcons || iconWithLabel
+          ? "pp-guide-sub-row--icons justify-between"
+          : "flex-nowrap overflow-x-auto subfilter-scroll"
+      } ${iconWithLabel ? "pp-guide-sub-row--labeled" : ""} ${className}`}
       role="group"
       aria-label={ariaLabel}
     >
       {options.map((opt) => {
         const active = value === opt.id;
+        const caption = opt.shortLabel || opt.label;
         return (
           <button
             key={opt.id}
@@ -30,16 +37,24 @@ export default function GuideSubFilterRow({
             aria-label={opt.label}
             title={opt.label}
             className={`pp-guide-sub-chip shrink-0 ${
-              iconOnly ? "pp-guide-sub-chip--icon" : ""
+              iconWithLabel
+                ? "pp-guide-sub-chip--icon-label"
+                : compactIcons
+                  ? "pp-guide-sub-chip--icon"
+                  : ""
             } ${active ? "pp-guide-sub-chip--active" : "pp-guide-sub-chip--inactive"}`}
           >
             <GuideSubFilterIcon
               group={group}
               id={opt.id}
               active={active}
-              className={iconOnly ? "w-4 h-4 shrink-0" : "w-3 h-3 shrink-0"}
+              className={compactIcons || iconWithLabel ? "w-[17px] h-[17px] shrink-0" : "w-3 h-3 shrink-0"}
             />
-            {iconOnly ? null : opt.label}
+            {compactIcons ? null : iconWithLabel ? (
+              <span className="pp-guide-sub-chip__caption">{caption}</span>
+            ) : (
+              opt.label
+            )}
           </button>
         );
       })}

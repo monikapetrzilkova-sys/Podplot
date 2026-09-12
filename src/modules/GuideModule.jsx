@@ -300,11 +300,8 @@ export default function GuideModule() {
             onChange={setProvozovnaType}
 
             ariaLabel="Typ provozovny"
-
-            iconOnly
-
+            iconWithLabel
             className="shrink-0 pb-0.5"
-
           />
 
         )}
