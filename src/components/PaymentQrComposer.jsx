@@ -176,7 +176,7 @@ export default function PaymentQrComposer({
               <input
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="např. Smyslohrání"
+                placeholder="např. vstupenka"
                 maxLength={60}
                 className="w-full mt-1 px-2.5 py-2 border border-stone-200 rounded-xl text-sm bg-white"
               />
