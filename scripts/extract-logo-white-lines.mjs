@@ -206,8 +206,8 @@ const transparentPath = join(assetsDir, "logo-podplot.png");
 writePng(transparentPath, lines);
 copyFileSync(transparentPath, join(publicDir, "logo-podplot.png"));
 
-writePng(join(iconsDir, "icon-192.png"), placeOnGreen(lines, 192, 0.08));
-writePng(join(iconsDir, "icon-512.png"), placeOnGreen(lines, 512, 0.08));
-writePng(join(iconsDir, "icon-512-maskable.png"), placeOnGreen(lines, 512, 0.12));
-writePng(join(publicDir, "apple-touch-icon.png"), placeOnGreen(lines, 180, 0.08));
+writePng(join(iconsDir, "icon-192.png"), placeOnGreen(lines, 192, 0.04));
+writePng(join(iconsDir, "icon-512.png"), placeOnGreen(lines, 512, 0.04));
+writePng(join(iconsDir, "icon-512-maskable.png"), placeOnGreen(lines, 512, 0.08));
+writePng(join(publicDir, "apple-touch-icon.png"), placeOnGreen(lines, 180, 0.04));
 console.log("done");

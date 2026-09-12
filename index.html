@@ -48,7 +48,7 @@
         min-height: -webkit-fill-available;
         overscroll-behavior-x: none;
         touch-action: manipulation;
-        background: #f9f9f9;
+        background: #1b4d3e;
       }
       #root {
         width: 100%;
@@ -57,6 +57,36 @@
         min-height: -webkit-fill-available;
         margin: 0;
         padding: 0;
+      }
+      /* Boot splash — zelená obrazovka než naběhne React */
+      #pp-boot-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.25rem;
+        background: #1b4d3e;
+        pointer-events: none;
+        transition: opacity 0.28s ease;
+      }
+      #pp-boot-splash.is-leaving {
+        opacity: 0;
+      }
+      #pp-boot-splash img {
+        width: min(42vw, 148px);
+        height: min(42vw, 148px);
+        object-fit: contain;
+        display: block;
+      }
+      #pp-boot-splash .pp-boot-name {
+        font-size: clamp(2rem, 8vw, 2.75rem);
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1;
+        color: #ffffff;
       }
       /* Mobil: full-bleed; PC s myší: telefonní rámeček 390px */
       #app-panel-root,
@@ -103,6 +133,10 @@
     </style>
   </head>
   <body>
+    <div id="pp-boot-splash" aria-hidden="true">
+      <img src="/logo-podplot.png" alt="" width="148" height="148" />
+      <span class="pp-boot-name">Podplot</span>
+    </div>
     <div id="root"></div>
     <script type="importmap">
       {

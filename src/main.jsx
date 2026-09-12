@@ -36,6 +36,16 @@ createRoot(document.getElementById("root")).render(
   </AppProvider>
 );
 
+/** Schovej boot splash až po prvním paintu Reactu */
+function dismissBootSplash() {
+  const el = document.getElementById("pp-boot-splash");
+  if (!el) return;
+  el.classList.add("is-leaving");
+  window.setTimeout(() => el.remove(), 300);
+  if (document.body) document.body.style.background = "#f9f9f9";
+}
+requestAnimationFrame(() => requestAnimationFrame(dismissBootSplash));
+
 /** PWA + systémová upozornění — musí být v JS bundlu (Vite vyhazuje inline skript z index.html). */
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
