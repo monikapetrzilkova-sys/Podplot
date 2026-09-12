@@ -985,20 +985,22 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                       <p className="text-[10px] text-stone-400 leading-snug">
                         Okruh zájmu u „{locationChipLabel(activeLoc)}“: {formatMapRadiusKm(radiusValue)}
                       </p>
-                      <button
-                        type="button"
-                        onClick={() => openEdit({ focusRadius: false })}
-                        className="pp-profile-sec-edit"
-                      >
-                        Upravit vybrané místo
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => openEdit({ focusRadius: true })}
-                        className="pp-profile-sec-edit"
-                      >
-                        Upravit okruh zájmu
-                      </button>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <button
+                          type="button"
+                          onClick={() => openEdit({ focusRadius: false })}
+                          className="pp-profile-sec-edit"
+                        >
+                          Upravit místo
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openEdit({ focusRadius: true })}
+                          className="pp-profile-sec-edit"
+                        >
+                          Upravit okruh zájmu
+                        </button>
+                      </div>
                     </div>
                   );
                 })()}
