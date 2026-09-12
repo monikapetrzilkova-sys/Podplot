@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import FeedCard from "./FeedCard.jsx";
-import LiveFeedCard, { getListingBadge } from "./LiveFeedCard.jsx";
+import LiveFeedCard, { getListingBadge, getNeighborSectionBadge } from "./LiveFeedCard.jsx";
 import HelpFeedActions from "./HelpFeedActions.jsx";
 import DoodleEmptyState from "./doodle/DoodleEmptyState.jsx";
 import FeedSkeleton from "./FeedSkeleton.jsx";
@@ -549,13 +549,16 @@ export default function LiveNeighborFeed() {
               { body: item.body },
               { preview: item.body, hasExtraDetail: !item.mine }
             );
+            const helpBadge = getNeighborSectionBadge("vypomoc", item.helpType);
             return (
               <LiveFeedCard
                 key={item.id}
                 itemId={item.id}
                 sample={sample}
-                badge="Výpomoc"
-                badgeClassName="pp-badge--vypomoc"
+                badge={helpBadge.label}
+                badgeClassName={helpBadge.className}
+                badgeTone={helpBadge.tone}
+                BadgeIcon={helpBadge.Icon}
                 title={item.title}
                 authorLabel={displayCreatorLabel(item.author, item.accountType, {
                   mine: item.mine,

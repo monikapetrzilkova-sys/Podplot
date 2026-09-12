@@ -927,10 +927,10 @@ export const VECI_TYPE_DOODLE_ICONS = {
   pujcovna: DoodleToolsIcon,
 };
 
-/** Filtry Výpomoc — Vše / Hledám / Nabízím */
+/** Filtry Výpomoc — Vše / Hledám / Nabízím (Hledám ≠ Sháním u Věcí) */
 export const VYPOMOC_FILTER_DOODLE_ICONS = {
   vse: DoodleAllIcon,
-  hledam: DoodleWantIcon,
+  hledam: DoodleHelpIcon,
   nabizim: DoodleHandIcon,
 };
 

@@ -24,7 +24,11 @@ export default function FeedBadgePill({
   const showLabel =
     showLabelProp != null
       ? showLabelProp
-      : tone === "things" || tone === "report" || tone === "groups" || tone === "default";
+      : tone === "things" ||
+        tone === "report" ||
+        tone === "help" ||
+        tone === "groups" ||
+        tone === "default";
 
   return (
     <span

@@ -15,6 +15,7 @@ import {
   DoodleToolsIcon,
   DoodleMegaphoneIcon,
   DoodleHandIcon,
+  DoodleHelpIcon,
   DoodleGroupsIcon,
   DoodleCalendarIcon,
 } from "../doodle/doodleIcons.jsx";
@@ -37,9 +38,9 @@ const byClass = {
   "pp-badge--tip": { tone: "report", Icon: DoodleBulbIcon, label: "Tip" },
   "pp-badge--patrani": { tone: "report", Icon: DoodleSearchIcon, label: "Pátrání" },
   "pp-badge--hlaseni": { tone: "report", Icon: DoodleReportIcon, label: "Hlášení" },
-  "pp-badge--hledam": { tone: "help", Icon: DoodleHandIcon, label: "Hledám" },
+  "pp-badge--hledam": { tone: "help", Icon: DoodleHelpIcon, label: "Hledám" },
   "pp-badge--nabizim": { tone: "help", Icon: DoodleHandIcon, label: "Nabízím" },
-  "pp-badge--vypomoc": { tone: "help", Icon: DoodleHandIcon, label: "Výpomoc" },
+  "pp-badge--vypomoc": { tone: "help", Icon: DoodleHelpIcon, label: "Výpomoc" },
   "pp-badge--skupina": { tone: "groups", Icon: DoodleGroupsIcon, label: "Skupina" },
   "pp-badge--akce": { tone: "events", Icon: DoodleMegaphoneIcon, label: "Akce" },
   "pp-badge--default": { tone: "default", Icon: DoodleQuestionIcon, label: null },
@@ -62,6 +63,12 @@ function fromTypeString(type) {
   if (t.includes("půjčovna") || t === "pujcovna") return byClass["pp-badge--pujcovna"];
   if (t.includes("daruji") || t === "daruji") return byClass["pp-badge--daruji"];
   if (t.includes("sháním") || t === "shanim") return byClass["pp-badge--shanim"];
+  if (t.includes("nabízím") || t === "nabizim" || t.includes("nabizim")) {
+    return byClass["pp-badge--nabizim"];
+  }
+  if (t.includes("hledám") || t === "hledam" || t.includes("hledam")) {
+    return byClass["pp-badge--hledam"];
+  }
   if (t === "tip" || t.includes("tip:")) return byClass["pp-badge--tip"];
   if (t.includes("pátrání") || t.includes("patrani") || t.includes("zaběhl") || t.includes("ztrát")) {
     return byClass["pp-badge--patrani"];
@@ -147,6 +154,15 @@ export function getListingBadge(type, { reportCategoryId } = {}) {
   if (t.includes("sháním") || t === "shanim") {
     return { label: "Sháním", className: "pp-badge--shanim", tone: "things", Icon: DoodleWantIcon };
   }
+  if (t.includes("nabízím") || t === "nabizim" || t.includes("nabizim")) {
+    return { label: "Nabízím", className: "pp-badge--nabizim", tone: "help", Icon: DoodleHandIcon };
+  }
+  if (t.includes("hledám") || t === "hledam" || t.includes("hledam") || t.includes("hledám pomoc")) {
+    return { label: "Hledám", className: "pp-badge--hledam", tone: "help", Icon: DoodleHelpIcon };
+  }
+  if (t.includes("výpomoc") || t.includes("vypomoc")) {
+    return { label: "Výpomoc", className: "pp-badge--vypomoc", tone: "help", Icon: DoodleHelpIcon };
+  }
   if (t === "tip" || t.includes("tip:")) {
     return { label: "Tip", className: "pp-badge--tip", tone: "report", Icon: DoodleBulbIcon };
   }
@@ -172,12 +188,12 @@ export function getGroupPostBadge(post, communityGroups = []) {
 export function getNeighborSectionBadge(section, helpType = null) {
   if (section === "vypomoc") {
     if (helpType === "hledam") {
-      return { label: "Hledám", className: "pp-badge--hledam", tone: "help", Icon: DoodleHandIcon };
+      return { label: "Hledám", className: "pp-badge--hledam", tone: "help", Icon: DoodleHelpIcon };
     }
     if (helpType === "nabizim") {
       return { label: "Nabízím", className: "pp-badge--nabizim", tone: "help", Icon: DoodleHandIcon };
     }
-    return { label: "Výpomoc", className: "pp-badge--vypomoc", tone: "help", Icon: DoodleHandIcon };
+    return { label: "Výpomoc", className: "pp-badge--vypomoc", tone: "help", Icon: DoodleHelpIcon };
   }
   if (section === "skupiny") {
     return { label: "Skupina", className: "pp-badge--skupina", tone: "groups", Icon: DoodleGroupsIcon };
