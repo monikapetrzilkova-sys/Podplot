@@ -220,7 +220,15 @@ export default function EventDetailModal() {
                     <PersonLabel personId={a.id} name={a.name} />
                   </span>
                   {!isSelf(a) && (
-                    <MessageButton participantId={a.id} participantName={a.name} className="shrink-0 text-[11px]" />
+                    <MessageButton
+                      participantId={a.id}
+                      participantName={a.name}
+                      className="shrink-0 text-[11px]"
+                      topicKind="event"
+                      topicId={ev.id}
+                      topicTitle={ev.title}
+                      topicLabel="Akce"
+                    />
                   )}
                 </div>
               ))}

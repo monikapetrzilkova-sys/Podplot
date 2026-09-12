@@ -66,6 +66,9 @@ export function topicFromMessageMeta(meta) {
       label: "Poptávka",
     });
   }
+  if (meta.kind === "payment_qr") {
+    return meta.topic ? normalizeChatTopic(meta.topic) : null;
+  }
   if (meta.kind === "office_prompt_status" || meta.kind === "office_prompt_reply") {
     return normalizeChatTopic({
       kind: "prompt",

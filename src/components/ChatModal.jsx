@@ -15,6 +15,7 @@ import {
 import SectionBackButton from "./SectionBackButton.jsx";
 import SampleBadge from "./SampleBadge.jsx";
 import { isSampleContent } from "../data/sampleContent.js";
+import PaymentQrComposer from "./PaymentQrComposer.jsx";
 
 /** Messenger-style fajfky: odesláno / doručeno / přečteno */
 function MessageTicks({ status = "sent" }) {
@@ -50,9 +51,40 @@ function MessageTicks({ status = "sent" }) {
   );
 }
 
+function PaymentQrBubbleBody({ meta, mine }) {
+  const amount = meta?.amount ? String(meta.amount).replace(".", ",") : null;
+  return (
+    <div className={`mt-2 pt-2 border-t ${mine ? "border-white/25" : "border-stone-200"}`}>
+      {meta?.qrDataUrl ? (
+        <img
+          src={meta.qrDataUrl}
+          alt="QR platba"
+          className={`w-40 h-40 rounded-xl mx-auto bg-white ${mine ? "ring-1 ring-white/30" : "border border-stone-100"}`}
+        />
+      ) : null}
+      <div className={`mt-2 text-[11px] leading-snug space-y-0.5 ${mine ? "text-white/90" : "text-stone-600"}`}>
+        {amount ? (
+          <p className="font-semibold text-sm">{amount} {meta.currency || "Kč"}</p>
+        ) : null}
+        {meta?.paymentMessage ? <p>{meta.paymentMessage}</p> : null}
+        {meta?.variableSymbol ? <p>VS {meta.variableSymbol}</p> : null}
+        {meta?.iban ? (
+          <p className={`font-mono text-[10px] break-all ${mine ? "opacity-80" : "text-stone-500"}`}>
+            {meta.iban}
+          </p>
+        ) : null}
+        <p className={`text-[10px] ${mine ? "opacity-70" : "text-stone-400"}`}>
+          Naskenuj v bankovní aplikaci (QR platba)
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function ChatBubble({ m, mine, showReadLabel }) {
   const { openCraftsmanPublicProfile, ownedService, user } = useApp();
   const isInterest = m.meta?.kind === "interest";
+  const isPaymentQr = m.meta?.kind === "payment_qr";
 
   const openProfileFromInterest = (meta) => {
     openCraftsmanPublicProfile({
@@ -73,6 +105,7 @@ function ChatBubble({ m, mine, showReadLabel }) {
           }`}
         >
           {m.text}
+          {isPaymentQr ? <PaymentQrBubbleBody meta={m.meta} mine={mine} /> : null}
           {isInterest && (
             <div className={`mt-2 pt-2 border-t ${mine ? "border-white/25" : "border-stone-200"}`}>
               <button
@@ -177,8 +210,10 @@ export default function ChatModal({
     setChatActiveTopic,
     getPersonPhoto,
     chats,
+    user,
   } = useApp();
   const [text, setText] = useState("");
+  const [paymentQrOpen, setPaymentQrOpen] = useState(false);
   const [didInitThread, setDidInitThread] = useState(false);
   const messages = participantId ? getChatMessages(participantId) : [];
   const listRef = useRef(null);
@@ -261,6 +296,23 @@ export default function ChatModal({
     sendMessage(participantId, participantName, outgoing, meta);
     setText("");
   };
+
+  const sendPaymentQr = ({ text: paymentText, meta: paymentMeta }) => {
+    if (!participantId || !openSection || !paymentText) return;
+    const topicMeta =
+      openSection.key === "general" ? null : topicToMessageMeta(openSection.topic);
+    sendMessage(participantId, participantName, paymentText, {
+      ...paymentMeta,
+      ...(topicMeta || {}),
+      kind: "payment_qr",
+      topic: topicMeta?.topic || openSection.topic || null,
+    });
+  };
+
+  const paymentDefaultMessage =
+    openSection?.topic?.kind === "event" && openSection?.topic?.title
+      ? openSection.topic.title
+      : openSection?.topic?.title || "";
 
   const threadMessages = openSection?.messages ?? [];
   const lastMineId = (() => {
@@ -368,6 +420,20 @@ export default function ChatModal({
                         onSubmit={submit}
                         className="px-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] pt-1 flex gap-2 bg-[#F7F8F7] sticky bottom-0"
                       >
+                        <button
+                          type="button"
+                          onClick={() => setPaymentQrOpen(true)}
+                          className="shrink-0 w-11 h-11 rounded-2xl border border-[#C5DDD4] bg-white text-[#1B4D3E] flex items-center justify-center"
+                          aria-label="Poslat QR platbu"
+                          title="QR platba"
+                        >
+                          <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" aria-hidden>
+                            <path
+                              d="M4.5 4.5h6v6h-6v-6zm1.5 1.5v3h3v-3h-3zM13.5 4.5h6v6h-6v-6zm1.5 1.5v3h3v-3h-3zM4.5 13.5h6v6h-6v-6zm1.5 1.5v3h3v-3h-3zM13.5 13.5h2.2v2.2H13.5V13.5zm3.8 0H19.5V15.7h-2.2V13.5zm-3.8 3.8h2.2V19.5H13.5v-2.2zm3.8 0h1.1v1.1h-1.1v-1.1zm1.1 1.1H19.5V19.5h-1.1v-1.1z"
+                              fill="currentColor"
+                            />
+                          </svg>
+                        </button>
                         <input
                           type="text"
                           value={text}
@@ -377,7 +443,7 @@ export default function ChatModal({
                               ? "Napište zprávu…"
                               : `Zpráva · ${section.topic?.title || section.topic?.label || "téma"}…`
                           }
-                          className="flex-1 px-3 py-2.5 border border-stone-200 rounded-2xl text-sm bg-white"
+                          className="flex-1 px-3 py-2.5 border border-stone-200 rounded-2xl text-sm bg-white min-w-0"
                           enterKeyHint="send"
                           autoComplete="off"
                         />
@@ -396,6 +462,13 @@ export default function ChatModal({
           </div>
         </div>
       </div>
+      <PaymentQrComposer
+        open={paymentQrOpen}
+        onClose={() => setPaymentQrOpen(false)}
+        onSend={sendPaymentQr}
+        defaultMessage={paymentDefaultMessage}
+        senderName={user?.name || ""}
+      />
     </AppPanelPortal>
   );
 }

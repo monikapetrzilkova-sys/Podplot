@@ -6980,7 +6980,9 @@ export function AppProvider({ children }) {
       let finalMeta = meta;
       if (meta) {
         const special =
-          meta.kind === "interest" || String(meta.kind || "").startsWith("office_");
+          meta.kind === "interest" ||
+          meta.kind === "payment_qr" ||
+          String(meta.kind || "").startsWith("office_");
         if (special) {
           const t = topicFromMessageMeta(meta);
           finalMeta = t ? { ...meta, topic: t } : meta;
