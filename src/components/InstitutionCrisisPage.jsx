@@ -4,7 +4,6 @@ import EditedBadge from "./EditedBadge.jsx";
 import ContentEditModal from "./ContentEditModal.jsx";
 import OfficeAnnouncementForm from "./OfficeAnnouncementForm.jsx";
 import { IconAlert } from "../data/icons.jsx";
-import { IconNavPlus } from "./communityNavIcons.jsx";
 import SampleBadge from "./SampleBadge.jsx";
 import { isSampleContent } from "../data/sampleContent.js";
 import InfoTip from "./InfoTip.jsx";
@@ -12,63 +11,10 @@ import { formatAnnouncementScope } from "../data/officeAnnouncementScope.js";
 import { activePostsLabel } from "../data/officeAnnouncementCopy.js";
 import SparsePageDoodle from "./doodle/SparsePageDoodle.jsx";
 import { DoodleOznameniScene } from "./doodle/doodleIllustrations.jsx";
+import CollapsibleCategoryCard from "./CollapsibleCategoryCard.jsx";
 
 const EDIT_BTN =
   "mt-2 text-xs font-semibold text-[#3D7A68] border border-[#C5DDD4] bg-white px-3 py-1.5 rounded-xl hover:bg-[#F1F6F5]";
-
-function SectionAddButton({ label, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={(event) => {
-        event.stopPropagation();
-        onClick?.();
-      }}
-      className="pp-map-add-fab-btn shrink-0"
-      aria-label={label}
-      title={label}
-    >
-      <IconNavPlus className="w-4 h-4" />
-    </button>
-  );
-}
-
-function CategoryCard({ id, title, count, open, onToggle, onAdd, addLabel, children }) {
-  return (
-    <section className={`pp-card overflow-hidden ${open ? "ring-1 ring-[#C5DDD4]" : ""}`}>
-      <div className="flex items-stretch">
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={open}
-          aria-controls={`${id}-posts`}
-          className="flex-1 min-w-0 text-left px-4 py-3.5 flex items-center gap-2"
-        >
-          <span className="flex-1 min-w-0">
-            <span className="block text-sm font-bold text-stone-900">{title}</span>
-            <span className="block text-[11px] text-stone-500 mt-0.5">{activePostsLabel(count)}</span>
-          </span>
-          <span
-            className={`shrink-0 text-stone-400 transition-transform ${open ? "rotate-180" : ""}`}
-            aria-hidden
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
-              <path d="M6 9l6 6 6-6" />
-            </svg>
-          </span>
-        </button>
-        <div className="flex items-center pr-3">
-          <SectionAddButton label={addLabel} onClick={onAdd} />
-        </div>
-      </div>
-      {open ? (
-        <div id={`${id}-posts`} className="px-3 pb-3 pt-3 space-y-2 border-t border-stone-100">
-          {children}
-        </div>
-      ) : null}
-    </section>
-  );
-}
 
 /**
  * Oznámení úřadu — tři kategorie hned, seznam až po rozbalení.
@@ -136,10 +82,10 @@ export default function InstitutionCrisisPage() {
         </InfoTip>
       </div>
 
-      <CategoryCard
+      <CollapsibleCategoryCard
         id="crisis"
         title="Mimořádné"
-        count={crisisCount}
+        countLabel={activePostsLabel(crisisCount)}
         open={openSection === "crisis"}
         onToggle={() => toggleSection("crisis")}
         onAdd={() => startCompose("crisis")}
@@ -206,12 +152,12 @@ export default function InstitutionCrisisPage() {
             ))}
           </div>
         ) : null}
-      </CategoryCard>
+      </CollapsibleCategoryCard>
 
-      <CategoryCard
+      <CollapsibleCategoryCard
         id="news"
         title="Běžné aktuality"
-        count={officeNews.length}
+        countLabel={activePostsLabel(officeNews.length)}
         open={openSection === "news"}
         onToggle={() => toggleSection("news")}
         onAdd={() => startCompose("news")}
@@ -244,12 +190,12 @@ export default function InstitutionCrisisPage() {
             </article>
           ))
         )}
-      </CategoryCard>
+      </CollapsibleCategoryCard>
 
-      <CategoryCard
+      <CollapsibleCategoryCard
         id="prompt"
         title="Podněty úřadu"
-        count={officePrompts.length}
+        countLabel={activePostsLabel(officePrompts.length)}
         open={openSection === "prompt"}
         onToggle={() => toggleSection("prompt")}
         onAdd={() => startCompose("prompt")}
@@ -282,7 +228,7 @@ export default function InstitutionCrisisPage() {
             </article>
           ))
         )}
-      </CategoryCard>
+      </CollapsibleCategoryCard>
 
       <SparsePageDoodle
         Scene={DoodleOznameniScene}

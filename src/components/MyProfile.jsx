@@ -60,6 +60,8 @@ import {
   formatCraftsmanRadiusLabel,
   isNationwideRadius,
 } from "../data/craftsmanSettings.js";
+import CollapsibleCategoryCard from "./CollapsibleCategoryCard.jsx";
+import { profileActivityLabels } from "../data/officeAnnouncementCopy.js";
 
 function ProfileSectionTitle({ icon: Icon, children, className = "mb-3" }) {
   return (
@@ -347,6 +349,8 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
   const [detailListing, setDetailListing] = useState(null);
   const [detailPrompt, setDetailPrompt] = useState(null);
   const [detailLending, setDetailLending] = useState(null);
+  /** Jedna otevřená kategorie aktivity — jako u úředních oznámení */
+  const [openNeighborSection, setOpenNeighborSection] = useState(null);
 
   useEffect(() => {
     if (!registerLegalBack) return undefined;
@@ -408,6 +412,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
           clearProfileScrollTarget();
           return;
         }
+        setOpenNeighborSection(targetId);
         const section = document.getElementById(targetId);
         section?.scrollIntoView({ behavior: "smooth", block: "start" });
         if (profileScrollTarget === "group-supports") {
@@ -713,6 +718,36 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
     }
     return [...byId.values()].filter((item) => isReportVisibleInOwnerProfile(item.report));
   })();
+
+  const trustPendingNeighbors = (() => {
+    const dismissed = trustDismissedIds ?? [];
+    return neighbors.filter(
+      (n) =>
+        n?.id &&
+        !isSelfNeighborCandidate(n, user) &&
+        !isCurrentUserRef(n.id, user) &&
+        !confirmationsGiven.includes(n.id) &&
+        !dismissed.includes(n.id)
+    );
+  })();
+
+  const myGroupProposals = (groupProposals ?? []).filter((p) => {
+    if (p.active) return false;
+    if (user?.id && (p.proposerId === user.id || p.proposer_id === user.id)) return true;
+    if (user?.name && p.proposer && String(p.proposer).trim() === String(user.name).trim()) {
+      return true;
+    }
+    return false;
+  });
+
+  const marketplaceItemCount =
+    myOffers.length +
+    reservations.length +
+    myListings.filter((p) => !myOffers.some((o) => o.id === p.id)).length;
+
+  const toggleNeighborSection = (id) => {
+    setOpenNeighborSection((prev) => (prev === id ? null : id));
+  };
 
   const openListingOnMap = (post) => {
     if (!post?.id) return;
@@ -1092,106 +1127,99 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
 
       {showNeighborProfile && (
         <>
-      <section id="profile-trust-network" className="pp-card p-4 mb-4 scroll-mt-4">
-        <ProfileSectionTitle icon={PROFILE_DOODLE_ICONS.trust}>{TRUST_COPY.sectionTitle}</ProfileSectionTitle>
-        <p className="text-[10px] text-stone-500 mb-2 leading-snug">
+      <CollapsibleCategoryCard
+        id="profile-trust-network"
+        title={TRUST_COPY.sectionTitle}
+        countLabel={profileActivityLabels.trustPending(trustPendingNeighbors.length)}
+        open={openNeighborSection === "profile-trust-network"}
+        onToggle={() => toggleNeighborSection("profile-trust-network")}
+      >
+        <p className="text-[10px] text-stone-500 mb-2 leading-snug px-0.5">
           {TRUST_COPY.sectionHint}
         </p>
-        {(() => {
-          const dismissed = trustDismissedIds ?? [];
-          const pending = neighbors.filter(
-            (n) =>
-              n?.id &&
-              !isSelfNeighborCandidate(n, user) &&
-              !isCurrentUserRef(n.id, user) &&
-              !confirmationsGiven.includes(n.id) &&
-              !dismissed.includes(n.id)
-          );
-          if (pending.length === 0) {
-            return (
-              <div className="space-y-2">
-                <p className="text-xs text-stone-500 leading-relaxed">{TRUST_COPY.profileEmpty}</p>
-                <p className="text-[11px] text-stone-500 leading-snug">{TRUST_COPY.inviteHint}</p>
-                <InviteToPodplotButton label="Poslat odkaz na Podplot" />
-              </div>
-            );
-          }
-          return (
-            <TrustPendingAccordion
-              pending={pending}
-              confirmNeighbor={confirmNeighbor}
-              dismissTrustNeighbor={dismissTrustNeighbor}
-              getPersonPhoto={getPersonPhoto}
-            />
-          );
-        })()}
-      </section>
+        {trustPendingNeighbors.length === 0 ? (
+          <div className="space-y-2">
+            <p className="text-xs text-stone-500 leading-relaxed">{TRUST_COPY.profileEmpty}</p>
+            <p className="text-[11px] text-stone-500 leading-snug">{TRUST_COPY.inviteHint}</p>
+            <InviteToPodplotButton label="Poslat odkaz na Podplot" />
+          </div>
+        ) : (
+          <TrustPendingAccordion
+            pending={trustPendingNeighbors}
+            confirmNeighbor={confirmNeighbor}
+            dismissTrustNeighbor={dismissTrustNeighbor}
+            getPersonPhoto={getPersonPhoto}
+          />
+        )}
+      </CollapsibleCategoryCard>
 
-      <section id="profile-my-group-proposals" className="pp-card p-4 mb-4 scroll-mt-4">
-        <ProfileSectionTitle icon={PROFILE_DOODLE_ICONS.groups}>Moje návrhy skupin</ProfileSectionTitle>
-        {(() => {
-          const mine = (groupProposals ?? []).filter((p) => {
-            if (p.active) return false;
-            if (user?.id && (p.proposerId === user.id || p.proposer_id === user.id)) return true;
-            if (user?.name && p.proposer && String(p.proposer).trim() === String(user.name).trim()) {
-              return true;
-            }
-            return false;
-          });
-          if (mine.length === 0) {
-            return (
-              <div className="space-y-3">
-                <p className="text-xs text-stone-500 leading-relaxed">
-                  Zatím jsi nenavrhl/a žádnou skupinu. Návrh uvidíš tady s počtem podpor od sousedů.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    closeProfile?.();
-                    openCreateGroupModal?.();
-                  }}
-                  className="w-full py-2.5 rounded-xl text-xs font-semibold bg-[#E8F3EF] text-[#1B4D3E] border border-[#C5E0D6]"
-                >
-                  Navrhnout novou skupinu
-                </button>
-              </div>
-            );
-          }
-          return (
-            <div className="space-y-3">
-              <p className="text-xs text-stone-500 leading-relaxed">
-                Sousedé návrh vidí na Domů a ve Skupinách. Po {mine[0]?.required ?? 5} podporách se skupina
-                aktivuje. Podpory uvidíš po rozbalení u konkrétního návrhu.
-              </p>
-              {mine.map((p) => (
-                <GroupProposalCard
-                  key={p.id}
-                  proposal={p}
-                  mine
-                  onEdit={openEditGroupProposal}
-                  supporters={groupProposalSupporters.filter((s) => s.proposalId === p.id)}
-                  onExpandSupporters={() => markGroupProposalSupportersSeen?.()}
-                />
-              ))}
-              <button
-                type="button"
-                onClick={() => {
-                  closeProfile?.();
-                  selectMainTab?.("neighbors");
-                  setPendingNeighborsSection?.("skupiny");
-                }}
-                className="w-full py-2 rounded-xl text-xs font-semibold text-[#3D7A68]"
-              >
-                Zobrazit ve Skupinách ›
-              </button>
-            </div>
-          );
-        })()}
-      </section>
+      <CollapsibleCategoryCard
+        id="profile-my-group-proposals"
+        title="Moje návrhy skupin"
+        countLabel={profileActivityLabels.groupProposals(myGroupProposals.length)}
+        open={openNeighborSection === "profile-my-group-proposals"}
+        onToggle={() => toggleNeighborSection("profile-my-group-proposals")}
+        onAdd={() => {
+          closeProfile?.();
+          openCreateGroupModal?.();
+        }}
+        addLabel="Navrhnout novou skupinu"
+      >
+        {myGroupProposals.length === 0 ? (
+          <div className="space-y-3">
+            <p className="text-xs text-stone-500 leading-relaxed">
+              Zatím jsi nenavrhl/a žádnou skupinu. Návrh uvidíš tady s počtem podpor od sousedů.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                closeProfile?.();
+                openCreateGroupModal?.();
+              }}
+              className="w-full py-2.5 rounded-xl text-xs font-semibold bg-[#E8F3EF] text-[#1B4D3E] border border-[#C5E0D6]"
+            >
+              Navrhnout novou skupinu
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-xs text-stone-500 leading-relaxed">
+              Sousedé návrh vidí na Domů a ve Skupinách. Po {myGroupProposals[0]?.required ?? 5} podporách se skupina
+              aktivuje. Podpory uvidíš po rozbalení u konkrétního návrhu.
+            </p>
+            {myGroupProposals.map((p) => (
+              <GroupProposalCard
+                key={p.id}
+                proposal={p}
+                mine
+                onEdit={openEditGroupProposal}
+                supporters={groupProposalSupporters.filter((s) => s.proposalId === p.id)}
+                onExpandSupporters={() => markGroupProposalSupportersSeen?.()}
+              />
+            ))}
+            <button
+              type="button"
+              onClick={() => {
+                closeProfile?.();
+                selectMainTab?.("neighbors");
+                setPendingNeighborsSection?.("skupiny");
+              }}
+              className="w-full py-2 rounded-xl text-xs font-semibold text-[#3D7A68]"
+            >
+              Zobrazit ve Skupinách ›
+            </button>
+          </div>
+        )}
+      </CollapsibleCategoryCard>
 
-      <section id="profile-my-help-offers" className="pp-card p-4 mb-4 scroll-mt-4">
-        <ProfileSectionTitle>Moje nabídky pomoci</ProfileSectionTitle>
-        <p className="text-[11px] text-stone-500 mb-3 -mt-1">
+      <CollapsibleCategoryCard
+        id="profile-my-help-offers"
+        title="Moje nabídky pomoci"
+        countLabel={profileActivityLabels.helpOffers(myHelpOffers.length)}
+        open={openNeighborSection === "profile-my-help-offers"}
+        onToggle={() => toggleNeighborSection("profile-my-help-offers")}
+      >
+        <p className="text-[11px] text-stone-500 mb-2 leading-snug px-0.5">
           Po kliknutí na „Nabízím pomoc“ se žadateli otevře konverzace ve zprávách. Nabídka tu zůstane 48 hodin.
         </p>
         {myHelpOffers.length === 0 ? (
@@ -1229,10 +1257,15 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
             ))}
           </div>
         )}
-      </section>
+      </CollapsibleCategoryCard>
 
-      <section id="profile-my-lending-offers" className="pp-card p-4 mb-4 scroll-mt-4">
-        <ProfileSectionTitle>Moje výpůjčky a nabídky</ProfileSectionTitle>
+      <CollapsibleCategoryCard
+        id="profile-my-lending-offers"
+        title="Moje výpůjčky a nabídky"
+        countLabel={profileActivityLabels.marketplace(marketplaceItemCount)}
+        open={openNeighborSection === "profile-my-lending-offers"}
+        onToggle={() => toggleNeighborSection("profile-my-lending-offers")}
+      >
         {myOffers.length === 0 &&
         reservations.length === 0 &&
         myListings.length === 0 ? (
@@ -1332,10 +1365,15 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
                 ))}
           </div>
         )}
-      </section>
+      </CollapsibleCategoryCard>
 
-      <section id="profile-my-reports" className="pp-card p-4 mb-4 scroll-mt-4">
-        <ProfileSectionTitle>Moje hlášení</ProfileSectionTitle>
+      <CollapsibleCategoryCard
+        id="profile-my-reports"
+        title="Moje hlášení"
+        countLabel={profileActivityLabels.reports(myReportItems.length)}
+        open={openNeighborSection === "profile-my-reports"}
+        onToggle={() => toggleNeighborSection("profile-my-reports")}
+      >
         {myReportItems.length === 0 ? (
           <p className="text-sm text-stone-500 leading-relaxed">
             Zatím jsi neodeslal/a žádné hlášení na mapu.
@@ -1375,10 +1413,15 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
             })}
           </div>
         )}
-      </section>
+      </CollapsibleCategoryCard>
 
-      <section id="profile-my-prompts" className="pp-card p-4 mb-4 scroll-mt-4">
-        <ProfileSectionTitle>Moje podněty úřadu</ProfileSectionTitle>
+      <CollapsibleCategoryCard
+        id="profile-my-prompts"
+        title="Moje podněty úřadu"
+        countLabel={profileActivityLabels.prompts(myMunicipalityPrompts.length)}
+        open={openNeighborSection === "profile-my-prompts"}
+        onToggle={() => toggleNeighborSection("profile-my-prompts")}
+      >
         {myMunicipalityPrompts.length === 0 ? (
           <p className="text-sm text-stone-500 leading-relaxed">
             Zatím jsi neodeslal/a žádný podnět. Najdeš je v záložce{" "}
@@ -1410,7 +1453,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
             ))}
           </div>
         )}
-      </section>
+      </CollapsibleCategoryCard>
 
       {(isBusinessAccount(user) && resolveBusinessSubtype(user) === "mobilni") && (
         <ProfileCollapsible
