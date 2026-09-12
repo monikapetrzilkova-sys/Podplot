@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
 
 const VIEWPORT = 240;
 const OUTPUT = 320;
@@ -230,8 +229,13 @@ export default function ProfilePhotoEditor({
   if (onClose) {
     return (
       <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
-        <ModalDoodleBackdrop onClose={onClose} />
-        <div className="relative bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-5 max-h-[92vh] overflow-y-auto">
+        <button
+          type="button"
+          className="absolute inset-0 bg-stone-900/45 border-0 p-0 cursor-pointer"
+          onClick={onClose}
+          aria-label="Zavřít"
+        />
+        <div className="relative bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-5 max-h-[92vh] overflow-y-auto shadow-xl">
           <h3 className="font-bold text-stone-900 mb-3">{title}</h3>
           {content}
         </div>
