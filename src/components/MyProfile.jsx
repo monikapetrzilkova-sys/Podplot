@@ -1563,6 +1563,7 @@ export default function MyProfile({ registerLegalBack, settingsOpen = false } = 
       {detailReport && (
         <ReportDetailModal
           report={detailReport}
+          centered
           onClose={() => setDetailReport(null)}
           onReport={(reason) => {
             reportSecurityReport?.(detailReport.id, reason);

@@ -20,7 +20,7 @@ import SampleBadge from "./SampleBadge.jsx";
 import { isSampleContent } from "../data/sampleContent.js";
 import MapComponent from "./module/MapComponent.jsx";
 
-export default function ReportDetailModal({ report, onClose, onReport, overMap = false }) {
+export default function ReportDetailModal({ report, onClose, onReport, overMap = false, centered = false }) {
   const { updateSecurityReport, resolveSecurityReport, activeLocation, user, showToast } = useApp();
   const [editOpen, setEditOpen] = useState(false);
 
@@ -34,22 +34,44 @@ export default function ReportDetailModal({ report, onClose, onReport, overMap =
   const titleColor = tip ? REPORT_TIP_ACCENT : reportPinAccentColor(report);
   const showMap = !overMap && hasReportMapPosition(report);
   const canResolve = Boolean(report.mine) && isReportActive(report) && !isReportResolved(report);
+  const sheetTitle = tip ? "Detail tipu" : "Detail hlášení";
+
+  const overlayClass = [
+    "pp-app-sheet-overlay",
+    overMap ? "pp-app-sheet-overlay--over-map" : "",
+    centered ? "pp-app-sheet-overlay--center" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const sheetClass = centered
+    ? "pp-app-sheet !max-h-[85%] !rounded-2xl w-full max-w-md mx-auto shadow-xl overflow-hidden flex flex-col"
+    : "pp-app-sheet flex flex-col overflow-hidden";
 
   return (
     <AppPanelPortal>
-    <div className={`pp-app-sheet-overlay${overMap ? " pp-app-sheet-overlay--over-map" : ""}`}>
-      <div className="absolute inset-0 pointer-events-auto">
-        <ModalDoodleBackdrop onClose={onClose} />
-      </div>
+    <div className={overlayClass}>
+      {centered ? (
+        <button
+          type="button"
+          className="absolute inset-0 bg-stone-900/45 border-0 p-0 cursor-pointer pointer-events-auto"
+          onClick={onClose}
+          aria-label="Zavřít"
+        />
+      ) : (
+        <div className="absolute inset-0 pointer-events-auto">
+          <ModalDoodleBackdrop onClose={onClose} />
+        </div>
+      )}
 
       <div
-        className="pp-app-sheet flex flex-col overflow-hidden"
+        className={sheetClass}
         role="dialog"
-        aria-label={`Detail ${tip ? "tipu" : "hlášení"}: ${report.type}`}
+        aria-label={`${sheetTitle}: ${report.type}`}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-stone-200 shrink-0">
           <h2 className="text-base font-bold text-stone-900">
-            {tip ? "Detail tipu" : "Detail hlášení"}
+            {sheetTitle}
           </h2>
           <button
             type="button"
@@ -62,7 +84,11 @@ export default function ReportDetailModal({ report, onClose, onReport, overMap =
         </div>
 
         {showMap && (
-          <div className="pp-report-detail-map shrink-0 border-b border-stone-100">
+          <div
+            className={`pp-report-detail-map shrink-0 border-b border-stone-100 ${
+              centered ? "pp-report-detail-map--compact" : ""
+            }`}
+          >
             <MapComponent
               mapMode="reports"
               reports={[report]}
@@ -81,7 +107,7 @@ export default function ReportDetailModal({ report, onClose, onReport, overMap =
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto px-4 py-4">
+        <div className="flex-1 overflow-y-auto px-4 py-4 min-h-0">
           <div className="flex items-start gap-3">
             <ReportListIcon report={report} className="w-12 h-12" />
             <div className="flex-1 min-w-0">

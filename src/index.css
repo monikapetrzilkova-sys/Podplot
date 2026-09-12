@@ -2070,11 +2070,23 @@ body,
   background: #eef5f2;
 }
 
+.pp-report-detail-map--compact {
+  height: 120px;
+  max-height: 22vh;
+  min-height: 100px;
+}
+
 .pp-report-detail-map .pp-map-google-wrap,
 .pp-report-detail-map .pp-map-container,
 .pp-report-detail-map .pp-map-container--google {
   height: 100% !important;
   min-height: 140px;
+}
+
+.pp-report-detail-map--compact .pp-map-google-wrap,
+.pp-report-detail-map--compact .pp-map-container,
+.pp-report-detail-map--compact .pp-map-container--google {
+  min-height: 100px;
 }
 
 /* Hlavní přepínač Hlášení / Průvodce — stejná výška dlaždic jako Sousedé / Katalog */
