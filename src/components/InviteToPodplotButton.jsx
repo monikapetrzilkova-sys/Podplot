@@ -54,7 +54,7 @@ function IconEmail({ className = "w-5 h-5" }) {
 }
 
 const ICON_BTN =
-  "inline-flex items-center justify-center w-10 h-10 shrink-0 rounded-xl border border-[#C5DDD4] bg-white text-[#1B4D3E] hover:bg-[#F1F6F5] transition-colors";
+  "inline-flex items-center justify-center w-10 h-10 shrink-0 rounded-xl border border-[#C5DDD4] bg-white text-[#3D7A68] hover:bg-[#E8F3EF] hover:border-[#3D7A68]/40 transition-colors";
 
 /**
  * Řádek sdílecích tlačítek — ikony na jednom řádku (WhatsApp, Messenger, Facebook, Kopírovat).
@@ -105,7 +105,7 @@ export function InviteShareRow({ className = "", showEmail = false }) {
       <button
         type="button"
         onClick={() => openChannel("whatsapp")}
-        className={`${ICON_BTN} text-[#25D366]`}
+        className={ICON_BTN}
         aria-label="WhatsApp"
         title="WhatsApp"
       >
@@ -114,7 +114,7 @@ export function InviteShareRow({ className = "", showEmail = false }) {
       <button
         type="button"
         onClick={() => openChannel("messenger")}
-        className={`${ICON_BTN} text-[#0084FF]`}
+        className={ICON_BTN}
         aria-label="Messenger"
         title="Messenger"
       >
@@ -123,7 +123,7 @@ export function InviteShareRow({ className = "", showEmail = false }) {
       <button
         type="button"
         onClick={() => openChannel("facebook")}
-        className={`${ICON_BTN} text-[#1877F2]`}
+        className={ICON_BTN}
         aria-label="Facebook"
         title="Facebook"
       >
