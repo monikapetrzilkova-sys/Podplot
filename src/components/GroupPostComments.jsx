@@ -7,13 +7,20 @@ import { isSameAppUser } from "../data/listingSales.js";
 import { MessageButton } from "./MessagesPage.jsx";
 
 /**
- * Veřejná diskuse u příspěvku ve skupině.
+ * Veřejná diskuse u příspěvku ve skupině nebo u hlášení / tipu.
  * Klepnutím na souseda (avatar / jméno) nebo „Zpráva“ otevřete 1:1 chat.
+ * @param {{ postId: string, postTitle?: string, groupName?: string, variant?: "group"|"report" }} props
  */
-export default function GroupPostComments({ postId, postTitle = "", groupName = "" }) {
+export default function GroupPostComments({
+  postId,
+  postTitle = "",
+  groupName = "",
+  variant = "group",
+}) {
   const { getGroupPostComments, addGroupPostComment, user, startChat } = useApp();
   const comments = getGroupPostComments(postId);
   const [text, setText] = useState("");
+  const isReport = variant === "report";
 
   const submit = (e) => {
     e?.preventDefault?.();
@@ -25,22 +32,35 @@ export default function GroupPostComments({ postId, postTitle = "", groupName = 
   const isOwnComment = (c) =>
     Boolean(c.mine) || isSameAppUser(c.authorId, user?.id ?? "me");
 
-  const messageTopic = {
-    kind: "group",
-    refId: postId,
-    title: postTitle || "Příspěvek ve skupině",
-    label: groupName ? `Skupina · ${groupName}` : "Skupina",
-  };
+  const messageTopic = isReport
+    ? {
+        kind: "report",
+        refId: postId,
+        title: postTitle || "Hlášení",
+        label: "Hlášení",
+      }
+    : {
+        kind: "group",
+        refId: postId,
+        title: postTitle || "Příspěvek ve skupině",
+        label: groupName ? `Skupina · ${groupName}` : "Skupina",
+      };
 
   const openChatWith = (c) => {
     if (!c?.authorId || isOwnComment(c)) return;
     startChat(c.authorId, c.authorName, null, messageTopic);
   };
 
+  const heading = isReport ? "Komentáře" : "Diskuse ve skupině";
+  const emptyHint = isReport
+    ? "Zatím bez komentářů — napiš tip nebo otázku veřejně. Autorovi můžeš napsat i soukromě tlačítkem výše."
+    : "Zatím bez komentářů — zeptej se sousedů přímo tady. Klepnutím na souseda mu pak můžeš napsat i soukromě.";
+  const placeholder = isReport ? "Napsat komentář k hlášení…" : "Napsat komentář pro skupinu…";
+
   return (
     <div className="pp-group-comments space-y-2 pt-1">
       <p className="text-[10px] font-bold uppercase tracking-wide text-[#3D7A68]">
-        Diskuse ve skupině
+        {heading}
         {comments.length > 0 ? (
           <span className="font-semibold normal-case tracking-normal text-stone-500 ml-1">
             · {comments.length}
@@ -49,9 +69,7 @@ export default function GroupPostComments({ postId, postTitle = "", groupName = 
       </p>
 
       {comments.length === 0 ? (
-        <p className="text-[11px] text-stone-500 leading-snug">
-          Zatím bez komentářů — zeptej se sousedů přímo tady. Klepnutím na souseda mu pak můžeš napsat i soukromě.
-        </p>
+        <p className="text-[11px] text-stone-500 leading-snug">{emptyHint}</p>
       ) : (
         <ul className="space-y-2 max-h-56 overflow-y-auto pr-0.5">
           {comments.map((c) => {
@@ -126,7 +144,7 @@ export default function GroupPostComments({ postId, postTitle = "", groupName = 
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={2}
-            placeholder="Napsat komentář pro skupinu…"
+            placeholder={placeholder}
             className="flex-1 min-w-0 px-2.5 py-2 rounded-xl text-xs border border-[#C5DDD4] bg-white text-stone-800 resize-none focus:outline-none focus:border-[#3D7A68]"
             maxLength={500}
           />

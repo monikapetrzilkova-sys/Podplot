@@ -4260,6 +4260,7 @@ export function AppProvider({ children }) {
         lat: gpsLat,
         lng: gpsLng,
         photos: photoUrls,
+        authorId: user.id ?? "me",
         locationId: activeLocationId,
         municipality: activeLocation?.municipality ?? null,
       };

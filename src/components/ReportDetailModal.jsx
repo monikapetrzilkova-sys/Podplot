@@ -19,6 +19,9 @@ import { useApp } from "../context/AppContext.jsx";
 import SampleBadge from "./SampleBadge.jsx";
 import { isSampleContent } from "../data/sampleContent.js";
 import MapComponent from "./module/MapComponent.jsx";
+import { MessageButton } from "./MessagesPage.jsx";
+import GroupPostComments from "./GroupPostComments.jsx";
+import { normalizeChatTopic } from "../data/chatTopics.js";
 
 export default function ReportDetailModal({ report, onClose, onReport, overMap = false, centered = false }) {
   const { updateSecurityReport, resolveSecurityReport, activeLocation, user, showToast } = useApp();
@@ -35,6 +38,23 @@ export default function ReportDetailModal({ report, onClose, onReport, overMap =
   const showMap = !overMap && hasReportMapPosition(report);
   const canResolve = Boolean(report.mine) && isReportActive(report) && !isReportResolved(report);
   const sheetTitle = tip ? "Detail tipu" : "Detail hlášení";
+  const authorId =
+    report.authorId ||
+    (report.mine ? user?.id ?? "me" : null) ||
+    (report.author
+      ? String(report.author)
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "") || null
+      : null);
+  const messageTopic = normalizeChatTopic({
+    kind: "report",
+    refId: report.id,
+    title: report.type,
+    label: tip ? "Tip" : "Hlášení",
+  });
 
   const overlayClass = [
     "pp-app-sheet-overlay",
@@ -262,6 +282,25 @@ export default function ReportDetailModal({ report, onClose, onReport, overMap =
               </p>
             </div>
             {acc && <RoleBadge roleId={acc.role} />}
+          </div>
+
+          {!report.mine && authorId ? (
+            <div className="mt-3">
+              <MessageButton
+                participantId={authorId}
+                participantName={report.author}
+                topic={messageTopic}
+                label="Napsat autorovi"
+              />
+            </div>
+          ) : null}
+
+          <div className="mt-4 pt-3 border-t border-stone-100">
+            <GroupPostComments
+              postId={report.id}
+              postTitle={report.type}
+              variant="report"
+            />
           </div>
         </div>
       </div>

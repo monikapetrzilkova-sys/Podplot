@@ -33,6 +33,7 @@ import { topicFromPost, topicFromGroupPost } from "../data/chatTopics.js";
 import GroupPostComments from "./GroupPostComments.jsx";
 import { isGroupBoardDiscussionPost } from "../data/groups.js";
 import { formatContentAge } from "../data/czechDateTime.js";
+import { isCommunityAnnouncementPost } from "../utils/thingsModule.js";
 
 function extractDistance(meta) {
   if (!meta) return null;
@@ -113,7 +114,18 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
   const accRole = acc ? getRole(acc.role) : null;
   const authorLabel = formatAuthorName(post.author, post.accountType);
   const isGroupDiscussion = isGroupBoardDiscussionPost(post);
+  const isReportPost =
+    Boolean(post.fromSecurityReportId) || isCommunityAnnouncementPost(post);
+  const commentPostId = isReportPost
+    ? post.fromSecurityReportId || post.id
+    : post.id;
   const messageTopic = isGroupDiscussion ? topicFromGroupPost(post) : topicFromPost(post);
+  const messageLabel = isGroupDiscussion
+    ? "Soukromě"
+    : isReportPost
+      ? "Napsat autorovi"
+      : "Domluvit předání";
+  const showComments = (isGroupDiscussion || isReportPost) && !isReported;
   const distance = extractDistance(post.meta);
   const ageLabel = formatContentAge(post);
   const metaRest = stripTimeFromMeta(
@@ -199,9 +211,9 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
                   participantName={post.author}
                   topic={messageTopic}
                   compact
-                  label={isGroupDiscussion ? "Soukromě" : "Domluvit předání"}
+                  label={messageLabel}
                 />
-                {!isGroupDiscussion && <ListingSaleBuyButton post={post} />}
+                {!isGroupDiscussion && !isReportPost && <ListingSaleBuyButton post={post} />}
               </>
             )}
             {!isGroupDiscussion && post.mine && <PostInteractions post={post} />}
@@ -211,11 +223,12 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
           </div>
         )}
         {!isReported && !isGroupDiscussion ? <ListingSaleStatusPanel post={post} /> : null}
-        {isGroupDiscussion && !isReported ? (
+        {showComments ? (
           <GroupPostComments
-            postId={post.id}
+            postId={commentPostId}
             postTitle={post.title}
             groupName={post.groupName}
+            variant={isReportPost ? "report" : "group"}
           />
         ) : null}
         {showTopButton && !isReported && (
@@ -389,9 +402,9 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
                 participantName={post.author}
                 topic={messageTopic}
                 compact
-                label={isGroupDiscussion ? "Soukromě" : "Domluvit předání"}
+                label={messageLabel}
               />
-              {!isGroupDiscussion && <ListingSaleBuyButton post={post} />}
+              {!isGroupDiscussion && !isReportPost && <ListingSaleBuyButton post={post} />}
             </>
           )}
           {!isGroupDiscussion && post.mine && <PostInteractions post={post} />}
@@ -408,12 +421,13 @@ export default function FeedCard({ post, compact = false, detailsOnly = false, b
         </div>
       ) : null}
 
-      {isGroupDiscussion && !compact && !isReported ? (
+      {showComments && !compact ? (
         <div className="px-4 pb-3">
           <GroupPostComments
-            postId={post.id}
+            postId={commentPostId}
             postTitle={post.title}
             groupName={post.groupName}
+            variant={isReportPost ? "report" : "group"}
           />
         </div>
       ) : null}

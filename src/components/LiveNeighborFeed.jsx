@@ -301,6 +301,7 @@ export default function LiveNeighborFeed() {
           body: r.body,
           type: r.type,
           author: r.author,
+          authorId: r.authorId ?? null,
           accountType: r.accountType,
           initials: r.authorInitials,
           meta: [r.distance, r.time].filter(Boolean).join(" · "),
