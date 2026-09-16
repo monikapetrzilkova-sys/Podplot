@@ -4,7 +4,8 @@
 
 import { officialMunicipalityMatch } from "./geoFilter.js";
 import { refineLocalityFromPsc } from "./czechCityDistricts.js";
-import { parseStreetAndHouseNumber, searchRuianAddresses } from "../../lib/ruianAddress.mjs";
+import { parseStreetAndHouseNumber, searchRuianAddresses, ruianCityQueryName } from "../../lib/ruianAddress.mjs";
+import { parseStoredAddress, validateAddressFields } from "./addressValidation.js";
 
 export { parseStreetAndHouseNumber };
 
@@ -126,6 +127,174 @@ export function houseNumberSuggests(candidate, filter) {
   if (!c) return false;
   if (houseNumberMatches(candidate, filter)) return true;
   return c.startsWith(f);
+}
+
+function stripDiacritics(value) {
+  return String(value ?? "")
+    .toLocaleLowerCase("cs")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+/** „Ulice Pražská“ / „Prazska“ → stejný klíč jako oficiální název z RÚIAN. */
+export function normalizeStreetName(value) {
+  return stripDiacritics(value)
+    .replace(/^(ulice|ul\.?|namesti|nam\.?)\s+/i, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function streetsMatch(a, b) {
+  const left = normalizeStreetName(a);
+  const right = normalizeStreetName(b);
+  return Boolean(left && right && left === right);
+}
+
+export function localityMatches(item, { psc = "", city = "" } = {}) {
+  const digits = String(psc ?? "").replace(/\D/g, "");
+  const itemPsc = String(item?.psc ?? "").replace(/\D/g, "");
+  if (digits.length === 5 && itemPsc.length === 5) return digits === itemPsc;
+
+  const cityTrim = String(city ?? "").trim();
+  const itemCity = String(item?.city ?? "").trim();
+  if (!cityTrim || !itemCity) return false;
+  if (officialMunicipalityMatch(itemCity, cityTrim) || officialMunicipalityMatch(cityTrim, itemCity)) {
+    return true;
+  }
+  const left = ruianCityQueryName(itemCity).toLocaleLowerCase("cs");
+  const right = ruianCityQueryName(cityTrim).toLocaleLowerCase("cs");
+  return Boolean(left && right && left === right);
+}
+
+export function isExistingStreetMatch(item, { street, psc = "", city = "" } = {}) {
+  if (!item?.street || !streetsMatch(item.street, street)) return false;
+  return localityMatches(item, { psc, city });
+}
+
+export function isExistingHouseMatch(item, { street, houseNumber, psc = "", city = "" } = {}) {
+  if (!item?.houseNumber) return false;
+  if (!houseNumberMatches(item.houseNumber, houseNumber)) return false;
+  return isExistingStreetMatch(item, { street, psc, city });
+}
+
+function rankVerifiedHouseMatches(items, houseNumber) {
+  const filter = normalizeHouseNumber(houseNumber);
+  return items.slice().sort((a, b) => {
+    const aExact = normalizeHouseNumber(a.houseNumber) === filter ? 0 : 1;
+    const bExact = normalizeHouseNumber(b.houseNumber) === filter ? 0 : 1;
+    if (aExact !== bExact) return aExact - bExact;
+    const aCoords = a.lat != null && (a.lon != null || a.lng != null) ? 0 : 1;
+    const bCoords = b.lat != null && (b.lon != null || b.lng != null) ? 0 : 1;
+    return aCoords - bCoords;
+  });
+}
+
+/** Přesná shoda ulice + č.p. v obci/PSČ — bez záložního trefu na střed obce. */
+export function matchExistingAddress(items, fields = {}) {
+  const list = Array.isArray(items) ? items : [];
+  const houseHits = rankVerifiedHouseMatches(
+    list.filter((item) => isExistingHouseMatch(item, fields)),
+    fields.houseNumber
+  );
+  if (houseHits.length) return { ok: true, match: houseHits[0] };
+  if (list.some((item) => isExistingStreetMatch(item, fields))) {
+    return { ok: false, reason: "house" };
+  }
+  return { ok: false, reason: "missing" };
+}
+
+export function fieldErrorsFromAddressVerify(result) {
+  if (!result || result.ok) return {};
+  if (result.reason === "format") return result.errors || {};
+  if (result.reason === "house") return { houseNumber: result.error };
+  if (result.reason === "missing") return { street: result.error };
+  return {};
+}
+
+function resolvedAddressFields({ street = "", houseNumber = "", psc = "", city = "", fullAddress = "" } = {}) {
+  const parsed = fullAddress ? parseStoredAddress(fullAddress) : { street: "", houseNumber: "", psc: "", city: "" };
+  const fromStreet = parseStreetAndHouseNumber(street || parsed.street);
+  return {
+    street: fromStreet.street,
+    houseNumber: String(houseNumber || fromStreet.houseNumber || parsed.houseNumber || "").trim(),
+    psc: String(psc || parsed.psc || "").trim(),
+    city: String(city || parsed.city || "").trim(),
+  };
+}
+
+const verifyCache = new Map();
+const VERIFY_CACHE_MS = 60_000;
+
+/**
+ * Ověří, že adresa existuje v RÚIAN (nebo v záložním geokódu) jako konkrétní dům.
+ * Nesmí projít „Nesmyslná 999“ jen proto, že PSČ ukazuje na existující obec.
+ */
+export async function verifyExistingCzechAddress(input = {}) {
+  const fields = resolvedAddressFields(input);
+  const format = validateAddressFields(fields);
+  if (!format.valid) {
+    return {
+      ok: false,
+      reason: "format",
+      errors: format.errors,
+      error: "Zkontroluj adresu — některé údaje chybí nebo nejsou správně.",
+      fields,
+    };
+  }
+
+  const cacheKey = [
+    fields.street,
+    fields.houseNumber,
+    String(fields.psc ?? "").replace(/\D/g, ""),
+    fields.city,
+  ]
+    .join("|")
+    .toLocaleLowerCase("cs");
+  const cached = verifyCache.get(cacheKey);
+  if (cached && Date.now() - cached.at < VERIFY_CACHE_MS) return cached.result;
+
+  let items = [];
+  let lookupFailed = false;
+  try {
+    items = await fetchAddressSuggestions(buildAddressSearchQuery(fields), fields);
+  } catch {
+    lookupFailed = true;
+  }
+
+  let result = matchExistingAddress(items, fields);
+  if (result.ok) {
+    const okResult = { ok: true, match: result.match, fields };
+    verifyCache.set(cacheKey, { at: Date.now(), result: okResult });
+    return okResult;
+  }
+
+  const alreadyHasRuian = items.some((item) => item.source === "ruian");
+  if (!alreadyHasRuian) {
+    try {
+      const ruian = await searchRuianAddresses(fields);
+      const ruianItems = dedupeItems(ruian.items || []);
+      if (ruianItems.length) lookupFailed = false;
+      items = dedupeItems([...items, ...ruianItems]);
+      result = matchExistingAddress(items, fields);
+      if (result.ok) {
+        const okResult = { ok: true, match: result.match, fields };
+        verifyCache.set(cacheKey, { at: Date.now(), result: okResult });
+        return okResult;
+      }
+    } catch {
+      lookupFailed = true;
+    }
+  }
+
+  const failResult =
+    result.reason === "house"
+      ? { ok: false, reason: "house", error: ADDRESS_HOUSE_NOT_FOUND_MESSAGE, fields }
+      : lookupFailed && !items.length
+        ? { ok: false, reason: "lookup", error: ADDRESS_LOOKUP_FAILED_MESSAGE, fields }
+        : { ok: false, reason: "missing", error: ADDRESS_NOT_FOUND_MESSAGE, fields };
+  verifyCache.set(cacheKey, { at: Date.now(), result: failResult });
+  return failResult;
 }
 
 export function normalizeAddressSearchParts({ street = "", houseNumber = "", city = "", psc = "" } = {}) {
@@ -289,26 +458,32 @@ export async function geocodeCzechAddress({
   psc = "",
   city = "",
   fullAddress = "",
+  requireHouse = false,
 } = {}) {
   const cityTrim = String(city || "").trim();
   const pscTrim = String(psc || "").replace(/\s/g, "");
+  const houseReady = Boolean(String(street || "").trim() && String(houseNumber || "").trim());
+  const strictHouse = requireHouse && houseReady;
   const queries = [
     String(fullAddress || "").trim(),
     `${street} ${houseNumber}, ${pscTrim} ${cityTrim}`.replace(/\s+/g, " ").trim(),
     `${street} ${houseNumber}, ${cityTrim}`.replace(/\s+/g, " ").trim(),
-    `${pscTrim} ${cityTrim}`.trim(),
-    cityTrim ? `${cityTrim}, Česko` : "",
-    cityTrim,
-  ].filter((q) => q && q.replace(/\s/g, "").length >= 3);
+  ];
+  if (!strictHouse) {
+    queries.push(`${pscTrim} ${cityTrim}`.trim(), cityTrim ? `${cityTrim}, Česko` : "", cityTrim);
+  }
 
   const seen = new Set();
-  for (const query of queries) {
+  const fields = { street, houseNumber, psc, city: cityTrim };
+  for (const query of queries.filter((q) => q && q.replace(/\s/g, "").length >= 3)) {
     const key = query.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
     try {
-      const results = await fetchAddressSuggestions(query);
-      const hit = pickBestGeocodeHit(results, cityTrim);
+      const results = await fetchAddressSuggestions(query, fields);
+      const hit = strictHouse
+        ? matchExistingAddress(results, fields).match
+        : pickBestGeocodeHit(results, cityTrim);
       if (hit?.lat == null) continue;
       const lng = hit.lon ?? hit.lng;
       if (lng == null) continue;
@@ -407,6 +582,13 @@ export async function reverseGeocodeStreet(lat, lng) {
 }
 
 export const ADDRESS_SEARCH_HINT =
-  "Začněte psát ulici — po jejím výběru nabídneme všechna čísla popisná v tomto PSČ.";
+  "Vyber ulici a číslo popisné z nabídky — uloží se jen adresa, která v Česku existuje.";
+
+export const ADDRESS_NOT_FOUND_MESSAGE =
+  "Tato adresa v registru neexistuje. Vyber ulici a číslo popisné z nabídky.";
+export const ADDRESS_HOUSE_NOT_FOUND_MESSAGE =
+  "Toto číslo popisné na zadané ulici v registru není. Vyber ho z nabídky.";
+export const ADDRESS_LOOKUP_FAILED_MESSAGE =
+  "Adresu se teď nepodařilo ověřit. Zkontroluj internet a zkus to znovu.";
 
 export { MIN_QUERY_LENGTH, DEBOUNCE_MS };

@@ -50,6 +50,7 @@ export default function LocalityRadiusPreview({
         psc: pscDigits(psc),
         city,
         fullAddress: `${street} ${houseNumber}, ${psc} ${city}`.replace(/\s+/g, " ").trim(),
+        requireHouse: streetReady,
       });
       if (cancelled) return;
       if (geo?.lat != null && geo.lng != null) {
@@ -111,8 +112,7 @@ export default function LocalityRadiusPreview({
       />
       {status === "missing" && !hasPin ? (
         <p className="text-[11px] text-amber-800 leading-relaxed">
-          Adresu jsme zatím nenašli na mapě. Zkontroluj PSČ a ulici — můžeš pokračovat a místo upřesnit později v
-          profilu.
+          Tuto adresu v registru nenašli. Zkontroluj ulici a číslo popisné, nebo je vyber z nabídky.
         </p>
       ) : null}
       <div id={radiusSectionId} className="scroll-mt-4">

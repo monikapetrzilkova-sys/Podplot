@@ -60,9 +60,9 @@ import {
   INITIAL_GROUP_PROPOSALS,
 } from "../data/communityGroups.js";
 import { clampMapPos, posToDistanceLabel } from "../data/mapData.js";
-import { pscDigits } from "../data/addressValidation.js";
+import { pscDigits, parseStoredAddress } from "../data/addressValidation.js";
 import { TRUST_COPY } from "../data/trustNetworkCopy.js";
-import { geocodeCzechAddress } from "../data/addressAutocomplete.js";
+import { geocodeCzechAddress, verifyExistingCzechAddress, formatSuggestionAddress } from "../data/addressAutocomplete.js";
 import { isValidMapPos } from "../utils/reportPinUtils.js";
 import { latLngToMapPos, mapPosToLatLng, latLngOffsetMeters } from "../utils/geoCoordinates.js";
 import {
@@ -2416,13 +2416,37 @@ export function AppProvider({ children }) {
       const resolvedSubtype =
         normalizedType === "podnik" ? businessSubtype ?? resolveBusinessSubtype(accountType) : null;
 
+      const parsedAddress = parseStoredAddress(address);
+      const addressFields = {
+        street: geo?.street || parsedAddress.street,
+        houseNumber: geo?.houseNumber || parsedAddress.houseNumber,
+        psc: geo?.psc || parsedAddress.psc,
+        city: municipality,
+        fullAddress: address,
+      };
+      let resolvedAddress = address;
+      let verifiedLat = null;
+      let verifiedLng = null;
+      if (normalizedType !== "urad") {
+        const verified = await verifyExistingCzechAddress(addressFields);
+        if (!verified.ok) {
+          showToast(verified.error, "error");
+          return { ok: false, error: verified.error, code: "address_not_found" };
+        }
+        resolvedAddress = formatSuggestionAddress(verified.match) || address;
+        if (verified.match?.lat != null) {
+          verifiedLat = Number(verified.match.lat);
+          verifiedLng = Number(verified.match.lon ?? verified.match.lng);
+        }
+      }
+
       let userId = createUserId();
       const auth = await authSignUp({
         email,
         password,
         metadata: {
           name,
-          address,
+          address: resolvedAddress,
           account_type: normalizedType,
           municipality,
         },
@@ -2466,15 +2490,16 @@ export function AppProvider({ children }) {
       }
       const labelsJoined = formatServiceSubcategoryLabels(subIds);
 
-      let nextLat = geo?.lat ?? null;
-      let nextLng = geo?.lng ?? null;
+      let nextLat = geo?.lat ?? verifiedLat ?? null;
+      let nextLng = geo?.lng ?? verifiedLng ?? null;
       if (nextLat == null || nextLng == null) {
         const geocoded = await geocodeCzechAddress({
           street: geo?.street,
           houseNumber: geo?.houseNumber,
           psc: geo?.psc,
           city: municipality,
-          fullAddress: address,
+          fullAddress: resolvedAddress,
+          requireHouse: normalizedType !== "urad",
         });
         if (geocoded) {
           nextLat = geocoded.lat;
@@ -2505,7 +2530,7 @@ export function AppProvider({ children }) {
         id: userId,
         name,
         email,
-        address,
+        address: resolvedAddress,
         accountType: normalizedType,
         businessSubtype: resolvedSubtype,
         initials: initialsFromName(name),
@@ -2564,7 +2589,7 @@ export function AppProvider({ children }) {
       }
       setLocations([
         buildHomeLocation({
-          address,
+          address: resolvedAddress,
           municipality,
           shortLabel,
           lat: homeLat,

@@ -22,6 +22,11 @@ import {
   parseStoredAddress,
   ADDRESS_PRIVACY_NOTE_INLINE,
 } from "../data/addressValidation.js";
+import {
+  verifyExistingCzechAddress,
+  fieldErrorsFromAddressVerify,
+  formatSuggestionAddress,
+} from "../data/addressAutocomplete.js";
 import { SKIP_REGISTRATION, ENABLE_DEV_ROLE_SWITCH } from "../data/devConfig.js";
 import ModalDoodleBackdrop from "./ModalDoodleBackdrop.jsx";
 import AppPanelPortal from "./AppPanelPortal.jsx";
@@ -200,7 +205,7 @@ export default function MyProfilesPanel({ embedded = false }) {
     setAdding(false);
   };
 
-  const submitSetup = () => {
+  const submitSetup = async () => {
     setFormError("");
     const addressResult = validateAddressFields({ street, houseNumber, psc, city });
     setAddressErrors(addressResult.errors);
@@ -208,11 +213,18 @@ export default function MyProfilesPanel({ embedded = false }) {
       setFormError("Doplň adresu ve správném formátu (ulice, č.p., PSČ).");
       return;
     }
+    const verified = await verifyExistingCzechAddress({ street, houseNumber, psc, city });
+    if (!verified.ok) {
+      setAddressErrors((prev) => ({ ...prev, ...fieldErrorsFromAddressVerify(verified) }));
+      setFormError(verified.error);
+      return;
+    }
     if (isMobilniSetup && !primarySubcategory) {
       setFormError("Vyber hlavní zaměření služby.");
       return;
     }
-    const fullAddress = formatFullAddress({ street, houseNumber, psc, city });
+    const fullAddress =
+      formatSuggestionAddress(verified.match) || formatFullAddress({ street, houseNumber, psc, city });
     const keywords = customKeywords
       .split(",")
       .map((k) => k.trim())
@@ -752,7 +764,7 @@ function CraftsmanAccountSettings() {
     setCity(parsed.city);
   }, [user?.name, user?.email, user?.address, user]);
 
-  const saveProfile = () => {
+  const saveProfile = async () => {
     setFormError("");
     const addressResult = validateAddressFields({ street, houseNumber, psc, city });
     setAddressErrors(addressResult.errors);
@@ -760,10 +772,16 @@ function CraftsmanAccountSettings() {
       setFormError("Doplň adresu ve správném formátu (ulice, č.p., PSČ).");
       return;
     }
+    const verified = await verifyExistingCzechAddress({ street, houseNumber, psc, city });
+    if (!verified.ok) {
+      setAddressErrors((prev) => ({ ...prev, ...fieldErrorsFromAddressVerify(verified) }));
+      setFormError(verified.error);
+      return;
+    }
     updateAccountProfile({
       name,
       email,
-      address: formatFullAddress({ street, houseNumber, psc, city }),
+      address: formatSuggestionAddress(verified.match) || formatFullAddress({ street, houseNumber, psc, city }),
     });
   };
 
