@@ -20,6 +20,11 @@ import {
   formatFullAddress,
   parseStoredAddress,
 } from "../data/addressValidation.js";
+import {
+  verifyExistingCzechAddress,
+  fieldErrorsFromAddressVerify,
+  formatSuggestionAddress,
+} from "../data/addressAutocomplete.js";
 import CraftCategoryPicker from "./CraftCategoryPicker.jsx";
 import StructuredAddressFields from "./StructuredAddressFields.jsx";
 
@@ -152,7 +157,7 @@ export default function CraftsmanProfilePanel() {
     setEditing(true);
   };
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     setFormError("");
     const name = catalogName.trim();
     if (!name) {
@@ -165,11 +170,18 @@ export default function CraftsmanProfilePanel() {
       setFormError("Doplň adresu působnosti ve správném formátu.");
       return;
     }
+    const verified = await verifyExistingCzechAddress({ street, houseNumber, psc, city });
+    if (!verified.ok) {
+      setAddressErrors((prev) => ({ ...prev, ...fieldErrorsFromAddressVerify(verified) }));
+      setFormError(verified.error);
+      return;
+    }
     if (!primarySubcategory) {
       setFormError("Vyber hlavní zaměření.");
       return;
     }
-    const fullAddress = formatFullAddress({ street, houseNumber, psc, city });
+    const fullAddress =
+      formatSuggestionAddress(verified.match) || formatFullAddress({ street, houseNumber, psc, city });
     const selectedLabels = new Set(
       subcategories.map((id) => getServiceCategory(id)?.label).filter(Boolean)
     );

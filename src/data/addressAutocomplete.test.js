@@ -8,6 +8,14 @@ import {
   canSearchAddress,
   rankAddressSuggestions,
   filterSuggestionsByLocality,
+  normalizeStreetName,
+  streetsMatch,
+  localityMatches,
+  isExistingHouseMatch,
+  matchExistingAddress,
+  fieldErrorsFromAddressVerify,
+  ADDRESS_NOT_FOUND_MESSAGE,
+  ADDRESS_HOUSE_NOT_FOUND_MESSAGE,
 } from "./addressAutocomplete.js";
 
 describe("houseNumberMatches", () => {
@@ -104,6 +112,106 @@ describe("filterSuggestionsByLocality", () => {
     assert.deepEqual(
       filtered.map((i) => `${i.street} ${i.houseNumber}`.trim()),
       ["Pražská", "Pražská 21"]
+    );
+  });
+});
+
+describe("existing address match", () => {
+  const pražská21 = {
+    street: "Pražská",
+    houseNumber: "21",
+    psc: "252 42",
+    city: "Jesenice",
+    lat: 49.96,
+    lon: 14.51,
+  };
+
+  it("treats diacritics and ulice prefix as the same street", () => {
+    assert.equal(normalizeStreetName("Ulice Pražská"), "prazska");
+    assert.equal(streetsMatch("Prazska", "Pražská"), true);
+    assert.equal(streetsMatch("Nesmyslná", "Pražská"), false);
+  });
+
+  it("accepts the same PSČ even when the city label differs slightly", () => {
+    assert.equal(localityMatches(pražská21, { psc: "25242", city: "Jesenice u Prahy" }), true);
+    assert.equal(localityMatches(pražská21, { psc: "14200", city: "Praha 4" }), false);
+  });
+
+  it("requires a real house on the typed street — not just the municipality", () => {
+    assert.equal(
+      isExistingHouseMatch(pražská21, {
+        street: "Pražská",
+        houseNumber: "21",
+        psc: "252 42",
+        city: "Jesenice",
+      }),
+      true
+    );
+    assert.equal(
+      isExistingHouseMatch(pražská21, {
+        street: "Nesmyslná",
+        houseNumber: "21",
+        psc: "252 42",
+        city: "Jesenice",
+      }),
+      false
+    );
+    assert.equal(
+      isExistingHouseMatch({ city: "Jesenice", psc: "252 42", lat: 49.96, lon: 14.51 }, {
+        street: "Nesmyslná",
+        houseNumber: "999",
+        psc: "252 42",
+        city: "Jesenice",
+      }),
+      false
+    );
+  });
+
+  it("rejects a made-up street even when the city exists", () => {
+    const result = matchExistingAddress(
+      [
+        { street: "Pražská", houseNumber: "21", psc: "252 42", city: "Jesenice" },
+        { city: "Jesenice", psc: "252 42", lat: 49.96, lon: 14.51 },
+      ],
+      { street: "Nesmyslná", houseNumber: "1", psc: "252 42", city: "Jesenice" }
+    );
+    assert.equal(result.ok, false);
+    assert.equal(result.reason, "missing");
+  });
+
+  it("rejects a missing číslo popisné on an otherwise real street", () => {
+    const result = matchExistingAddress([pražská21], {
+      street: "Pražská",
+      houseNumber: "99999",
+      psc: "252 42",
+      city: "Jesenice",
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.reason, "house");
+    assert.equal(
+      fieldErrorsFromAddressVerify({ ok: false, reason: "house", error: ADDRESS_HOUSE_NOT_FOUND_MESSAGE })
+        .houseNumber,
+      ADDRESS_HOUSE_NOT_FOUND_MESSAGE
+    );
+  });
+
+  it("prefers the exact house number when several candidates exist", () => {
+    const result = matchExistingAddress(
+      [
+        { street: "Pražská", houseNumber: "21a", psc: "252 42", city: "Jesenice", lat: 1, lon: 1 },
+        { street: "Pražská", houseNumber: "21", psc: "252 42", city: "Jesenice", lat: 2, lon: 2 },
+      ],
+      { street: "Pražská", houseNumber: "21", psc: "252 42", city: "Jesenice" }
+    );
+    assert.equal(result.ok, true);
+    assert.equal(result.match.houseNumber, "21");
+    assert.equal(result.match.lat, 2);
+  });
+
+  it("maps a missing street to the registration field error", () => {
+    assert.deepEqual(
+      fieldErrorsFromAddressVerify({ ok: false, reason: "missing", error: ADDRESS_NOT_FOUND_MESSAGE }),
+      { street: ADDRESS_NOT_FOUND_MESSAGE }
     );
   });
 });
