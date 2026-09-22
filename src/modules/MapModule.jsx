@@ -180,7 +180,7 @@ export default function MapModule({ provozovnaType = null }) {
           <div className="pp-map-module-viewport relative flex flex-col flex-1 min-h-0 overflow-hidden">
             {(source === "mock" || source === "mock-fallback") && (
               <p className="pp-map-status-overlay shrink-0 absolute top-2 left-2 right-2 z-[4] mx-0 px-2 py-1.5 text-[10px] leading-snug rounded-lg border border-amber-200 bg-amber-50/95 text-amber-900 pointer-events-none">
-                Lokálně běží ukázková místa — do <code className="font-mono">app/.env</code> doplňte{" "}
+                Lokálně běží ukázková místa — do <code className="font-mono">app/.env.local</code> doplňte{" "}
                 <code className="font-mono">GOOGLE_MAPS_SERVER_API_KEY</code> (klíč bez HTTP referrer) a
                 restartujte SPUSTIT.bat.
               </p>

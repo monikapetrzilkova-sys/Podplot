@@ -28,8 +28,9 @@ import {
 const ROOT = fileURLToPath(new URL(".", import.meta.url));
 const PORT = 5173;
 
-/** Načte KEY=VALUE z .env do process.env (nepřepisuje už nastavené). */
-function loadDotEnv(filePath = join(ROOT, ".env")) {
+/** Načte KEY=VALUE z .env.local do process.env (nepřepisuje už nastavené). */
+function loadDotEnv() {
+  const filePath = join(ROOT, ".env.local");
   if (!existsSync(filePath)) return;
   const text = readFileSync(filePath, "utf-8");
   for (const line of text.split(/\r?\n/)) {
@@ -351,6 +352,6 @@ server.listen(PORT, () => {
     (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "").trim() &&
       (process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "").trim()
   );
-  console.log("  Supabase: " + (sbOn ? "zapnuto (sdílené příspěvky)" : "vypnuto — doplňte VITE_SUPABASE_* do .env"));
+  console.log("  Supabase: " + (sbOn ? "zapnuto (sdílené příspěvky)" : "vypnuto — doplňte VITE_SUPABASE_* do .env.local"));
   console.log("  Ukoncit:  Ctrl+C\n");
 });

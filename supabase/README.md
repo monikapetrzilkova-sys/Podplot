@@ -10,7 +10,7 @@ Veřejný `anon` klíč v aplikaci **musí zůstat** — bez něj se sousedé ne
 2. **SQL Editor** → New query
 3. Když tabulky ještě nemáš, nejdřív spusť `trust.sql` (a podle potřeby `messages.sql`, `group_proposals.sql`). Pak vlož celý `supabase/rls_secure.sql` → **Run**. Chybějící tabulky skript přeskočí, nespadne.
 4. **Authentication → Providers → Email** → zapnuto
-5. **Project Settings → API**: `service_role` klíč **nikdy** nedávej do Vercelu, `.env` v gitu, ani do frontendu. Stačí `anon` / `public`.
+5. **Project Settings → API**: `service_role` klíč **nikdy** nedávej do Vercelu, `.env.example` v gitu, ani do frontendu. Stačí `anon` / `public`.
 6. **Project Settings → General**: zapni 2FA na svůj účet Supabase (ty jsi jediný správce dashboardu).
 
 Po kroku 3 už náhodný návštěvník s anon klíčem **neuvidí** zprávy, e-maily ani příspěvky. Přihlášení sousedé ano — to aplikace potřebuje.
