@@ -4,6 +4,14 @@ import { isMunicipalityUrgent } from "../data/reportUrgency.js";
 
 const NEAR_HOME_THRESHOLD = 3.2;
 const NEAR_PIN_THRESHOLD = 2.8;
+/**
+ * Strop pro rozhazování překrývajících se špendlíků.
+ * Poloměr roste (3.2 + slot * 1.5), ale clampMapPos drží bod v [8,92] — jakmile
+ * poloměr přeroste mapu, každý úhel spadne na už obsazený okraj a cyklus by
+ * nikdy neskončil. Od ~26 slotů je poloměr větší než polovina mapy, 60 je tedy
+ * bohatá rezerva. Překryv je kosmetická vada, zamrzlá karta prohlížeče není.
+ */
+const MAX_DEOVERLAP_SLOTS = 60;
 
 function posDistance(a, b) {
   const dx = a.x - b.x;
@@ -113,8 +121,9 @@ export function buildReportDisplayPositions(reports, homeCenter = MAP_CENTER) {
     const avoidHome = nearHome && !isMunicipalityUrgent(report) && !report.urgent;
 
     while (
-      occupied.some((p) => posDistance(p, { x, y }) < NEAR_PIN_THRESHOLD) ||
-      (avoidHome && slot === 0)
+      slot < MAX_DEOVERLAP_SLOTS &&
+      (occupied.some((p) => posDistance(p, { x, y }) < NEAR_PIN_THRESHOLD) ||
+        (avoidHome && slot === 0))
     ) {
       slot += 1;
       const angle = ((slot * 137.5) * Math.PI) / 180;
@@ -124,6 +133,12 @@ export function buildReportDisplayPositions(reports, homeCenter = MAP_CENTER) {
         Number(origin.x) + Math.cos(angle) * radius,
         Number(origin.y) + Math.sin(angle) * radius
       ));
+    }
+
+    // Volné místo se nenašlo — radši ukaž špendlík tam, kde hlášení opravdu je,
+    // než na náhodném okraji mapy, kam ho zahnal ořez poloměru.
+    if (slot >= MAX_DEOVERLAP_SLOTS) {
+      ({ x, y } = clampMapPos(Number(report.mapPos.x), Number(report.mapPos.y)));
     }
 
     occupied.push({ x, y });

@@ -331,13 +331,17 @@ export default function ReportsMap({
     }
   };
 
-  const visibleReports = draftPinOnly
-    ? []
-    : singleReportMode
-      ? selectedReportId
+  // Musí být memoizované — jinak má pole pokaždé novou identitu a useMemo níž
+  // nikdy netrefí, takže se rozhazování špendlíků počítá při každém renderu.
+  const visibleReports = useMemo(() => {
+    if (draftPinOnly) return [];
+    if (singleReportMode) {
+      return selectedReportId
         ? reports.filter((r) => r.id === selectedReportId && isValidMapPos(r.mapPos))
-        : []
-      : reports.filter((r) => isValidMapPos(r.mapPos));
+        : [];
+    }
+    return reports.filter((r) => isValidMapPos(r.mapPos));
+  }, [draftPinOnly, singleReportMode, selectedReportId, reports]);
 
   const reportDisplayPositions = useMemo(
     () => buildReportDisplayPositions(visibleReports, MAP_CENTER),
