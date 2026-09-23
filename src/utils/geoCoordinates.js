@@ -60,6 +60,24 @@ export function latLngToMapPos(
   );
 }
 
+/**
+ * Z našeptané adresy udělá stejný výsledek jako klepnutí na mapu.
+ * Našeptávač vrací `lon` (Photon i Nominatim), zbytek appky pracuje s `lng`.
+ * Vrací null, když adresa nemá použitelné souřadnice — volající pak nic nepřepíše.
+ */
+export function addressSuggestionToPick(suggestion, center, referenceRadiusKm) {
+  const rawLat = suggestion?.lat;
+  const rawLng = suggestion?.lng ?? suggestion?.lon;
+  // Pozor: Number(null) je 0, ne NaN — chybějící souřadnice by se tiše staly
+  // nulovým poledníkem a špendlík by skončil přilepený na okraji mapy.
+  if (rawLat == null || rawLng == null || rawLat === "" || rawLng === "") return null;
+  const lat = Number(rawLat);
+  const lng = Number(rawLng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return buildMapPickResult(lat, lng, center, referenceRadiusKm);
+}
+
 /** Výsledek výběru na mapě — GPS + mapPos pro uložení. */
 export function buildMapPickResult(lat, lng, center, referenceRadiusKm) {
   const radiusKm = referenceRadiusKm ?? DEFAULT_REPORTS_MAP_RADIUS_KM;
