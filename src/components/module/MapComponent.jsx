@@ -2,6 +2,7 @@
 
 import ReportsMap from "../ReportsMap.jsx";
 import PodPlotGoogleMap from "../map/PodPlotGoogleMap.jsx";
+import MapAddressPicker from "../map/MapAddressPicker.jsx";
 import { useGoogleMapsReady } from "../../hooks/useGoogleMapsReady.js";
 import { useApp } from "../../context/AppContext.jsx";
 import {
@@ -66,18 +67,43 @@ export default function MapComponent(props) {
     );
   }
 
-  if (enabled && ready) {
-    return (
-      <PodPlotGoogleMap
-        {...props}
-        mapCenter={mapCenter}
-        referenceRadiusKm={referenceRadiusKm}
+  const useGoogle = enabled && ready;
+
+  // Musí sedět s poloměrem té mapy, která se opravdu vykreslí — jinak by adresa
+  // spadla jinam, než kam ukazuje špendlík. Google si bere referenceRadiusKm,
+  // ReportsMap svůj radiusKm (s fallbackem na stejný výchozí).
+  const pickRadiusKm = useGoogle ? referenceRadiusKm : props.radiusKm ?? referenceRadiusKm;
+
+  // Psaní adresy je rovnocenná cesta ke klepnutí do mapy — bez ní nemá
+  // uživatel na klávesnici jak špendlík umístit.
+  const addressPicker =
+    props.pickMode && props.onPickPin ? (
+      <MapAddressPicker
+        center={mapCenter}
+        referenceRadiusKm={pickRadiusKm}
+        city={activeLocation?.municipality ?? activeLocation?.shortLabel ?? ""}
+        psc={activeLocation?.psc ?? activeLocation?.geo?.psc ?? ""}
+        onPick={props.onPickPin}
+        className="shrink-0 mb-2"
       />
+    ) : null;
+
+  if (useGoogle) {
+    return (
+      <>
+        {addressPicker}
+        <PodPlotGoogleMap
+          {...props}
+          mapCenter={mapCenter}
+          referenceRadiusKm={referenceRadiusKm}
+        />
+      </>
     );
   }
 
   return (
     <>
+      {addressPicker}
       {error ? (
         <p className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 mb-1 shrink-0">
           {error}

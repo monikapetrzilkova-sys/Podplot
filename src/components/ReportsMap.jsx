@@ -331,13 +331,17 @@ export default function ReportsMap({
     }
   };
 
-  const visibleReports = draftPinOnly
-    ? []
-    : singleReportMode
-      ? selectedReportId
+  // Musí být memoizované — jinak má pole pokaždé novou identitu a useMemo níž
+  // nikdy netrefí, takže se rozhazování špendlíků počítá při každém renderu.
+  const visibleReports = useMemo(() => {
+    if (draftPinOnly) return [];
+    if (singleReportMode) {
+      return selectedReportId
         ? reports.filter((r) => r.id === selectedReportId && isValidMapPos(r.mapPos))
-        : []
-      : reports.filter((r) => isValidMapPos(r.mapPos));
+        : [];
+    }
+    return reports.filter((r) => isValidMapPos(r.mapPos));
+  }, [draftPinOnly, singleReportMode, selectedReportId, reports]);
 
   const reportDisplayPositions = useMemo(
     () => buildReportDisplayPositions(visibleReports, MAP_CENTER),
@@ -389,14 +393,13 @@ export default function ReportsMap({
     >
       <div
         ref={mapRef}
-        role={pickMode ? "button" : "img"}
-        tabIndex={pickMode ? 0 : undefined}
+        // Při výběru místa to není tlačítko — klepnutí potřebuje souřadnice,
+        // které klávesnice nedá. Enter/mezerník tu dřív vždy upustily špendlík
+        // přesně doprostřed mapy, takže hlášení z klávesnice mířila na špatné
+        // místo a hromadila se na jednom bodě. Klávesnicí se teď místo zadává
+        // adresou nad mapou (MapAddressPicker).
+        role={pickMode ? undefined : "img"}
         onClick={handleMapClick}
-        onKeyDown={(e) => {
-          if (pickMode && (e.key === "Enter" || e.key === " ")) {
-            onPickPin?.({ x: MAP_CENTER.x, y: MAP_CENTER.y });
-          }
-        }}
         className={`pp-map-container relative select-none ${
           fluid ? "flex-1 min-h-0" : compact ? "h-36" : large ? "h-72" : "h-52"
         } ${pickMode ? "pp-map-container--pick ring-2 ring-[#A85858]/40 ring-offset-2" : ""}`}
