@@ -10,6 +10,11 @@ import {
   formatPscInput,
   pscDigits,
 } from "../data/addressValidation.js";
+import {
+  verifyExistingCzechAddress,
+  fieldErrorsFromAddressVerify,
+  formatSuggestionAddress,
+} from "../data/addressAutocomplete.js";
 import StructuredAddressFields from "./StructuredAddressFields.jsx";
 import LocalityRadiusPreview from "./LocalityRadiusPreview.jsx";
 import { DEFAULT_NEIGHBOR_RADIUS_KM } from "../data/mapRadiusSettings.js";
@@ -347,7 +352,6 @@ export default function RegisterScreen() {
       }
     }
 
-    const fullAddress = officeAddress || formatFullAddress({ street, houseNumber, psc, city });
     const keywordList = customKeywords
       .split(/[,;]+/)
       .map((k) => k.trim())
@@ -355,20 +359,47 @@ export default function RegisterScreen() {
 
     setBusy(true);
     try {
+      let resolvedStreet = street.trim();
+      let resolvedHouse = houseNumber.trim();
+      let resolvedPsc = psc;
+      let resolvedCity = (selectedInstitution?.seatCity || city).trim();
+      let resolvedAddress = officeAddress || formatFullAddress({ street, houseNumber, psc, city });
+      let resolvedLat = areaPin?.lat ?? null;
+      let resolvedLng = areaPin?.lng ?? areaPin?.lon ?? null;
+
+      if (!officeAddress) {
+        const verified = await verifyExistingCzechAddress({ street, houseNumber, psc, city });
+        if (!verified.ok) {
+          setSubmitError(verified.error);
+          setFieldErrors((prev) => ({ ...prev, ...fieldErrorsFromAddressVerify(verified) }));
+          return;
+        }
+        const match = verified.match;
+        resolvedStreet = match.street || resolvedStreet;
+        resolvedHouse = match.houseNumber || resolvedHouse;
+        if (match.psc) resolvedPsc = match.psc;
+        if (match.city) resolvedCity = match.city;
+        resolvedAddress = formatSuggestionAddress(match) || resolvedAddress;
+        if (resolvedLat == null && match.lat != null) {
+          resolvedLat = Number(match.lat);
+          resolvedLng = Number(match.lon ?? match.lng);
+        }
+      }
+
       const result = await register({
         name: name.trim(),
         email: email.trim(),
         password,
-        address: fullAddress,
+        address: resolvedAddress,
         accountType,
         businessSubtype: accountType === "podnik" ? businessSubtype : null,
         geo: {
-          city: (selectedInstitution?.seatCity || city).trim(),
-          street: street.trim(),
-          houseNumber: houseNumber.trim(),
-          psc: pscDigits(selectedInstitution?.psc || psc),
-          lat: areaPin?.lat ?? null,
-          lng: areaPin?.lng ?? areaPin?.lon ?? null,
+          city: resolvedCity,
+          street: resolvedStreet,
+          houseNumber: resolvedHouse,
+          psc: pscDigits(selectedInstitution?.psc || resolvedPsc),
+          lat: resolvedLat,
+          lng: resolvedLng,
         },
         radiusKm,
         allowPublicAreaLabel,

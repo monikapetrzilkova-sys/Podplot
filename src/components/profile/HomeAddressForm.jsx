@@ -4,6 +4,11 @@ import {
   formatFullAddress,
   parseStoredAddress,
 } from "../../data/addressValidation.js";
+import {
+  verifyExistingCzechAddress,
+  fieldErrorsFromAddressVerify,
+  formatSuggestionAddress,
+} from "../../data/addressAutocomplete.js";
 import StructuredAddressFields from "../StructuredAddressFields.jsx";
 import LocalityRadiusPreview from "../LocalityRadiusPreview.jsx";
 import { DEFAULT_NEIGHBOR_RADIUS_KM, clampNeighborRadius } from "../../data/mapRadiusSettings.js";
@@ -58,15 +63,23 @@ export default function HomeAddressForm({
 
     setSaving(true);
     try {
-      const fullAddress = formatFullAddress({ street, houseNumber, psc, city });
+      const verified = await verifyExistingCzechAddress({ street, houseNumber, psc, city });
+      if (!verified.ok) {
+        setFieldErrors((prev) => ({ ...prev, ...fieldErrorsFromAddressVerify(verified) }));
+        setSubmitError(verified.error);
+        return;
+      }
+      const match = verified.match;
+      const fullAddress =
+        formatSuggestionAddress(match) || formatFullAddress({ street, houseNumber, psc, city });
       const ok = await onSave({
-        street: street.trim(),
-        houseNumber: houseNumber.trim(),
-        psc,
-        city: city.trim(),
+        street: match.street || street.trim(),
+        houseNumber: match.houseNumber || houseNumber.trim(),
+        psc: match.psc || psc,
+        city: match.city || city.trim(),
         fullAddress,
-        lat: pickedCoords?.lat ?? null,
-        lng: pickedCoords?.lng ?? pickedCoords?.lon ?? null,
+        lat: pickedCoords?.lat ?? match.lat ?? null,
+        lng: pickedCoords?.lng ?? pickedCoords?.lon ?? match.lon ?? match.lng ?? null,
         label: placeLabel.trim(),
         radiusKm,
       });
